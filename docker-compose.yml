@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: campus_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: campus_admin
+      POSTGRES_PASSWORD: campus_secure_password
+      POSTGRES_DB: campus_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campus_admin -d campus_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: campus_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: campus_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://campus_admin:campus_secure_password@postgres:5432/campus_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=campus_management_super_secret_jwt_key_32_bytes_min!
+      - AI_SERVICE_URL=http://ai_service:8001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  ai_service:
+    build:
+      context: ./AIService
+      dockerfile: Dockerfile
+    container_name: campus_ai_service
+    restart: always
+    ports:
+      - "8001:8001"
+    environment:
+      - SECRET_KEY=campus_management_super_secret_jwt_key_32_bytes_min!
+
+volumes:
+  postgres_data:

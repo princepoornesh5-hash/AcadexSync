@@ -1,0 +1,544 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================
+    // SECURITY HELPER FUNCTIONS
+    // =========================================================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwnUser(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function userProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function userRole() {
+      return userProfile().role;
+    }
+
+    function isActiveUser() {
+      return isSignedIn() && userProfile().accountStatus == 'active';
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && userRole() == 'SUPER_ADMIN';
+    }
+
+    function isCollegeAdmin() {
+      return isSignedIn() && userRole() == 'COLLEGE_ADMIN';
+    }
+
+    function isHOD() {
+      return isSignedIn() && userRole() == 'HOD';
+    }
+
+    function isFaculty() {
+      return isSignedIn() && userRole() == 'FACULTY';
+    }
+
+    // =========================================================
+    // USERS COLLECTION
+    // =========================================================
+
+    match /users/{uid} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isOwnUser(uid) || 
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId) ||
+        (isHOD() && userProfile().collegeId == resource.data.collegeId) ||
+        (isFaculty() && userProfile().collegeId == resource.data.collegeId)
+      );
+
+      // Prevent self-elevation of security fields
+      allow create: if isSignedIn() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == request.resource.data.collegeId && request.resource.data.role in ['COLLEGE_ADMIN', 'HOD', 'FACULTY', 'STUDENT']) ||
+        (isOwnUser(uid) && request.resource.data.role == 'STUDENT')
+      );
+
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() ||
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId && request.resource.data.collegeId == userProfile().collegeId && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || request.resource.data.role in ['COLLEGE_ADMIN', 'HOD', 'FACULTY', 'STUDENT'])) ||
+        (isOwnUser(uid) &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'role', 'collegeId', 'departmentId', 'accountStatus', 'firebaseUid', 'status', 'employeeId', 'rollNumber'
+          ])
+        )
+      );
+
+      allow delete: if isSignedIn() && isActiveUser() && isSuperAdmin();
+    }
+
+    // =========================================================
+    // COLLEGES
+    // =========================================================
+
+    match /colleges/{collegeId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        userProfile().collegeId == collegeId
+      );
+      allow create, delete: if isSignedIn() && isActiveUser() && isSuperAdmin();
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == collegeId)
+      );
+    }
+
+    // =========================================================
+    // DEPARTMENTS
+    // =========================================================
+
+    match /departments/{departmentId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        userProfile().collegeId == resource.data.collegeId
+      );
+      allow create: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == request.resource.data.collegeId)
+      );
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId && request.resource.data.collegeId == userProfile().collegeId)
+      );
+      allow delete: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId)
+      );
+    }
+
+    // =========================================================
+    // COURSES, ACADEMIC YEARS, SEMESTERS, SECTIONS, SUBJECTS
+    // =========================================================
+
+    match /courses/{courseId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        userProfile().collegeId == resource.data.collegeId
+      );
+      allow create: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == request.resource.data.collegeId)
+      );
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId && request.resource.data.collegeId == userProfile().collegeId)
+      );
+      allow delete: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId)
+      );
+    }
+
+    match /academicYears/{academicYearId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        userProfile().collegeId == resource.data.collegeId
+      );
+      allow create: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == request.resource.data.collegeId)
+      );
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId && request.resource.data.collegeId == userProfile().collegeId)
+      );
+      allow delete: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId)
+      );
+    }
+
+    match /semesters/{semesterId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        userProfile().collegeId == resource.data.collegeId
+      );
+      allow create: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == request.resource.data.collegeId)
+      );
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId && request.resource.data.collegeId == userProfile().collegeId)
+      );
+      allow delete: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId)
+      );
+    }
+
+    match /sections/{sectionId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        userProfile().collegeId == resource.data.collegeId
+      );
+      allow create: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == request.resource.data.collegeId)
+      );
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId && request.resource.data.collegeId == userProfile().collegeId)
+      );
+      allow delete: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId)
+      );
+    }
+
+    match /subjects/{subjectId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        userProfile().collegeId == resource.data.collegeId
+      );
+      allow create: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == request.resource.data.collegeId)
+      );
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId && request.resource.data.collegeId == userProfile().collegeId)
+      );
+      allow delete: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId)
+      );
+    }
+
+    // =========================================================
+    // FACULTY
+    // =========================================================
+
+    match /faculty/{facultyId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        userProfile().collegeId == resource.data.collegeId
+      );
+      allow create: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == request.resource.data.collegeId) || 
+        (isHOD() && userProfile().collegeId == request.resource.data.collegeId && userProfile().departmentId == request.resource.data.departmentId)
+      );
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId && request.resource.data.collegeId == userProfile().collegeId) || 
+        (isHOD() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId && request.resource.data.collegeId == userProfile().collegeId && request.resource.data.departmentId == userProfile().departmentId)
+      );
+      allow delete: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId) || 
+        (isHOD() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId)
+      );
+    }
+
+    // =========================================================
+    // STUDENTS
+    // =========================================================
+
+    match /students/{studentId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isOwnUser(studentId) || 
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId) ||
+        (isHOD() && userProfile().collegeId == resource.data.collegeId) ||
+        (isFaculty() && userProfile().collegeId == resource.data.collegeId)
+      );
+      allow create: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == request.resource.data.collegeId) || 
+        (isHOD() && userProfile().collegeId == request.resource.data.collegeId && userProfile().departmentId == request.resource.data.departmentId)
+      );
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId && request.resource.data.collegeId == userProfile().collegeId) || 
+        (isHOD() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId && request.resource.data.collegeId == userProfile().collegeId && request.resource.data.departmentId == userProfile().departmentId)
+      );
+      allow delete: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId) || 
+        (isHOD() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId)
+      );
+    }
+
+    // =========================================================
+    // FACULTY ASSIGNMENTS
+    // =========================================================
+
+    match /facultyAssignments/{assignmentId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        userProfile().collegeId == resource.data.collegeId
+      );
+      allow create: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == request.resource.data.collegeId) || 
+        (isHOD() && userProfile().collegeId == request.resource.data.collegeId && userProfile().departmentId == request.resource.data.departmentId)
+      );
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId && request.resource.data.collegeId == userProfile().collegeId) || 
+        (isHOD() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId && request.resource.data.collegeId == userProfile().collegeId && request.resource.data.departmentId == userProfile().departmentId)
+      );
+      allow delete: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId) || 
+        (isHOD() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId)
+      );
+    }
+
+    // =========================================================
+    // ATTENDANCE SESSIONS
+    // =========================================================
+
+    match /attendanceSessions/{sessionId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        userProfile().collegeId == resource.data.collegeId
+      );
+      allow create: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == request.resource.data.collegeId) ||
+        (isHOD() && userProfile().collegeId == request.resource.data.collegeId && userProfile().departmentId == request.resource.data.departmentId) ||
+        (isFaculty() && userProfile().collegeId == request.resource.data.collegeId && userProfile().id == request.resource.data.facultyId)
+      );
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId && request.resource.data.collegeId == userProfile().collegeId) ||
+        (isHOD() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId && request.resource.data.collegeId == userProfile().collegeId && request.resource.data.departmentId == userProfile().departmentId) ||
+        (isFaculty() && userProfile().collegeId == resource.data.collegeId && userProfile().id == resource.data.facultyId && request.resource.data.collegeId == userProfile().collegeId && request.resource.data.facultyId == userProfile().id)
+      );
+      allow delete: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId) ||
+        (isHOD() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId) ||
+        (isFaculty() && userProfile().collegeId == resource.data.collegeId && userProfile().id == resource.data.facultyId)
+      );
+    }
+
+    // =========================================================
+    // ATTENDANCE RECORDS (PER STUDENT)
+    // =========================================================
+
+    match /attendance/{attendanceId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isOwnUser(resource.data.studentId) ||
+        isSuperAdmin() ||
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId) ||
+        (isHOD() && userProfile().collegeId == resource.data.collegeId) ||
+        (isFaculty() && userProfile().collegeId == resource.data.collegeId)
+      );
+
+      allow create: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == request.resource.data.collegeId) ||
+        (isHOD() && userProfile().collegeId == request.resource.data.collegeId && userProfile().departmentId == request.resource.data.departmentId) ||
+        (isFaculty() && userProfile().collegeId == request.resource.data.collegeId && userProfile().id == request.resource.data.facultyId)
+      ) && request.resource.data.status in ['present', 'absent', 'late', 'medicalLeave', 'onDuty', 'holiday'];
+
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId && request.resource.data.collegeId == userProfile().collegeId) ||
+        (isHOD() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId && request.resource.data.departmentId == userProfile().departmentId) ||
+        (isFaculty() && userProfile().collegeId == resource.data.collegeId && userProfile().id == resource.data.facultyId && request.resource.data.facultyId == userProfile().id)
+      ) && request.resource.data.status in ['present', 'absent', 'late', 'medicalLeave', 'onDuty', 'holiday'] &&
+        request.resource.data.studentId == resource.data.studentId &&
+        request.resource.data.subjectId == resource.data.subjectId &&
+        request.resource.data.sectionId == resource.data.sectionId;
+
+      allow delete: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() || 
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId)
+      );
+    }
+
+    // =========================================================
+    // ACTIVATION CODES
+    // =========================================================
+
+    match /activationCodes/{activationId} {
+      // SECURITY VULNERABILITY:
+      // Firestore rule evaluation occurs after the query is constructed, and we cannot restrict `list` queries 
+      // by parameter filtering within the rules engine (e.g. enforcing "where rollNumber == X").
+      // Because users are unauthenticated at the time of activation, this `allow read: if true;` exposes the 
+      // entire collection to public enumeration.
+      // 
+      // RECOMMENDED FIX: Move activation logic to a Firebase Cloud Function.
+      allow get: if true;
+      allow list: if false;
+      allow create: if isSignedIn() && (isSuperAdmin() || isCollegeAdmin() || isHOD() || isFaculty());
+      allow update: if request.resource.data.status == 'used' && resource.data.status == 'pending';
+      allow delete: if isSignedIn() && isSuperAdmin();
+    }
+    // =========================================================
+    // NOTIFICATIONS
+    // =========================================================
+
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        (resource.data.audienceType == 'personal' && resource.data.recipientUserId == request.auth.uid) ||
+        (resource.data.audienceType == 'role' && resource.data.recipientRole == userRole()) ||
+        (resource.data.audienceType == 'department' && resource.data.departmentId == userProfile().departmentId) ||
+        (resource.data.audienceType == 'college' && resource.data.collegeId == userProfile().collegeId) ||
+        (resource.data.audienceType == 'platform')
+      );
+
+      // Create: Platform -> SuperAdmin, College -> CollegeAdmin, Dept -> HOD
+      allow create: if isSignedIn() && isActiveUser() && (
+        (request.resource.data.audienceType == 'personal' && (isSuperAdmin() || isCollegeAdmin() || isHOD() || isFaculty())) ||
+        (request.resource.data.audienceType == 'platform' && isSuperAdmin()) ||
+        (request.resource.data.audienceType == 'college' && (isSuperAdmin() || (isCollegeAdmin() && userProfile().collegeId == request.resource.data.collegeId))) ||
+        (request.resource.data.audienceType == 'department' && (isSuperAdmin() || isCollegeAdmin() || (isHOD() && userProfile().departmentId == request.resource.data.departmentId))) ||
+        (request.resource.data.audienceType == 'role' && (isSuperAdmin() || isCollegeAdmin() || isHOD()))
+      );
+
+      // Update: Users can only update their own personal notification read status
+      allow update: if isSignedIn() && isActiveUser() && (
+        (resource.data.audienceType == 'personal' && resource.data.recipientUserId == request.auth.uid &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'id', 'title', 'message', 'category', 'priority', 'audienceType', 'timestamp', 'recipientUserId', 'recipientRole', 'collegeId', 'departmentId'
+          ])
+        ) ||
+        (isSuperAdmin())
+      );
+
+      allow delete: if isSignedIn() && isActiveUser() && (
+        (resource.data.audienceType == 'personal' && resource.data.recipientUserId == request.auth.uid) ||
+        (isSuperAdmin())
+      );
+    }
+
+    // =========================================================
+    // TIMETABLE
+    // =========================================================
+    match /timetable/{timetableId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() ||
+        userProfile().collegeId == resource.data.collegeId
+      );
+      allow create: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() ||
+        (isCollegeAdmin() && request.resource.data.collegeId == userProfile().collegeId) ||
+        (isHOD() && request.resource.data.collegeId == userProfile().collegeId && request.resource.data.departmentId == userProfile().departmentId)
+      );
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() ||
+        (isCollegeAdmin() && resource.data.collegeId == userProfile().collegeId && request.resource.data.collegeId == userProfile().collegeId) ||
+        (isHOD() && resource.data.collegeId == userProfile().collegeId && resource.data.departmentId == userProfile().departmentId && request.resource.data.collegeId == userProfile().collegeId && request.resource.data.departmentId == userProfile().departmentId)
+      );
+      allow delete: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() ||
+        (isCollegeAdmin() && resource.data.collegeId == userProfile().collegeId) ||
+        (isHOD() && resource.data.collegeId == userProfile().collegeId && resource.data.departmentId == userProfile().departmentId)
+      );
+    // =========================================================
+    // CERTIFICATE REQUESTS
+    // =========================================================
+    match /certificateRequests/{requestId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() ||
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId) ||
+        (isHOD() && userProfile().departmentId == resource.data.departmentId) ||
+        (isOwnUser(resource.data.studentUserId))
+      );
+
+      allow create: if isSignedIn() && isActiveUser() && (
+        isOwnUser(request.resource.data.studentUserId)
+      );
+
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() ||
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId && request.resource.data.collegeId == userProfile().collegeId) ||
+        (isHOD() && userProfile().departmentId == resource.data.departmentId && request.resource.data.departmentId == userProfile().departmentId)
+      ) && (
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['studentId', 'studentUserId', 'certificateTypeId', 'certificateTypeName', 'requestedAt', 'createdAt'])
+      );
+
+      allow delete: if isSignedIn() && isActiveUser() && isSuperAdmin();
+    }
+    
+    // =========================================================
+    // NOTES
+    // =========================================================
+    match /notes/{noteId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() ||
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId) ||
+        (isHOD() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId) ||
+        (isFaculty() && resource.data.authorUserId == request.auth.uid) ||
+        (resource.data.status == 'published' && userProfile().collegeId == resource.data.collegeId)
+      );
+
+      allow create: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() ||
+        (isCollegeAdmin() && request.resource.data.collegeId == userProfile().collegeId) ||
+        (isHOD() && request.resource.data.collegeId == userProfile().collegeId && request.resource.data.departmentId == userProfile().departmentId) ||
+        (isFaculty() && request.resource.data.collegeId == userProfile().collegeId && request.resource.data.authorUserId == request.auth.uid)
+      );
+
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() ||
+        (isCollegeAdmin() && resource.data.collegeId == userProfile().collegeId && request.resource.data.collegeId == userProfile().collegeId) ||
+        (isHOD() && resource.data.collegeId == userProfile().collegeId && resource.data.departmentId == userProfile().departmentId && request.resource.data.collegeId == userProfile().collegeId && request.resource.data.departmentId == userProfile().departmentId) ||
+        (isFaculty() && resource.data.collegeId == userProfile().collegeId && resource.data.authorUserId == request.auth.uid && request.resource.data.collegeId == userProfile().collegeId && request.resource.data.authorUserId == request.auth.uid)
+      );
+
+      allow delete: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() ||
+        (isCollegeAdmin() && resource.data.collegeId == userProfile().collegeId) ||
+        (isHOD() && resource.data.collegeId == userProfile().collegeId && resource.data.departmentId == userProfile().departmentId) ||
+        (isFaculty() && resource.data.collegeId == userProfile().collegeId && resource.data.authorUserId == request.auth.uid)
+      );
+    }
+    // =========================================================
+    // USER SETTINGS
+    // =========================================================
+
+    match /userSettings/{userId} {
+      allow read, write: if isSignedIn() && isOwnUser(userId);
+    }
+
+    // =========================================================
+    // CERTIFICATES (METADATA)
+    // =========================================================
+
+    match /certificates/{certificateId} {
+      allow read: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() ||
+        isOwnUser(resource.data.studentUid) ||
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId) ||
+        (isHOD() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId) ||
+        (isFaculty() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId)
+      );
+
+      allow create: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() ||
+        (isCollegeAdmin() && userProfile().collegeId == request.resource.data.collegeId) ||
+        (isHOD() && userProfile().collegeId == request.resource.data.collegeId && userProfile().departmentId == request.resource.data.departmentId) ||
+        (isFaculty() && userProfile().collegeId == request.resource.data.collegeId && userProfile().departmentId == request.resource.data.departmentId)
+      );
+
+      allow update: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() ||
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId && request.resource.data.collegeId == userProfile().collegeId) ||
+        (isHOD() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId && request.resource.data.collegeId == userProfile().collegeId && request.resource.data.departmentId == userProfile().departmentId) ||
+        (isFaculty() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId && request.resource.data.collegeId == userProfile().collegeId && request.resource.data.departmentId == userProfile().departmentId)
+      );
+
+      allow delete: if isSignedIn() && isActiveUser() && (
+        isSuperAdmin() ||
+        (isCollegeAdmin() && userProfile().collegeId == resource.data.collegeId) ||
+        (isHOD() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId) ||
+        (isFaculty() && userProfile().collegeId == resource.data.collegeId && userProfile().departmentId == resource.data.departmentId)
+      );
+    }
+
+  }
+}

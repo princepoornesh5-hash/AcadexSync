@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "441884307062",
+    "project_id": "campusmanagement-19ea1",
+    "storage_bucket": "campusmanagement-19ea1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:441884307062:android:cfc95d77367dee33bef957",
+        "android_client_info": {
+          "package_name": "com.campusmanagement.campus_management"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-OzysFXxyF97jgqkGlPgcIjcQ9N1Dqj4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,71 @@
+rules_version = '2';
+
+// Acadex Storage Security Rules
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if the user owns the specific path
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+
+    // Role assertions via custom claims (if implemented in future Auth system) 
+    // or we assume backend enforces the token claims.
+    // For now, relies on isOwner and paths.
+
+    // Allow read/write to the user's isolated global storage
+    match /global/users/{uid}/{category}/{fileName} {
+      allow read: if isAuthenticated(); // Or restrict to isOwner(uid) based on requirements
+      allow write: if isAuthenticated() && isOwner(uid);
+    }
+
+    // College scoped storage
+    match /colleges/{collegeId} {
+      
+      // Profile images
+      match /users/{uid}/profile/{fileName} {
+        allow read: if isAuthenticated(); // Anyone in the system can read profile images
+        allow write: if isAuthenticated() && isOwner(uid)
+                     && request.resource.size < 5 * 1024 * 1024 // 5 MB max
+                     && request.resource.contentType.matches('image/.*');
+        allow delete: if isAuthenticated() && isOwner(uid);
+      }
+
+      // Student certificates
+      match /students/{uid}/certificates/{fileName} {
+        allow read: if isAuthenticated(); // Faculty/HODs might need to view this
+        allow write: if isAuthenticated() && isOwner(uid)
+                     && request.resource.size < 10 * 1024 * 1024 // 10 MB max
+                     && request.resource.contentType.matches('application/pdf|image/.*');
+        allow delete: if isAuthenticated() && isOwner(uid);
+      }
+
+      // Faculty notes
+      match /faculty/{uid}/notes/{fileName} {
+        allow read: if isAuthenticated(); // Students need to read notes
+        allow write: if isAuthenticated() && isOwner(uid)
+                     && request.resource.size < 25 * 1024 * 1024 // 25 MB max
+                     && !request.resource.contentType.matches('.*executable.*');
+        allow delete: if isAuthenticated() && isOwner(uid);
+      }
+
+      // Other generic college-scoped user files
+      match /users/{uid}/other/{fileName} {
+        allow read: if isAuthenticated() && isOwner(uid);
+        allow write: if isAuthenticated() && isOwner(uid);
+        allow delete: if isAuthenticated() && isOwner(uid);
+      }
+    }
+
+    // Default deny for everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
