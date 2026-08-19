@@ -10,15 +10,20 @@ class CollegeShortageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = shortage.status == ShortageStatus.critical ? DashboardColors.error : DashboardColors.warning;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isCritical = shortage.status == ShortageStatus.critical;
+    final color = isCritical ? AcadexColors.error : AcadexColors.warning;
     
-    return Card(
-      color: DashboardColors.surface,
-      elevation: 0,
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: color.withValues(alpha: 0.3)),
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(
+          color: color.withValues(alpha: 0.35),
+          width: 1,
+        ),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -28,17 +33,14 @@ class CollegeShortageCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
+                color: color.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
+                border: Border.all(color: color.withValues(alpha: 0.3)),
               ),
               child: Center(
                 child: Text(
                   "${shortage.currentPercentage.toInt()}%",
-                  style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                  style: AcadexTypography.title(color: color).copyWith(fontSize: 14),
                 ),
               ),
             ),
@@ -49,22 +51,27 @@ class CollegeShortageCard extends StatelessWidget {
                 children: [
                   Text(
                     shortage.studentName,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: DashboardColors.textPrimary),
+                    style: AcadexTypography.body(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     "${shortage.rollNumber} • ${shortage.departmentName}",
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: DashboardColors.primary),
+                    style: AcadexTypography.caption(
+                      color: AcadexColors.primary,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     shortage.semester,
-                    style: const TextStyle(fontSize: 11, color: DashboardColors.textSecondary),
+                    style: AcadexTypography.caption(
+                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: DashboardColors.textSecondary),
           ],
         ),
       ),

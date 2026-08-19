@@ -218,4 +218,24 @@ class MockCertificateRepository implements CertificateRepository {
     _store[certificateId] = verified;
     return verified;
   }
+
+  @override
+  Stream<List<Certificate>> watchStudentCertificates(String studentUid) async* {
+    yield await getStudentCertificates(studentUid);
+  }
+
+  @override
+  Stream<List<Certificate>> watchFacultyStudentCertificates({
+    required String facultyUid,
+    required String collegeId,
+    required String departmentId,
+    String? sectionId,
+  }) async* {
+    yield await getFacultyStudentCertificates(
+      facultyUid: facultyUid,
+      collegeId: collegeId,
+      departmentId: departmentId,
+      sectionId: sectionId,
+    );
+  }
 }

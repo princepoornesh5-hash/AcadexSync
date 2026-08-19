@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../../../app/theme/app_theme.dart';
 import '../../../domain/models/attendance_session.dart';
-import 'package:intl/intl.dart';
 
 class AuditInfoCard extends StatelessWidget {
   final AttendanceSession session;
@@ -10,12 +10,18 @@ class AuditInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: DashboardColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: DashboardColors.border),
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          width: 1,
+        ),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -23,41 +29,64 @@ class AuditInfoCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Audit Trail", style: TextStyle(fontWeight: FontWeight.bold, color: DashboardColors.textPrimary)),
+              Text(
+                "AUDIT TRAIL",
+                style: AcadexTypography.eyebrow(
+                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                ),
+              ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: DashboardColors.primaryLight,
-                  borderRadius: BorderRadius.circular(12),
+                  color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.25) : AcadexColors.primaryLight,
+                  borderRadius: AcadexRadius.borderRadiusFull,
                 ),
-                child: Text("v${session.version}", style: const TextStyle(color: DashboardColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
-              )
+                child: Text(
+                  "v${session.version}",
+                  style: AcadexTypography.caption(
+                    color: isDark ? Colors.white : AcadexColors.primary,
+                  ).copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
-          _buildRow("Created By", session.createdBy ?? "System", session.createdAt),
-          const Divider(),
-          _buildRow("Last Modified", session.lastModifiedBy ?? "System", session.lastModifiedAt),
+          const SizedBox(height: 14),
+          _buildRow("Created By", session.createdBy ?? "System", session.createdAt, isDark),
+          Divider(height: 18, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+          _buildRow("Last Modified", session.lastModifiedBy ?? "System", session.lastModifiedAt, isDark),
         ],
       ),
     );
   }
 
-  Widget _buildRow(String label, String user, DateTime? date) {
+  Widget _buildRow(String label, String user, DateTime? date, bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 12, color: DashboardColors.textSecondary)),
-            Text(user, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: DashboardColors.textPrimary)),
+            Text(
+              label,
+              style: AcadexTypography.caption(
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              user,
+              style: AcadexTypography.body(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ).copyWith(fontWeight: FontWeight.w600),
+            ),
           ],
         ),
         if (date != null)
           Text(
             DateFormat('MMM dd, yyyy • HH:mm').format(date),
-            style: const TextStyle(fontSize: 13, color: DashboardColors.textSecondary),
+            style: AcadexTypography.caption(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ),
           ),
       ],
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../../app/theme/app_theme.dart';
 import '../../../domain/models/college_insight.dart';
 
@@ -9,13 +10,19 @@ class CollegeInsightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: DashboardColors.surface,
-      elevation: 0,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = insight.isPositive ? AcadexColors.success : AcadexColors.warning;
+
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: DashboardColors.border),
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          width: 1,
+        ),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -25,12 +32,12 @@ class CollegeInsightCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: insight.isPositive ? DashboardColors.success.withValues(alpha: 0.1) : DashboardColors.warning.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                color: color.withValues(alpha: 0.12),
+                borderRadius: AcadexRadius.borderRadiusMd,
               ),
               child: Icon(
-                insight.isPositive ? Icons.lightbulb : Icons.info_outline,
-                color: insight.isPositive ? DashboardColors.success : DashboardColors.warning,
+                insight.isPositive ? LucideIcons.sparkles : LucideIcons.alertCircle,
+                color: color,
                 size: 20,
               ),
             ),
@@ -41,17 +48,23 @@ class CollegeInsightCard extends StatelessWidget {
                 children: [
                   Text(
                     insight.title,
-                    style: const TextStyle(fontSize: 12, color: DashboardColors.textSecondary),
+                    style: AcadexTypography.caption(
+                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     insight.value,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: DashboardColors.textPrimary),
+                    style: AcadexTypography.title(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     insight.subtitle,
-                    style: const TextStyle(fontSize: 12, color: DashboardColors.textSecondary),
+                    style: AcadexTypography.caption(
+                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    ),
                   ),
                 ],
               ),

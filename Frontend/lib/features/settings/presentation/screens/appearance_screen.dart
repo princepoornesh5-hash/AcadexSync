@@ -5,6 +5,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../providers/settings_providers.dart';
 import '../widgets/settings_widgets.dart';
+import '../../../../core/presentation/widgets/acadex_card.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
 
 class AppearanceScreen extends ConsumerWidget {
   const AppearanceScreen({super.key});
@@ -12,73 +15,105 @@ class AppearanceScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsAsync = ref.watch(appSettingsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        
-        elevation: 0,
-        leading: IconButton(icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface), onPressed: () => context.pop()),
-        title: Text("Appearance", style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        leading: IconButton(
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          "Appearance",
+          style: AcadexTypography.title(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
+        ),
       ),
       body: settingsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text("Error: $err", style: const TextStyle(color: AppColors.warning))),
-        data: (settings) => SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 800),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Theme", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-                  const SizedBox(height: 16),
-                  ThemeSelector(
-                    currentMode: settings.themeMode,
-                    onChanged: (mode) {
-                      ref.read(appSettingsProvider.notifier).updateSettings(settings.copyWith(themeMode: mode));
-                    },
-                  ),
-                  const SizedBox(height: 32),
-                  Text("Font Size", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-                  const SizedBox(height: 16),
-                  Container(
-                    decoration: BoxDecoration(
-                      
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Theme.of(context).dividerColor),
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
+        loading: () => const AcadexLoadingState(message: "Loading appearance settings..."),
+        error: (err, _) => AcadexErrorState(
+          message: "Unable to load settings: $err",
+          onRetry: () => ref.refresh(appSettingsProvider),
+        ),
+        data: (settings) => AcadexPageContainer(
+          maxWidth: AcadexLayout.formMaxWidth,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "INTERFACE THEME",
+                style: AcadexTypography.eyebrow(
+                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ThemeSelector(
+                currentMode: settings.themeMode,
+                onChanged: (mode) {
+                  ref.read(appSettingsProvider.notifier).updateSettings(
+                        settings.copyWith(themeMode: mode),
+                      );
+                },
+              ),
+              const SizedBox(height: 32),
+              Text(
+                "TEXT SCALING",
+                style: AcadexTypography.eyebrow(
+                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                ),
+              ),
+              const SizedBox(height: 12),
+              AcadexCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            Text("A", style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
-                            Expanded(
-                              child: Slider(
-                                value: settings.fontScale,
-                                min: 0.8,
-                                max: 1.4,
-                                divisions: 3,
-                                activeColor: AppColors.primary,
-                                inactiveColor: AppColors.surfaceDarkElevated,
-                                onChanged: (val) {
-                                  ref.read(appSettingsProvider.notifier).updateSettings(settings.copyWith(fontScale: val));
-                                },
-                              ),
-                            ),
-                            Text("A", style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24)),
-                          ],
+                        Text(
+                          "A",
+                          style: AcadexTypography.body(
+                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                          ).copyWith(fontSize: 13),
                         ),
-                        const SizedBox(height: 8),
-                        Text("Adjust the text size for better readability.", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 12)),
+                        Expanded(
+                          child: Slider(
+                            value: settings.fontScale,
+                            min: 0.8,
+                            max: 1.4,
+                            divisions: 3,
+                            activeColor: AcadexColors.primary,
+                            onChanged: (val) {
+                              ref.read(appSettingsProvider.notifier).updateSettings(
+                                    settings.copyWith(fontScale: val),
+                                  );
+                            },
+                          ),
+                        ),
+                        Text(
+                          "A",
+                          style: AcadexTypography.heading2(
+                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Text(
+                      "Adjust the application font scale for optimal reading comfort.",
+                      style: AcadexTypography.caption(
+                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

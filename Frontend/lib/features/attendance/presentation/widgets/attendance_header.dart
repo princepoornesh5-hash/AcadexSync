@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 
 class AttendanceHeader extends StatelessWidget {
@@ -15,16 +16,25 @@ class AttendanceHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      decoration: const BoxDecoration(
-        color: DashboardColors.surface,
-        border: Border(bottom: BorderSide(color: DashboardColors.border)),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          ),
+        ),
       ),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: DashboardColors.textPrimary),
+            icon: Icon(
+              LucideIcons.arrowLeft,
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
             onPressed: onBack,
           ),
           const SizedBox(width: 8),
@@ -32,8 +42,18 @@ class AttendanceHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: DashboardColors.textPrimary)),
-                Text(subtitle, style: const TextStyle(fontSize: 14, color: DashboardColors.textSecondary)),
+                Text(
+                  title,
+                  style: AcadexTypography.title(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: AcadexTypography.caption(
+                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  ),
+                ),
               ],
             ),
           )

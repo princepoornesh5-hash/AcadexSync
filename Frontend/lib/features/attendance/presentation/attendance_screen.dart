@@ -45,9 +45,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final isWarning = _percentage < 75.0;
 
     return _isLoading
-        ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+        ? Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor))
         : Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -62,7 +62,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             decoration: BoxDecoration(
               
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: isWarning ? AppColors.error : AppColors.primary, width: 1.5),
+              border: Border.all(color: isWarning ? AppColors.error : Theme.of(context).primaryColor, width: 1.5),
             ),
             child: Row(
               children: [
@@ -76,7 +76,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       child: CircularProgressIndicator(
                         value: _percentage / 100.0,
                         strokeWidth: 10,
-                        backgroundColor: AppColors.surfaceDarkElevated,
+                        backgroundColor: Theme.of(context).colorScheme.surface,
                         color: isWarning ? AppColors.error : AppColors.success,
                       ),
                     ),
@@ -90,7 +90,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(width: 24),
+                SizedBox(width: 24),
 
                 // Stats breakdown
                 Expanded(
@@ -150,11 +150,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Widget _buildCourseAttendanceItem(String title, int attended, int total, double percent) {
     final isLow = percent < 75.0;
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AcadexRadius.borderRadiusLg,
         border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
@@ -173,7 +173,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: isLow ? AppColors.error.withValues(alpha: 0.2) : AppColors.success.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: AcadexRadius.borderRadiusMd,
             ),
             child: Text(
               "${percent.toStringAsFixed(1)}%",

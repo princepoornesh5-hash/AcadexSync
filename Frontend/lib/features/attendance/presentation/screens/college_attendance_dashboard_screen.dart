@@ -7,26 +7,34 @@ import '../widgets/college/department_comparison_card.dart';
 import '../widgets/college/college_faculty_card.dart';
 import '../widgets/college/college_shortage_card.dart';
 import '../widgets/college/college_insight_card.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
 
 class CollegeAttendanceDashboardScreen extends ConsumerWidget {
   const CollegeAttendanceDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return DefaultTabController(
       length: 5,
       child: Scaffold(
-        backgroundColor: DashboardColors.background,
+        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
         appBar: AppBar(
-          backgroundColor: DashboardColors.surface,
-          elevation: 0,
-          title: const Text("College Attendance", style: TextStyle(color: DashboardColors.textPrimary, fontWeight: FontWeight.bold)),
-          bottom: const TabBar(
+          title: Text(
+            "College Attendance Overview",
+            style: AcadexTypography.title(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
+          ),
+          bottom: TabBar(
             isScrollable: true,
-            labelColor: DashboardColors.primary,
-            unselectedLabelColor: DashboardColors.textSecondary,
-            indicatorColor: DashboardColors.primary,
-            tabs: [
+            labelColor: AcadexColors.primary,
+            unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            indicatorColor: AcadexColors.primary,
+            indicatorWeight: 2.5,
+            tabs: const [
               Tab(text: "Overview"),
               Tab(text: "Departments"),
               Tab(text: "Faculty"),
@@ -52,19 +60,22 @@ class CollegeAttendanceDashboardScreen extends ConsumerWidget {
     final summaryAsync = ref.watch(collegeSummaryProvider);
     
     return summaryAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text("Error: $err")),
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Loading college-wide attendance metrics..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load college metrics: $err",
+          onRetry: () => ref.refresh(collegeSummaryProvider),
+        ),
+      ),
       data: (summary) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+        return AcadexPageContainer(
+          maxWidth: AcadexLayout.contentMaxWidth,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CollegeSummaryCard(summary: summary),
-              const SizedBox(height: 24),
-              const Text("Top Departments", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: DashboardColors.textPrimary)),
-              const SizedBox(height: 12),
-              _buildTopDepartmentsPreview(ref),
             ],
           ),
         );
@@ -72,36 +83,33 @@ class CollegeAttendanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTopDepartmentsPreview(WidgetRef ref) {
-    final comparisonAsync = ref.watch(departmentComparisonProvider);
-    return comparisonAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => const SizedBox(),
-      data: (comparisons) {
-        // Show top 2
-        return Column(
-          children: comparisons.take(2).map((comp) {
-            final index = comparisons.indexOf(comp);
-            return DepartmentComparisonCard(comparison: comp, rank: index + 1);
-          }).toList(),
-        );
-      },
-    );
-  }
-
   Widget _buildDepartmentsTab(WidgetRef ref) {
-    final comparisonAsync = ref.watch(departmentComparisonProvider);
+    final deptsAsync = ref.watch(departmentComparisonProvider);
     
-    return comparisonAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text("Error: $err")),
-      data: (comparisons) {
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: comparisons.length,
-          itemBuilder: (context, index) {
-            return DepartmentComparisonCard(comparison: comparisons[index], rank: index + 1);
-          },
+    return deptsAsync.when(
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Comparing departmental metrics..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load comparison: $err",
+          onRetry: () => ref.refresh(departmentComparisonProvider),
+        ),
+      ),
+      data: (depts) {
+        return AcadexPageContainer(
+          maxWidth: AcadexLayout.contentMaxWidth,
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: depts.length,
+            itemBuilder: (context, index) {
+              return DepartmentComparisonCard(
+                comparison: depts[index],
+                rank: index + 1,
+              );
+            },
+          ),
         );
       },
     );
@@ -111,15 +119,26 @@ class CollegeAttendanceDashboardScreen extends ConsumerWidget {
     final facultyAsync = ref.watch(collegeFacultyProvider);
     
     return facultyAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text("Error: $err")),
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Loading faculty status..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load faculty: $err",
+          onRetry: () => ref.refresh(collegeFacultyProvider),
+        ),
+      ),
       data: (faculties) {
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: faculties.length,
-          itemBuilder: (context, index) {
-            return CollegeFacultyCard(completion: faculties[index]);
-          },
+        return AcadexPageContainer(
+          maxWidth: AcadexLayout.contentMaxWidth,
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: faculties.length,
+            itemBuilder: (context, index) {
+              return CollegeFacultyCard(completion: faculties[index]);
+            },
+          ),
         );
       },
     );
@@ -129,15 +148,26 @@ class CollegeAttendanceDashboardScreen extends ConsumerWidget {
     final shortageAsync = ref.watch(collegeShortageProvider);
     
     return shortageAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text("Error: $err")),
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Loading shortage alerts..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load shortage roster: $err",
+          onRetry: () => ref.refresh(collegeShortageProvider),
+        ),
+      ),
       data: (shortages) {
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: shortages.length,
-          itemBuilder: (context, index) {
-            return CollegeShortageCard(shortage: shortages[index]);
-          },
+        return AcadexPageContainer(
+          maxWidth: AcadexLayout.contentMaxWidth,
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: shortages.length,
+            itemBuilder: (context, index) {
+              return CollegeShortageCard(shortage: shortages[index]);
+            },
+          ),
         );
       },
     );
@@ -147,15 +177,26 @@ class CollegeAttendanceDashboardScreen extends ConsumerWidget {
     final insightsAsync = ref.watch(collegeInsightsProvider);
     
     return insightsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text("Error: $err")),
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Generating attendance insights..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load insights: $err",
+          onRetry: () => ref.refresh(collegeInsightsProvider),
+        ),
+      ),
       data: (insights) {
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: insights.length,
-          itemBuilder: (context, index) {
-            return CollegeInsightCard(insight: insights[index]);
-          },
+        return AcadexPageContainer(
+          maxWidth: AcadexLayout.contentMaxWidth,
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: insights.length,
+            itemBuilder: (context, index) {
+              return CollegeInsightCard(insight: insights[index]);
+            },
+          ),
         );
       },
     );

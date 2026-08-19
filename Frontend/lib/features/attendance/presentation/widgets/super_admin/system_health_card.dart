@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../../app/theme/app_theme.dart';
 import '../../../domain/models/super_admin_system_health.dart';
 
@@ -9,49 +10,70 @@ class SystemHealthCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: DashboardColors.surface,
-      elevation: 0,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: DashboardColors.border),
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusXl,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          width: 1,
+        ),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.monitor_heart, color: DashboardColors.primary, size: 20),
-                SizedBox(width: 8),
+                Icon(
+                  LucideIcons.activity,
+                  color: AcadexColors.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
                 Text(
-                  "System Health",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: DashboardColors.textPrimary),
+                  "System Health & Telemetry",
+                  style: AcadexTypography.title(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            _buildStatusRow("Server Status", health.serverStatus, DashboardColors.success),
-            const Divider(color: DashboardColors.border, height: 24),
-            _buildStatusRow("Sync Status", health.syncStatus, DashboardColors.success),
-            const Divider(color: DashboardColors.border, height: 24),
-            _buildStatusRow("API Latency", health.apiLatency, DashboardColors.primary),
-            const Divider(color: DashboardColors.border, height: 24),
-            _buildStatusRow("Active Users", health.activeUsers.toString(), DashboardColors.textPrimary),
+            const SizedBox(height: 20),
+            _buildStatusRow("Server Status", health.serverStatus, AcadexColors.success, isDark),
+            Divider(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline, height: 24),
+            _buildStatusRow("Sync Engine", health.syncStatus, AcadexColors.success, isDark),
+            Divider(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline, height: 24),
+            _buildStatusRow("API Latency", health.apiLatency, AcadexColors.primary, isDark),
+            Divider(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline, height: 24),
+            _buildStatusRow("Active Sessions", health.activeUsers.toString(), isDark ? AcadexColors.darkInk : AcadexColors.ink, isDark),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatusRow(String label, String value, Color valueColor) {
+  Widget _buildStatusRow(String label, String value, Color valueColor, bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14, color: DashboardColors.textSecondary)),
-        Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: valueColor)),
+        Text(
+          label,
+          style: AcadexTypography.bodySmall(
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
+        ),
+        Text(
+          value,
+          style: AcadexTypography.body(
+            color: valueColor,
+          ).copyWith(fontWeight: FontWeight.w700),
+        ),
       ],
     );
   }

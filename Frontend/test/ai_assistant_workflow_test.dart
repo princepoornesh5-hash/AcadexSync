@@ -1,15 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:campus_management/features/ai_assistant/domain/models/ai_message.dart';
 import 'package:campus_management/features/ai_assistant/data/repositories/mock_ai_repository.dart';
 import 'package:campus_management/features/ai_assistant/data/repositories/api_ai_repository.dart';
 import 'package:campus_management/features/ai_assistant/presentation/providers/ai_providers.dart';
-import 'package:campus_management/features/auth/domain/models/auth_state.dart';
-import 'package:campus_management/features/auth/domain/models/user_model.dart';
-import 'package:campus_management/features/auth/domain/models/role_enum.dart';
-import 'package:campus_management/features/auth/presentation/providers/auth_provider.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  FlutterSecureStorage.setMockInitialValues({});
   group('AI Assistant Workflow Tests', () {
     test('MockAiRepository provides role-aware responses', () async {
       final repo = MockAiRepository();

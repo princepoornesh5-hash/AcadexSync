@@ -7,6 +7,11 @@ import '../../../../app/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../../domain/models/auth_state.dart';
 import '../../domain/models/role_enum.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../core/presentation/widgets/acadex_card.dart';
+import '../../../../core/presentation/widgets/acadex_form_controls.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../../core/presentation/widgets/animated_particle_sphere.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -20,24 +25,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   
-  bool _obscurePassword = true;
-  final bool _rememberMe = false;
   String? _selectedRole;
 
   AppRole _mapStringToRole(String roleString) {
     switch (roleString) {
-      case "Super Admin":
-        return AppRole.superAdmin;
-      case "College Admin":
-        return AppRole.collegeAdmin;
-      case "HOD":
-        return AppRole.hod;
-      case "Faculty":
-        return AppRole.faculty;
-      case "Student":
-        return AppRole.student;
-      default:
-        return AppRole.student;
+      case "Super Admin": return AppRole.superAdmin;
+      case "College Admin": return AppRole.collegeAdmin;
+      case "HOD": return AppRole.hod;
+      case "Faculty": return AppRole.faculty;
+      case "Student": return AppRole.student;
+      default: return AppRole.student;
     }
   }
 
@@ -51,21 +48,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _navigateBasedOnRole(AppRole role) {
     switch (role) {
-      case AppRole.superAdmin:
-        context.go('/dashboard/super_admin');
-        break;
-      case AppRole.collegeAdmin:
-        context.go('/dashboard/college_admin');
-        break;
-      case AppRole.hod:
-        context.go('/dashboard/hod');
-        break;
-      case AppRole.faculty:
-        context.go('/dashboard/faculty');
-        break;
-      case AppRole.student:
-        context.go('/dashboard/student');
-        break;
+      case AppRole.superAdmin: context.go('/dashboard/super_admin'); break;
+      case AppRole.collegeAdmin: context.go('/dashboard/college_admin'); break;
+      case AppRole.hod: context.go('/dashboard/hod'); break;
+      case AppRole.faculty: context.go('/dashboard/faculty'); break;
+      case AppRole.student: context.go('/dashboard/student'); break;
     }
   }
 
@@ -78,14 +65,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    // Theme references matching existing system
-    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFFAFAFA);
-    final cardColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFFFFFFF);
-    final primaryColor = const Color(0xFF6366F1); // Brand Indigo
-    
     final authState = ref.watch(authProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next is AuthAuthenticated) {
@@ -94,14 +75,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.message),
-            backgroundColor: AppColors.error,
+            backgroundColor: AcadexColors.error,
           ),
         );
       } else if (next is AuthProfileError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.message),
-            backgroundColor: AppColors.warning,
+            backgroundColor: AcadexColors.warning,
             duration: const Duration(seconds: 6),
             action: SnackBarAction(
               label: 'Logout',
@@ -117,378 +98,426 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final loadingMessage = authState is AuthProfileLoading ? "Loading Profile..." : "Sign In";
 
     final width = MediaQuery.of(context).size.width;
-    final isMobile = width < 850;
+    final isSplitView = width >= 900;
 
-    Widget buildBrandPanel() {
-      return Container(
-        color: const Color(0xFF0F172A),
-        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 64),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Logo
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: primaryColor.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(LucideIcons.graduationCap, color: primaryColor, size: 28),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  "Acadex",
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-            
-            // Abstract technology/academic visual
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Subtle minimalist grid visual representation
-                      Icon(LucideIcons.network, size: 120, color: primaryColor.withValues(alpha: 0.4)),
-                      const SizedBox(height: 32),
-                      const Text(
-                        "Campus management, simplified.",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        "One connected platform for students, faculty and administrators.",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 15,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            
-            // Footer branding
-            const Text(
-              "© 2026 Acadex Platform. All rights reserved.",
-              style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
-            ),
-          ],
-        ),
-      );
-    }
-
-    Widget buildLoginForm() {
-      return Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32.0),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: Card(
-              color: cardColor,
-              elevation: isDark ? 0 : 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: isDark 
-                    ? const BorderSide(color: Color(0xFF334155), width: 1)
-                    : const BorderSide(color: Color(0xFFE2E8F0), width: 1),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Mobile-only logo
-                      if (isMobile) ...[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: primaryColor.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(LucideIcons.graduationCap, color: primaryColor, size: 24),
+    return Scaffold(
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      body: AnimatedParticleSphereBackground(
+        variant: ParticleSphereVariant.login,
+        sphereAlignment: isSplitView ? const Alignment(-0.35, 0.0) : Alignment.center,
+        child: SafeArea(
+          child: isSplitView
+              ? Row(
+                  children: [
+                    // Left Branded Hero Section
+                    Expanded(
+                      flex: 5,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              const Color(0xFF0F172A).withValues(alpha: 0.40),
+                              const Color(0xFF1E1B4B).withValues(alpha: 0.25),
+                            ],
+                          ),
+                          border: Border(
+                            right: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.08),
+                              width: 1,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              "Acadex",
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : const Color(0xFF0F172A),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                        const SizedBox(height: 24),
-                      ],
-
-                      Text(
-                        "Welcome back",
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        "Sign in to continue to Acadex.",
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-
-                      // Email Field
-                      Text(
-                        "Email address",
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          hintText: "Enter your email",
-                          prefixIcon: const Icon(LucideIcons.mail, size: 18),
-                        ),
-                        validator: (val) {
-                          if (val == null || val.isEmpty) return "Please enter your email";
-                          if (!val.contains('@')) return "Invalid email address";
-                          return null;
-                        },
-                        enabled: !isLoading,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Password Field
-                      Row(
+                      padding: const EdgeInsets.symmetric(horizontal: 56, vertical: 48),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            "Password",
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: isLoading ? null : () => context.go('/forgot-password'),
-                            style: TextButton.styleFrom(
-                              foregroundColor: primaryColor,
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: const Text("Forgot password?", style: TextStyle(fontSize: 13)),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          hintText: "Enter your password",
-                          prefixIcon: const Icon(LucideIcons.lock, size: 18),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword ? LucideIcons.eye : LucideIcons.eyeOff,
-                              size: 18,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                          ),
-                        ),
-                        validator: (val) {
-                          if (val == null || val.isEmpty) return "Please enter your password";
-                          return null;
-                        },
-                        enabled: !isLoading,
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Sign In Button
-                      ElevatedButton(
-                        onPressed: isLoading ? null : _handleLogin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          minimumSize: const Size.fromHeight(50),
-                        ),
-                        child: isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                              )
-                            : Text(loadingMessage),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Account Activation Action
-                      Center(
-                        child: TextButton(
-                          onPressed: () {
-                            context.go('/activate');
-                          },
-                          child: Text(
-                            "New to Acadex? Activate your account",
-                            style: TextStyle(
-                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // Development Test Mode (Debug Only)
-                      if (kDebugMode) ...[
-                        const SizedBox(height: 24),
-                        const Divider(height: 1, color: Color(0xFF334155)),
-                        const SizedBox(height: 20),
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                          // Brand Header
+                          Row(
                             children: [
-                              const Text(
-                                "DEVELOPMENT MODE",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF6366F1),
-                                  letterSpacing: 1.0,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "Preview role-based dashboards using test identities.",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              DropdownButtonFormField<String>(
-                                initialValue: _selectedRole,
-                                decoration: const InputDecoration(
-                                  labelText: "Test Role",
-                                  prefixIcon: Icon(LucideIcons.user, size: 16),
-                                ),
-                                dropdownColor: cardColor,
-                                items: const [
-                                  DropdownMenuItem(value: "Super Admin", child: Text("Super Admin")),
-                                  DropdownMenuItem(value: "College Admin", child: Text("College Admin")),
-                                  DropdownMenuItem(value: "HOD", child: Text("HOD")),
-                                  DropdownMenuItem(value: "Faculty", child: Text("Faculty")),
-                                  DropdownMenuItem(value: "Student", child: Text("Student")),
-                                ],
-                                onChanged: (val) {
-                                  if (val == null) return;
-                                  setState(() {
-                                    _selectedRole = val;
-                                  });
-                                },
-                              ),
-                              const SizedBox(height: 12),
-                              ElevatedButton(
-                                onPressed: (isLoading || _selectedRole == null)
-                                    ? null
-                                    : () {
-                                        ref.read(authProvider.notifier).loginAsDevelopmentRole(
-                                          _mapStringToRole(_selectedRole!),
-                                        );
-                                      },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                                  foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  borderRadius: AcadexRadius.borderRadiusMd,
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    width: 1,
                                   ),
                                 ),
-                                child: Text(
-                                  _selectedRole == null 
-                                      ? "Sign In as..." 
-                                      : "Sign In as $_selectedRole",
-                                ),
+                                child: const Icon(LucideIcons.graduationCap, color: Colors.white, size: 24),
+                              ),
+                              const SizedBox(width: 14),
+                              Text(
+                                'Acadex',
+                                style: AcadexTypography.heading1(color: Colors.white),
                               ),
                             ],
                           ),
+
+                          // Hero Value Prop
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const AcadexBadge(
+                                label: 'CAMPUS OPERATING SYSTEM',
+                                variant: AcadexBadgeVariant.primary,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'The modern platform for academic excellence.',
+                                style: AcadexTypography.display2(color: Colors.white),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Streamline attendance, timetable scheduling, faculty workflows, notes distribution, and student analytics across your entire institution.',
+                                style: AcadexTypography.body(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                ),
+                              ),
+                              const SizedBox(height: 36),
+
+                              // Feature Highlights
+                              _FeaturePill(
+                                icon: LucideIcons.clipboardCheck,
+                                title: 'One-Tap Attendance Marking',
+                                subtitle: 'Instant session logging and student verification',
+                              ),
+                              const SizedBox(height: 14),
+                              _FeaturePill(
+                                icon: LucideIcons.calendar,
+                                title: 'Smart Academic Timetable',
+                                subtitle: 'Automated conflict detection and room schedules',
+                              ),
+                              const SizedBox(height: 14),
+                              _FeaturePill(
+                                icon: LucideIcons.bot,
+                                title: 'AI-Powered Campus Assistant',
+                                subtitle: 'Instant answers for curriculum and scheduling queries',
+                              ),
+                            ],
+                          ),
+
+                          // Footer Note
+                          Text(
+                            '© 2026 Acadex Platform. Secure Multi-Tenant Architecture.',
+                            style: AcadexTypography.caption(
+                              color: Colors.white.withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Right Form Area
+                  Expanded(
+                    flex: 4,
+                    child: Center(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 440),
+                          child: _buildLoginForm(context, isDark, isLoading, loadingMessage),
                         ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 440),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Mobile Header
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: AcadexColors.primary,
+                            borderRadius: AcadexRadius.borderRadiusMd,
+                          ),
+                          child: const Icon(LucideIcons.graduationCap, color: Colors.white, size: 28),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Acadex',
+                          style: AcadexTypography.heading1(
+                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Sign in to your campus account',
+                          style: AcadexTypography.bodySmall(
+                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        _buildLoginForm(context, isDark, isLoading, loadingMessage),
                       ],
-                    ],
+                    ),
                   ),
                 ),
+              ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginForm(
+    BuildContext context,
+    bool isDark,
+    bool isLoading,
+    String loadingMessage,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AcadexCard(
+          padding: const EdgeInsets.all(28),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Welcome Back',
+                  style: AcadexTypography.heading2(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Enter your credentials to access your dashboard.',
+                  style: AcadexTypography.bodySmall(
+                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Email
+                AcadexTextField(
+                  controller: _emailController,
+                  label: 'Email Address',
+                  hint: 'user@acadex.edu',
+                  prefixIcon: LucideIcons.mail,
+                  keyboardType: TextInputType.emailAddress,
+                  enabled: !isLoading,
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return "Please enter your email";
+                    if (!val.contains('@')) return "Invalid email address";
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Password
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Password',
+                      style: AcadexTypography.caption(
+                        color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                      ).copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    InkWell(
+                      onTap: isLoading ? null : () => context.go('/forgot-password'),
+                      child: Text(
+                        'Forgot password?',
+                        style: AcadexTypography.caption(
+                          color: AcadexColors.primary,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                AcadexTextField(
+                  controller: _passwordController,
+                  hint: '••••••••',
+                  prefixIcon: LucideIcons.lock,
+                  isPassword: true,
+                  enabled: !isLoading,
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return "Please enter your password";
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // Submit Button
+                AcadexButton(
+                  label: loadingMessage,
+                  icon: LucideIcons.logIn,
+                  isLoading: isLoading,
+                  isFullWidth: true,
+                  size: AcadexButtonSize.lg,
+                  onPressed: isLoading ? null : _handleLogin,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Account Activation Link
+        Center(
+          child: TextButton(
+            onPressed: () => context.go('/activate'),
+            child: Text(
+              'New student or faculty? Activate Account',
+              style: AcadexTypography.bodySmall(
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
               ),
             ),
           ),
         ),
-      );
-    }
 
-    return Scaffold(
-      backgroundColor: bgColor,
-      body: SafeArea(
-        child: Row(
-          children: [
-            if (!isMobile)
-              Expanded(
-                flex: 1,
-                child: buildBrandPanel(),
-              ),
-            Expanded(
-              flex: 1,
-              child: buildLoginForm(),
+        // Development Test Mode (Debug Only)
+        if (kDebugMode) ...[
+          const SizedBox(height: 24),
+          AcadexCard(
+            backgroundColor: isDark
+                ? AcadexColors.warningDarkContainer.withValues(alpha: 0.3)
+                : AcadexColors.warningLight,
+            borderColor: isDark ? AcadexColors.warningDark : AcadexColors.warning.withValues(alpha: 0.4),
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(LucideIcons.code2, size: 16, color: AcadexColors.warning),
+                    const SizedBox(width: 8),
+                    Text(
+                      'DEVELOPMENT TEST SANDBOX',
+                      style: AcadexTypography.eyebrow(color: AcadexColors.warning),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                AcadexDropdown<String>(
+                  value: _selectedRole,
+                  hint: 'Select Test Role',
+                  prefixIcon: LucideIcons.userCheck,
+                  items: const [
+                    DropdownMenuItem(value: "Super Admin", child: Text("Super Admin")),
+                    DropdownMenuItem(value: "College Admin", child: Text("College Admin")),
+                    DropdownMenuItem(value: "HOD", child: Text("HOD")),
+                    DropdownMenuItem(value: "Faculty", child: Text("Faculty")),
+                    DropdownMenuItem(value: "Student", child: Text("Student")),
+                  ],
+                  onChanged: (val) {
+                    if (val == null) return;
+                    setState(() {
+                      _selectedRole = val;
+                      switch (val) {
+                        case "Super Admin":
+                          _emailController.text = "admin@acadex.com";
+                          _passwordController.text = "acadex123";
+                          break;
+                        case "College Admin":
+                          _emailController.text = "college@acadex.com";
+                          _passwordController.text = "acadex123";
+                          break;
+                        case "HOD":
+                          _emailController.text = "hod@acadex.com";
+                          _passwordController.text = "acadex123";
+                          break;
+                        case "Faculty":
+                          _emailController.text = "faculty@acadex.com";
+                          _passwordController.text = "acadex123";
+                          break;
+                        case "Student":
+                          _emailController.text = "student@acadex.com";
+                          _passwordController.text = "acadex123";
+                          break;
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                AcadexButton(
+                  label: _selectedRole == null ? "Sign In as Role..." : "Sign In as $_selectedRole",
+                  variant: AcadexButtonVariant.secondary,
+                  icon: LucideIcons.play,
+                  onPressed: (isLoading || _selectedRole == null)
+                      ? null
+                      : () {
+                          ref.read(authProvider.notifier).loginAsDevelopmentRole(
+                            _mapStringToRole(_selectedRole!),
+                          );
+                        },
+                ),
+              ],
             ),
-          ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _FeaturePill extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _FeaturePill({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.12),
+          width: 1,
         ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: AcadexRadius.borderRadiusMd,
+            ),
+            child: Icon(icon, color: Colors.white, size: 18),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AcadexTypography.body(color: Colors.white).copyWith(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  subtitle,
+                  style: AcadexTypography.caption(color: Colors.white.withValues(alpha: 0.7)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

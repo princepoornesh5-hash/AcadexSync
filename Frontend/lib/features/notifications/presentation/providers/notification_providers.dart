@@ -1,4 +1,3 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../../core/firebase/firebase_services.dart';
@@ -6,6 +5,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../settings/presentation/providers/settings_providers.dart';
 import '../../domain/models/notification_models.dart';
+import '../../domain/services/notification_service.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../data/repositories/firebase_notification_repository.dart';
 import '../../data/repositories/mock_notification_repository.dart';
@@ -18,6 +18,12 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
   
   final firestoreService = ref.watch(firestoreServiceProvider);
   return FirebaseNotificationRepository(firestoreService);
+});
+
+final notificationServiceProvider = Provider<NotificationService>((ref) {
+  final repo = ref.watch(notificationRepositoryProvider);
+  final firestoreService = ref.watch(firestoreServiceProvider);
+  return NotificationService(repo, firestoreService);
 });
 
 

@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../core/presentation/widgets/acadex_card.dart';
+import '../../../../core/presentation/widgets/acadex_form_controls.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -26,7 +29,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     });
 
     try {
-      await ref.read(authProvider.notifier).resetPassword(_emailController.text);
+      await ref.read(authProvider.notifier).resetPassword(_emailController.text.trim());
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -41,7 +44,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString()),
-            backgroundColor: AppColors.error,
+            backgroundColor: AcadexColors.error,
           ),
         );
       }
@@ -56,104 +59,153 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.canvasDark,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(LucideIcons.arrowLeft, color: AppColors.textLight),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.go('/login'),
         ),
-        title: const Text('Reset Password'),
+        title: Text(
+          'Reset Password',
+          style: AcadexTypography.title(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
-          child: Container(
+          child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
-            padding: const EdgeInsets.all(32.0),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceDarkElevated,
-              borderRadius: BorderRadius.circular(8),
+            child: AcadexCard(
+              padding: const EdgeInsets.all(32.0),
+              child: _isSuccess ? _buildSuccessState(isDark) : _buildFormState(isDark),
             ),
-            child: _isSuccess ? _buildSuccessState() : _buildFormState(),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildFormState() {
+  Widget _buildFormState(bool isDark) {
     return Form(
       key: _formKey,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(LucideIcons.keyRound, size: 48, color: AppColors.primary),
-          const SizedBox(height: 24),
-          const Text(
+          Center(
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(LucideIcons.keyRound, size: 26, color: AcadexColors.primary),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
             "Forgot your password?",
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textLight),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            "Enter your email address and we'll send you a link to reset your password.",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textMuted, fontSize: 14),
-          ),
-          const SizedBox(height: 32),
-          TextFormField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              labelText: "Email Address",
-              prefixIcon: Icon(LucideIcons.mail, color: AppColors.textMuted),
+            style: AcadexTypography.heading2(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
             ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Enter your registered email address and we'll send you instructions to reset your password.",
+            textAlign: TextAlign.center,
+            style: AcadexTypography.body(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 24),
+          AcadexTextField(
+            controller: _emailController,
+            label: "Email Address",
+            hint: "user@acadex.edu",
+            prefixIcon: LucideIcons.mail,
+            keyboardType: TextInputType.emailAddress,
+            enabled: !_isLoading,
             validator: (val) {
               if (val == null || val.isEmpty) return "Please enter your email";
               if (!val.contains('@')) return "Please enter a valid email";
               return null;
             },
           ),
-          const SizedBox(height: 32),
-          ElevatedButton(
+          const SizedBox(height: 24),
+          AcadexButton(
+            label: "Send Reset Link",
+            icon: LucideIcons.send,
+            isLoading: _isLoading,
+            isFullWidth: true,
+            size: AcadexButtonSize.lg,
             onPressed: _isLoading ? null : _handleReset,
-            child: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Text("Send Reset Link"),
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: TextButton(
+              onPressed: () => context.go('/login'),
+              child: Text(
+                "Back to Sign In",
+                style: AcadexTypography.bodySmall(
+                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSuccessState() {
+  Widget _buildSuccessState(bool isDark) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Icon(LucideIcons.mailCheck, size: 64, color: AppColors.success),
-        const SizedBox(height: 24),
-        const Text(
+        Center(
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(LucideIcons.mailCheck, size: 32, color: AcadexColors.success),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
           "Check your email",
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textLight),
+          style: AcadexTypography.heading2(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Text(
           "We have sent a password reset link to\n${_emailController.text}",
           textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 14, height: 1.5),
+          style: AcadexTypography.body(
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
         ),
-        const SizedBox(height: 32),
-        OutlinedButton(
+        const SizedBox(height: 28),
+        AcadexButton(
+          label: "Back to Sign In",
+          variant: AcadexButtonVariant.secondary,
+          icon: LucideIcons.arrowLeft,
+          isFullWidth: true,
           onPressed: () => context.go('/login'),
-          child: const Text("Back to Login"),
         ),
       ],
     );

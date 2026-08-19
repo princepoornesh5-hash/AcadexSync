@@ -23,34 +23,30 @@ class AcadexFormCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceDarkCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.hairlineDark),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
           Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: EdgeInsets.all(24.0),
             child: Row(
               children: [
                 if (icon != null) ...[
-                  Icon(icon, color: AppColors.primary, size: 24),
+                  Icon(icon, color: Theme.of(context).primaryColor, size: 24),
                   const SizedBox(width: 12),
                 ],
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.onDark,
-                  ),
+                  style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, thickness: 1, color: AppColors.hairlineDark),
+          Divider(height: 1, thickness: 1, color: Theme.of(context).dividerColor),
           
           // Form Content
           Padding(
@@ -60,7 +56,7 @@ class AcadexFormCard extends StatelessWidget {
           
           // Footer Actions
           if (onSave != null || onCancel != null) ...[
-            const Divider(height: 1, thickness: 1, color: AppColors.hairlineDark),
+            Divider(height: 1, thickness: 1, color: Theme.of(context).dividerColor),
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Row(
@@ -69,24 +65,19 @@ class AcadexFormCard extends StatelessWidget {
                   if (onCancel != null)
                     TextButton(
                       onPressed: isSaving ? null : onCancel,
-                      child: const Text("Cancel", style: TextStyle(color: AppColors.textMuted)),
+                      child: Text("Cancel", style: AcadexTypography.button(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)),
                     ),
                   const SizedBox(width: 16),
                   if (onSave != null)
                     ElevatedButton(
                       onPressed: isSaving ? null : onSave,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9999)),
-                      ),
                       child: isSaving
                           ? const SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                             )
-                          : const Text("Save Changes", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                          : const Text("Save Changes"),
                     ),
                 ],
               ),
@@ -115,11 +106,7 @@ class AcadexFormField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: AppColors.onDark,
-          ),
+          style: AcadexTypography.eyebrow(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
         ),
         const SizedBox(height: 8),
         child,

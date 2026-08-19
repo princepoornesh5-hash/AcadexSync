@@ -4,14 +4,14 @@ import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/ai_message.dart';
 import '../../domain/repositories/ai_repository.dart';
-import '../../data/repositories/api_ai_repository.dart';
+import '../../data/repositories/firebase_ai_repository.dart';
 import '../../data/repositories/mock_ai_repository.dart';
 
 final aiRepositoryProvider = Provider<AiRepository>((ref) {
   if (FirebaseInitializer.shouldUseMock) {
     return MockAiRepository();
   }
-  return ApiAiRepository();
+  return FirebaseAiRepository();
 });
 
 class AiChatState {
@@ -40,6 +40,8 @@ class AiChatState {
 
 class AiChatNotifier extends StateNotifier<AiChatState> {
   final Ref _ref;
+  DateTime? _lastRequestTime;
+  static const _rateLimitDuration = Duration(seconds: 3);
 
   AiChatNotifier(this._ref) : super(AiChatState()) {
     _initWelcomeMessage();
@@ -62,6 +64,14 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
   Future<void> sendMessage(String query) async {
     if (query.trim().isEmpty) return;
     if (state.isLoading) return;
+
+    // Rate Limiting
+    final now = DateTime.now();
+    if (_lastRequestTime != null && now.difference(_lastRequestTime!) < _rateLimitDuration) {
+      state = state.copyWith(error: 'Please wait a few seconds before asking another question.');
+      return;
+    }
+    _lastRequestTime = now;
 
     final userMsg = AiMessage(text: query.trim(), isAi: false);
     
@@ -90,6 +100,8 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
 
       final responseText = await repository.sendMessage(query: query.trim(), context: context);
       
+      if (!mounted) return;
+
       final aiMsg = AiMessage(text: responseText, isAi: true);
       
       state = AiChatState(
@@ -98,6 +110,7 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
         error: null,
       );
     } catch (e) {
+      if (!mounted) return;
       state = AiChatState(
         messages: state.messages,
         isLoading: false,
@@ -108,5 +121,10 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
 }
 
 final aiChatProvider = StateNotifierProvider<AiChatNotifier, AiChatState>((ref) {
+  ref.listen<AuthState>(authProvider, (previous, next) {
+    if (previous is AuthAuthenticated && (next is! AuthAuthenticated || previous.user.id != next.user.id)) {
+      ref.invalidateSelf();
+    }
+  });
   return AiChatNotifier(ref);
 });

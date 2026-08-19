@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/models/note_model.dart';
-import '../../../academic_structure/presentation/providers/academic_providers.dart';
+import '../providers/notes_lookup_providers.dart';
 
 class NoteDetailScreen extends ConsumerWidget {
   final NoteModel note;
@@ -15,258 +14,302 @@ class NoteDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final subjectsAsync = ref.watch(subjectsProvider);
-    final subject = subjectsAsync.maybeWhen(
-      data: (subjects) => subjects.where((s) => s.id == note.subjectId).firstOrNull,
-      orElse: () => null,
-    );
+    final subjectMap = ref.watch(notesSubjectMapProvider);
+    final subject = subjectMap[note.subjectId];
 
     return Scaffold(
-      backgroundColor: DashboardColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Note Details', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: DashboardColors.textPrimary)),
-        backgroundColor: DashboardColors.surface,
-        iconTheme: const IconThemeData(color: DashboardColors.textPrimary),
+        title: Text(
+          'Note Details',
+          style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (subject != null) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: DashboardColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      subject.name,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: DashboardColors.primary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                ],
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: DashboardColors.surface,
-                    border: Border.all(color: DashboardColors.border),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    note.resourceType.displayName,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: DashboardColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            if (note.chapter != null && note.chapter!.isNotEmpty) ...[
-              Text(
-                note.chapter!,
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: DashboardColors.primary,
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-            Text(
-              note.title,
-              style: GoogleFonts.inter(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: DashboardColors.textPrimary,
-                height: 1.2,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(LucideIcons.calendar, size: 16, color: DashboardColors.textMuted),
-                const SizedBox(width: 6),
-                Text(
-                  'Updated ${timeago.format(note.updatedAt)}',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: DashboardColors.textMuted,
-                  ),
-                ),
-                if (note.publishedAt != null) ...[
-                  const SizedBox(width: 16),
-                  Icon(LucideIcons.checkCircle2, size: 16, color: DashboardColors.success),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Published',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: DashboardColors.success,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 32),
-            const Divider(),
-            const SizedBox(height: 24),
-
-            // Content
-            if (note.description.isNotEmpty) ...[
-              Text(
-                'Description',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: DashboardColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                note.description,
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  color: DashboardColors.textSecondary,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
-
-            if (note.resourceType == ResourceType.textNote && note.content != null && note.content!.isNotEmpty) ...[
-              Text(
-                'Content',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: DashboardColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: DashboardColors.border),
-                ),
-                child: SelectableText(
-                  note.content!,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    color: DashboardColors.textPrimary,
-                    height: 1.6,
-                  ),
-                ),
-              ),
-            ],
-
-            if (note.resourceType == ResourceType.externalLink && note.externalUrl != null && note.externalUrl!.isNotEmpty) ...[
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: DashboardColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: DashboardColors.primary.withValues(alpha: 0.3)),
-                ),
-                child: Column(
+                // Header
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Icon(LucideIcons.externalLink, size: 48, color: DashboardColors.primary),
-                    const SizedBox(height: 16),
-                    Text(
-                      'External Resource',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: DashboardColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'This note contains an external link. Click below to open it in your browser.',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: DashboardColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () => _openUrl(context, note.externalUrl!),
-                      icon: const Icon(LucideIcons.globe, size: 18),
-                      label: const Text('Open Resource'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: DashboardColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            if (note.resourceType == ResourceType.fileAttachment && note.fileUrl != null) ...[
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: DashboardColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: DashboardColors.primary.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  children: [
-                    Icon(LucideIcons.fileArchive, size: 48, color: DashboardColors.primary),
-                    const SizedBox(height: 16),
-                    Text(
-                      note.fileName ?? 'Attached File',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: DashboardColors.textPrimary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    if (note.fileSize != null)
-                      Text(
-                        'Size: ${(note.fileSize! / 1024 / 1024).toStringAsFixed(2)} MB • Type: ${note.fileType?.toUpperCase() ?? 'UNKNOWN'}',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: DashboardColors.textSecondary,
+                    if (subject != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${subject.code} - ${subject.name}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).primaryColor,
+                          ),
                         ),
                       ),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () => _openUrl(context, note.fileUrl!),
-                      icon: const Icon(LucideIcons.download, size: 18),
-                      label: const Text('Download / View Original File'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: DashboardColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        border: Border.all(color: Theme.of(context).dividerColor),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        note.resourceType.displayName,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ],
+                const SizedBox(height: 16),
+                if (note.chapter != null && note.chapter!.isNotEmpty) ...[
+                  Text(
+                    note.chapter!,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                Text(
+                  note.title,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(LucideIcons.calendar, size: 16, color: AcadexColors.inkMuted),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Updated ${timeago.format(note.updatedAt)}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AcadexColors.inkMuted,
+                      ),
+                    ),
+                    if (note.publishedAt != null) ...[
+                      const SizedBox(width: 16),
+                      const Icon(LucideIcons.checkCircle2, size: 16, color: AcadexColors.success),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Published',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AcadexColors.success,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 24),
+
+                // Description
+                if (note.description.isNotEmpty) ...[
+                  Text(
+                    'Description',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    note.description,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
+                // Content: Text Note
+                if (note.resourceType == ResourceType.textNote && note.content != null && note.content!.isNotEmpty) ...[
+                  Text(
+                    'Content',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: AcadexRadius.borderRadiusLg,
+                      border: Border.all(color: Theme.of(context).dividerColor),
+                    ),
+                    child: SelectableText(
+                      note.content!,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        height: 1.6,
+                      ),
+                    ),
+                  ),
+                ],
+
+                // Content: External Link
+                if (note.resourceType == ResourceType.externalLink &&
+                    note.externalUrl != null &&
+                    note.externalUrl!.isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                      borderRadius: AcadexRadius.borderRadiusLg,
+                      border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.25)),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(LucideIcons.externalLink, size: 48, color: Theme.of(context).primaryColor),
+                        const SizedBox(height: 16),
+                        Text(
+                          'External Resource',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'This note references an external web resource. Click below to open it in your browser.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: () => _openUrl(context, note.externalUrl!),
+                          icon: const Icon(LucideIcons.globe, size: 18),
+                          label: const Text('Open Resource'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                            textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // Content: File Attachment
+                if (note.resourceType == ResourceType.fileAttachment && note.fileUrl != null) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                      borderRadius: AcadexRadius.borderRadiusLg,
+                      border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.25)),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          note.isPreviewable ? LucideIcons.fileText : LucideIcons.fileArchive,
+                          size: 48,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          note.fileName ?? 'Attached File',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (note.fileSize != null)
+                              Text(
+                                '${(note.fileSize! / 1024 / 1024).toStringAsFixed(2)} MB  •  ',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                                ),
+                              ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: note.isPreviewable
+                                    ? AcadexColors.success.withValues(alpha: 0.12)
+                                    : (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)
+                                        .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                note.isPreviewable ? 'Preview Available' : 'Download Required',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: note.isPreviewable
+                                      ? AcadexColors.success
+                                      : (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () => _openUrl(context, note.fileUrl!),
+                          icon: Icon(note.isPreviewable ? LucideIcons.eye : LucideIcons.download, size: 18),
+                          label: Text(note.isPreviewable ? 'Preview / View File' : 'Download File'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                            textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -278,12 +321,12 @@ class NoteDetailScreen extends ConsumerWidget {
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Mock Storage Limitation'),
-            content: const Text('File download is simulated because Firebase Storage is intentionally deferred for billing reasons. In production with a connected bucket, the original file would download now.'),
+            title: const Text('Mock Storage'),
+            content: const Text('File access is simulated in mock mode. In production, this opens the authenticated Firebase Storage asset.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Understood'),
+                child: const Text('OK'),
               ),
             ],
           ),

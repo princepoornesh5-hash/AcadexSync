@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../domain/models/assigned_class.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
 
 class AssignedClassCard extends StatelessWidget {
   final AssignedClass assignedClass;
@@ -15,100 +16,153 @@ class AssignedClassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.white,
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final times = assignedClass.timeSlot.split(' - ');
+    final startTime = times.isNotEmpty ? times[0] : '';
+    final endTime = times.length > 1 ? times[1] : '';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          width: 1,
+        ),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              // Time Slot Column
-              Container(
-                width: 80,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: DashboardColors.primaryLight,
-                  borderRadius: BorderRadius.circular(12),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AcadexRadius.borderRadiusLg,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                // Time Slot Column
+                Container(
+                  width: 84,
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AcadexColors.primaryHover.withValues(alpha: 0.2)
+                        : AcadexColors.primaryLight,
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                    border: Border.all(
+                      color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.4) : AcadexColors.primary.withValues(alpha: 0.15),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        LucideIcons.clock,
+                        color: isDark ? AcadexColors.primaryMuted : AcadexColors.primary,
+                        size: 16,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        startTime,
+                        style: AcadexTypography.caption(
+                          color: isDark ? Colors.white : AcadexColors.primary,
+                        ).copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      if (endTime.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          endTime,
+                          style: AcadexTypography.caption(
+                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          ).copyWith(fontSize: 11),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(LucideIcons.clock, color: DashboardColors.primary, size: 20),
-                    const SizedBox(height: 8),
-                    Text(
-                      assignedClass.timeSlot.split(' - ')[0],
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: DashboardColors.primary),
-                    ),
-                    Text(
-                      assignedClass.timeSlot.split(' - ')[1],
-                      style: const TextStyle(fontSize: 12, color: DashboardColors.primary),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 20),
-              // Class Details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      assignedClass.subjectName,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: DashboardColors.textPrimary),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "${assignedClass.sectionName} • ${assignedClass.semester}",
-                      style: const TextStyle(color: DashboardColors.textSecondary, fontSize: 14),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        if (assignedClass.isAttendanceMarked)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: DashboardColors.successLight,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.check_circle, size: 14, color: DashboardColors.success),
-                                const SizedBox(width: 4),
-                                const Text("Marked", style: TextStyle(color: DashboardColors.success, fontSize: 12, fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                          )
-                        else
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: DashboardColors.warningLight,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.pending_actions, size: 14, color: DashboardColors.warning),
-                                const SizedBox(width: 4),
-                                const Text("Pending", style: TextStyle(color: DashboardColors.warning, fontSize: 12, fontWeight: FontWeight.bold)),
-                              ],
+                const SizedBox(width: 16),
+                
+                // Class Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              assignedClass.subjectName,
+                              style: AcadexTypography.title(
+                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                      ],
-                    )
-                  ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            LucideIcons.users,
+                            size: 13,
+                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            assignedClass.sectionName,
+                            style: AcadexTypography.bodySmall(
+                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            ),
+                          ),
+                          if (assignedClass.semester.isNotEmpty) ...[
+                            Text(
+                              ' • ',
+                              style: TextStyle(
+                                color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                              ),
+                            ),
+                            Text(
+                              assignedClass.semester,
+                              style: AcadexTypography.bodySmall(
+                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          if (assignedClass.isAttendanceMarked)
+                            const AcadexBadge(
+                              label: 'Marked',
+                              variant: AcadexBadgeVariant.success,
+                              icon: LucideIcons.checkCircle2,
+                            )
+                          else
+                            const AcadexBadge(
+                              label: 'Pending',
+                              variant: AcadexBadgeVariant.warning,
+                              icon: LucideIcons.clock,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const Icon(Icons.chevron_right, color: Colors.grey),
-            ],
+                const SizedBox(width: 8),
+                Icon(
+                  LucideIcons.chevronRight,
+                  color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                  size: 18,
+                ),
+              ],
+            ),
           ),
         ),
       ),

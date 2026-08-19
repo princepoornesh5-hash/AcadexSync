@@ -7,8 +7,6 @@ class UserProfileModel extends UserModel {
   final String phone;
   final String? employeeId;
   final String? rollNumber;
-  final String? semesterId;
-  final String? sectionId;
   final List<String> assignedSubjects;
   final List<String> assignedClasses;
   final double? attendancePercentage;
@@ -22,6 +20,8 @@ class UserProfileModel extends UserModel {
     super.profilePictureUrl,
     super.collegeId,
     super.departmentId,
+    super.sectionId,
+    super.semesterId,
     super.accountStatus,
     super.createdAt,
     super.updatedAt,
@@ -30,8 +30,6 @@ class UserProfileModel extends UserModel {
     required this.phone,
     this.employeeId,
     this.rollNumber,
-    this.semesterId,
-    this.sectionId,
     this.assignedSubjects = const [],
     this.assignedClasses = const [],
     this.attendancePercentage,

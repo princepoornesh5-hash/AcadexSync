@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
@@ -11,6 +11,14 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/user_profile_model.dart';
 import '../../domain/models/user_status_enum.dart';
 import '../providers/user_profile_providers.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../core/presentation/widgets/acadex_card.dart';
+import '../../../../core/presentation/widgets/acadex_avatar.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_form_controls.dart';
+import '../../../../core/presentation/widgets/acadex_dialogs.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -73,7 +81,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile updated successfully'),
-            backgroundColor: DashboardColors.success,
+            backgroundColor: AcadexColors.success,
           ),
         );
       }
@@ -82,7 +90,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to update profile: $e'),
-            backgroundColor: DashboardColors.error,
+            backgroundColor: AcadexColors.error,
           ),
         );
       }
@@ -92,11 +100,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (authState is! AuthAuthenticated) {
-      return const Scaffold(
-        backgroundColor: DashboardColors.background,
-        body: Center(child: Text('Authentication required')),
+      return Scaffold(
+        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+        body: const Center(child: Text('Authentication required')),
       );
     }
 
@@ -130,25 +139,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final coursesAsync = ref.watch(coursesProvider);
     final semestersAsync = ref.watch(semestersProvider);
     final sectionsAsync = ref.watch(sectionsProvider);
-    final studentsAsync = ref.watch(studentsProvider);
-    final facultyAsync = ref.watch(facultyProvider);
+    final studentsAsync = ref.watch(studentsProvider((departmentId: null, sectionId: null)));
+    final facultyAsync = ref.watch(facultyProvider(null));
 
     // Resolve Student academic details
     dynamic resolvedStudent;
-    if (profile.role == AppRole.student && studentsAsync.value != null) {
-      final matches = studentsAsync.value!.where((s) => s.email == profile.email || s.id == profile.id);
-      if (matches.isNotEmpty) {
-        resolvedStudent = matches.first;
-      }
+    if (user.role == AppRole.student) {
+      final studentsList = studentsAsync.items;
+      resolvedStudent = studentsList.where((s) => s.id == user.id).firstOrNull;
     }
 
     // Resolve Faculty/HOD details
     dynamic resolvedFaculty;
-    if ((profile.role == AppRole.faculty || profile.role == AppRole.hod) && facultyAsync.value != null) {
-      final matches = facultyAsync.value!.where((f) => f.email == profile.email || f.id == profile.id);
-      if (matches.isNotEmpty) {
-        resolvedFaculty = matches.first;
-      }
+    if (user.role == AppRole.faculty || user.role == AppRole.hod) {
+      final facultyList = facultyAsync.items;
+      resolvedFaculty = facultyList.where((f) => f.id == user.id).firstOrNull;
     }
 
     String collegeName = profile.collegeId ?? 'Not Assigned';
@@ -192,7 +197,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
       employeeId = resolvedFaculty.employeeId;
     } else {
-      // Fallback lookup using profile values directly
       if (collegesAsync.value != null && profile.collegeId != null) {
         final matches = collegesAsync.value!.where((c) => c.id == profile.collegeId);
         if (matches.isNotEmpty) collegeName = matches.first.name;
@@ -204,276 +208,236 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: DashboardColors.background,
-      appBar: AppBar(
-        title: const Text('My Profile'),
-        backgroundColor: DashboardColors.surface,
-        foregroundColor: DashboardColors.textPrimary,
-        elevation: 0,
-        actions: [
-          if (!_isEditing)
-            IconButton(
-              icon: const Icon(LucideIcons.edit3),
-              onPressed: () => setState(() => _isEditing = true),
-            ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      body: AcadexPageContainer(
+        maxWidth: AcadexLayout.formMaxWidth,
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Profile Header Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: DashboardColors.surface,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: DashboardColors.primary.withValues(alpha: 0.2),
-                      foregroundImage: profile.profilePictureUrl != null
-                          ? NetworkImage(profile.profilePictureUrl!)
-                          : null,
-                      child: Text(
-                        profile.name.isNotEmpty ? profile.name[0].toUpperCase() : '?',
-                        style: GoogleFonts.inter(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: DashboardColors.primary,
+                children: [
+                  AcadexPageHeader(
+                    title: 'My Profile',
+                    subtitle: 'Manage your institutional profile and personal contact details.',
+                    actions: [
+                      if (!_isEditing)
+                        AcadexButton(
+                          label: 'Edit Profile',
+                          icon: LucideIcons.edit3,
+                          variant: AcadexButtonVariant.secondary,
+                          onPressed: () => setState(() => _isEditing = true),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      profile.name,
-                      style: GoogleFonts.inter(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: DashboardColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      profile.role.displayName,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: DashboardColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: DashboardColors.success.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        profile.accountStatus.name.toUpperCase(),
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: DashboardColors.success,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Personal Information Section
-              _buildSectionTitle('Personal Information'),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: DashboardColors.surface,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  children: [
-                    if (_isEditing) ...[
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Full Name',
-                          prefixIcon: Icon(LucideIcons.user),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Name is required';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _phoneController,
-                        decoration: const InputDecoration(
-                          labelText: 'Phone Number',
-                          prefixIcon: Icon(LucideIcons.phone),
-                        ),
-                        keyboardType: TextInputType.phone,
-                      ),
-                    ] else ...[
-                      _buildDetailRow('Full Name', profile.name, LucideIcons.user),
-                      const Divider(height: 24),
-                      _buildDetailRow('Email Address', profile.email, LucideIcons.mail),
-                      const Divider(height: 24),
-                      _buildDetailRow(
-                        'Phone Number',
-                        profile.phone.isNotEmpty ? profile.phone : 'Not Added',
-                        LucideIcons.phone,
-                      ),
                     ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Academic Information Section
-              _buildSectionTitle('Academic Details'),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: DashboardColors.surface,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  children: [
-                    _buildDetailRow('College / Institution', collegeName, LucideIcons.school),
-                    if (profile.role != AppRole.superAdmin) ...[
-                      const Divider(height: 24),
-                      _buildDetailRow('Department', departmentName, LucideIcons.building),
-                    ],
-                    if (profile.role == AppRole.student) ...[
-                      const Divider(height: 24),
-                      _buildDetailRow('Course', courseName, LucideIcons.book),
-                      const Divider(height: 24),
-                      _buildDetailRow('Semester', semesterName, LucideIcons.calendar),
-                      const Divider(height: 24),
-                      _buildDetailRow('Section', sectionName, LucideIcons.users),
-                      const Divider(height: 24),
-                      _buildDetailRow('Roll Number', rollNumber, LucideIcons.hash),
-                    ],
-                    if (profile.role == AppRole.faculty || profile.role == AppRole.hod) ...[
-                      const Divider(height: 24),
-                      _buildDetailRow('Employee / Faculty ID', employeeId, LucideIcons.creditCard),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Edit Actions
-              if (_isEditing) ...[
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: DashboardColors.textPrimary,
-                          side: const BorderSide(color: DashboardColors.border),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _isEditing = false;
-                            _nameController.text = profile.name;
-                            _phoneController.text = profile.phone;
-                          });
-                        },
-                        child: const Text('Cancel'),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: DashboardColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () => _saveProfile(profile),
-                        child: const Text('Save Changes'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-              ],
-
-              // Logout Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: DashboardColors.errorLight,
-                    foregroundColor: DashboardColors.error,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
                   ),
-                  icon: const Icon(LucideIcons.logOut),
-                  label: const Text('Logout from Acadex'),
-                  onPressed: () {
-                    ref.read(authProvider.notifier).logout();
-                  },
-                ),
+
+                  // Header Profile Card
+                  AcadexCard(
+                    padding: const EdgeInsets.all(28),
+                    child: Column(
+                      children: [
+                        AcadexAvatar(
+                          name: profile.name,
+                          size: 72,
+                          imageUrl: profile.profilePictureUrl,
+                          isOnline: true,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          profile.name,
+                          style: AcadexTypography.heading2(
+                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          profile.email,
+                          style: AcadexTypography.bodySmall(
+                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AcadexBadge(
+                              label: profile.role.displayName,
+                              variant: AcadexBadgeVariant.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            AcadexBadge(
+                              label: profile.accountStatus.name.toUpperCase(),
+                              variant: AcadexBadgeVariant.success,
+                              icon: LucideIcons.checkCircle,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Personal Information Section
+                  const AcadexSectionHeader(title: 'Personal Information'),
+                  AcadexCard(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        if (_isEditing) ...[
+                          AcadexTextField(
+                            controller: _nameController,
+                            label: 'Full Name',
+                            prefixIcon: LucideIcons.user,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Name is required';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          AcadexTextField(
+                            controller: _phoneController,
+                            label: 'Phone Number',
+                            prefixIcon: LucideIcons.phone,
+                            keyboardType: TextInputType.phone,
+                          ),
+                        ] else ...[
+                          _buildDetailRow('Full Name', profile.name, LucideIcons.user, isDark),
+                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                          _buildDetailRow('Email Address', profile.email, LucideIcons.mail, isDark),
+                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                          _buildDetailRow(
+                            'Phone Number',
+                            profile.phone.isNotEmpty ? profile.phone : 'Not Added',
+                            LucideIcons.phone,
+                            isDark,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Academic Details Section
+                  const AcadexSectionHeader(title: 'Academic Details'),
+                  AcadexCard(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        _buildDetailRow('College / Institution', collegeName, LucideIcons.school, isDark),
+                        if (profile.role != AppRole.superAdmin) ...[
+                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                          _buildDetailRow('Department', departmentName, LucideIcons.building, isDark),
+                        ],
+                        if (profile.role == AppRole.student) ...[
+                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                          _buildDetailRow('Course', courseName, LucideIcons.book, isDark),
+                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                          _buildDetailRow('Semester', semesterName, LucideIcons.calendar, isDark),
+                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                          _buildDetailRow('Section', sectionName, LucideIcons.users, isDark),
+                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                          _buildDetailRow('Roll Number', rollNumber, LucideIcons.hash, isDark),
+                        ],
+                        if (profile.role == AppRole.faculty || profile.role == AppRole.hod) ...[
+                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                          _buildDetailRow('Employee / Faculty ID', employeeId, LucideIcons.creditCard, isDark),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Edit Actions
+                  if (_isEditing) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: AcadexButton(
+                            label: 'Cancel',
+                            variant: AcadexButtonVariant.secondary,
+                            onPressed: () {
+                              setState(() {
+                                _isEditing = false;
+                                _nameController.text = profile.name;
+                                _phoneController.text = profile.phone;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: AcadexButton(
+                            label: 'Save Changes',
+                            icon: LucideIcons.check,
+                            onPressed: () => _saveProfile(profile),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Sign Out Button
+                  AcadexButton(
+                    label: 'Sign Out from Acadex',
+                    icon: LucideIcons.logOut,
+                    variant: AcadexButtonVariant.danger,
+                    isFullWidth: true,
+                    onPressed: () async {
+                      final confirmed = await AcadexConfirmationDialog.show(
+                        context: context,
+                        title: 'Sign Out',
+                        message: 'Are you sure you want to sign out of Acadex?',
+                        confirmLabel: 'Sign Out',
+                        isDestructive: true,
+                      );
+                      if (confirmed == true && context.mounted) {
+                        await ref.read(authProvider.notifier).logout();
+                        if (context.mounted) context.go('/login');
+                      }
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(height: 40),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: GoogleFonts.inter(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-        color: DashboardColors.textPrimary,
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value, IconData icon) {
+  Widget _buildDetailRow(String label, String value, IconData icon, bool isDark) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: DashboardColors.textSecondary),
-        const SizedBox(width: 12),
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+            borderRadius: AcadexRadius.borderRadiusMd,
+          ),
+          child: Icon(
+            icon,
+            size: 18,
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
+        ),
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: DashboardColors.textSecondary,
+                style: AcadexTypography.caption(
+                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: DashboardColors.textPrimary,
-                ),
+                style: AcadexTypography.body(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ).copyWith(fontWeight: FontWeight.w500),
               ),
             ],
           ),

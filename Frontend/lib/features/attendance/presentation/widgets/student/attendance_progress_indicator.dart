@@ -15,17 +15,18 @@ class AttendanceProgressIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = percentage >= 75 
-        ? DashboardColors.success 
+        ? AcadexColors.success 
         : percentage >= 60 
-            ? DashboardColors.warning 
-            : DashboardColors.error;
+            ? AcadexColors.warning 
+            : AcadexColors.error;
 
     return Container(
       height: height,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
+        color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
         borderRadius: BorderRadius.circular(height / 2),
       ),
       child: LayoutBuilder(

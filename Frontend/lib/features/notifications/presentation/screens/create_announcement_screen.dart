@@ -107,7 +107,7 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         labelText: 'Title',
-                        labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       validator: (value) => value == null || value.isEmpty ? 'Required' : null,
@@ -119,19 +119,19 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         labelText: 'Message',
-                        labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       validator: (value) => value == null || value.isEmpty ? 'Required' : null,
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<NotificationAudienceType>(
-                      value: _audienceType,
+                      initialValue: _audienceType,
                       dropdownColor: DashboardColors.surface,
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         labelText: 'Target Audience',
-                        labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       items: audienceOptions,
@@ -143,12 +143,12 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<NotificationCategory>(
-                            value: _category,
+                            initialValue: _category,
                             dropdownColor: DashboardColors.surface,
                             style: const TextStyle(color: Colors.white),
                             decoration: InputDecoration(
                               labelText: 'Category',
-                              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                              labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             ),
                             items: NotificationCategory.values.map((c) {
@@ -160,12 +160,12 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
                         const SizedBox(width: 16),
                         Expanded(
                           child: DropdownButtonFormField<NotificationPriority>(
-                            value: _priority,
+                            initialValue: _priority,
                             dropdownColor: DashboardColors.surface,
                             style: const TextStyle(color: Colors.white),
                             decoration: InputDecoration(
                               labelText: 'Priority',
-                              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                              labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             ),
                             items: NotificationPriority.values.map((p) {

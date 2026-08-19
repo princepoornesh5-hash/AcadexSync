@@ -4,8 +4,8 @@ import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../academic_structure/domain/models/academic_models.dart';
-import '../../../academic_structure/presentation/providers/academic_providers.dart';
+import '../../../storage/presentation/providers/storage_providers.dart';
+import '../../../notifications/presentation/providers/notification_providers.dart';
 import '../../domain/models/note_model.dart';
 import '../../data/repositories/notes_repository.dart';
 import '../../data/repositories/mock_notes_repository.dart';
@@ -17,7 +17,13 @@ final mockNotesRepositoryProvider = Provider<NotesRepository>((ref) {
 
 final firebaseNotesRepositoryProvider = Provider<NotesRepository>((ref) {
   final firestoreService = ref.watch(firestoreServiceProvider);
-  return FirebaseNotesRepository(firestoreService);
+  final storageRepository = ref.watch(fileStorageRepositoryProvider);
+  final notificationService = ref.watch(notificationServiceProvider);
+  return FirebaseNotesRepository(
+    firestoreService,
+    storageRepository: storageRepository,
+    notificationService: notificationService,
+  );
 });
 
 final notesRepositoryProvider = Provider<NotesRepository>((ref) {
@@ -35,27 +41,28 @@ final userNotesProvider = StreamProvider<List<NoteModel>>((ref) async* {
   }
 
   final user = authState.user;
+  // Readiness safety guard: Prevent querying with uninitialized/empty user
+  if (user.id.isEmpty) {
+    yield [];
+    return;
+  }
+
+  if (user.role != AppRole.superAdmin && (user.collegeId == null || user.collegeId!.isEmpty)) {
+    yield [];
+    return;
+  }
+
   final repository = ref.watch(notesRepositoryProvider);
 
-  String? sectionId;
-  String? courseId;
-  String? semesterId;
-
-  if (user.role == AppRole.student) {
-    final students = await ref.watch(studentsProvider.future);
-    final studentList = students.whereType<Student>().toList();
-    final student = studentList.where((s) => s.id == user.id).firstOrNull;
-    sectionId = student?.sectionId;
-    courseId = student?.courseId;
-    semesterId = student?.semesterId;
-  }
+  // Direct O(1) section & semester resolution directly from UserModel
+  final sectionId = user.sectionId;
+  final semesterId = user.semesterId;
 
   final stream = repository.watchNotes(
     role: user.role,
     userId: user.id,
     collegeId: user.collegeId,
     departmentId: user.departmentId,
-    courseId: courseId,
     semesterId: semesterId,
     sectionId: sectionId,
   );

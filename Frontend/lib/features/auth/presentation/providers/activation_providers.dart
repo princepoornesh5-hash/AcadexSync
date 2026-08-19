@@ -1,8 +1,6 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../../core/firebase/firebase_services.dart';
-import '../../../academic_structure/domain/models/academic_models.dart';
 import '../../domain/repositories/activation_repository.dart';
 import '../../data/repositories/mock_activation_repository.dart';
 import '../../data/repositories/firebase_activation_repository.dart';
@@ -20,16 +18,16 @@ class ActivationState {
   final int step; // 0: Input ID/Code, 1: Password Creation, 2: Success
   final bool isLoading;
   final String? error;
-  final Student? validatedStudent;
-  final String? rollNumber;
+  final Map<String, dynamic>? validatedUser;
+  final String? identifier;
   final String? activationCode;
 
   const ActivationState({
     this.step = 0,
     this.isLoading = false,
     this.error,
-    this.validatedStudent,
-    this.rollNumber,
+    this.validatedUser,
+    this.identifier,
     this.activationCode,
   });
 
@@ -37,8 +35,8 @@ class ActivationState {
     int? step,
     bool? isLoading,
     String? error,
-    Student? validatedStudent,
-    String? rollNumber,
+    Map<String, dynamic>? validatedUser,
+    String? identifier,
     String? activationCode,
     bool clearError = false,
   }) {
@@ -46,8 +44,8 @@ class ActivationState {
       step: step ?? this.step,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
-      validatedStudent: validatedStudent ?? this.validatedStudent,
-      rollNumber: rollNumber ?? this.rollNumber,
+      validatedUser: validatedUser ?? this.validatedUser,
+      identifier: identifier ?? this.identifier,
       activationCode: activationCode ?? this.activationCode,
     );
   }
@@ -62,16 +60,16 @@ class ActivationNotifier extends StateNotifier<ActivationState> {
     state = const ActivationState();
   }
 
-  Future<void> validateCode(String rollNumber, String code) async {
+  Future<void> validateCode(String identifier, String code) async {
     state = state.copyWith(isLoading: true, clearError: true);
     
     try {
-      final student = await _repository.validateActivation(rollNumber, code);
+      final user = await _repository.validateActivation(identifier, code);
       state = state.copyWith(
         isLoading: false,
         step: 1, // Move to Password step
-        validatedStudent: student,
-        rollNumber: rollNumber,
+        validatedUser: user as Map<String, dynamic>?,
+        identifier: identifier,
         activationCode: code,
       );
     } catch (e) {
@@ -83,7 +81,7 @@ class ActivationNotifier extends StateNotifier<ActivationState> {
   }
 
   Future<void> completeActivation(String password) async {
-    if (state.rollNumber == null || state.activationCode == null) {
+    if (state.identifier == null || state.activationCode == null) {
       state = state.copyWith(error: "Missing activation details.");
       return;
     }
@@ -91,7 +89,7 @@ class ActivationNotifier extends StateNotifier<ActivationState> {
     state = state.copyWith(isLoading: true, clearError: true);
     
     try {
-      await _repository.completeActivation(state.rollNumber!, state.activationCode!, password);
+      await _repository.completeActivation(state.identifier!, state.activationCode!, password);
       state = state.copyWith(
         isLoading: false,
         step: 2, // Move to Success step

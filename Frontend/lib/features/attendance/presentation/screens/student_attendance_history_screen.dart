@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/presentation/widgets/acadex_empty_state.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../providers/student_attendance_providers.dart';
 import '../widgets/student/attendance_history_tile.dart';
 import '../widgets/student/attendance_filter_bar.dart';
@@ -23,29 +23,37 @@ class _StudentAttendanceHistoryScreenState extends ConsumerState<StudentAttendan
 
     final selectedSub = ref.watch(selectedHistorySubjectProvider);
     final selectedMonth = ref.watch(selectedHistoryMonthProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: DashboardColors.background,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: DashboardColors.surface,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(LucideIcons.arrowLeft, color: DashboardColors.textPrimary),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.pop(),
         ),
-        title: const Text("Attendance History", style: TextStyle(color: DashboardColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(
+          "Attendance History",
+          style: AcadexTypography.title(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
+        ),
       ),
       body: Column(
         children: [
+          // Filter Bar Container
           Container(
-            color: DashboardColors.surface,
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+            padding: const EdgeInsets.symmetric(vertical: 14),
             child: subjectsAsync.when(
               loading: () => const SizedBox.shrink(),
               error: (_, _) => const SizedBox.shrink(),
               data: (subs) {
                 return AttendanceFilterBar(
-                  subjects: subs.map((e) => e.subjectId).toList(), // Using ID for logic, we could map to names
+                  subjects: subs.map((e) => e.subjectName).toList(),
                   selectedSubject: selectedSub,
                   onSubjectSelected: (val) {
                     ref.read(selectedHistorySubjectProvider.notifier).state = val;
@@ -58,29 +66,49 @@ class _StudentAttendanceHistoryScreenState extends ConsumerState<StudentAttendan
               },
             ),
           ),
+          Divider(
+            height: 1,
+            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          ),
+          
+          // History Log List
           Expanded(
             child: historyAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text("Error: $err")),
+              loading: () => const Center(
+                child: AcadexLoadingState(message: "Loading attendance records..."),
+              ),
+              error: (err, stack) => Center(
+                child: AcadexErrorState(
+                  message: "Unable to load attendance log: $err",
+                  onRetry: () => ref.refresh(studentHistoryProvider),
+                ),
+              ),
               data: (records) {
                 if (records.isEmpty) {
-                  return const AcadexEmptyState(
-                    title: "No Records Found",
-                    subtitle: "No attendance records match your filters.",
-                    icon: LucideIcons.calendarOff,
+                  return const Center(
+                    child: AcadexEmptyState(
+                      title: "No Attendance Records",
+                      subtitle: "No attendance entries match your selected subject or month filters.",
+                      icon: LucideIcons.calendarOff,
+                    ),
                   );
                 }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(24),
-                  itemCount: records.length,
-                  itemBuilder: (context, index) {
-                    return AttendanceHistoryTile(record: records[index]);
-                  },
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 800),
+                    child: ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+                      itemCount: records.length,
+                      itemBuilder: (context, index) {
+                        return AttendanceHistoryTile(record: records[index]);
+                      },
+                    ),
+                  ),
                 );
               },
             ),
-          )
+          ),
         ],
       ),
     );

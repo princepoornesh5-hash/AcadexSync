@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../core/presentation/widgets/acadex_empty_state.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
 import '../../domain/models/timetable_models.dart';
 import '../providers/timetable_providers.dart';
+import '../providers/timetable_lookup_providers.dart';
 import '../widgets/timetable_widgets.dart';
 
 class TimetableFilterState {
@@ -18,6 +21,7 @@ class TimetableFilterState {
   final String? semesterId;
   final String? sectionId;
   final TimetableDay? day;
+  final String searchQuery;
 
   TimetableFilterState({
     this.departmentId,
@@ -25,6 +29,7 @@ class TimetableFilterState {
     this.semesterId,
     this.sectionId,
     this.day,
+    this.searchQuery = '',
   });
 
   TimetableFilterState copyWith({
@@ -34,6 +39,7 @@ class TimetableFilterState {
     String? sectionId,
     TimetableDay? day,
     bool clearDay = false,
+    String? searchQuery,
   }) {
     return TimetableFilterState(
       departmentId: departmentId ?? this.departmentId,
@@ -41,8 +47,12 @@ class TimetableFilterState {
       semesterId: semesterId ?? this.semesterId,
       sectionId: sectionId ?? this.sectionId,
       day: clearDay ? null : (day ?? this.day),
+      searchQuery: searchQuery ?? this.searchQuery,
     );
   }
+
+  bool get hasActiveFilters =>
+      departmentId != null || courseId != null || semesterId != null || sectionId != null || day != null || searchQuery.isNotEmpty;
 }
 
 final timetableFilterProvider = StateProvider<TimetableFilterState>((ref) => TimetableFilterState());
@@ -66,20 +76,42 @@ final managementTimetableProvider = FutureProvider<List<TimetableModel>>((ref) a
     sectionId: filters.sectionId,
   );
   
+  var filtered = entries;
   if (filters.day != null) {
-    return entries.where((e) => e.dayOfWeek == filters.day).toList()..sort((a, b) => a.startTime.compareTo(b.startTime));
+    filtered = filtered.where((e) => e.dayOfWeek == filters.day).toList();
+  }
+
+  // Local case-insensitive search matching subject, code, faculty, room, building, section
+  if (filters.searchQuery.trim().isNotEmpty) {
+    final query = filters.searchQuery.trim().toLowerCase();
+    final subjectMap = ref.read(timetableSubjectMapProvider);
+    final facultyMap = ref.read(timetableFacultyMapProvider);
+    final sectionMap = ref.read(timetableSectionMapProvider);
+
+    filtered = filtered.where((e) {
+      final subject = subjectMap[e.subjectId];
+      final faculty = facultyMap[e.facultyId];
+      final section = sectionMap[e.sectionId];
+
+      final subjectMatch = subject != null && (subject.name.toLowerCase().contains(query) || subject.code.toLowerCase().contains(query));
+      final facultyMatch = faculty != null && faculty.name.toLowerCase().contains(query);
+      final sectionMatch = section != null && section.name.toLowerCase().contains(query);
+      final roomMatch = e.roomNumber.toLowerCase().contains(query) || (e.building?.toLowerCase().contains(query) ?? false);
+      final rawIdMatch = e.subjectId.toLowerCase().contains(query) || e.facultyId.toLowerCase().contains(query);
+
+      return subjectMatch || facultyMatch || sectionMatch || roomMatch || rawIdMatch;
+    }).toList();
   }
   
   // Sort by day, then time
-  entries.sort((a, b) {
+  filtered.sort((a, b) {
     int dayCmp = a.dayOfWeek.index.compareTo(b.dayOfWeek.index);
     if (dayCmp != 0) return dayCmp;
     return a.startTime.compareTo(b.startTime);
   });
   
-  return entries;
+  return filtered;
 });
-
 
 class TimetableManagementScreen extends ConsumerWidget {
   const TimetableManagementScreen({super.key});
@@ -91,213 +123,348 @@ class TimetableManagementScreen extends ConsumerWidget {
     
     final user = authState.user;
     if (user.role != AppRole.superAdmin && user.role != AppRole.collegeAdmin && user.role != AppRole.hod) {
-      return const Center(child: Text('Unauthorized'));
+      return Scaffold(
+        appBar: AppBar(title: const Text('Unauthorized')),
+        body: const Center(child: Text('Unauthorized: Only administrators and HODs can manage timetables.')),
+      );
     }
 
     final filters = ref.watch(timetableFilterProvider);
     final timetableAsync = ref.watch(managementTimetableProvider);
+    final width = MediaQuery.of(context).size.width;
+    final isMobile = width < 640;
 
     return Scaffold(
-      backgroundColor: DashboardColors.background,
-      appBar: AppBar(
-        title: Text('Manage Timetable', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: DashboardColors.textPrimary)),
-        backgroundColor: DashboardColors.surface,
-        iconTheme: const IconThemeData(color: DashboardColors.textPrimary),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: ElevatedButton.icon(
-              onPressed: () => context.go('/timetable/new'),
-              icon: const Icon(LucideIcons.plus, size: 18),
-              label: const Text('Add Entry'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: DashboardColors.primary,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _buildFilters(context, ref, user.role, filters),
-          Expanded(
-            child: timetableAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, st) => Center(child: Text('Error: $e')),
-              data: (entries) {
-                if (entries.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(LucideIcons.calendarX, size: 48, color: DashboardColors.textSecondary.withValues(alpha: 0.5)),
-                        const SizedBox(height: 16),
-                        Text('No timetable entries found.', style: TextStyle(color: DashboardColors.textSecondary)),
-                      ],
-                    ),
-                  );
-                }
-                
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: entries.length,
-                  itemBuilder: (context, index) {
-                    final entry = entries[index];
-                    return Stack(
-                      children: [
-                        TimetableCard(entry: entry),
-                        Positioned(
-                          right: 8,
-                          top: 8,
-                          child: Row(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1600),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header with Add Schedule CTA
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 16),
+                  child: AcadexPageHeader(
+                    title: 'Manage Timetable',
+                    subtitle: 'Create, edit and maintain academic schedules.',
+                    actions: [
+                      AcadexButton(
+                        label: 'Add Schedule',
+                        icon: LucideIcons.plus,
+                        variant: AcadexButtonVariant.primary,
+                        size: AcadexButtonSize.md,
+                        onPressed: () => context.go('/timetable/new'),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Responsive Filter Toolbar
+                _buildFilterBar(context, ref, user.role, filters),
+
+                // Timetable Entries List with smooth AnimatedSwitcher
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: AcadexMotion.resolveDuration(context, AcadexMotion.fast),
+                    switchInCurve: AcadexMotion.curveStandard,
+                    switchOutCurve: AcadexMotion.curveStandard,
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+                    child: timetableAsync.when(
+                      loading: () => const Center(
+                        key: ValueKey('mgt_loading'),
+                        child: CircularProgressIndicator(),
+                      ),
+                      error: (e, st) => Center(
+                        key: const ValueKey('mgt_error'),
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              IconButton(
-                                icon: const Icon(LucideIcons.edit, size: 18, color: DashboardColors.primary),
+                              const Icon(LucideIcons.alertCircle, size: 48, color: AcadexColors.error),
+                              const SizedBox(height: 16),
+                              Text('Failed to load schedule entries', style: AcadexTypography.heading3(color: Theme.of(context).colorScheme.onSurface)),
+                              const SizedBox(height: 8),
+                              TextButton.icon(
                                 onPressed: () {
-                                  context.go('/timetable/edit/${entry.id}', extra: entry);
+                                  // ignore: unused_result
+                                  ref.refresh(managementTimetableProvider);
                                 },
-                              ),
-                              IconButton(
-                                icon: const Icon(LucideIcons.trash2, size: 18, color: DashboardColors.error),
-                                onPressed: () => _confirmDelete(context, ref, entry.id),
+                                icon: const Icon(LucideIcons.refreshCw, size: 16),
+                                label: const Text('Retry'),
                               ),
                             ],
                           ),
                         ),
-                        if (filters.day == null)
-                          Positioned(
-                            left: 16,
-                            top: 8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: DashboardColors.purple,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                entry.dayOfWeek.displayName,
-                                style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
-                              ),
+                      ),
+                      data: (entries) {
+                        if (entries.isEmpty) {
+                          return Center(
+                            key: const ValueKey('mgt_empty'),
+                            child: AcadexEmptyState(
+                              title: filters.hasActiveFilters ? 'No matching schedules found' : 'No timetable entries found',
+                              subtitle: filters.hasActiveFilters
+                                  ? 'Try adjusting your filters or search query.'
+                                  : 'Click "Add Schedule" to create your first class timetable slot.',
+                              icon: LucideIcons.calendarX,
+                              actionLabel: filters.hasActiveFilters ? 'Clear All Filters' : null,
+                              onActionTap: filters.hasActiveFilters
+                                  ? () => ref.read(timetableFilterProvider.notifier).state = TimetableFilterState()
+                                  : null,
                             ),
-                          ),
-                      ],
-                    );
-                  },
-                );
-              },
+                          );
+                        }
+
+                        return ListView.builder(
+                          key: ValueKey('mgt_list_${entries.length}_${filters.day?.name ?? 'all'}'),
+                          padding: const EdgeInsets.all(20),
+                          itemCount: entries.length,
+                          itemBuilder: (context, index) {
+                            final entry = entries[index];
+                            return TimetableManagementCard(
+                              entry: entry,
+                              onEdit: () => context.go('/timetable/edit/${entry.id}', extra: entry),
+                              onDuplicate: () {
+                                // Pre-fill new timetable form with existing entry values
+                                context.go('/timetable/new', extra: entry.copyWith(id: ''));
+                              },
+                              onDelete: () => _confirmDelete(context, ref, entry),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildFilters(BuildContext context, WidgetRef ref, AppRole role, TimetableFilterState filters) {
+  Widget _buildFilterBar(BuildContext context, WidgetRef ref, AppRole role, TimetableFilterState filters) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.all(16),
-      color: DashboardColors.surface,
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(color: Theme.of(context).dividerColor),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Day Filter
-          DropdownButton<TimetableDay?>(
-            value: filters.day,
-            hint: const Text('All Days'),
-            items: [
-              const DropdownMenuItem<TimetableDay?>(value: null, child: Text('All Days')),
-              ...TimetableDay.values.map((d) => DropdownMenuItem(value: d, child: Text(d.displayName))),
-            ],
+          // Row 1: Case-Insensitive Search Field
+          TextField(
+            decoration: InputDecoration(
+              hintText: 'Search by subject, faculty, room or section...',
+              prefixIcon: const Icon(LucideIcons.search, size: 18),
+              suffixIcon: filters.searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(LucideIcons.x, size: 16),
+                      onPressed: () => ref.read(timetableFilterProvider.notifier).state = filters.copyWith(searchQuery: ''),
+                    )
+                  : null,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              border: OutlineInputBorder(borderRadius: AcadexRadius.borderRadiusMd),
+              isDense: true,
+            ),
             onChanged: (val) {
-              ref.read(timetableFilterProvider.notifier).state = filters.copyWith(day: val, clearDay: val == null);
+              ref.read(timetableFilterProvider.notifier).state = filters.copyWith(searchQuery: val);
             },
           ),
-          
-          if (role != AppRole.hod)
-            Consumer(
-              builder: (context, ref, _) {
-                final deptsAsync = ref.watch(departmentsProvider);
-                return deptsAsync.maybeWhen(
-                  data: (depts) => DropdownButton<String?>(
-                    value: filters.departmentId,
-                    hint: const Text('All Departments'),
-                    items: [
-                      const DropdownMenuItem<String?>(value: null, child: Text('All Departments')),
-                      ...depts.map((d) => DropdownMenuItem(value: d.id, child: Text(d.code))),
-                    ],
-                    onChanged: (val) {
-                      ref.read(timetableFilterProvider.notifier).state = filters.copyWith(departmentId: val);
-                    },
-                  ),
-                  orElse: () => const SizedBox.shrink(),
-                );
-              }
-            ),
+          const SizedBox(height: 12),
 
-          Consumer(
-            builder: (context, ref, _) {
-              final coursesAsync = ref.watch(coursesProvider);
-              return coursesAsync.maybeWhen(
-                data: (courses) {
-                  final validCourses = role == AppRole.hod 
-                    ? courses // Wait, we should filter by HOD dept, but mock data doesn't strictly link them perfectly, so we allow all for now or filter by user dept
-                    : courses;
-                  return DropdownButton<String?>(
-                    value: filters.courseId,
-                    hint: const Text('All Courses'),
-                    items: [
-                      const DropdownMenuItem<String?>(value: null, child: Text('All Courses')),
-                      ...validCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.code))),
-                    ],
-                    onChanged: (val) {
-                      ref.read(timetableFilterProvider.notifier).state = filters.copyWith(courseId: val);
-                    },
-                  );
+          // Row 2: Dropdowns & Clear Filter
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              // Day Dropdown
+              DropdownButton<TimetableDay?>(
+                value: filters.day,
+                hint: const Text('All Days'),
+                isDense: true,
+                items: [
+                  const DropdownMenuItem<TimetableDay?>(value: null, child: Text('All Days')),
+                  ...TimetableDay.values.map((d) => DropdownMenuItem(value: d, child: Text(d.displayName))),
+                ],
+                onChanged: (val) {
+                  ref.read(timetableFilterProvider.notifier).state = filters.copyWith(day: val, clearDay: val == null);
                 },
-                orElse: () => const SizedBox.shrink(),
-              );
-            }
-          ),
-          
-          Consumer(
-            builder: (context, ref, _) {
-              final sectionsAsync = ref.watch(sectionsProvider);
-              return sectionsAsync.maybeWhen(
-                data: (sections) => DropdownButton<String?>(
-                  value: filters.sectionId,
-                  hint: const Text('All Sections'),
-                  items: [
-                    const DropdownMenuItem<String?>(value: null, child: Text('All Sections')),
-                    ...sections.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
-                  ],
-                  onChanged: (val) {
-                    ref.read(timetableFilterProvider.notifier).state = filters.copyWith(sectionId: val);
+              ),
+
+              // Department Dropdown (Super Admin & College Admin)
+              if (role != AppRole.hod)
+                Consumer(
+                  builder: (context, ref, _) {
+                    final deptsAsync = ref.watch(departmentsProvider);
+                    return deptsAsync.maybeWhen(
+                      data: (depts) => DropdownButton<String?>(
+                        value: filters.departmentId,
+                        hint: const Text('All Departments'),
+                        isDense: true,
+                        items: [
+                          const DropdownMenuItem<String?>(value: null, child: Text('All Departments')),
+                          ...depts.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name.isNotEmpty ? d.name : d.code))),
+                        ],
+                        onChanged: (val) {
+                          ref.read(timetableFilterProvider.notifier).state = filters.copyWith(departmentId: val);
+                        },
+                      ),
+                      orElse: () => const SizedBox.shrink(),
+                    );
                   },
                 ),
-                orElse: () => const SizedBox.shrink(),
-              );
-            }
+
+              // Course Dropdown
+              Consumer(
+                builder: (context, ref, _) {
+                  final coursesAsync = ref.watch(coursesProvider);
+                  return coursesAsync.maybeWhen(
+                    data: (courses) => DropdownButton<String?>(
+                      value: filters.courseId,
+                      hint: const Text('All Courses'),
+                      isDense: true,
+                      items: [
+                        const DropdownMenuItem<String?>(value: null, child: Text('All Courses')),
+                        ...courses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name.isNotEmpty ? c.name : c.code))),
+                      ],
+                      onChanged: (val) {
+                        ref.read(timetableFilterProvider.notifier).state = filters.copyWith(courseId: val);
+                      },
+                    ),
+                    orElse: () => const SizedBox.shrink(),
+                  );
+                },
+              ),
+
+              // Section Dropdown
+              Consumer(
+                builder: (context, ref, _) {
+                  final sectionsAsync = ref.watch(sectionsProvider);
+                  return sectionsAsync.maybeWhen(
+                    data: (sections) => DropdownButton<String?>(
+                      value: filters.sectionId,
+                      hint: const Text('All Sections'),
+                      isDense: true,
+                      items: [
+                        const DropdownMenuItem<String?>(value: null, child: Text('All Sections')),
+                        ...sections.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
+                      ],
+                      onChanged: (val) {
+                        ref.read(timetableFilterProvider.notifier).state = filters.copyWith(sectionId: val);
+                      },
+                    ),
+                    orElse: () => const SizedBox.shrink(),
+                  );
+                },
+              ),
+
+              // Clear Filter Button with AnimatedSize
+              AnimatedSize(
+                duration: AcadexMotion.resolveDuration(context, AcadexMotion.micro),
+                curve: AcadexMotion.curveStandard,
+                child: filters.hasActiveFilters
+                    ? TextButton.icon(
+                        onPressed: () => ref.read(timetableFilterProvider.notifier).state = TimetableFilterState(),
+                        icon: const Icon(LucideIcons.x, size: 14),
+                        label: const Text('Clear Filters'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AcadexColors.error,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, String id) {
+  void _confirmDelete(BuildContext context, WidgetRef ref, TimetableModel entry) {
+    final subjectMap = ref.read(timetableSubjectMapProvider);
+    final subject = subjectMap[entry.subjectId];
+    final subjectName = subject?.name ?? entry.subjectId;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Entry'),
-        content: const Text('Are you sure you want to delete this timetable entry?'),
+        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusXl),
+        title: const Row(
+          children: [
+            Icon(LucideIcons.alertTriangle, color: AcadexColors.error, size: 20),
+            SizedBox(width: 8),
+            Text('Delete this schedule?'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to remove this timetable slot? This will remove the class from student and faculty calendars.',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                borderRadius: AcadexRadius.borderRadiusMd,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Subject: $subjectName', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 4),
+                  Text('Day: ${entry.dayOfWeek.displayName}', style: const TextStyle(fontSize: 12)),
+                  Text('Time: ${entry.startTime} – ${entry.endTime}', style: const TextStyle(fontSize: 12)),
+                  if (entry.roomNumber.isNotEmpty)
+                    Text('Room: ${entry.roomNumber}', style: const TextStyle(fontSize: 12)),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           TextButton(
-            onPressed: () {
-              ref.read(timetableManagementProvider.notifier).deleteEntry(id);
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
               Navigator.pop(ctx);
+              await ref.read(timetableManagementProvider.notifier).deleteEntry(entry.id);
+              // ignore: unused_result
+              ref.refresh(managementTimetableProvider);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Timetable entry deleted successfully.'),
+                    backgroundColor: AcadexColors.success,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
             },
-            child: const Text('Delete', style: TextStyle(color: DashboardColors.error)),
+            child: const Text('Delete'),
           ),
         ],
       ),

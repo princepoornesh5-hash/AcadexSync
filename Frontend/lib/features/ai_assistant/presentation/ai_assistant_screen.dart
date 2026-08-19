@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_theme.dart';
 import 'package:campus_management/features/auth/domain/models/auth_state.dart';
@@ -95,25 +94,25 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
     });
 
     return Scaffold(
-      backgroundColor: DashboardColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Acadex AI', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: DashboardColors.textPrimary)),
-        backgroundColor: DashboardColors.surface,
+        title: Text('Acadex AI', style: AcadexTypography.heading3(color: Theme.of(context).colorScheme.onSurface)),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
-        iconTheme: const IconThemeData(color: DashboardColors.textPrimary),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
         actions: [
           IconButton(
             tooltip: 'Clear Conversation',
-            icon: const Icon(LucideIcons.trash2),
+            icon: Icon(LucideIcons.trash2),
             onPressed: () {
               ref.read(aiChatProvider.notifier).clearChat();
             },
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: DashboardColors.border, height: 1),
+          child: Container(color: Theme.of(context).dividerColor, height: 1),
         ),
       ),
       body: Center(
@@ -134,27 +133,23 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                     return Align(
                       alignment: isAi ? Alignment.centerLeft : Alignment.centerRight,
                       child: Container(
-                        margin: const EdgeInsets.only(bottom: 16),
+                        margin: EdgeInsets.only(bottom: 16),
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                         constraints: const BoxConstraints(maxWidth: 600),
                         decoration: BoxDecoration(
-                          color: isAi ? Colors.white : DashboardColors.primary,
+                          color: isAi ? Colors.white : Theme.of(context).primaryColor,
                           borderRadius: BorderRadius.circular(16).copyWith(
                             bottomLeft: isAi ? const Radius.circular(4) : const Radius.circular(16),
                             bottomRight: isAi ? const Radius.circular(16) : const Radius.circular(4),
                           ),
-                          border: isAi ? Border.all(color: DashboardColors.border) : null,
+                          border: isAi ? Border.all(color: Theme.of(context).dividerColor) : null,
                           boxShadow: [
                             if (isAi) BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))
                           ],
                         ),
                         child: Text(
                           msg.text,
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            color: isAi ? DashboardColors.textPrimary : Colors.white,
-                            height: 1.5,
-                          ),
+                          style: AcadexTypography.body(color: isAi ? Theme.of(context).colorScheme.onSurface : Colors.white).copyWith(height: 1.5, fontSize: 15),
                         ),
                       ),
                     );
@@ -165,16 +160,16 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
               // Loading / Error States
               if (chatState.isLoading)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                   child: Row(
                     children: [
-                      const SizedBox(
+                      SizedBox(
                         width: 16, 
                         height: 16, 
-                        child: CircularProgressIndicator(strokeWidth: 2, color: DashboardColors.primary)
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).primaryColor)
                       ),
-                      const SizedBox(width: 12),
-                      Text("Acadex AI is thinking...", style: GoogleFonts.inter(color: DashboardColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500)),
+                      SizedBox(width: 12),
+                      Text("Acadex AI is thinking...", style: AcadexTypography.caption(color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)).copyWith(fontWeight: FontWeight.w500)),
                     ],
                   ),
                 ),
@@ -184,18 +179,18 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                   margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: DashboardColors.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: DashboardColors.error.withValues(alpha: 0.3)),
+                    color: AcadexColors.error.withValues(alpha: 0.1),
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                    border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(LucideIcons.alertCircle, color: DashboardColors.error, size: 20),
-                      const SizedBox(width: 12),
+                      Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 20),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           chatState.error!,
-                          style: GoogleFonts.inter(color: DashboardColors.error, fontSize: 13, fontWeight: FontWeight.w500),
+                          style: AcadexTypography.caption(color: AcadexColors.error).copyWith(fontWeight: FontWeight.w500),
                         ),
                       ),
                       TextButton(
@@ -222,9 +217,9 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                     children: _getSuggestedPrompts(userRole).map((prompt) {
                       return ActionChip(
                         label: Text(prompt),
-                        labelStyle: GoogleFonts.inter(fontSize: 13, color: DashboardColors.textSecondary),
-                        backgroundColor: DashboardColors.surface,
-                        side: BorderSide(color: DashboardColors.border),
+                        labelStyle: AcadexTypography.caption(color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)),
+                        backgroundColor: Theme.of(context).colorScheme.surface,
+                        side: BorderSide(color: Theme.of(context).dividerColor),
                         onPressed: chatState.isLoading ? null : () => _submitQuery(prompt),
                       );
                     }).toList(),
@@ -233,32 +228,32 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
 
               // Input Bar
               Container(
-                padding: const EdgeInsets.all(24).copyWith(top: 16),
-                decoration: const BoxDecoration(
-                  color: DashboardColors.background,
+                padding: EdgeInsets.all(24).copyWith(top: 16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
                 ),
                 child: Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: _queryController,
-                        style: GoogleFonts.inter(color: DashboardColors.textPrimary),
+                        style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface),
                         decoration: InputDecoration(
                           hintText: "Ask about your campus...",
-                          hintStyle: GoogleFonts.inter(color: DashboardColors.textMuted),
+                          hintStyle: AcadexTypography.body(color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted).withValues(alpha: 0.5)),
                           filled: true,
                           fillColor: Colors.white,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: DashboardColors.border),
+                            borderRadius: AcadexRadius.borderRadiusLg,
+                            borderSide: BorderSide(color: Theme.of(context).dividerColor),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: DashboardColors.border),
+                            borderRadius: AcadexRadius.borderRadiusLg,
+                            borderSide: BorderSide(color: Theme.of(context).dividerColor),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: DashboardColors.primary, width: 2),
+                            borderRadius: AcadexRadius.borderRadiusLg,
+                            borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
                           ),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                         ),
@@ -266,19 +261,19 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                         enabled: !chatState.isLoading,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: DashboardColors.primary,
+                        backgroundColor: Theme.of(context).primaryColor,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.all(16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusLg),
                         elevation: 0,
                       ),
                       onPressed: chatState.isLoading
                           ? null
                           : () => _submitQuery(_queryController.text),
-                      child: const Icon(LucideIcons.send, size: 20),
+                      child: Icon(LucideIcons.send, size: 20),
                     ),
                   ],
                 ),

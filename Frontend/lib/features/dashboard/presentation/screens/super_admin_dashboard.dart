@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/domain/models/user_model.dart';
@@ -13,7 +13,6 @@ import '../../domain/models/quick_action_model.dart';
 import '../providers/dashboard_providers.dart';
 import '../widgets/activity_feed.dart';
 import '../widgets/quick_action_card.dart';
-import '../widgets/section_header.dart';
 import '../widgets/section_header.dart';
 import '../widgets/stat_card.dart';
 import '../../../timetable/presentation/providers/timetable_providers.dart';
@@ -32,19 +31,16 @@ class SuperAdminDashboard extends ConsumerWidget {
     UserModel? user;
     if (authState is AuthAuthenticated) user = authState.user;
 
-    return Theme(
-      data: AppTheme.lightTheme,
-      child: Scaffold(
-        backgroundColor: DashboardColors.background,
-        body: _DashboardBody(
-          user: user,
-          greeting: 'Good day, ${user?.name.split(' ').first ?? 'Admin'}',
-          subtitle: 'Here\'s your system overview for today.',
-          stats: stats,
-          quickActions: quickActions,
-          activity: activity,
-          extraSection: _SystemHealthCard(),
-        ),
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: _DashboardBody(
+        user: user,
+        greeting: 'Good day, ${user?.name.split(' ').first ?? 'Admin'}',
+        subtitle: 'Here\'s your system overview for today.',
+        stats: stats,
+        quickActions: quickActions,
+        activity: activity,
+        extraSection: _SystemHealthCard(),
       ),
     );
   }
@@ -57,19 +53,19 @@ class _SystemHealthCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SectionHeader(title: 'System Health'),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: DashboardColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: DashboardColors.border),
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: AcadexRadius.borderRadiusLg,
+            border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: Row(
             children: [
-              _HealthItem(label: 'API Status', status: 'Operational', color: DashboardColors.success, icon: LucideIcons.server),
-              _HealthItem(label: 'Database', status: 'Healthy', color: DashboardColors.success, icon: LucideIcons.database),
-              _HealthItem(label: 'Storage', status: '74% Used', color: DashboardColors.warning, icon: LucideIcons.hardDrive),
+              _HealthItem(label: 'API Status', status: 'Operational', color: AcadexColors.success, icon: LucideIcons.server),
+              _HealthItem(label: 'Database', status: 'Healthy', color: AcadexColors.success, icon: LucideIcons.database),
+              _HealthItem(label: 'Storage', status: '74% Used', color: AcadexColors.warning, icon: LucideIcons.hardDrive),
             ],
           ),
         ),
@@ -91,10 +87,10 @@ class _HealthItem extends StatelessWidget {
       child: Column(
         children: [
           Icon(icon, color: color, size: 22),
-          const SizedBox(height: 8),
-          Text(label, style: GoogleFonts.inter(fontSize: 11, color: DashboardColors.textSecondary, fontWeight: FontWeight.w500)),
+          SizedBox(height: 8),
+          Text(label, style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted).copyWith(fontWeight: FontWeight.w500)),
           const SizedBox(height: 4),
-          Text(status, style: GoogleFonts.inter(fontSize: 12, color: color, fontWeight: FontWeight.w700)),
+          Text(status, style: AcadexTypography.bodySmall(color: color).copyWith(fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -129,20 +125,20 @@ class _DashboardBody extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        int statCols = width > 1024 ? 4 : width > 600 ? 3 : 2;
+        final statCols = AcadexLayout.statGridColumns(context);
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+        return AcadexPageContainer(
+          particleSphereVariant: ParticleSphereVariant.dashboard,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Greeting
               _GreetingRow(greeting: greeting, subtitle: subtitle, user: user),
-              const SizedBox(height: 28),
+              AcadexLayout.sectionSpacer,
 
               // Stats Grid
               const SectionHeader(title: 'Overview'),
-              const SizedBox(height: 12),
+              AcadexLayout.headerGap,
               stats.when(
                 loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
                 error: (err, stack) => Text('Error: $err'),
@@ -152,8 +148,8 @@ class _DashboardBody extends StatelessWidget {
                   itemCount: data.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: statCols,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
+                    crossAxisSpacing: AcadexLayout.gridSpacing,
+                    mainAxisSpacing: AcadexLayout.gridSpacing,
                     childAspectRatio: width > 600 ? 1.15 : 1.05,
                   ),
                   itemBuilder: (_, i) => StatCard(
@@ -162,10 +158,10 @@ class _DashboardBody extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 28),
+              AcadexLayout.sectionSpacer,
 
               const SectionHeader(title: "Today's Timetable"),
-              const SizedBox(height: 12),
+              AcadexLayout.headerGap,
               Consumer(
                 builder: (context, ref, _) {
                   final todayAsync = ref.watch(todayScheduleProvider);
@@ -176,29 +172,29 @@ class _DashboardBody extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 28),
+              AcadexLayout.sectionSpacer,
 
               // Quick Actions
               const SectionHeader(title: 'Quick Actions'),
-              const SizedBox(height: 12),
+              AcadexLayout.headerGap,
               GridView.builder(
                 physics: const NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
                 itemCount: quickActions.length,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: width > 600 ? 6 : 3,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
+                  crossAxisSpacing: AcadexLayout.gridSpacing,
+                  mainAxisSpacing: AcadexLayout.gridSpacing,
                   childAspectRatio: 0.9,
                 ),
                 itemBuilder: (_, i) => QuickActionCard(action: quickActions[i]),
               ),
-              const SizedBox(height: 28),
+              AcadexLayout.sectionSpacer,
 
               // Extra section (e.g. System Health for Super Admin)
               if (extraSection != null) ...[
                 extraSection!,
-                const SizedBox(height: 28),
+                AcadexLayout.sectionSpacer,
               ],
 
               // Recent Activity
@@ -207,7 +203,7 @@ class _DashboardBody extends StatelessWidget {
                 actionLabel: 'View All',
                 onAction: () {},
               ),
-              const SizedBox(height: 12),
+              AcadexLayout.headerGap,
               activity.when(
                 loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
                 error: (err, stack) => Text('Error: $err'),
@@ -238,20 +234,12 @@ class _GreetingRow extends StatelessWidget {
             children: [
               Text(
                 greeting,
-                style: GoogleFonts.inter(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: DashboardColors.textPrimary,
-                  height: 1.2,
-                ),
+                style: AcadexTypography.heading2(color: Theme.of(context).colorScheme.onSurface),
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               Text(
                 subtitle,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: DashboardColors.textSecondary,
-                ),
+                style: AcadexTypography.body(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
               ),
             ],
           ),
@@ -260,9 +248,9 @@ class _GreetingRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: DashboardColors.primaryLight,
-            borderRadius: BorderRadius.circular(9999),
-            border: Border.all(color: DashboardColors.primary.withValues(alpha: 0.2)),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+            borderRadius: AcadexRadius.borderRadiusFull,
+            border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.2)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -271,18 +259,14 @@ class _GreetingRow extends StatelessWidget {
                 width: 8,
                 height: 8,
                 decoration: const BoxDecoration(
-                  color: DashboardColors.success,
+                  color: AcadexColors.success,
                   shape: BoxShape.circle,
                 ),
               ),
               const SizedBox(width: 6),
               Text(
                 user?.role.displayName ?? 'User',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: DashboardColors.primary,
-                ),
+                style: AcadexTypography.eyebrow(color: Theme.of(context).primaryColor),
               ),
             ],
           ),

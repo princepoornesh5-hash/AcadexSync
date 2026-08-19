@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../../app/theme/app_theme.dart';
 
 class ValidationBanner extends StatelessWidget {
@@ -9,23 +10,28 @@ class ValidationBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (remainingCount == 0) return const SizedBox.shrink();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: DashboardColors.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: DashboardColors.error.withValues(alpha: 0.3)),
+        color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+        borderRadius: AcadexRadius.borderRadiusMd,
+        border: Border.all(
+          color: isDark ? AcadexColors.warning.withValues(alpha: 0.4) : AcadexColors.warning.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: DashboardColors.error, size: 20),
-          const SizedBox(width: 8),
+          Icon(LucideIcons.alertTriangle, color: AcadexColors.warning, size: 18),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "Validation Error: $remainingCount students have missing attendance statuses.",
-              style: const TextStyle(color: DashboardColors.error, fontSize: 13, fontWeight: FontWeight.w600),
+              "Attention: $remainingCount student(s) currently have unmarked attendance.",
+              style: AcadexTypography.bodySmall(
+                color: isDark ? Colors.white : AcadexColors.warningDark,
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
         ],

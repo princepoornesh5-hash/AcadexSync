@@ -19,6 +19,8 @@ class UserModel {
   final String? profilePictureUrl;
   final String? collegeId;
   final String? departmentId;
+  final String? sectionId;
+  final String? semesterId;
   final AccountStatus accountStatus;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -33,6 +35,8 @@ class UserModel {
     this.profilePictureUrl,
     this.collegeId,
     this.departmentId,
+    this.sectionId,
+    this.semesterId,
     this.accountStatus = AccountStatus.active,
     this.createdAt,
     this.updatedAt,
@@ -49,6 +53,8 @@ class UserModel {
       profilePictureUrl: json['profilePictureUrl'] as String?,
       collegeId: json['collegeId'] as String?,
       departmentId: json['departmentId'] as String?,
+      sectionId: json['sectionId'] as String?,
+      semesterId: json['semesterId'] as String?,
       accountStatus: json['accountStatus'] != null 
           ? AccountStatusExtension.fromString(json['accountStatus'] as String)
           : AccountStatus.active,
@@ -68,6 +74,8 @@ class UserModel {
       'profilePictureUrl': profilePictureUrl,
       'collegeId': collegeId,
       'departmentId': departmentId,
+      'sectionId': sectionId,
+      'semesterId': semesterId,
       'accountStatus': accountStatus.value,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
@@ -84,6 +92,8 @@ class UserModel {
     String? profilePictureUrl,
     String? collegeId,
     String? departmentId,
+    String? sectionId,
+    String? semesterId,
     AccountStatus? accountStatus,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -98,6 +108,8 @@ class UserModel {
       profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
       collegeId: collegeId ?? this.collegeId,
       departmentId: departmentId ?? this.departmentId,
+      sectionId: sectionId ?? this.sectionId,
+      semesterId: semesterId ?? this.semesterId,
       accountStatus: accountStatus ?? this.accountStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../auth/domain/models/auth_state.dart';
@@ -9,8 +8,10 @@ import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
 import '../providers/notes_providers.dart';
+import '../providers/notes_lookup_providers.dart';
 import '../widgets/note_card.dart';
 import '../../domain/models/note_model.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 
 class NotesDashboardScreen extends ConsumerWidget {
   const NotesDashboardScreen({super.key});
@@ -24,11 +25,14 @@ class NotesDashboardScreen extends ConsumerWidget {
     final isFaculty = user.role == AppRole.faculty;
 
     return Scaffold(
-      backgroundColor: DashboardColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(isFaculty ? 'My Notes' : 'Academic Resources', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: DashboardColors.textPrimary)),
-        backgroundColor: DashboardColors.surface,
-        iconTheme: const IconThemeData(color: DashboardColors.textPrimary),
+        title: Text(
+          isFaculty ? 'My Notes' : 'Academic Resources',
+          style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
         actions: [
           if (isFaculty)
             Padding(
@@ -38,20 +42,26 @@ class NotesDashboardScreen extends ConsumerWidget {
                 icon: const Icon(LucideIcons.plus, size: 18),
                 label: const Text('Create Note'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: DashboardColors.primary,
+                  backgroundColor: Theme.of(context).primaryColor,
                   foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
                 ),
               ),
             ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildFilters(context, ref, user.role),
-          Expanded(
-            child: _NotesList(role: user.role),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1600),
+          child: Column(
+            children: [
+              _buildFilters(context, ref, user.role),
+              Expanded(
+                child: _NotesList(role: user.role),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -62,18 +72,26 @@ class NotesDashboardScreen extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      color: DashboardColors.surface,
+      color: Theme.of(context).colorScheme.surface,
       child: Column(
         children: [
           TextField(
             decoration: InputDecoration(
               hintText: 'Search notes by title or description...',
-              prefixIcon: const Icon(LucideIcons.search, size: 20, color: DashboardColors.textSecondary),
+              prefixIcon: Icon(
+                LucideIcons.search,
+                size: 20,
+                color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+              ),
               filled: true,
-              fillColor: DashboardColors.background,
+              fillColor: Theme.of(context).scaffoldBackgroundColor,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
+                borderRadius: AcadexRadius.borderRadiusMd,
+                borderSide: BorderSide(color: Theme.of(context).dividerColor),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: AcadexRadius.borderRadiusMd,
+                borderSide: BorderSide(color: Theme.of(context).dividerColor),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
@@ -95,12 +113,13 @@ class NotesDashboardScreen extends ConsumerWidget {
                     ...ResourceType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.displayName))),
                   ],
                   onChanged: (val) {
-                    ref.read(notesFilterProvider.notifier).state = filters.copyWith(resourceType: val, clearResourceType: val == null);
+                    ref.read(notesFilterProvider.notifier).state =
+                        filters.copyWith(resourceType: val, clearResourceType: val == null);
                   },
                 ),
                 const SizedBox(width: 8),
 
-                // Status Filter (Only if not student, as students only see published)
+                // Status Filter (Only for non-students)
                 if (!isStudent) ...[
                   _FilterChip<NoteStatus?>(
                     label: 'All Statuses',
@@ -110,32 +129,32 @@ class NotesDashboardScreen extends ConsumerWidget {
                       ...NoteStatus.values.map((s) => DropdownMenuItem(value: s, child: Text(s.displayName))),
                     ],
                     onChanged: (val) {
-                      ref.read(notesFilterProvider.notifier).state = filters.copyWith(status: val, clearStatus: val == null);
+                      ref.read(notesFilterProvider.notifier).state =
+                          filters.copyWith(status: val, clearStatus: val == null);
                     },
                   ),
                   const SizedBox(width: 8),
                 ],
 
-                // Subject Filter (using subject dropdown if available, we can just use generic or rely on subject provider)
-                Consumer(
-                  builder: (context, ref, _) {
-                    final subjectsAsync = ref.watch(subjectsProvider);
-                    return subjectsAsync.maybeWhen(
-                      data: (subjects) => _FilterChip<String?>(
-                        label: 'All Subjects',
-                        value: filters.subjectId,
-                        items: [
-                          const DropdownMenuItem(value: null, child: Text('All Subjects')),
-                          ...subjects.map((s) => DropdownMenuItem(value: s.id, child: Text(s.code))),
-                        ],
-                        onChanged: (val) {
-                          ref.read(notesFilterProvider.notifier).state = filters.copyWith(subjectId: val, clearSubject: val == null);
-                        },
-                      ),
-                      orElse: () => const SizedBox.shrink(),
-                    );
-                  }
-                ),
+                // Subject Filter using memoized subject list
+                Consumer(builder: (context, ref, _) {
+                  final subjectsAsync = ref.watch(subjectsProvider);
+                  return subjectsAsync.maybeWhen(
+                    data: (subjects) => _FilterChip<String?>(
+                      label: 'All Subjects',
+                      value: filters.subjectId,
+                      items: [
+                        const DropdownMenuItem(value: null, child: Text('All Subjects')),
+                        ...subjects.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.code} - ${s.name}'))),
+                      ],
+                      onChanged: (val) {
+                        ref.read(notesFilterProvider.notifier).state =
+                            filters.copyWith(subjectId: val, clearSubject: val == null);
+                      },
+                    ),
+                    orElse: () => const SizedBox.shrink(),
+                  );
+                }),
               ],
             ),
           ),
@@ -163,18 +182,28 @@ class _FilterChip<T> extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: DashboardColors.background,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: DashboardColors.border),
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: AcadexRadius.borderRadiusMd,
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           value: value,
-          hint: Text(label, style: GoogleFonts.inter(fontSize: 13, color: DashboardColors.textSecondary)),
+          hint: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+            ),
+          ),
           items: items,
           onChanged: onChanged,
-          icon: const Icon(LucideIcons.chevronDown, size: 16, color: DashboardColors.textSecondary),
-          style: GoogleFonts.inter(fontSize: 13, color: DashboardColors.textPrimary),
+          icon: Icon(
+            LucideIcons.chevronDown,
+            size: 16,
+            color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+          ),
+          style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
           isDense: true,
           padding: const EdgeInsets.symmetric(vertical: 8),
         ),
@@ -191,25 +220,25 @@ class _NotesList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notesAsync = ref.watch(filteredNotesProvider);
-    final subjectsAsync = ref.watch(subjectsProvider);
+    final subjectMap = ref.watch(notesSubjectMapProvider);
 
     return notesAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, st) => Center(child: Text('Error: $e')),
+      loading: () => const AcadexLoadingState(),
+      error: (e, st) => AcadexErrorState(
+        title: 'Unable to Load Notes',
+        message: e.toString(),
+        onRetry: () => ref.refresh(userNotesProvider),
+      ),
       data: (notes) {
         if (notes.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(LucideIcons.fileX, size: 64, color: DashboardColors.textSecondary.withValues(alpha: 0.3)),
-                const SizedBox(height: 16),
-                Text(
-                  'No notes found.',
-                  style: GoogleFonts.inter(fontSize: 16, color: DashboardColors.textSecondary),
-                ),
-              ],
-            ),
+          return AcadexEmptyState(
+            title: 'No Notes Found',
+            subtitle: role == AppRole.student
+                ? 'Check back later for newly published academic resources.'
+                : 'Get started by creating your first note or chapter resource.',
+            icon: LucideIcons.fileSearch,
+            actionLabel: role == AppRole.faculty ? 'Create Note' : null,
+            onActionTap: role == AppRole.faculty ? () => context.go('/notes/new') : null,
           );
         }
 
@@ -218,24 +247,21 @@ class _NotesList extends ConsumerWidget {
           itemCount: notes.length,
           itemBuilder: (context, index) {
             final note = notes[index];
-            
-            // Resolve subject for UI
-            final subject = subjectsAsync.maybeWhen(
-              data: (subjects) => subjects.where((s) => s.id == note.subjectId).firstOrNull,
-              orElse: () => null,
-            );
+            final subject = subjectMap[note.subjectId];
 
             Widget? trailing;
-            if (role == AppRole.faculty) {
+            if (role == AppRole.faculty || role == AppRole.hod || role == AppRole.collegeAdmin || role == AppRole.superAdmin) {
               trailing = Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: const Icon(LucideIcons.edit, size: 18, color: DashboardColors.primary),
+                    icon: Icon(LucideIcons.edit, size: 18, color: Theme.of(context).primaryColor),
+                    tooltip: 'Edit Note',
                     onPressed: () => context.go('/notes/edit/${note.id}', extra: note),
                   ),
                   IconButton(
-                    icon: const Icon(LucideIcons.trash2, size: 18, color: DashboardColors.error),
+                    icon: const Icon(LucideIcons.trash2, size: 18, color: AcadexColors.error),
+                    tooltip: 'Delete Note',
                     onPressed: () => _confirmDelete(context, ref, note.id),
                   ),
                 ],
@@ -261,15 +287,22 @@ class _NotesList extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Note'),
-        content: const Text('Are you sure you want to delete this note? This action cannot be undone.'),
+        content: const Text('Are you sure you want to delete this note and its associated attachments? This action cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.error,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () {
               ref.read(noteManagementProvider.notifier).deleteNote(id);
               Navigator.pop(ctx);
             },
-            child: const Text('Delete', style: TextStyle(color: DashboardColors.error)),
+            child: const Text('Delete'),
           ),
         ],
       ),

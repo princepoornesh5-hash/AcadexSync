@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/firebase/firebase_exceptions.dart';
 import '../../../../core/firebase/firebase_services.dart';
@@ -15,8 +16,10 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<UserModel> loginAsDevelopmentRole(AppRole role) async {
-    // This method is only intended for development mock auth; production repo does not support it.
-    throw UnimplementedError('loginAsDevelopmentRole is not supported in production');
+    if (!kDebugMode) {
+      throw StateError('CRITICAL: Development test login is strictly prohibited in release builds.');
+    }
+    return MockAuthRepository().loginAsDevelopmentRole(role);
   }
 
   @override
@@ -43,6 +46,7 @@ class FirebaseAuthRepository implements AuthRepository {
       );
       
       if (acadexUser == null) {
+        await _authService.signOut();
         throw const BackendPermissionException(
           'Your Acadex profile has not been configured yet.'
         );
@@ -54,6 +58,7 @@ class FirebaseAuthRepository implements AuthRepository {
       );
       
       if (acadexUser.accountStatus != AccountStatus.active) {
+        await _authService.signOut();
         throw BackendPermissionException(
           'Your account is ${acadexUser.accountStatus.name}. Access denied.'
         );

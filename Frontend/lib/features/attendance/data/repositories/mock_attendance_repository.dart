@@ -26,6 +26,8 @@ import '../../domain/repositories/attendance_repository.dart';
 class MockAttendanceRepository implements AttendanceRepository {
   final List<AttendanceSession> _sessions = [
     AttendanceSession(
+      collegeId: 'c1',
+      departmentId: 'd1',
       id: 'sess1',
       facultyId: 'faculty1',
       subjectId: 'sub1',
@@ -47,6 +49,8 @@ class MockAttendanceRepository implements AttendanceRepository {
       ],
     ),
     AttendanceSession(
+      collegeId: 'c1',
+      departmentId: 'd1',
       id: 'sess2',
       facultyId: 'faculty1',
       subjectId: 'sub2',
@@ -69,7 +73,7 @@ class MockAttendanceRepository implements AttendanceRepository {
     ),
   ];
 
-  Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 600));
+  Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 10));
 
   @override
   Future<List<AssignedClass>> getAssignedClasses(String facultyId, DateTime date) async {
@@ -109,10 +113,10 @@ class MockAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Future<List<AttendanceHistoryRecord>> getStudentAttendanceHistory(String studentId) async {
+  Future<List<AttendanceHistoryRecord>> getStudentAttendanceHistory(String studentId, {DateTime? startDate, DateTime? endDate}) async {
     await _delay();
     final now = DateTime.now();
-    return [
+    final records = [
       AttendanceHistoryRecord(id: 'h1', date: now, subjectId: 'sub1', subjectName: 'Java Programming', facultyName: 'Prof. Alan Turing', status: AttendanceStatus.present, timeSlot: '08:30 - 09:20'),
       AttendanceHistoryRecord(id: 'h2', date: now, subjectId: 'sub2', subjectName: 'Operating Systems', facultyName: 'Dr. Grace Hopper', status: AttendanceStatus.absent, timeSlot: '09:30 - 10:20'),
       AttendanceHistoryRecord(id: 'h3', date: now, subjectId: 'sub3', subjectName: 'DBMS Lab', facultyName: 'Dr. E. F. Codd', status: AttendanceStatus.present, timeSlot: '10:30 - 11:20'),
@@ -120,6 +124,12 @@ class MockAttendanceRepository implements AttendanceRepository {
       AttendanceHistoryRecord(id: 'h5', date: now.subtract(const Duration(days: 1)), subjectId: 'sub1', subjectName: 'Java Programming', facultyName: 'Prof. Alan Turing', status: AttendanceStatus.present, timeSlot: '08:30 - 09:20'),
       AttendanceHistoryRecord(id: 'h6', date: now.subtract(const Duration(days: 2)), subjectId: 'sub2', subjectName: 'Operating Systems', facultyName: 'Dr. Grace Hopper', status: AttendanceStatus.absent, timeSlot: '09:30 - 10:20'),
     ];
+    
+    return records.where((r) {
+      if (startDate != null && r.date.isBefore(startDate)) return false;
+      if (endDate != null && r.date.isAfter(endDate)) return false;
+      return true;
+    }).toList();
   }
 
   @override

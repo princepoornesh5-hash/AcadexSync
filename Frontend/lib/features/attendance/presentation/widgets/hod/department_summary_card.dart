@@ -9,30 +9,43 @@ class DepartmentSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: DashboardColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: DashboardColors.border),
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusXl,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          width: 1,
+        ),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Department Overview", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: DashboardColors.textPrimary)),
+          Text(
+            "DEPARTMENT OVERVIEW",
+            style: AcadexTypography.eyebrow(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ),
+          ),
           const SizedBox(height: 16),
           Row(
             children: [
               _buildMetricCard(
                 "Overall Attendance",
                 "${summary.overallPercentage}%",
-                summary.overallPercentage >= 75 ? DashboardColors.success : DashboardColors.error,
+                summary.overallPercentage >= 75 ? AcadexColors.success : AcadexColors.error,
+                isDark,
               ),
               const SizedBox(width: 12),
               _buildMetricCard(
-                "Critical Students",
+                "Critical Defaulters",
                 summary.studentsBelow75.toString(),
-                DashboardColors.warning,
+                AcadexColors.warning,
+                isDark,
               ),
             ],
           ),
@@ -42,13 +55,15 @@ class DepartmentSummaryCard extends StatelessWidget {
               _buildMetricCard(
                 "Faculty Completed",
                 "${summary.facultyCompleted} / ${summary.totalFaculty}",
-                DashboardColors.primary,
+                AcadexColors.primary,
+                isDark,
               ),
               const SizedBox(width: 12),
               _buildMetricCard(
                 "Today's Classes",
                 summary.todayClasses.toString(),
-                DashboardColors.textSecondary,
+                isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                isDark,
               ),
             ],
           ),
@@ -57,20 +72,28 @@ class DepartmentSummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricCard(String title, String value, Color valueColor) {
+  Widget _buildMetricCard(String title, String value, Color valueColor, bool isDark) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: DashboardColors.background,
-          borderRadius: BorderRadius.circular(8),
+          color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+          borderRadius: AcadexRadius.borderRadiusMd,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontSize: 12, color: DashboardColors.textSecondary)),
+            Text(
+              title,
+              style: AcadexTypography.caption(
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: valueColor)),
+            Text(
+              value,
+              style: AcadexTypography.heading2(color: valueColor),
+            ),
           ],
         ),
       ),

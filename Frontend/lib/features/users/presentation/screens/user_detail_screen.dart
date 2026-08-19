@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../auth/domain/models/role_enum.dart';
@@ -12,6 +12,7 @@ import '../providers/user_providers.dart';
 import '../widgets/user_header.dart';
 import '../widgets/user_detail_card.dart';
 import '../widgets/assignment_card.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
 
 class UserDetailScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -37,42 +38,43 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
     } catch (e) {
       setState(() => _isGenerating = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to generate code: $e'), backgroundColor: DashboardColors.error));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to generate code: $e'), backgroundColor: AcadexColors.error));
       }
     }
   }
 
   void _showActivationDialog(String code) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: DashboardColors.surface,
-        title: Text('Activation Code Generated', style: GoogleFonts.inter(color: DashboardColors.textPrimary)),
+        backgroundColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        title: Text('Activation Code Generated', style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Share this code with the student safely. It will only be shown once.', style: GoogleFonts.inter(color: DashboardColors.textSecondary, fontSize: 14)),
+            Text('Share this code with the student safely. It will only be shown once.', style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted)),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: DashboardColors.background,
+                color: isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: DashboardColors.border),
+                border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
               ),
               alignment: Alignment.center,
               child: SelectableText(
                 code,
-                style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 4, color: DashboardColors.primary),
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 4, color: AcadexColors.primary),
               ),
             ),
           ],
         ),
         actions: [
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: DashboardColors.primary, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Done'),
           ),
@@ -84,6 +86,7 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(userDetailProvider(widget.userId));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     // Academic resolving providers
     final collegesAsync = ref.watch(collegesProvider);
@@ -91,14 +94,16 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
     final coursesAsync = ref.watch(coursesProvider);
     final semestersAsync = ref.watch(semestersProvider);
     final sectionsAsync = ref.watch(sectionsProvider);
-    final studentsAsync = ref.watch(studentsProvider);
+    final studentsAsync = ref.watch(studentsProvider((departmentId: null, sectionId: null)));
 
     return Scaffold(
-      backgroundColor: DashboardColors.background,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        title: const Text('User Details'),
-        backgroundColor: DashboardColors.surface,
-        foregroundColor: DashboardColors.textPrimary,
+        leading: IconButton(
+          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          onPressed: () => context.pop(),
+        ),
+        title: Text('User Details', style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink)),
         elevation: 0,
       ),
       body: userAsync.when(
@@ -124,10 +129,10 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
           String sectionName = 'N/A';
           Student? resolvedStudent;
 
-          if (user.role == AppRole.student && studentsAsync.value != null) {
-             final s = studentsAsync.value!.where((s) => s.rollNumber == user.rollNumber || s.id == user.id || s.email == user.email);
-             if (s.isNotEmpty) {
-               resolvedStudent = s.first;
+          if (user.role == AppRole.student) {
+            final studentsList = studentsAsync.items;
+            resolvedStudent = studentsList.where((s) => s.id == user.id || s.email == user.email).firstOrNull;
+            if (resolvedStudent != null) {
                if (coursesAsync.value != null) {
                  final c = coursesAsync.value!.where((c) => c.id == resolvedStudent!.courseId);
                  if (c.isNotEmpty) courseName = c.first.name;
@@ -143,8 +148,8 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
              }
           }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+          return AcadexPageContainer(
+            maxWidth: AcadexLayout.contentMaxWidth,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -188,7 +193,7 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
 
                 // Assignments
                 if (user.assignedSubjects.isNotEmpty || user.assignedClasses.isNotEmpty) ...[
-                  Text('Assignments', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: DashboardColors.textPrimary)),
+                  Text('Assignments', style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 12,
@@ -203,30 +208,30 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
 
                 // Activation Actions for students
                 if (user.role == AppRole.student && resolvedStudent != null) ...[
-                  Text('Activation Status', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: DashboardColors.textPrimary)),
+                  Text('Activation Status', style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: DashboardColors.surface,
+                      color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: DashboardColors.border),
+                      border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
                     ),
                     child: Row(
                       children: [
-                        const Icon(LucideIcons.key, color: DashboardColors.textSecondary),
+                        Icon(LucideIcons.key, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Student Activation', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: DashboardColors.textPrimary)),
-                              Text('Generate a new activation code for this student.', style: GoogleFonts.inter(fontSize: 12, color: DashboardColors.textSecondary)),
+                              Text('Student Activation', style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.w600)),
+                              Text('Generate a new activation code for this student.', style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted)),
                             ],
                           ),
                         ),
                         ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: DashboardColors.primaryLight, foregroundColor: DashboardColors.primary, elevation: 0),
+                          style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary.withValues(alpha: 0.1), foregroundColor: AcadexColors.primary, elevation: 0),
                           onPressed: _isGenerating ? null : () => _generateActivationCode(resolvedStudent!),
                           child: _isGenerating ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Generate Code'),
                         ),
@@ -237,32 +242,32 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
                 ],
 
                 // Danger Zone
-                Text('Account Actions', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: DashboardColors.textPrimary)),
+                Text('Account Actions', style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: DashboardColors.surface,
+                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: DashboardColors.error.withValues(alpha: 0.3)),
+                    border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(LucideIcons.shieldAlert, color: DashboardColors.error),
+                      const Icon(LucideIcons.shieldAlert, color: AcadexColors.error),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(user.status == UserStatus.active ? 'Deactivate Account' : 'Reactivate Account', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: DashboardColors.textPrimary)),
-                            Text('Change the access status of this user.', style: GoogleFonts.inter(fontSize: 12, color: DashboardColors.textSecondary)),
+                            Text(user.status == UserStatus.active ? 'Deactivate Account' : 'Reactivate Account', style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.w600)),
+                            Text('Change the access status of this user.', style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted)),
                           ],
                         ),
                       ),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: user.status == UserStatus.active ? DashboardColors.errorLight : DashboardColors.successLight,
-                          foregroundColor: user.status == UserStatus.active ? DashboardColors.error : DashboardColors.success,
+                          backgroundColor: user.status == UserStatus.active ? AcadexColors.error.withValues(alpha: 0.1) : AcadexColors.success.withValues(alpha: 0.1),
+                          foregroundColor: user.status == UserStatus.active ? AcadexColors.error : AcadexColors.success,
                           elevation: 0,
                         ),
                         onPressed: () {

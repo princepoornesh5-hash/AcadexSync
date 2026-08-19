@@ -1,16 +1,31 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/firebase/firebase_services.dart';
+import '../../../../core/firebase/firebase_exceptions.dart';
 import 'dart:async';
 import 'package:uuid/uuid.dart';
 import '../../../../features/auth/domain/models/role_enum.dart';
+import '../../../../features/auth/domain/models/user_model.dart';
+import '../../../academic_structure/domain/models/academic_models.dart';
 import '../../domain/models/note_model.dart';
 import 'notes_repository.dart';
 
 class MockNotesRepository implements NotesRepository {
+  final UserModel? currentUser;
+  final List<FacultyAssignment> assignments;
   final List<NoteModel> _notes = [];
   bool _initialized = false;
   
   final _controller = StreamController<List<NoteModel>>.broadcast();
 
-  Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 400));
+  MockNotesRepository({
+    this.currentUser,
+    List<FacultyAssignment>? assignments,
+  }) : assignments = assignments ?? [] {
+    _generateInitialData();
+    _initialized = true;
+  }
+
+  Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 200));
 
   void _emit() {
     if (!_controller.isClosed) {
@@ -19,6 +34,7 @@ class MockNotesRepository implements NotesRepository {
   }
 
   void _generateInitialData() {
+    if (_notes.isNotEmpty) return;
     final now = DateTime.now();
     _notes.addAll([
       NoteModel(
@@ -129,11 +145,11 @@ class MockNotesRepository implements NotesRepository {
           // Students only see published notes for their specific section/semester
           return allNotes.where((n) {
             return n.status == NoteStatus.published &&
-                   n.collegeId == collegeId &&
-                   n.departmentId == departmentId &&
-                   n.courseId == courseId &&
-                   n.semesterId == semesterId &&
-                   n.sectionId == sectionId;
+                   (collegeId == null || n.collegeId == collegeId) &&
+                   (departmentId == null || n.departmentId == departmentId) &&
+                   (courseId == null || n.courseId == courseId) &&
+                   (semesterId == null || n.semesterId == semesterId) &&
+                   (sectionId == null || n.sectionId == sectionId);
           }).toList();
           
         case AppRole.faculty:
@@ -181,6 +197,30 @@ class MockNotesRepository implements NotesRepository {
   }
 
   @override
+  Future<PaginatedResponse<NoteModel>> getPaginatedNotes({
+    required String collegeId,
+    String? departmentId,
+    String? courseId,
+    String? semesterId,
+    String? sectionId,
+    String? subjectId,
+    String? facultyId,
+    int limit = 20,
+    DocumentSnapshot? startAfter,
+  }) async {
+    final list = await getNotes(
+      collegeId: collegeId,
+      departmentId: departmentId,
+      courseId: courseId,
+      semesterId: semesterId,
+      sectionId: sectionId,
+      subjectId: subjectId,
+      facultyId: facultyId,
+    );
+    return PaginatedResponse(data: list, hasMore: false, lastDocument: null);
+  }
+
+  @override
   Future<NoteModel?> getNoteById(String id) async {
     await _delay();
     return _notes.where((n) => n.id == id).firstOrNull;
@@ -189,11 +229,35 @@ class MockNotesRepository implements NotesRepository {
   @override
   Future<void> createNote(NoteModel note) async {
     await _delay();
+    if (currentUser != null) {
+      if (currentUser!.role == AppRole.student) {
+        throw const BackendPermissionException("Students cannot author lesson notes");
+      }
+      if (currentUser!.role == AppRole.collegeAdmin) {
+        throw const BackendPermissionException("College admins cannot author lesson notes; lesson materials are faculty-owned");
+      }
+      if (currentUser!.role == AppRole.faculty) {
+        if (currentUser!.collegeId != null && currentUser!.collegeId != note.collegeId) {
+          throw const BackendPermissionException("Cross-college note authoring is prohibited");
+        }
+        if (assignments.isNotEmpty) {
+          final hasAssignment = assignments.any((a) =>
+              a.facultyId == (currentUser?.id ?? note.facultyId) &&
+              a.subjectId == note.subjectId &&
+              a.sectionId == note.sectionId &&
+              a.isActive);
+          if (!hasAssignment) {
+            throw const BackendValidationException("Faculty cannot create notes for unassigned subjects or sections");
+          }
+        }
+      }
+    }
+
     final newNote = note.copyWith(
-      id: const Uuid().v4(),
-      createdAt: DateTime.now(),
+      id: note.id.isNotEmpty ? note.id : const Uuid().v4(),
+      createdAt: note.createdAt,
       updatedAt: DateTime.now(),
-      publishedAt: note.status == NoteStatus.published ? DateTime.now() : null,
+      publishedAt: note.status == NoteStatus.published ? (note.publishedAt ?? DateTime.now()) : null,
     );
     _notes.add(newNote);
     _emit();

@@ -4,10 +4,18 @@ import '../../domain/models/search_models.dart';
 import '../../../academic_structure/data/repositories/mock_academic_repository.dart';
 // import '../../../attendance/data/repositories/mock_attendance_repository.dart';
 
-class MockSearchRepository {
+import '../../domain/repositories/search_repository.dart';
+
+class MockSearchRepository implements SearchRepository {
   Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 300));
 
-  Future<List<SearchResult>> search(String query, UserModel currentUser, {SearchResultType? filterType}) async {
+  @override
+  Future<List<SearchResult>> search(
+    String query,
+    UserModel currentUser, {
+    SearchResultType? filterType,
+    int limit = 10,
+  }) async {
     await _delay();
     
     if (query.trim().isEmpty) return [];
@@ -93,7 +101,7 @@ class MockSearchRepository {
 
     // Sort by relevance score descending
     results.sort((a, b) => b.relevanceScore.compareTo(a.relevanceScore));
-    return results;
+    return results.take(limit).toList();
   }
 
   bool _matches(String field, String query) {

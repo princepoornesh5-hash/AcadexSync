@@ -2,6 +2,8 @@ import 'attendance_record.dart';
 
 class AttendanceSession {
   final String id;
+  final String collegeId;
+  final String departmentId;
   final String facultyId;
   final String subjectId;
   final String subjectName;
@@ -20,6 +22,8 @@ class AttendanceSession {
 
   AttendanceSession({
     required this.id,
+    required this.collegeId,
+    required this.departmentId,
     required this.facultyId,
     required this.subjectId,
     required this.subjectName,
@@ -39,6 +43,8 @@ class AttendanceSession {
 
   AttendanceSession copyWith({
     String? id,
+    String? collegeId,
+    String? departmentId,
     String? facultyId,
     String? subjectId,
     String? subjectName,
@@ -57,6 +63,8 @@ class AttendanceSession {
   }) {
     return AttendanceSession(
       id: id ?? this.id,
+      collegeId: collegeId ?? this.collegeId,
+      departmentId: departmentId ?? this.departmentId,
       facultyId: facultyId ?? this.facultyId,
       subjectId: subjectId ?? this.subjectId,
       subjectName: subjectName ?? this.subjectName,
@@ -78,6 +86,8 @@ class AttendanceSession {
   factory AttendanceSession.fromJson(Map<String, dynamic> json) {
     return AttendanceSession(
       id: json['id'] as String? ?? '',
+      collegeId: json['collegeId'] as String? ?? '',
+      departmentId: json['departmentId'] as String? ?? '',
       facultyId: json['facultyId'] as String? ?? '',
       subjectId: json['subjectId'] as String? ?? '',
       subjectName: json['subjectName'] as String? ?? '',
@@ -102,6 +112,8 @@ class AttendanceSession {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'collegeId': collegeId,
+      'departmentId': departmentId,
       'facultyId': facultyId,
       'subjectId': subjectId,
       'subjectName': subjectName,

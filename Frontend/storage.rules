@@ -37,7 +37,25 @@ service firebase.storage {
         allow delete: if isAuthenticated() && isOwner(uid);
       }
 
-      // Student certificates
+      // Student achievements (Achievements feature)
+      match /students/{uid}/achievements/{fileName} {
+        allow read: if isAuthenticated(); // Faculty/HODs/Admins can view achievements
+        allow write: if isAuthenticated() && isOwner(uid)
+                     && request.resource.size < 10 * 1024 * 1024 // 10 MB max
+                     && request.resource.contentType.matches('application/pdf|image/.*|application/msword|application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        allow delete: if isAuthenticated() && isOwner(uid);
+      }
+
+      // Student official certificates (Official Certificates feature)
+      match /students/{uid}/official-certificates/{fileName} {
+        allow read: if isAuthenticated(); // Faculty/HODs/Admins can view submissions
+        allow write: if isAuthenticated() && isOwner(uid)
+                     && request.resource.size < 10 * 1024 * 1024 // 10 MB max
+                     && request.resource.contentType.matches('application/pdf|image/.*|application/msword|application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        allow delete: if isAuthenticated() && isOwner(uid);
+      }
+
+      // Student certificates (legacy)
       match /students/{uid}/certificates/{fileName} {
         allow read: if isAuthenticated(); // Faculty/HODs might need to view this
         allow write: if isAuthenticated() && isOwner(uid)

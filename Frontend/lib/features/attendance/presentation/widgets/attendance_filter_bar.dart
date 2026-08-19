@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
 
 class AttendanceFilterBar extends StatelessWidget {
   final ValueChanged<String> onSearch;
@@ -13,37 +15,50 @@ class AttendanceFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(16),
-      color: const Color(0xFFFAFAFA),
+      color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Search by Name or Roll No...",
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: DashboardColors.primary)),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
+                borderRadius: AcadexRadius.borderRadiusMd,
+                border: Border.all(
+                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                ),
               ),
-              onChanged: onSearch,
+              child: TextField(
+                style: AcadexTypography.body(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ),
+                decoration: InputDecoration(
+                  hintText: "Search by Name or Roll No...",
+                  hintStyle: AcadexTypography.body(
+                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  ),
+                  prefixIcon: Icon(
+                    LucideIcons.search,
+                    size: 18,
+                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+                onChanged: onSearch,
+              ),
             ),
           ),
           const SizedBox(width: 12),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.check_circle_outline),
-            label: const Text("Mark All Present"),
+          AcadexButton(
+            label: "Mark All Present",
+            icon: LucideIcons.checkCheck,
+            variant: AcadexButtonVariant.secondary,
             onPressed: onMarkAllPresent,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.green.shade700,
-              side: BorderSide(color: Colors.green.shade700),
-              backgroundColor: Colors.green.shade50,
-            ),
-          )
+          ),
         ],
       ),
     );

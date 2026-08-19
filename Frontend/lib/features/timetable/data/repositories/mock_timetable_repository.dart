@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:uuid/uuid.dart';
-import '../../../../features/auth/domain/models/user_model.dart';
 import '../../../../features/auth/domain/models/role_enum.dart';
 import '../../domain/models/timetable_models.dart';
 import 'timetable_repository.dart';
@@ -11,7 +10,12 @@ class MockTimetableRepository implements TimetableRepository {
   
   final _controller = StreamController<List<TimetableModel>>.broadcast();
 
-  Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 400));
+  MockTimetableRepository() {
+    _generateInitialData();
+    _initialized = true;
+  }
+
+  Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 200));
 
   void _emit() {
     if (!_controller.isClosed) {
@@ -38,20 +42,22 @@ class MockTimetableRepository implements TimetableRepository {
       switch (role) {
         case AppRole.student:
           return sectionId != null
-              ? allEntries.where((e) => e.sectionId == sectionId).toList()
+              ? allEntries.where((e) => e.sectionId == sectionId && (collegeId == null || e.collegeId == collegeId)).toList()
               : [];
         case AppRole.faculty:
-          return allEntries.where((e) => e.facultyId == userId).toList();
+          return allEntries.where((e) => e.facultyId == userId && (collegeId == null || e.collegeId == collegeId)).toList();
         case AppRole.hod:
           return departmentId != null
-              ? allEntries.where((e) => e.departmentId == departmentId).toList()
+              ? allEntries.where((e) => e.departmentId == departmentId && (collegeId == null || e.collegeId == collegeId)).toList()
               : [];
         case AppRole.collegeAdmin:
           return collegeId != null
               ? allEntries.where((e) => e.collegeId == collegeId).toList()
               : [];
         case AppRole.superAdmin:
-          return allEntries;
+          return collegeId != null
+              ? allEntries.where((e) => e.collegeId == collegeId).toList()
+              : allEntries;
       }
     });
   }
@@ -82,6 +88,9 @@ class MockTimetableRepository implements TimetableRepository {
     await _delay();
     for (final existing in _entries) {
       if (existing.id == entry.id) continue; // Skip self for updates
+      if (existing.collegeId.isNotEmpty && entry.collegeId.isNotEmpty && existing.collegeId != entry.collegeId) {
+        continue; // Different college
+      }
 
       if (existing.overlapsWith(entry)) {
         // Faculty Conflict
@@ -114,8 +123,8 @@ class MockTimetableRepository implements TimetableRepository {
     await checkConflicts(entry);
     
     final newEntry = entry.copyWith(
-      id: const Uuid().v4(),
-      createdAt: DateTime.now(),
+      id: entry.id.isNotEmpty ? entry.id : const Uuid().v4(),
+      createdAt: entry.createdAt,
       updatedAt: DateTime.now(),
     );
     
@@ -139,6 +148,306 @@ class MockTimetableRepository implements TimetableRepository {
     await _delay();
     _entries.removeWhere((e) => e.id == entryId);
     _emit();
+  }
+
+  // =========================================================
+  // AUTHORING ARCHITECTURE (MOCK IN-MEMORY IMPLEMENTATION)
+  // =========================================================
+
+  final Map<String, TimetableContainerModel> _containers = {};
+  final Map<String, List<TimetablePeriodModel>> _periods = {};
+  final Map<String, List<TimetableBreakModel>> _breaks = {};
+  final Map<String, List<TimetableGridEntryModel>> _gridEntries = {};
+
+  final _containersController = StreamController<List<TimetableContainerModel>>.broadcast();
+
+  @override
+  Future<void> createTimetableContainer(TimetableContainerModel container) async {
+    await _delay();
+    container.validate();
+    final id = container.id.isNotEmpty ? container.id : const Uuid().v4();
+    final toSave = container.copyWith(id: id, createdAt: DateTime.now(), updatedAt: DateTime.now());
+    _containers[id] = toSave;
+    _containersController.add(_containers.values.toList());
+  }
+
+  @override
+  Future<void> updateTimetableContainer(TimetableContainerModel container) async {
+    await _delay();
+    container.validate();
+    _containers[container.id] = container.copyWith(updatedAt: DateTime.now());
+    _containersController.add(_containers.values.toList());
+  }
+
+  @override
+  Future<void> deleteTimetableContainer(String timetableId) async {
+    await _delay();
+    _containers.remove(timetableId);
+    _periods.remove(timetableId);
+    _breaks.remove(timetableId);
+    _gridEntries.remove(timetableId);
+    _entries.removeWhere((e) => e.id.startsWith('pub_${timetableId}_'));
+    _emit();
+    _containersController.add(_containers.values.toList());
+  }
+
+  @override
+  Future<TimetableContainerModel?> getTimetableContainer(String timetableId) async {
+    await _delay();
+    return _containers[timetableId];
+  }
+
+  @override
+  Stream<TimetableContainerModel?> watchTimetableContainer(String timetableId) async* {
+    yield _containers[timetableId];
+    yield* _containersController.stream.map((_) => _containers[timetableId]);
+  }
+
+  @override
+  Future<List<TimetableContainerModel>> getTimetableContainers({
+    required String collegeId,
+    String? departmentId,
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? sectionId,
+    TimetableStatus? status,
+  }) async {
+    await _delay();
+    return _containers.values.where((c) {
+      if (c.collegeId != collegeId) return false;
+      if (departmentId != null && c.departmentId != departmentId) return false;
+      if (courseId != null && c.courseId != courseId) return false;
+      if (academicYearId != null && c.academicYearId != academicYearId) return false;
+      if (semesterId != null && c.semesterId != semesterId) return false;
+      if (sectionId != null && c.sectionId != sectionId) return false;
+      if (status != null && c.status != status) return false;
+      return true;
+    }).toList();
+  }
+
+  @override
+  Stream<List<TimetableContainerModel>> watchTimetableContainers({
+    required String collegeId,
+    String? departmentId,
+    String? sectionId,
+    TimetableStatus? status,
+  }) async* {
+    List<TimetableContainerModel> filter(List<TimetableContainerModel> list) {
+      return list.where((c) {
+        if (c.collegeId != collegeId) return false;
+        if (departmentId != null && c.departmentId != departmentId) return false;
+        if (sectionId != null && c.sectionId != sectionId) return false;
+        if (status != null && c.status != status) return false;
+        return true;
+      }).toList();
+    }
+
+    yield filter(_containers.values.toList());
+    yield* _containersController.stream.map((list) => filter(list));
+  }
+
+  @override
+  Future<void> savePeriod(String timetableId, TimetablePeriodModel period) async {
+    await _delay();
+    period.validate();
+    final list = _periods.putIfAbsent(timetableId, () => []);
+    list.removeWhere((p) => p.id == period.id);
+    list.add(period);
+  }
+
+  @override
+  Future<void> savePeriodsBatch(String timetableId, List<TimetablePeriodModel> periods) async {
+    await _delay();
+    for (final p in periods) {
+      p.validate();
+    }
+    final list = _periods.putIfAbsent(timetableId, () => []);
+    for (final p in periods) {
+      list.removeWhere((existing) => existing.id == p.id);
+      list.add(p);
+    }
+  }
+
+  @override
+  Future<void> deletePeriod(String timetableId, String periodId) async {
+    await _delay();
+    _periods[timetableId]?.removeWhere((p) => p.id == periodId);
+  }
+
+  @override
+  Future<List<TimetablePeriodModel>> getPeriods(String timetableId) async {
+    await _delay();
+    final list = List<TimetablePeriodModel>.from(_periods[timetableId] ?? []);
+    list.sort((a, b) => a.index.compareTo(b.index));
+    return list;
+  }
+
+  @override
+  Stream<List<TimetablePeriodModel>> watchPeriods(String timetableId) {
+    return Stream.value(List<TimetablePeriodModel>.from(_periods[timetableId] ?? []));
+  }
+
+  @override
+  Future<void> saveBreak(String timetableId, TimetableBreakModel breakModel) async {
+    await _delay();
+    breakModel.validate();
+    final list = _breaks.putIfAbsent(timetableId, () => []);
+    list.removeWhere((b) => b.id == breakModel.id);
+    list.add(breakModel);
+  }
+
+  @override
+  Future<void> saveBreaksBatch(String timetableId, List<TimetableBreakModel> breaks) async {
+    await _delay();
+    for (final b in breaks) {
+      b.validate();
+    }
+    final list = _breaks.putIfAbsent(timetableId, () => []);
+    for (final b in breaks) {
+      list.removeWhere((existing) => existing.id == b.id);
+      list.add(b);
+    }
+  }
+
+  @override
+  Future<void> deleteBreak(String timetableId, String breakId) async {
+    await _delay();
+    _breaks[timetableId]?.removeWhere((b) => b.id == breakId);
+  }
+
+  @override
+  Future<List<TimetableBreakModel>> getBreaks(String timetableId) async {
+    await _delay();
+    return List<TimetableBreakModel>.from(_breaks[timetableId] ?? []);
+  }
+
+  @override
+  Stream<List<TimetableBreakModel>> watchBreaks(String timetableId) {
+    return Stream.value(List<TimetableBreakModel>.from(_breaks[timetableId] ?? []));
+  }
+
+  @override
+  Future<void> saveGridEntry(String timetableId, TimetableGridEntryModel entry) async {
+    await _delay();
+    entry.validate();
+    final list = _gridEntries.putIfAbsent(timetableId, () => []);
+    list.removeWhere((e) => e.id == entry.id);
+    list.add(entry);
+  }
+
+  @override
+  Future<void> saveGridEntriesBatch(String timetableId, List<TimetableGridEntryModel> entries) async {
+    await _delay();
+    for (final e in entries) {
+      e.validate();
+    }
+    final list = _gridEntries.putIfAbsent(timetableId, () => []);
+    for (final e in entries) {
+      list.removeWhere((existing) => existing.id == e.id);
+      list.add(e);
+    }
+  }
+
+  @override
+  Future<void> deleteGridEntry(String timetableId, String entryId) async {
+    await _delay();
+    _gridEntries[timetableId]?.removeWhere((e) => e.id == entryId);
+  }
+
+  @override
+  Future<List<TimetableGridEntryModel>> getGridEntries(String timetableId) async {
+    await _delay();
+    return List<TimetableGridEntryModel>.from(_gridEntries[timetableId] ?? []);
+  }
+
+  @override
+  Stream<List<TimetableGridEntryModel>> watchGridEntries(String timetableId) {
+    return Stream.value(List<TimetableGridEntryModel>.from(_gridEntries[timetableId] ?? []));
+  }
+
+  @override
+  Future<void> validateTimetableForPublishing(String timetableId) async {
+    final container = _containers[timetableId];
+    if (container == null) throw Exception("Container not found");
+    container.validate();
+
+    final periods = _periods[timetableId] ?? [];
+    final breaks = _breaks[timetableId] ?? [];
+    final entries = _gridEntries[timetableId] ?? [];
+
+    if (periods.isEmpty) throw ArgumentError("No periods defined");
+
+    for (int i = 0; i < entries.length; i++) {
+      for (int j = i + 1; j < entries.length; j++) {
+        final e1 = entries[i];
+        final e2 = entries[j];
+        if (e1.dayOfWeek == e2.dayOfWeek && (e1.overlapsHorizontallyWith(e2) || e1.overlapsTimeWith(e2))) {
+          throw TimetableConflictException("Conflict detected on ${e1.dayOfWeek.displayName}");
+        }
+      }
+    }
+
+    for (final entry in entries) {
+      for (final b in breaks) {
+        if (entry.conflictsWithBreak(b)) {
+          throw TimetableConflictException("Conflict with break ${b.name}");
+        }
+      }
+    }
+  }
+
+  @override
+  Future<void> publishTimetable(String timetableId, {required String publishedBy}) async {
+    await validateTimetableForPublishing(timetableId);
+    final container = _containers[timetableId]!;
+    final entries = _gridEntries[timetableId] ?? [];
+    final now = DateTime.now();
+
+    final updated = container.copyWith(
+      status: TimetableStatus.published,
+      publishedAt: now,
+      publishedBy: publishedBy,
+      version: container.version + 1,
+      updatedAt: now,
+    );
+    _containers[timetableId] = updated;
+
+    for (final entry in entries) {
+      final projectedId = 'pub_${timetableId}_${entry.id}';
+      _entries.removeWhere((e) => e.id == projectedId);
+      _entries.add(TimetableModel(
+        id: projectedId,
+        collegeId: container.collegeId,
+        departmentId: container.departmentId,
+        courseId: container.courseId,
+        academicYearId: container.academicYearId,
+        semesterId: container.semesterId,
+        sectionId: container.sectionId,
+        subjectId: entry.subjectId,
+        facultyId: entry.facultyId,
+        dayOfWeek: entry.dayOfWeek,
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+        roomNumber: entry.roomNumber,
+        building: entry.building,
+        sessionType: entry.sessionType,
+        createdAt: container.createdAt,
+        updatedAt: now,
+      ));
+    }
+    _emit();
+    _containersController.add(_containers.values.toList());
+  }
+
+  @override
+  Future<void> unpublishTimetable(String timetableId) async {
+    final container = _containers[timetableId];
+    if (container == null) return;
+    _entries.removeWhere((e) => e.id.startsWith('pub_${timetableId}_'));
+    _containers[timetableId] = container.copyWith(status: TimetableStatus.draft, clearPublished: true, updatedAt: DateTime.now());
+    _emit();
+    _containersController.add(_containers.values.toList());
   }
 
   void _generateInitialData() {

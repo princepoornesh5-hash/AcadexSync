@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/note_mime_helper.dart';
 
 enum ResourceType { textNote, externalLink, fileAttachment }
 
@@ -74,6 +75,7 @@ class NoteModel {
   final String? fileType;
   final int? fileSize;
   final String? fileUrl;
+  final String? storagePath;
   
   // Context
   final String subjectId;
@@ -82,6 +84,7 @@ class NoteModel {
   final String departmentId;
   final String collegeId;
   final String semesterId;
+  final String? academicYearId;
   
   // Ownership
   final String facultyId; // academic faculty profile ID
@@ -107,12 +110,14 @@ class NoteModel {
     this.fileType,
     this.fileSize,
     this.fileUrl,
+    this.storagePath,
     required this.subjectId,
     required this.sectionId,
     required this.courseId,
     required this.departmentId,
     required this.collegeId,
     required this.semesterId,
+    this.academicYearId,
     required this.facultyId,
     required this.authorUserId,
     this.status = NoteStatus.draft,
@@ -120,6 +125,8 @@ class NoteModel {
     required this.createdAt,
     required this.updatedAt,
   });
+
+  bool get isPreviewable => NoteMimeHelper.isPreviewableFormat(fileType ?? fileName);
 
   factory NoteModel.fromJson(Map<String, dynamic> json) {
     return NoteModel(
@@ -134,12 +141,14 @@ class NoteModel {
       fileType: json['fileType'] as String?,
       fileSize: json['fileSize'] as int?,
       fileUrl: json['fileUrl'] as String?,
+      storagePath: json['storagePath'] as String?,
       subjectId: json['subjectId'] as String,
       sectionId: json['sectionId'] as String,
       courseId: json['courseId'] as String,
       departmentId: json['departmentId'] as String,
       collegeId: json['collegeId'] as String,
       semesterId: json['semesterId'] as String,
+      academicYearId: json['academicYearId'] as String?,
       facultyId: json['facultyId'] as String,
       authorUserId: json['authorUserId'] as String,
       status: json['status'] != null ? NoteStatusExtension.fromString(json['status'] as String) : NoteStatus.draft,
@@ -162,12 +171,14 @@ class NoteModel {
       'fileType': fileType,
       'fileSize': fileSize,
       'fileUrl': fileUrl,
+      'storagePath': storagePath,
       'subjectId': subjectId,
       'sectionId': sectionId,
       'courseId': courseId,
       'departmentId': departmentId,
       'collegeId': collegeId,
       'semesterId': semesterId,
+      if (academicYearId != null) 'academicYearId': academicYearId,
       'facultyId': facultyId,
       'authorUserId': authorUserId,
       'status': status.value,
@@ -196,12 +207,14 @@ class NoteModel {
     String? fileType,
     int? fileSize,
     String? fileUrl,
+    String? storagePath,
     String? subjectId,
     String? sectionId,
     String? courseId,
     String? departmentId,
     String? collegeId,
     String? semesterId,
+    String? academicYearId,
     String? facultyId,
     String? authorUserId,
     NoteStatus? status,
@@ -221,12 +234,14 @@ class NoteModel {
       fileType: fileType ?? this.fileType,
       fileSize: fileSize ?? this.fileSize,
       fileUrl: fileUrl ?? this.fileUrl,
+      storagePath: storagePath ?? this.storagePath,
       subjectId: subjectId ?? this.subjectId,
       sectionId: sectionId ?? this.sectionId,
       courseId: courseId ?? this.courseId,
       departmentId: departmentId ?? this.departmentId,
       collegeId: collegeId ?? this.collegeId,
       semesterId: semesterId ?? this.semesterId,
+      academicYearId: academicYearId ?? this.academicYearId,
       facultyId: facultyId ?? this.facultyId,
       authorUserId: authorUserId ?? this.authorUserId,
       status: status ?? this.status,

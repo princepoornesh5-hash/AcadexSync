@@ -1,4 +1,6 @@
 import '../../domain/models/note_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/firebase/firebase_services.dart';
 import '../../../../features/auth/domain/models/role_enum.dart';
 
 abstract class NotesRepository {
@@ -22,6 +24,18 @@ abstract class NotesRepository {
     String? sectionId,
     String? subjectId,
     String? facultyId,
+  });
+
+  Future<PaginatedResponse<NoteModel>> getPaginatedNotes({
+    required String collegeId,
+    String? departmentId,
+    String? courseId,
+    String? semesterId,
+    String? sectionId,
+    String? subjectId,
+    String? facultyId,
+    int limit = 20,
+    DocumentSnapshot? startAfter,
   });
 
   /// Fetches a specific note by ID.

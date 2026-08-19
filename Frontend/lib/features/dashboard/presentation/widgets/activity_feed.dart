@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/models/activity_item_model.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 
 class ActivityFeed extends StatelessWidget {
   final List<ActivityItemModel> items;
@@ -10,51 +10,63 @@ class ActivityFeed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (items.isEmpty) {
+      return const AcadexEmptyState(
+        title: 'No recent activity',
+        subtitle: 'Activity logs and events will appear here.',
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
-        color: DashboardColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: DashboardColors.border),
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          width: 1,
+        ),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
       child: ListView.separated(
         physics: const NeverScrollableScrollPhysics(),
         shrinkWrap: true,
         itemCount: items.length,
-        separatorBuilder: (_, _) => const Divider(height: 1, indent: 72),
+        separatorBuilder: (_, _) => Divider(
+          height: 1,
+          indent: 68,
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
         itemBuilder: (context, index) {
           final item = items[index];
           return ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: Container(
-              width: 44,
-              height: 44,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: item.iconBackground,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: AcadexRadius.borderRadiusMd,
               ),
-              child: Icon(item.icon, color: item.iconColor, size: 20),
+              child: Icon(item.icon, color: item.iconColor, size: 18),
             ),
             title: Text(
               item.title,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: DashboardColors.textPrimary,
-              ),
+              style: AcadexTypography.body(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
             subtitle: Text(
               item.subtitle,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: DashboardColors.textSecondary,
+              style: AcadexTypography.caption(
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
               ),
             ),
             trailing: Text(
               item.timeAgo,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color: DashboardColors.textMuted,
-                fontWeight: FontWeight.w500,
+              style: AcadexTypography.caption(
+                color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
               ),
             ),
           );

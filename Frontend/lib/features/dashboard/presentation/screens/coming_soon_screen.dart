@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
 
 class ComingSoonScreen extends StatelessWidget {
   final String moduleName;
@@ -17,15 +18,12 @@ class ComingSoonScreen extends StatelessWidget {
         return LucideIcons.calendarDays;
       case 'notes':
         return LucideIcons.fileText;
-
       case 'profile':
         return LucideIcons.userCircle;
       case 'settings':
         return LucideIcons.settings;
       case 'notifications':
         return LucideIcons.bell;
-      case 'modules':
-        return LucideIcons.grid3x3;
       default:
         return LucideIcons.layoutDashboard;
     }
@@ -33,88 +31,79 @@ class ComingSoonScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: AppTheme.lightTheme,
-      child: Scaffold(
-        backgroundColor: DashboardColors.background,
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(LucideIcons.arrowLeft),
-            onPressed: () {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go('/login');
-              }
-            },
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
-          title: Text(moduleName),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/login');
+            }
+          },
         ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
+        title: Text(
+          moduleName,
+          style: AcadexTypography.title(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
+        ),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 100,
-                  height: 100,
+                  width: 80,
+                  height: 80,
                   decoration: BoxDecoration(
-                    color: DashboardColors.primaryLight,
-                    borderRadius: BorderRadius.circular(28),
+                    color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.25) : AcadexColors.primaryLight,
+                    borderRadius: AcadexRadius.borderRadiusXl,
                   ),
                   child: Icon(
                     _iconForModule(moduleName),
-                    color: DashboardColors.primary,
-                    size: 50,
+                    color: isDark ? AcadexColors.primaryMuted : AcadexColors.primary,
+                    size: 40,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  moduleName,
+                  style: AcadexTypography.heading1(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const AcadexBadge(
+                  label: 'COMING SOON',
+                  variant: AcadexBadgeVariant.warning,
+                  icon: LucideIcons.clock,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'This module is currently being finalized for the upcoming Acadex semester release.',
+                  textAlign: TextAlign.center,
+                  style: AcadexTypography.body(
+                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                   ),
                 ),
                 const SizedBox(height: 32),
-                Text(
-                  moduleName,
-                  style: GoogleFonts.inter(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    color: DashboardColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: DashboardColors.warningLight,
-                    borderRadius: BorderRadius.circular(9999),
-                  ),
-                  child: Text(
-                    'Coming Soon',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: DashboardColors.warning,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'This module is under development and will be available in a future update.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    color: DashboardColors.textSecondary,
-                    height: 1.6,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    if (context.canPop()) {
-                      context.pop();
-                    } else {
-                      context.go('/login');
-                    }
-                  },
-                  icon: const Icon(LucideIcons.arrowLeft, size: 16),
-                  label: const Text('Go Back'),
+                AcadexButton(
+                  label: 'Return to Dashboard',
+                  icon: LucideIcons.arrowLeft,
+                  variant: AcadexButtonVariant.secondary,
+                  onPressed: () => context.go('/dashboard'),
                 ),
               ],
             ),

@@ -1,10 +1,13 @@
 import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
 import '../../../../core/firebase/firebase_services.dart';
+import '../../../../core/firebase/firebase_initializer.dart';
 import '../../domain/models/assigned_class.dart';
 import '../../domain/models/attendance_history_record.dart';
 import '../../domain/models/attendance_record.dart';
 import '../../domain/models/attendance_session.dart';
 import '../../domain/models/attendance_status.dart';
+import '../../../../features/auth/domain/models/user_model.dart';
 import '../../domain/models/college_attendance_comparison.dart';
 import '../../domain/models/college_attendance_summary.dart';
 import '../../domain/models/college_faculty_completion.dart';
@@ -24,47 +27,71 @@ import '../../domain/models/super_admin_insight.dart';
 import '../../domain/models/super_admin_student_shortage.dart';
 import '../../domain/models/super_admin_system_health.dart';
 import '../../domain/repositories/attendance_repository.dart';
+import '../../../../features/notifications/domain/services/notification_service.dart';
+import '../../../../features/timetable/domain/models/timetable_models.dart';
 
 class FirebaseAttendanceRepository implements AttendanceRepository {
   final FirestoreService _firestoreService;
+  final UserModel? _currentUser;
+  final NotificationService? notificationService;
 
-  FirebaseAttendanceRepository(this._firestoreService);
+  FirebaseAttendanceRepository(
+    this._firestoreService, 
+    this._currentUser, {
+    this.notificationService,
+  });
+
+  void _debugLog(String operation, Map<String, dynamic> metadata) {
+    if (kDebugMode) {
+      final safeMetadata = Map<String, dynamic>.from(metadata)
+        ..removeWhere((key, _) => key.toLowerCase().contains('password') || key.toLowerCase().contains('secret'));
+      final formatted = safeMetadata.entries.map((e) => '${e.key}=${e.value}').join(', ');
+      developer.log('[Attendance] $operation: $formatted', name: 'Acadex.Attendance');
+    }
+  }
 
   @override
   Future<List<AssignedClass>> getAssignedClasses(String facultyId, DateTime date) async {
-    return [
-      AssignedClass(
-        id: 'ac1',
-        subjectId: 'sub1',
-        subjectName: 'Java Programming',
-        sectionId: 'sec1',
-        sectionName: 'DCME 3-A',
-        semester: 'Semester 3',
-        timeSlot: '08:30 - 09:20',
+    final userCollegeId = _currentUser?.collegeId;
+    _debugLog('getAssignedClasses', {
+      'facultyId': facultyId,
+      'date': date.toIso8601String(),
+      'collegeId': userCollegeId,
+      'role': _currentUser?.role.name,
+    });
+
+    final dayIndex = date.weekday - 1;
+    final dayName = TimetableDay.values[dayIndex].name;
+
+    final filters = <String, dynamic>{
+      'facultyId': facultyId,
+      'dayOfWeek': dayName,
+      if (userCollegeId != null && userCollegeId.isNotEmpty)
+        'collegeId': userCollegeId,
+    };
+
+    final timetableDocs = await _firestoreService.queryCollection('timetable', filters);
+
+    final assignedClasses = <AssignedClass>[];
+    for (var doc in timetableDocs) {
+      final subjectId = doc['subjectId'] as String;
+      final sectionId = doc['sectionId'] as String;
+
+      final subjectDoc = await _firestoreService.getDocument('subjects', subjectId);
+      final sectionDoc = await _firestoreService.getDocument('sections', sectionId);
+
+      assignedClasses.add(AssignedClass(
+        id: doc['id'] as String,
+        subjectId: subjectId,
+        subjectName: subjectDoc?['name'] ?? subjectId,
+        sectionId: sectionId,
+        sectionName: sectionDoc?['name'] ?? sectionId,
+        semester: doc['semesterId'] ?? '',
+        timeSlot: '${doc['startTime']} - ${doc['endTime']}',
         date: date,
-      ),
-      AssignedClass(
-        id: 'ac2',
-        subjectId: 'sub2',
-        subjectName: 'Operating Systems',
-        sectionId: 'sec2',
-        sectionName: 'DCME 5-A',
-        semester: 'Semester 5',
-        timeSlot: '09:30 - 10:20',
-        date: date,
-        isAttendanceMarked: true,
-      ),
-      AssignedClass(
-        id: 'ac3',
-        subjectId: 'sub3',
-        subjectName: 'DBMS Lab',
-        sectionId: 'sec3',
-        sectionName: 'DCME 3-B',
-        semester: 'Semester 3',
-        timeSlot: '10:30 - 11:20',
-        date: date,
-      ),
-    ];
+      ));
+    }
+    return assignedClasses;
   }
 
   @override
@@ -75,87 +102,250 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
   @override
   Future<List<AttendanceRecord>> getStudentsForSection(String sectionId, String subjectId, DateTime date) async {
     final sessionId = '${sectionId}_${subjectId}_${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
+    final userCollegeId = _currentUser?.collegeId;
+    _debugLog('getStudentsForSection', {
+      'sectionId': sectionId,
+      'subjectId': subjectId,
+      'sessionId': sessionId,
+      'collegeId': userCollegeId,
+    });
+
     final doc = await _firestoreService.getDocument('attendanceSessions', sessionId);
     if (doc != null) {
       final session = AttendanceSession.fromJson(doc);
       return session.records;
     }
-    return [
-      AttendanceRecord(id: 'rec_1', studentId: 's1', studentName: 'John Doe', rollNumber: 'CS2025001', sectionId: sectionId),
-      AttendanceRecord(id: 'rec_2', studentId: 's2', studentName: 'Jane Smith', rollNumber: 'CS2025002', sectionId: sectionId),
-      AttendanceRecord(id: 'rec_3', studentId: 's3', studentName: 'Alice Bob', rollNumber: 'CS2025003', sectionId: sectionId),
-      AttendanceRecord(id: 'rec_4', studentId: 's4', studentName: 'Michael Chang', rollNumber: 'CS2025004', sectionId: sectionId),
-      AttendanceRecord(id: 'rec_5', studentId: 's5', studentName: 'Sarah Connor', rollNumber: 'CS2025005', sectionId: sectionId),
-      AttendanceRecord(id: 'rec_6', studentId: 's6', studentName: 'David Bowman', rollNumber: 'CS2025006', sectionId: sectionId),
-    ];
+
+    final filters = <String, dynamic>{
+      'sectionId': sectionId, 
+      'isActive': true,
+      if (userCollegeId != null && userCollegeId.isNotEmpty)
+        'collegeId': userCollegeId,
+    };
+
+    final studentDocs = await _firestoreService.queryCollection('students', filters);
+    
+    return studentDocs.map((doc) => AttendanceRecord(
+      id: doc['id'] as String,
+      studentId: doc['id'] as String,
+      studentName: doc['name'] as String,
+      rollNumber: doc['rollNumber'] as String,
+      sectionId: sectionId,
+    )).toList();
   }
 
   @override
   Future<bool> saveSession(AttendanceSession session) async {
     final sessionId = '${session.sectionId}_${session.subjectId}_${session.date.year}${session.date.month.toString().padLeft(2, '0')}${session.date.day.toString().padLeft(2, '0')}';
     final now = DateTime.now();
+
+    final collegeId = session.collegeId.isNotEmpty 
+        ? session.collegeId 
+        : (_currentUser?.collegeId ?? (FirebaseInitializer.shouldUseMock ? 'col-1' : ''));
+    final departmentId = session.departmentId.isNotEmpty 
+        ? session.departmentId 
+        : (_currentUser?.departmentId ?? (FirebaseInitializer.shouldUseMock ? 'dept-1' : ''));
+    final facultyId = session.facultyId.isNotEmpty 
+        ? session.facultyId 
+        : (_currentUser?.id ?? '');
+
+    if (!FirebaseInitializer.shouldUseMock) {
+      if (collegeId.isEmpty || facultyId.isEmpty) {
+        throw StateError("Incomplete profile: Missing collegeId or facultyId.");
+      }
+    }
+
     final updatedSession = session.copyWith(
       id: sessionId,
+      collegeId: collegeId,
+      departmentId: departmentId,
+      facultyId: facultyId,
       isSubmitted: true,
       createdAt: session.createdAt ?? now,
-      createdBy: session.createdBy ?? session.facultyId,
+      createdBy: session.createdBy ?? facultyId,
       lastModifiedAt: now,
-      lastModifiedBy: session.facultyId,
+      lastModifiedBy: facultyId,
     );
 
-    developer.log('Saving Attendance Session $sessionId to Firestore', name: 'Acadex.Attendance');
-    await _firestoreService.setDocument('attendanceSessions', sessionId, updatedSession.toJson());
+    _debugLog('saveSession', {
+      'sessionId': sessionId,
+      'facultyId': facultyId,
+      'collegeId': collegeId,
+      'departmentId': departmentId,
+      'recordsCount': session.records.length,
+    });
+
+    final batchDocs = <String, Map<String, dynamic>>{};
+    batchDocs['attendanceSessions/$sessionId'] = updatedSession.toJson();
+
+    final dateString = session.date.toIso8601String().split('T').first;
 
     for (final record in session.records) {
       if (record.status != null) {
         final recordId = '${sessionId}_${record.studentId}';
-        await _firestoreService.setDocument('attendance', recordId, {
+        batchDocs['attendance/$recordId'] = {
           'attendanceId': recordId,
           'sessionId': sessionId,
           'studentId': record.studentId,
           'studentName': record.studentName,
           'rollNumber': record.rollNumber,
-          'sectionId': record.sectionId,
+          'sectionId': record.sectionId.isNotEmpty ? record.sectionId : session.sectionId,
           'subjectId': session.subjectId,
-          'facultyId': session.facultyId,
-          'date': session.date.toIso8601String().split('T').first,
+          'facultyId': facultyId,
+          'collegeId': collegeId,
+          'departmentId': departmentId,
+          'date': dateString,
           'status': record.status!.name,
           'markedAt': now.toIso8601String(),
-          'markedBy': session.facultyId,
-        });
+          'markedBy': facultyId,
+        };
       }
     }
+
+    await _firestoreService.batchSetDocuments(batchDocs);
+
+    if (notificationService != null) {
+      try {
+        await notificationService!.notifyAttendanceMarked(
+          sectionId: updatedSession.sectionId,
+          subjectName: updatedSession.subjectName.isNotEmpty ? updatedSession.subjectName : updatedSession.subjectId,
+          sessionDate: updatedSession.date,
+        );
+      } catch (e) {
+        _debugLog('notifyAttendanceMarked_failed', {'error': e.toString()});
+      }
+    }
+
     return true;
   }
 
   @override
   Future<List<AttendanceSession>> getRecentSessions(String facultyId) async {
-    return [];
+    final userCollegeId = _currentUser?.collegeId;
+    _debugLog('getRecentSessions', {
+      'facultyId': facultyId,
+      'collegeId': userCollegeId,
+    });
+
+    final filters = <String, dynamic>{
+      'facultyId': facultyId,
+      if (userCollegeId != null && userCollegeId.isNotEmpty)
+        'collegeId': userCollegeId,
+    };
+
+    final docs = await _firestoreService.queryCollection('attendanceSessions', filters);
+    final sessions = docs.map((doc) => AttendanceSession.fromJson(doc)).toList();
+    sessions.sort((a, b) => b.date.compareTo(a.date));
+    return sessions;
   }
 
   @override
   Future<List<SubjectAttendance>> getStudentSubjectAttendance(String studentId) async {
-    return [
-      SubjectAttendance(subjectId: 'sub1', subjectName: 'Java Programming', subjectCode: 'CS301', facultyName: 'Prof. Alan Turing', totalClasses: 40, attendedClasses: 35, missedClasses: 5),
-      SubjectAttendance(subjectId: 'sub2', subjectName: 'Operating Systems', subjectCode: 'CS302', facultyName: 'Dr. Grace Hopper', totalClasses: 38, attendedClasses: 20, missedClasses: 18),
-      SubjectAttendance(subjectId: 'sub3', subjectName: 'DBMS Lab', subjectCode: 'CS303L', facultyName: 'Dr. E. F. Codd', totalClasses: 20, attendedClasses: 19, missedClasses: 1),
-      SubjectAttendance(subjectId: 'sub4', subjectName: 'Mathematics III', subjectCode: 'MA301', facultyName: 'Prof. John Nash', totalClasses: 42, attendedClasses: 30, missedClasses: 12),
-    ];
+    final userCollegeId = _currentUser?.collegeId;
+    _debugLog('getStudentSubjectAttendance', {
+      'studentId': studentId,
+      'collegeId': userCollegeId,
+    });
+
+    final filters = <String, dynamic>{
+      'studentId': studentId,
+      if (userCollegeId != null && userCollegeId.isNotEmpty)
+        'collegeId': userCollegeId,
+    };
+
+    final docs = await _firestoreService.queryCollection('attendance', filters);
+    
+    final Map<String, int> totalClasses = {};
+    final Map<String, int> attendedClasses = {};
+    
+    for (var doc in docs) {
+      final subjectId = doc['subjectId'] as String;
+      final status = doc['status'] as String;
+      
+      totalClasses[subjectId] = (totalClasses[subjectId] ?? 0) + 1;
+      if (status == AttendanceStatus.present.name || status == AttendanceStatus.late.name) {
+        attendedClasses[subjectId] = (attendedClasses[subjectId] ?? 0) + 1;
+      }
+    }
+
+    final result = <SubjectAttendance>[];
+    for (final subjectId in totalClasses.keys) {
+      final subjectDoc = await _firestoreService.getDocument('subjects', subjectId);
+      final total = totalClasses[subjectId]!;
+      final attended = attendedClasses[subjectId] ?? 0;
+      
+      result.add(SubjectAttendance(
+        subjectId: subjectId,
+        subjectName: subjectDoc?['name'] ?? subjectId,
+        subjectCode: subjectDoc?['code'] ?? '',
+        facultyName: 'Assigned Faculty',
+        totalClasses: total,
+        attendedClasses: attended,
+        missedClasses: total - attended,
+      ));
+    }
+    return result;
   }
 
   @override
   Future<StudentAttendanceOverview> getStudentAttendanceOverview(String studentId) async {
-    return StudentAttendanceOverview(overallPercentage: 78.5);
+    final stats = await getStudentSubjectAttendance(studentId);
+    if (stats.isEmpty) return StudentAttendanceOverview(overallPercentage: 0.0);
+    
+    int total = 0;
+    int attended = 0;
+    for (var stat in stats) {
+      total += stat.totalClasses;
+      attended += stat.attendedClasses;
+    }
+    return StudentAttendanceOverview(overallPercentage: total > 0 ? (attended / total) * 100 : 0.0);
   }
 
   @override
-  Future<List<AttendanceHistoryRecord>> getStudentAttendanceHistory(String studentId) async {
-    final now = DateTime.now();
-    return [
-      AttendanceHistoryRecord(id: 'h1', date: now, subjectId: 'sub1', subjectName: 'Java Programming', facultyName: 'Prof. Alan Turing', status: AttendanceStatus.present, timeSlot: '08:30 - 09:20'),
-      AttendanceHistoryRecord(id: 'h2', date: now, subjectId: 'sub2', subjectName: 'Operating Systems', facultyName: 'Dr. Grace Hopper', status: AttendanceStatus.absent, timeSlot: '09:30 - 10:20'),
-      AttendanceHistoryRecord(id: 'h3', date: now, subjectId: 'sub3', subjectName: 'DBMS Lab', facultyName: 'Dr. E. F. Codd', status: AttendanceStatus.present, timeSlot: '10:30 - 11:20'),
-    ];
+  Future<List<AttendanceHistoryRecord>> getStudentAttendanceHistory(String studentId, {DateTime? startDate, DateTime? endDate}) async {
+    final userCollegeId = _currentUser?.collegeId;
+    _debugLog('getStudentAttendanceHistory', {
+      'studentId': studentId,
+      'collegeId': userCollegeId,
+    });
+
+    final filters = <String, dynamic>{
+      'studentId': studentId,
+      if (userCollegeId != null && userCollegeId.isNotEmpty)
+        'collegeId': userCollegeId,
+    };
+
+    final docs = await _firestoreService.queryCollection('attendance', filters);
+    
+    final records = <AttendanceHistoryRecord>[];
+    for (var doc in docs) {
+      final dateStr = doc['date'] as String;
+      final date = DateTime.parse(dateStr);
+      
+      if (startDate != null && date.isBefore(startDate)) continue;
+      if (endDate != null && date.isAfter(endDate)) continue;
+      
+      final subjectId = doc['subjectId'] as String;
+      final subjectDoc = await _firestoreService.getDocument('subjects', subjectId);
+      final facultyId = doc['facultyId'] as String;
+      final facultyDoc = await _firestoreService.getDocument('faculty', facultyId);
+      
+      final statusStr = doc['status'] as String;
+      final status = AttendanceStatus.values.firstWhere((e) => e.name == statusStr, orElse: () => AttendanceStatus.absent);
+
+      records.add(AttendanceHistoryRecord(
+        id: doc['attendanceId'] as String,
+        date: date,
+        subjectId: subjectId,
+        subjectName: subjectDoc?['name'] ?? subjectId,
+        facultyName: facultyDoc?['name'] ?? 'Faculty',
+        status: status,
+        timeSlot: 'Regular Class',
+      ));
+    }
+    
+    records.sort((a, b) => b.date.compareTo(a.date));
+    return records;
   }
 
   @override

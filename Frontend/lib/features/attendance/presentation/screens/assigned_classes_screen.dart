@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../providers/attendance_providers.dart';
 import '../widgets/assigned_class_card.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/presentation/widgets/acadex_empty_state.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 
 class AssignedClassesScreen extends ConsumerWidget {
   const AssignedClassesScreen({super.key});
@@ -14,107 +18,205 @@ class AssignedClassesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final assignedClassesAsync = ref.watch(assignedClassesProvider);
     final date = ref.watch(selectedDateProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final isToday = DateUtils.isSameDay(date, DateTime.now());
+    final formattedDate = DateFormat('EEE, MMM d, yyyy').format(date);
 
     return Scaffold(
-      backgroundColor: DashboardColors.background,
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      body: AcadexPageContainer(
+        maxWidth: AcadexLayout.contentMaxWidth,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Page Header with History Action
+            AcadexPageHeader(
+                  title: "Today's Classes",
+                  subtitle: "Manage assigned sections, timetable slots, and student attendance rosters.",
+                  actions: [
+                    AcadexButton(
+                      label: "Attendance History",
+                      icon: LucideIcons.history,
+                      variant: AcadexButtonVariant.secondary,
+                      onPressed: () => context.push('/attendance/faculty/history'),
+                    ),
+                  ],
+                ),
+
+                // Date Navigation Bar
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                    borderRadius: AcadexRadius.borderRadiusLg,
+                    border: Border.all(
+                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      width: 1,
+                    ),
+                    boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+                  ),
+                  child: Row(
                     children: [
-                      const Text(
-                        "Today's Classes",
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: DashboardColors.textPrimary,
+                      // Previous Day
+                      IconButton(
+                        icon: Icon(
+                          LucideIcons.chevronLeft,
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          size: 18,
                         ),
+                        tooltip: "Previous Day",
+                        onPressed: () {
+                          ref.read(selectedDateProvider.notifier).state =
+                              date.subtract(const Duration(days: 1));
+                        },
                       ),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(LucideIcons.history, color: DashboardColors.primary),
-                            tooltip: "View History",
-                            onPressed: () => context.push('/attendance/faculty/history'),
+                      
+                      // Today Button
+                      if (!isToday)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: AcadexButton(
+                            label: "Today",
+                            variant: AcadexButtonVariant.secondary,
+                            onPressed: () {
+                              ref.read(selectedDateProvider.notifier).state = DateTime.now();
+                            },
                           ),
-                          // Mock Date Picker Button
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: DashboardColors.surface,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: DashboardColors.border),
-                            ),
+                        ),
+
+                      // Current Date Display
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: date,
+                              firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                            );
+                            if (picked != null) {
+                              ref.read(selectedDateProvider.notifier).state = picked;
+                            }
+                          },
+                          borderRadius: AcadexRadius.borderRadiusMd,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
                             child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(LucideIcons.calendar, size: 16, color: DashboardColors.primary),
-                                const SizedBox(width: 6),
+                                Icon(
+                                  LucideIcons.calendar,
+                                  size: 16,
+                                  color: AcadexColors.primary,
+                                ),
+                                const SizedBox(width: 8),
                                 Text(
-                                  "${date.day}/${date.month}",
-                                  style: const TextStyle(fontWeight: FontWeight.w600, color: DashboardColors.textPrimary, fontSize: 13),
+                                  formattedDate,
+                                  style: AcadexTypography.body(
+                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  ).copyWith(fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
-                          )
-                        ],
-                      )
+                          ),
+                        ),
+                      ),
+
+                      // Next Day
+                      IconButton(
+                        icon: Icon(
+                          LucideIcons.chevronRight,
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          size: 18,
+                        ),
+                        tooltip: "Next Day",
+                        onPressed: () {
+                          ref.read(selectedDateProvider.notifier).state =
+                              date.add(const Duration(days: 1));
+                        },
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "Select a class to mark attendance.",
-                    style: TextStyle(color: DashboardColors.textSecondary, fontSize: 16),
+                ),
+
+                // Classes Content List / Grid
+                assignedClassesAsync.when(
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(40),
+                      child: AcadexLoadingState(message: "Loading scheduled classes..."),
+                    ),
                   ),
-                ],
-              ),
+                  error: (err, stack) => Center(
+                    child: AcadexErrorState(
+                      message: "Unable to load today's classes: $err",
+                      onRetry: () => ref.refresh(assignedClassesProvider),
+                    ),
+                  ),
+                  data: (classes) {
+                    if (classes.isEmpty) {
+                      return const Center(
+                        child: AcadexEmptyState(
+                          title: "No Scheduled Classes",
+                          subtitle: "You don't have any teaching sessions scheduled for this date.",
+                          icon: LucideIcons.calendarOff,
+                        ),
+                      );
+                    }
+
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        final width = constraints.maxWidth;
+                        final crossAxisCount = width > 900 ? 2 : 1;
+
+                        if (crossAxisCount == 1) {
+                          return ListView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            itemCount: classes.length,
+                            itemBuilder: (context, index) {
+                              final c = classes[index];
+                              return AssignedClassCard(
+                                assignedClass: c,
+                                onTap: () {
+                                  ref.read(activeClassProvider.notifier).state = c;
+                                  context.push('/attendance/mark');
+                                },
+                              );
+                            },
+                          );
+                        }
+
+                        return GridView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount: classes.length,
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 2.3,
+                          ),
+                          itemBuilder: (context, index) {
+                            final c = classes[index];
+                            return AssignedClassCard(
+                              assignedClass: c,
+                              onTap: () {
+                                ref.read(activeClassProvider.notifier).state = c;
+                                context.push('/attendance/mark');
+                              },
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ],
             ),
           ),
-          assignedClassesAsync.when(
-            loading: () => const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator(color: DashboardColors.primary)),
-            ),
-            error: (err, stack) => SliverFillRemaining(
-              child: Center(child: Text("Error: $err", style: const TextStyle(color: DashboardColors.error))),
-            ),
-            data: (classes) {
-              if (classes.isEmpty) {
-                return const SliverFillRemaining(
-                  child: AcadexEmptyState(
-                    title: "No Classes Today",
-                    subtitle: "You don't have any classes scheduled for this date.",
-                    icon: LucideIcons.calendarOff,
-                  ),
-                );
-              }
-              return SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final c = classes[index];
-                      return AssignedClassCard(
-                        assignedClass: c,
-                        onTap: () {
-                          // Set active class and navigate to mark screen
-                          ref.read(activeClassProvider.notifier).state = c;
-                          context.push('/attendance/mark');
-                        },
-                      );
-                    },
-                    childCount: classes.length,
-                  ),
-                ),
-              );
-            },
-          )
-        ],
-      ),
     );
   }
 }

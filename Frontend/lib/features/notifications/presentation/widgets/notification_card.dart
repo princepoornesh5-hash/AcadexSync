@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/models/notification_models.dart';
@@ -44,20 +43,20 @@ class NotificationCard extends StatelessWidget {
     }
   }
 
-  Color _getColorForPriority(NotificationPriority priority) {
+  Color _getColorForPriority(BuildContext context, NotificationPriority priority) {
     switch (priority) {
-      case NotificationPriority.critical: return DashboardColors.error;
-      case NotificationPriority.high: return DashboardColors.warning;
-      case NotificationPriority.normal: return DashboardColors.primary;
-      case NotificationPriority.low: return DashboardColors.textSecondary;
+      case NotificationPriority.critical: return AcadexColors.error;
+      case NotificationPriority.high: return AcadexColors.warning;
+      case NotificationPriority.normal: return Theme.of(context).primaryColor;
+      case NotificationPriority.low: return Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final isUnread = !notification.isRead;
-    final iconColor = _getColorForPriority(notification.priority);
-    final bgColor = isUnread ? DashboardColors.surface : DashboardColors.surface;
+    final iconColor = _getColorForPriority(context, notification.priority);
+    final bgColor = Theme.of(context).colorScheme.surface;
 
     return Dismissible(
       key: Key(notification.id),
@@ -66,7 +65,7 @@ class NotificationCard extends StatelessWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
-        color: DashboardColors.error,
+        color: AcadexColors.error,
         child: const Icon(LucideIcons.trash2, color: Colors.white),
       ),
       child: InkWell(
@@ -77,10 +76,10 @@ class NotificationCard extends StatelessWidget {
           }
         },
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: bgColor,
-            border: Border(bottom: BorderSide(color: AppColors.hairlineDark)),
+            border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,30 +111,21 @@ class NotificationCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             notification.title,
-                            style: GoogleFonts.inter(
-                              fontSize: 15,
+                            style: AcadexTypography.body(color: isUnread ? Theme.of(context).colorScheme.onSurface : (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)).copyWith(
                               fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
-                              color: isUnread ? AppColors.onDark : AppColors.textMuted,
                             ),
                           ),
                         ),
                         Text(
                           _formatRelativeTime(notification.timestamp),
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: AppColors.textMuted,
-                          ),
+                          style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
                     Text(
                       notification.message,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: AppColors.textMuted,
-                        height: 1.4,
-                      ),
+                      style: AcadexTypography.bodySmall(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
                     ),
                     if (notification.navigationTarget != null)
                       Padding(
@@ -144,14 +134,10 @@ class NotificationCard extends StatelessWidget {
                           children: [
                             Text(
                               'View details',
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primary,
-                              ),
+                              style: AcadexTypography.caption(color: Theme.of(context).primaryColor).copyWith(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(LucideIcons.chevronRight, size: 14, color: AppColors.primary),
+                            Icon(LucideIcons.chevronRight, size: 14, color: Theme.of(context).primaryColor),
                           ],
                         ),
                       ),
@@ -166,8 +152,8 @@ class NotificationCard extends StatelessWidget {
                   child: Container(
                     width: 10,
                     height: 10,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
                       shape: BoxShape.circle,
                     ),
                   ),

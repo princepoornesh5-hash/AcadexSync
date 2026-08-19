@@ -4,6 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../providers/activation_providers.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../core/presentation/widgets/acadex_card.dart';
+import '../../../../core/presentation/widgets/acadex_form_controls.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
 
 class ActivationScreen extends ConsumerStatefulWidget {
   const ActivationScreen({super.key});
@@ -21,9 +25,6 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
   
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -60,29 +61,23 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
   }
 
   Color _getPasswordStrengthColor(double strength) {
-    if (strength <= 0.25) return Colors.red;
-    if (strength <= 0.5) return Colors.orange;
-    if (strength <= 0.75) return Colors.yellow;
-    return Colors.green;
+    if (strength <= 0.25) return AcadexColors.error;
+    if (strength <= 0.5) return AcadexColors.warning;
+    if (strength <= 0.75) return AcadexColors.accentOrange;
+    return AcadexColors.success;
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(activationNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFFAFAFA);
-    final cardColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFFFFFFF);
-    final primaryColor = const Color(0xFF6366F1);
-    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
-    final subTextColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     ref.listen<ActivationState>(activationNotifierProvider, (previous, next) {
       if (next.error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.error!),
-            backgroundColor: AppColors.error,
+            backgroundColor: AcadexColors.error,
           ),
         );
         ref.read(activationNotifierProvider.notifier).clearError();
@@ -95,51 +90,59 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              "Activate your Acadex account",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Enter your details to begin the activation process.",
-              style: TextStyle(fontSize: 14, color: subTextColor),
-            ),
-            const SizedBox(height: 32),
-            Text("Student ID", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: subTextColor)),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _rollNumberController,
-              decoration: const InputDecoration(
-                hintText: "e.g., CS2025001",
-                prefixIcon: Icon(LucideIcons.idCard, size: 18),
+            Center(
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(LucideIcons.userCheck, size: 26, color: AcadexColors.primary),
               ),
-              validator: (val) => val == null || val.isEmpty ? "Please enter your Student ID" : null,
-              enabled: !state.isLoading,
             ),
             const SizedBox(height: 20),
-            Text("Activation Code", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: subTextColor)),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _codeController,
-              decoration: const InputDecoration(
-                hintText: "Enter your 8-character code",
-                prefixIcon: Icon(LucideIcons.keyRound, size: 18),
+            Text(
+              "Activate Account",
+              textAlign: TextAlign.center,
+              style: AcadexTypography.heading2(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
               ),
-              validator: (val) => val == null || val.isEmpty ? "Please enter your activation code" : null,
-              enabled: !state.isLoading,
             ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: state.isLoading ? null : _submitStep1,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            const SizedBox(height: 6),
+            Text(
+              "Enter your institutional ID and the 8-character activation code provided by your administrator.",
+              textAlign: TextAlign.center,
+              style: AcadexTypography.body(
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
               ),
-              child: state.isLoading
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text("Continue"),
+            ),
+            const SizedBox(height: 28),
+            AcadexTextField(
+              controller: _rollNumberController,
+              label: "Student or Employee ID",
+              hint: "e.g., CS2025001 or EMP101",
+              prefixIcon: LucideIcons.idCard,
+              enabled: !state.isLoading,
+              validator: (val) => val == null || val.isEmpty ? "Please enter your ID" : null,
+            ),
+            const SizedBox(height: 16),
+            AcadexTextField(
+              controller: _codeController,
+              label: "Activation Code",
+              hint: "Enter 8-character code",
+              prefixIcon: LucideIcons.keyRound,
+              enabled: !state.isLoading,
+              validator: (val) => val == null || val.isEmpty ? "Please enter your activation code" : null,
+            ),
+            const SizedBox(height: 28),
+            AcadexButton(
+              label: "Verify & Continue",
+              icon: LucideIcons.arrowRight,
+              isLoading: state.isLoading,
+              isFullWidth: true,
+              size: AcadexButtonSize.lg,
+              onPressed: state.isLoading ? null : _submitStep1,
             ),
           ],
         ),
@@ -147,110 +150,129 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
     }
 
     Widget buildStep2() {
-      final student = state.validatedStudent!;
+      final user = state.validatedUser!;
+      final strength = _calculatePasswordStrength(_passwordController.text);
+
       return Form(
         key: _step2FormKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              "Create your password",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor),
+            Center(
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(LucideIcons.lock, size: 26, color: AcadexColors.primary),
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 20),
             Text(
-              "Secure your account to complete activation.",
-              style: TextStyle(fontSize: 14, color: subTextColor),
+              "Create Password",
+              textAlign: TextAlign.center,
+              style: AcadexTypography.heading2(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 6),
+            Text(
+              "Set a secure password for your new Acadex account.",
+              textAlign: TextAlign.center,
+              style: AcadexTypography.body(
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Verified Identity Card
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: primaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
+                color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.15) : AcadexColors.primaryLight,
+                borderRadius: AcadexRadius.borderRadiusLg,
+                border: Border.all(
+                  color: isDark ? AcadexColors.primaryMuted.withValues(alpha: 0.3) : AcadexColors.primary.withValues(alpha: 0.2),
+                  width: 1,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Icon(LucideIcons.userCheck, size: 20, color: primaryColor),
-                      const SizedBox(width: 8),
-                      Text("Verified Identity", style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor)),
-                    ],
+                  const AcadexBadge(
+                    label: 'VERIFIED IDENTITY',
+                    variant: AcadexBadgeVariant.success,
+                    icon: LucideIcons.check,
                   ),
-                  const SizedBox(height: 12),
-                  Text(student.name, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
-                  const SizedBox(height: 4),
-                  Text("ID: ${student.rollNumber}", style: TextStyle(fontSize: 14, color: subTextColor)),
-                  Text(student.email, style: TextStyle(fontSize: 14, color: subTextColor)),
+                  const SizedBox(height: 10),
+                  Text(
+                    user['name'] ?? 'Academic Member',
+                    style: AcadexTypography.title(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "ID: ${user['rollNumber'] ?? user['employeeId'] ?? ''} • ${user['email'] ?? ''}",
+                    style: AcadexTypography.caption(
+                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    ),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            Text("New Password", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: subTextColor)),
-            const SizedBox(height: 8),
-            TextFormField(
+            const SizedBox(height: 20),
+
+            AcadexTextField(
               controller: _passwordController,
-              obscureText: _obscurePassword,
-              onChanged: (val) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: "Enter a strong password",
-                prefixIcon: const Icon(LucideIcons.lock, size: 18),
-                suffixIcon: IconButton(
-                  icon: Icon(_obscurePassword ? LucideIcons.eye : LucideIcons.eyeOff, size: 18),
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                ),
-              ),
+              label: "New Password",
+              hint: "Minimum 8 characters",
+              prefixIcon: LucideIcons.lock,
+              isPassword: true,
+              onChanged: (_) => setState(() {}),
+              enabled: !state.isLoading,
               validator: (val) {
                 if (val == null || val.length < 8) return "Password must be at least 8 characters";
                 return null;
               },
-              enabled: !state.isLoading,
             ),
             const SizedBox(height: 8),
+
+            // Password strength bar
             ClipRRect(
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: AcadexRadius.borderRadiusFull,
               child: LinearProgressIndicator(
-                value: _calculatePasswordStrength(_passwordController.text),
-                backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                color: _getPasswordStrengthColor(_calculatePasswordStrength(_passwordController.text)),
+                value: strength,
+                backgroundColor: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                valueColor: AlwaysStoppedAnimation<Color>(_getPasswordStrengthColor(strength)),
                 minHeight: 4,
               ),
             ),
-            const SizedBox(height: 20),
-            Text("Confirm Password", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: subTextColor)),
-            const SizedBox(height: 8),
-            TextFormField(
+            const SizedBox(height: 16),
+
+            AcadexTextField(
               controller: _confirmPasswordController,
-              obscureText: _obscureConfirmPassword,
-              decoration: InputDecoration(
-                hintText: "Repeat your new password",
-                prefixIcon: const Icon(LucideIcons.lock, size: 18),
-                suffixIcon: IconButton(
-                  icon: Icon(_obscureConfirmPassword ? LucideIcons.eye : LucideIcons.eyeOff, size: 18),
-                  onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
-                ),
-              ),
+              label: "Confirm Password",
+              hint: "Re-enter your password",
+              prefixIcon: LucideIcons.lock,
+              isPassword: true,
+              enabled: !state.isLoading,
               validator: (val) {
                 if (val != _passwordController.text) return "Passwords do not match";
                 return null;
               },
-              enabled: !state.isLoading,
             ),
-            const SizedBox(height: 32),
-            ElevatedButton(
+            const SizedBox(height: 24),
+
+            AcadexButton(
+              label: "Activate Account",
+              icon: LucideIcons.checkCircle,
+              isLoading: state.isLoading,
+              isFullWidth: true,
+              size: AcadexButtonSize.lg,
               onPressed: state.isLoading ? null : _submitStep2,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: state.isLoading
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text("Activate Account"),
             ),
           ],
         ),
@@ -261,81 +283,84 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+          Center(
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(LucideIcons.checkCircle2, size: 36, color: AcadexColors.success),
             ),
-            child: const Icon(LucideIcons.checkCircle, size: 64, color: Colors.green),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           Text(
             "Account Activated!",
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: textColor),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            "Your Acadex account is now ready.\nYou can now log in using your email and new password.",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 15, color: subTextColor, height: 1.5),
-          ),
-          const SizedBox(height: 48),
-          ElevatedButton(
-            onPressed: () => context.go('/login'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(50),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            style: AcadexTypography.heading1(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
             ),
-            child: const Text("Continue to Login"),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Your Acadex account is now fully active.\nYou can now sign in using your credentials.",
+            textAlign: TextAlign.center,
+            style: AcadexTypography.body(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 36),
+          AcadexButton(
+            label: "Continue to Sign In",
+            icon: LucideIcons.logIn,
+            isFullWidth: true,
+            size: AcadexButtonSize.lg,
+            onPressed: () => context.go('/login'),
           ),
         ],
       );
     }
 
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: state.step == 2 ? null : IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: textColor),
-          onPressed: () {
-            if (state.step == 1) {
-              ref.read(activationNotifierProvider.notifier).reset();
-            } else {
-              context.go('/login');
-            }
-          },
+        leading: state.step == 2
+            ? null
+            : IconButton(
+                icon: Icon(
+                  LucideIcons.arrowLeft,
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ),
+                onPressed: () {
+                  if (state.step == 1) {
+                    ref.read(activationNotifierProvider.notifier).reset();
+                  } else {
+                    context.go('/login');
+                  }
+                },
+              ),
+        title: Text(
+          'Account Activation',
+          style: AcadexTypography.title(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
         ),
       ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: Card(
-              color: cardColor,
-              elevation: isDark ? 0 : 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: isDark 
-                    ? const BorderSide(color: Color(0xFF334155), width: 1)
-                    : const BorderSide(color: Color(0xFFE2E8F0), width: 1),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: state.step == 0
-                      ? buildStep1()
-                      : state.step == 1
-                          ? buildStep2()
-                          : buildStep3(),
-                ),
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: AcadexCard(
+              padding: const EdgeInsets.all(32.0),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: state.step == 0
+                    ? buildStep1()
+                    : state.step == 1
+                        ? buildStep2()
+                        : buildStep3(),
               ),
             ),
           ),

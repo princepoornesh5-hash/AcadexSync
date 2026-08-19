@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../../app/theme/app_theme.dart';
 import '../../../domain/models/college_faculty_completion.dart';
+import '../../../../../core/presentation/widgets/acadex_badge.dart';
 
 class CollegeFacultyCard extends StatelessWidget {
   final CollegeFacultyCompletion completion;
@@ -9,15 +11,19 @@ class CollegeFacultyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isComplete = completion.pendingClasses == 0;
     
-    return Card(
-      color: DashboardColors.surface,
-      elevation: 0,
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: isComplete ? DashboardColors.success.withValues(alpha: 0.3) : DashboardColors.border),
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          width: 1,
+        ),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -33,31 +39,32 @@ class CollegeFacultyCard extends StatelessWidget {
                     children: [
                       Text(
                         completion.facultyName,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: DashboardColors.textPrimary),
+                        style: AcadexTypography.title(
+                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         completion.departmentName,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: DashboardColors.primary),
+                        style: AcadexTypography.caption(
+                          color: AcadexColors.primary,
+                        ).copyWith(fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isComplete ? DashboardColors.success.withValues(alpha: 0.1) : DashboardColors.warning.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                if (isComplete)
+                  const AcadexBadge(
+                    label: 'Completed',
+                    variant: AcadexBadgeVariant.success,
+                    icon: LucideIcons.checkCircle2,
+                  )
+                else
+                  AcadexBadge(
+                    label: '${completion.pendingClasses} Pending',
+                    variant: AcadexBadgeVariant.warning,
+                    icon: LucideIcons.clock,
                   ),
-                  child: Text(
-                    isComplete ? "Completed" : "${completion.pendingClasses} Pending",
-                    style: TextStyle(
-                      color: isComplete ? DashboardColors.success : DashboardColors.warning,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                )
               ],
             ),
             const SizedBox(height: 12),
@@ -68,8 +75,10 @@ class CollegeFacultyCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: completion.progress,
-                      backgroundColor: DashboardColors.background,
-                      color: isComplete ? DashboardColors.success : DashboardColors.primary,
+                      backgroundColor: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        isComplete ? AcadexColors.success : AcadexColors.primary,
+                      ),
                       minHeight: 6,
                     ),
                   ),
@@ -77,7 +86,9 @@ class CollegeFacultyCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(
                   "${completion.completedClasses} / ${completion.completedClasses + completion.pendingClasses}",
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: DashboardColors.textPrimary),
+                  style: AcadexTypography.caption(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ).copyWith(fontWeight: FontWeight.w700),
                 ),
               ],
             ),

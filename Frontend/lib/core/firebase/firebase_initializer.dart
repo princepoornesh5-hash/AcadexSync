@@ -22,7 +22,10 @@ class FirebaseInitializer {
 
   /// SECURE BOUNDARY: Mock repositories may ONLY be activated if explicitly requested
   /// AND the application is running in kDebugMode.
-  static bool get shouldUseMock => overrideShouldUseMock ?? (kDebugMode && (_fallbackMockActive || Firebase.apps.isEmpty));
+  static bool get shouldUseMock {
+    if (!kDebugMode) return false;
+    return overrideShouldUseMock ?? (_fallbackMockActive || Firebase.apps.isEmpty);
+  }
 
   static Future<void> initialize([FirebaseEnv env = FirebaseEnv.production]) async {
     if (_state == FirebaseInitializationState.ready) return;

@@ -12,19 +12,20 @@ class MonthlySummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final perc = summary.percentage;
-    final color = perc >= 75 ? DashboardColors.success : perc >= 60 ? DashboardColors.warning : DashboardColors.error;
+    final color = perc >= 75 ? AcadexColors.success : perc >= 60 ? AcadexColors.warning : AcadexColors.error;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [DashboardColors.surface, DashboardColors.surface.withValues(alpha: 0.9)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          width: 1,
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: DashboardColors.border),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,11 +35,13 @@ class MonthlySummaryCard extends StatelessWidget {
             children: [
               Text(
                 "${summary.monthName} ${summary.year}",
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: DashboardColors.textPrimary),
+                style: AcadexTypography.title(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ),
               ),
               Text(
                 "${perc.toStringAsFixed(1)}%",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
+                style: AcadexTypography.heading2(color: color),
               ),
             ],
           ),
@@ -46,9 +49,9 @@ class MonthlySummaryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStat("Conducted", summary.classesConducted.toString(), DashboardColors.primary),
-              _buildStat("Attended", summary.classesAttended.toString(), DashboardColors.success),
-              _buildStat("Missed", summary.classesMissed.toString(), DashboardColors.error),
+              _buildStat("Conducted", summary.classesConducted.toString(), AcadexColors.primary, isDark),
+              _buildStat("Attended", summary.classesAttended.toString(), AcadexColors.success, isDark),
+              _buildStat("Missed", summary.classesMissed.toString(), AcadexColors.error, isDark),
             ],
           ),
         ],
@@ -56,12 +59,20 @@ class MonthlySummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStat(String label, String val, Color color) {
+  Widget _buildStat(String label, String val, Color color, bool isDark) {
     return Column(
       children: [
-        Text(val, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+        Text(
+          val,
+          style: AcadexTypography.heading2(color: color),
+        ),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 12, color: DashboardColors.textSecondary)),
+        Text(
+          label,
+          style: AcadexTypography.caption(
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
+        ),
       ],
     );
   }

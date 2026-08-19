@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/models/search_models.dart';
 import '../providers/search_providers.dart';
 import '../widgets/search_result_card.dart';
-import '../widgets/search_empty_state.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/presentation/widgets/acadex_chip.dart';
 
 class GlobalSearchScreen extends ConsumerStatefulWidget {
   const GlobalSearchScreen({super.key});
@@ -34,24 +34,17 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   }
 
   void _onResultTapped(SearchResult result) {
-    // Add to recent searches
     ref.read(recentSearchesProvider.notifier).addSearch(result.title);
-    
-    // In a real application, you would navigate to the destination route here
-    // For mock, just go back or navigate to a placeholder if route is set up
-    // context.push(result.destinationRoute);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Navigating to ${result.destinationRoute}')),
-    );
+    if (result.destinationRoute.isNotEmpty) {
+      context.push(result.destinationRoute);
+    }
   }
 
-  Widget _buildFilterChips() {
+  Widget _buildFilterChips(bool isDark) {
     final currentFilter = ref.watch(searchFilterProvider);
     
-    // Provide a list of available filters
     final filters = [
-      null, // All
+      null,
       SearchResultType.student,
       SearchResultType.faculty,
       SearchResultType.department,
@@ -66,34 +59,22 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
         children: filters.map((filter) {
           final isSelected = currentFilter == filter;
           return Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: Text(getFilterName(filter)),
-              selected: isSelected,
+            child: AcadexChip(
+              label: getFilterName(filter),
+              isSelected: isSelected,
               onSelected: (selected) {
                 if (selected) {
                   ref.read(searchFilterProvider.notifier).state = filter;
                 } else if (filter != null) {
-                  ref.read(searchFilterProvider.notifier).state = null; // Default back to All
+                  ref.read(searchFilterProvider.notifier).state = null;
                 }
               },
-              backgroundColor: AppColors.surfaceDarkElevated,
-              selectedColor: AppColors.primary.withValues(alpha: 0.2),
-              labelStyle: TextStyle(
-                color: isSelected ? AppColors.primary : AppColors.onDark,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(
-                  color: isSelected ? AppColors.primary : AppColors.hairlineDark,
-                ),
-              ),
             ),
           );
         }).toList(),
@@ -101,66 +82,68 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     );
   }
 
-  Widget _buildRecentSearches() {
+  Widget _buildRecentSearches(bool isDark) {
     final recentSearches = ref.watch(recentSearchesProvider);
     
     if (recentSearches.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(LucideIcons.search, size: 48, color: AppColors.textMuted.withValues(alpha: 0.5)),
-            const SizedBox(height: 16),
-            Text(
-              "Search Acadex",
-              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.onDark),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Find students, faculty, departments and more.",
-              style: GoogleFonts.inter(fontSize: 14, color: AppColors.textMuted),
-            ),
-          ],
+      return const Center(
+        child: AcadexEmptyState(
+          icon: LucideIcons.search,
+          title: "Search Acadex",
+          subtitle: "Quickly find students, faculty, departments, subjects, and notes across campus.",
         ),
       );
     }
 
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               "Recent Searches",
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textMuted,
+              style: AcadexTypography.eyebrow(
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
               ),
             ),
             TextButton(
               onPressed: () {
                 ref.read(recentSearchesProvider.notifier).clearSearches();
               },
-              child: const Text("Clear"),
+              child: Text(
+                "Clear",
+                style: AcadexTypography.caption(color: AcadexColors.primary),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         ...recentSearches.map((query) => ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(LucideIcons.history, color: AppColors.textMuted),
-          title: Text(query, style: const TextStyle(color: AppColors.onDark)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          leading: Icon(
+            LucideIcons.history,
+            size: 18,
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
+          title: Text(
+            query,
+            style: AcadexTypography.body(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
+          ),
           trailing: IconButton(
-            icon: const Icon(LucideIcons.x, color: AppColors.textMuted, size: 18),
+            icon: Icon(
+              LucideIcons.x,
+              size: 16,
+              color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+            ),
             onPressed: () {
               ref.read(recentSearchesProvider.notifier).removeSearch(query);
             },
           ),
           onTap: () {
             _searchController.text = query;
-            // Place cursor at end
             _searchController.selection = TextSelection.fromPosition(
               TextPosition(offset: _searchController.text.length),
             );
@@ -174,59 +157,67 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   Widget build(BuildContext context) {
     final query = ref.watch(searchQueryProvider);
     final resultsAsync = ref.watch(searchResultsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.canvasDark,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Search Header
             Container(
-              padding: const EdgeInsets.fromLTRB(12, 12, 24, 12),
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceDarkElevated,
-                border: Border(bottom: BorderSide(color: AppColors.hairlineDark)),
+              padding: const EdgeInsets.fromLTRB(12, 12, 20, 12),
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  ),
+                ),
               ),
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(LucideIcons.arrowLeft, color: AppColors.onDark),
+                    icon: Icon(
+                      LucideIcons.arrowLeft,
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
                     onPressed: () => context.pop(),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceDarkElevated,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.hairlineDark),
+                    child: TextField(
+                      controller: _searchController,
+                      autofocus: true,
+                      style: AcadexTypography.body(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                       ),
-                      child: TextField(
-                        controller: _searchController,
-                        autofocus: true,
-                        style: const TextStyle(color: AppColors.onDark),
-                        decoration: InputDecoration(
-                          hintText: "Search students, faculty...",
-                          hintStyle: const TextStyle(color: AppColors.textMuted),
-                          prefixIcon: const Icon(LucideIcons.search, color: AppColors.textMuted),
-                          suffixIcon: query.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(LucideIcons.xCircle, color: AppColors.textMuted),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                  },
-                                )
-                              : null,
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: InputDecoration(
+                        hintText: "Search students, faculty, departments...",
+                        prefixIcon: Icon(
+                          LucideIcons.search,
+                          size: 18,
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                         ),
-                        onSubmitted: (value) {
-                          if (value.trim().isNotEmpty) {
-                            ref.read(recentSearchesProvider.notifier).addSearch(value);
-                          }
-                        },
+                        suffixIcon: query.isNotEmpty
+                            ? IconButton(
+                                icon: Icon(
+                                  LucideIcons.x,
+                                  size: 16,
+                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                ),
+                                onPressed: () {
+                                  _searchController.clear();
+                                },
+                              )
+                            : null,
                       ),
+                      onSubmitted: (value) {
+                        if (value.trim().isNotEmpty) {
+                          ref.read(recentSearchesProvider.notifier).addSearch(value);
+                        }
+                      },
                     ),
                   ),
                 ],
@@ -234,20 +225,26 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
             ),
 
             // Filters
-            _buildFilterChips(),
+            _buildFilterChips(isDark),
 
             // Content Area
             Expanded(
               child: query.trim().isEmpty
-                  ? _buildRecentSearches()
+                  ? _buildRecentSearches(isDark)
                   : resultsAsync.when(
                       data: (results) {
                         if (results.isEmpty) {
-                          return SearchEmptyState(query: query);
+                          return Center(
+                            child: AcadexEmptyState(
+                              icon: LucideIcons.searchX,
+                              title: "No results found for \"$query\"",
+                              subtitle: "Try checking your spelling or selecting a different filter type.",
+                            ),
+                          );
                         }
                         
                         return ListView.builder(
-                          padding: const EdgeInsets.all(24),
+                          padding: const EdgeInsets.all(20),
                           itemCount: results.length,
                           itemBuilder: (context, index) {
                             final result = results[index];
@@ -258,9 +255,12 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                           },
                         );
                       },
-                      loading: () => const Center(child: CircularProgressIndicator()),
+                      loading: () => const AcadexLoadingState(message: "Searching campus records..."),
                       error: (err, stack) => Center(
-                        child: Text('Error: $err', style: const TextStyle(color: AppColors.error)),
+                        child: AcadexErrorState(
+                          message: 'Error executing search: $err',
+                          onRetry: () => ref.refresh(searchResultsProvider),
+                        ),
                       ),
                     ),
             ),

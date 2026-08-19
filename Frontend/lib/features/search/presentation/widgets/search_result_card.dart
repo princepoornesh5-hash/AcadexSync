@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/models/search_models.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
 
 class SearchResultCard extends StatelessWidget {
   final SearchResult result;
@@ -39,18 +39,20 @@ class SearchResultCard extends StatelessWidget {
     }
   }
 
-  Color _getColorForType(SearchResultType type) {
+  AcadexBadgeVariant _getBadgeVariantForType(SearchResultType type) {
     switch (type) {
       case SearchResultType.student:
-        return Colors.blue;
+        return AcadexBadgeVariant.info;
       case SearchResultType.faculty:
-        return Colors.indigo;
+      case SearchResultType.hod:
+        return AcadexBadgeVariant.purple;
       case SearchResultType.department:
-        return Colors.orange;
+        return AcadexBadgeVariant.warning;
       case SearchResultType.subject:
-        return Colors.green;
+      case SearchResultType.course:
+        return AcadexBadgeVariant.teal;
       default:
-        return DashboardColors.primary;
+        return AcadexBadgeVariant.primary;
     }
   }
 
@@ -61,7 +63,6 @@ class SearchResultCard extends StatelessWidget {
       case SearchResultType.academicYear:
         return "Academic Year";
       default:
-        // simple capitalization for others
         final text = type.toString().split('.').last;
         return text[0].toUpperCase() + text.substring(1);
     }
@@ -69,79 +70,77 @@ class SearchResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _getColorForType(result.type);
-    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final badgeVariant = _getBadgeVariantForType(result.type);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceDarkCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.hairlineDark),
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          width: 1,
+        ),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  _getIconForType(result.type),
-                  color: color,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      result.title,
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.onDark,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      result.subtitle,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceDarkElevated,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.hairlineDark),
-                ),
-                child: Text(
-                  _getLabelForType(result.type),
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textMuted,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AcadexRadius.borderRadiusLg,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                  ),
+                  child: Icon(
+                    _getIconForType(result.type),
+                    color: isDark ? AcadexColors.primaryMuted : AcadexColors.primary,
+                    size: 20,
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              const Icon(LucideIcons.chevronRight, color: AppColors.textMuted, size: 20),
-            ],
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        result.title,
+                        style: AcadexTypography.body(
+                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        result.subtitle,
+                        style: AcadexTypography.caption(
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                AcadexBadge(
+                  label: _getLabelForType(result.type),
+                  variant: badgeVariant,
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  LucideIcons.chevronRight,
+                  color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                  size: 18,
+                ),
+              ],
+            ),
           ),
         ),
       ),

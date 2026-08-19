@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../domain/models/attendance_record.dart';
 import '../../domain/models/attendance_status.dart';
-import 'attendance_status_chip.dart';
+import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_avatar.dart';
 
 class StudentAttendanceCard extends StatelessWidget {
   final AttendanceRecord record;
@@ -15,71 +17,237 @@ class StudentAttendanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final status = record.status;
-    
-    // Future support for network images, falling back to initials
-    final initials = record.studentName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join();
 
-    return Card(
-      color: Colors.white,
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(
+          color: status == null
+              ? (isDark ? AcadexColors.darkHairline : AcadexColors.hairline)
+              : (status == AttendanceStatus.present
+                  ? AcadexColors.success.withValues(alpha: 0.3)
+                  : status == AttendanceStatus.late
+                      ? AcadexColors.warning.withValues(alpha: 0.3)
+                      : AcadexColors.error.withValues(alpha: 0.3)),
+          width: status != null ? 1.5 : 1,
+        ),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
-      elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 420;
+
+            if (isCompact) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      AcadexAvatar(
+                        name: record.studentName,
+                        size: 38,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              record.studentName,
+                              style: AcadexTypography.body(
+                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              ).copyWith(fontWeight: FontWeight.w600),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              record.rollNumber,
+                              style: AcadexTypography.caption(
+                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      _buildStatusIndicator(status, isDark),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  _buildSegmentedControl(isDark),
+                ],
+              );
+            }
+
+            return Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: Colors.blue.shade100,
-                  foregroundColor: Colors.blue.shade900,
-                  radius: 20,
-                  child: Text(initials, style: const TextStyle(fontWeight: FontWeight.bold)),
+                AcadexAvatar(
+                  name: record.studentName,
+                  size: 40,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(record.studentName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      Text(record.rollNumber, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                      Text(
+                        record.studentName,
+                        style: AcadexTypography.body(
+                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        record.rollNumber,
+                        style: AcadexTypography.caption(
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                if (status != null)
-                  Icon(
-                    status == AttendanceStatus.present ? Icons.check_circle :
-                    status == AttendanceStatus.absent ? Icons.cancel : Icons.info,
-                    color: status.color,
-                  )
+                const SizedBox(width: 16),
+                _buildSegmentedControl(isDark),
               ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusIndicator(AttendanceStatus? status, bool isDark) {
+    if (status == null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+          borderRadius: AcadexRadius.borderRadiusFull,
+        ),
+        child: Text(
+          'UNMARKED',
+          style: AcadexTypography.caption(
+            color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+          ).copyWith(fontSize: 10, fontWeight: FontWeight.w700),
+        ),
+      );
+    }
+
+    final color = status == AttendanceStatus.present
+        ? AcadexColors.success
+        : status == AttendanceStatus.late
+            ? AcadexColors.warning
+            : AcadexColors.error;
+
+    return Icon(
+      status == AttendanceStatus.present
+          ? LucideIcons.checkCircle2
+          : status == AttendanceStatus.late
+              ? LucideIcons.clock
+              : LucideIcons.xCircle,
+      color: color,
+      size: 18,
+    );
+  }
+
+  Widget _buildSegmentedControl(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+        borderRadius: AcadexRadius.borderRadiusMd,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(3),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildSegmentButton(
+            label: 'Present',
+            shortLabel: 'P',
+            icon: LucideIcons.check,
+            status: AttendanceStatus.present,
+            activeBg: isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight,
+            activeBorder: AcadexColors.success,
+            activeFg: AcadexColors.success,
+            isDark: isDark,
+          ),
+          const SizedBox(width: 4),
+          _buildSegmentButton(
+            label: 'Late',
+            shortLabel: 'L',
+            icon: LucideIcons.clock,
+            status: AttendanceStatus.late,
+            activeBg: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+            activeBorder: AcadexColors.warning,
+            activeFg: AcadexColors.warning,
+            isDark: isDark,
+          ),
+          const SizedBox(width: 4),
+          _buildSegmentButton(
+            label: 'Absent',
+            shortLabel: 'A',
+            icon: LucideIcons.x,
+            status: AttendanceStatus.absent,
+            activeBg: isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight,
+            activeBorder: AcadexColors.error,
+            activeFg: AcadexColors.error,
+            isDark: isDark,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSegmentButton({
+    required String label,
+    required String shortLabel,
+    required IconData icon,
+    required AttendanceStatus status,
+    required Color activeBg,
+    required Color activeBorder,
+    required Color activeFg,
+    required bool isDark,
+  }) {
+    final isSelected = record.status == status;
+
+    return GestureDetector(
+      onTap: () => onStatusChanged(status),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? activeBg : Colors.transparent,
+          borderRadius: AcadexRadius.borderRadiusSm,
+          border: Border.all(
+            color: isSelected ? activeBorder : Colors.transparent,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 13,
+              color: isSelected ? activeFg : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
             ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                AttendanceStatusChip(
-                  status: AttendanceStatus.present,
-                  isSelected: status == AttendanceStatus.present,
-                  onTap: () => onStatusChanged(AttendanceStatus.present),
-                ),
-                AttendanceStatusChip(
-                  status: AttendanceStatus.absent,
-                  isSelected: status == AttendanceStatus.absent,
-                  onTap: () => onStatusChanged(AttendanceStatus.absent),
-                ),
-                AttendanceStatusChip(
-                  status: AttendanceStatus.late,
-                  isSelected: status == AttendanceStatus.late,
-                  onTap: () => onStatusChanged(AttendanceStatus.late),
-                ),
-              ],
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: AcadexTypography.caption(
+                color: isSelected ? activeFg : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              ).copyWith(fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500),
             ),
           ],
         ),

@@ -23,6 +23,7 @@ class DevIdentityRegistry {
       'name': 'College Admin',
       'email': 'admin.test@acadex.com',
       'role': 'collegeAdmin',
+      'collegeId': 'mock-college-1',
       'accountStatus': 'active'
     },
     'mock-hod-uid': {
@@ -31,6 +32,8 @@ class DevIdentityRegistry {
       'name': 'HOD User',
       'email': 'hod.test@acadex.com',
       'role': 'hod',
+      'collegeId': 'mock-college-1',
+      'departmentId': 'mock-dept-1',
       'accountStatus': 'active'
     },
     'mock-faculty-uid': {
@@ -39,6 +42,8 @@ class DevIdentityRegistry {
       'name': 'Faculty User',
       'email': 'faculty.test@acadex.com',
       'role': 'faculty',
+      'collegeId': 'mock-college-1',
+      'departmentId': 'mock-dept-1',
       'accountStatus': 'active'
     },
     'mock-student-uid': {
@@ -47,6 +52,8 @@ class DevIdentityRegistry {
       'name': 'Student User',
       'email': 'student.test@acadex.com',
       'role': 'student',
+      'collegeId': 'mock-college-1',
+      'departmentId': 'mock-dept-1',
       'accountStatus': 'active'
     },
     'mock-suspended-uid': {
@@ -55,6 +62,8 @@ class DevIdentityRegistry {
       'name': 'Suspended User',
       'email': 'suspended@acadex.com',
       'role': 'student',
+      'collegeId': 'mock-college-1',
+      'departmentId': 'mock-dept-1',
       'accountStatus': 'suspended'
     },
   };

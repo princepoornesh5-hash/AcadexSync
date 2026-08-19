@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
 
 class AttendanceFooter extends StatelessWidget {
   final bool isReadyToSave;
@@ -13,25 +14,27 @@ class AttendanceFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -2))],
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        border: Border(
+          top: BorderSide(
+            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          ),
+        ),
       ),
       child: SafeArea(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            ElevatedButton(
+            AcadexButton(
+              label: "Review & Save",
+              variant: isReadyToSave ? AcadexButtonVariant.primary : AcadexButtonVariant.secondary,
               onPressed: isReadyToSave ? onSave : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: DashboardColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              child: const Text("Review & Save", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            )
+            ),
           ],
         ),
       ),

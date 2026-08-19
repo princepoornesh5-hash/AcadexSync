@@ -1,4 +1,3 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../../core/firebase/firebase_services.dart';
@@ -9,6 +8,7 @@ import '../../data/repositories/mock_analytics_repository.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
+import '../../../attendance/data/repositories/mock_attendance_repository.dart';
 
 // --- Configuration ---
 
@@ -16,8 +16,9 @@ final analyticsThresholdProvider = Provider<double>((ref) => 75.0);
 
 final analyticsRepositoryProvider = Provider<AnalyticsRepository>((ref) {
   if (FirebaseInitializer.shouldUseMock) {
-    return mockAnalyticsRepo;
+    return MockAnalyticsRepository(MockAttendanceRepository());
   }
+  // Production: NEVER fall back to mock on error
   final firestoreService = ref.watch(firestoreServiceProvider);
   return FirebaseAnalyticsRepository(firestoreService);
 });
@@ -64,7 +65,21 @@ final recentReportsProvider = FutureProvider<List<AttendanceReport>>((ref) async
   return await repo.getRecentReports(authState.user.role);
 });
 
-// --- Specific Calculators ---
+// --- Student Projection: derived from real summary metrics ---
+
+final studentAttendanceCountsProvider = FutureProvider<Map<String, int>>((ref) async {
+  final authState = ref.watch(authProvider);
+  if (authState is! AuthAuthenticated || authState.user.role != AppRole.student) {
+    return {'total': 0, 'attended': 0};
+  }
+  final summary = await ref.watch(analyticsSummaryProvider.future);
+  // Parse real values from summary
+  final classesStr = summary['Classes Attended'] ?? '0 / 0';
+  final parts = classesStr.split('/');
+  final attended = int.tryParse(parts[0].trim()) ?? 0;
+  final total = parts.length > 1 ? int.tryParse(parts[1].trim()) ?? 0 : 0;
+  return {'total': total, 'attended': attended};
+});
 
 final studentProjectionProvider = Provider<AttendanceProjection?>((ref) {
   final authState = ref.watch(authProvider);
@@ -72,12 +87,16 @@ final studentProjectionProvider = Provider<AttendanceProjection?>((ref) {
     return null;
   }
   final threshold = ref.watch(analyticsThresholdProvider);
-  
-  // Hardcoded for demo, normally this would come from a repository call giving total/attended classes
-  return AttendanceProjection.calculate(
-    totalClasses: 185,
-    attendedClasses: 145,
-    targetPercentage: threshold,
+  final countsAsync = ref.watch(studentAttendanceCountsProvider);
+
+  return countsAsync.when(
+    data: (counts) => AttendanceProjection.calculate(
+      totalClasses: counts['total']!,
+      attendedClasses: counts['attended']!,
+      targetPercentage: threshold,
+    ),
+    loading: () => null,
+    error: (_, _) => null,
   );
 });
 

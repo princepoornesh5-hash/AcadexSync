@@ -7,9 +7,9 @@ import '../../data/repositories/timetable_repository.dart';
 import '../../data/repositories/mock_timetable_repository.dart';
 import '../../data/repositories/firebase_timetable_repository.dart';
 import '../../../../core/firebase/firebase_initializer.dart';
-import '../../../academic_structure/presentation/providers/academic_providers.dart';
-import '../../../academic_structure/domain/models/academic_models.dart';
 import '../../../auth/domain/models/role_enum.dart';
+import '../../../notifications/presentation/providers/notification_providers.dart';
+export 'timetable_authoring_providers.dart';
 
 final mockTimetableRepositoryProvider = Provider<TimetableRepository>((ref) {
   return MockTimetableRepository();
@@ -17,7 +17,13 @@ final mockTimetableRepositoryProvider = Provider<TimetableRepository>((ref) {
 
 final firebaseTimetableRepositoryProvider = Provider<TimetableRepository>((ref) {
   final firestoreService = ref.watch(firestoreServiceProvider);
-  return FirebaseTimetableRepository(firestoreService);
+  final currentUser = ref.watch(currentUserProvider);
+  final notificationService = ref.watch(notificationServiceProvider);
+  return FirebaseTimetableRepository(
+    firestoreService,
+    currentUser: currentUser,
+    notificationService: notificationService,
+  );
 });
 
 final timetableRepositoryProvider = Provider<TimetableRepository>((ref) {
@@ -30,19 +36,28 @@ final timetableRepositoryProvider = Provider<TimetableRepository>((ref) {
 final weeklyTimetableProvider = StreamProvider<Map<TimetableDay, List<TimetableModel>>>((ref) async* {
   final authState = ref.watch(authProvider);
   if (authState is! AuthAuthenticated) {
-    yield {};
+    yield {for (var day in TimetableDay.values) day: []};
     return;
   }
 
   final user = authState.user;
+  
+  // Profile readiness guard: non-super-admin users must have collegeId loaded
+  if (!FirebaseInitializer.shouldUseMock && (user.collegeId == null || user.collegeId!.isEmpty) && user.role != AppRole.superAdmin) {
+    yield {for (var day in TimetableDay.values) day: []};
+    return;
+  }
+
   final repository = ref.watch(timetableRepositoryProvider);
   
   String? sectionId;
   if (user.role == AppRole.student) {
-    final students = await ref.watch(studentsProvider.future);
-    final studentList = students.whereType<Student>().toList();
-    final student = studentList.where((s) => s.id == user.id).firstOrNull;
-    sectionId = student?.sectionId;
+    sectionId = user.sectionId;
+    if (sectionId == null || sectionId.isEmpty) {
+      // Student has no assigned section yet; safely yield empty schedule without querying Firestore
+      yield {for (var day in TimetableDay.values) day: []};
+      return;
+    }
   }
 
   final stream = repository.watchTimetable(

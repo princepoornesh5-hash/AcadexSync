@@ -1,12 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../../core/firebase/firebase_services.dart';
 import '../../domain/models/certificate_request_model.dart';
 import 'certificate_request_repository.dart';
 
 class FirebaseCertificateRequestRepository implements CertificateRequestRepository {
-  final FirestoreService _firestoreService;
-
-  FirebaseCertificateRequestRepository(this._firestoreService);
+  FirebaseCertificateRequestRepository();
 
   CollectionReference get _collection => FirebaseFirestore.instance.collection('certificateRequests');
   CollectionReference get _typesCollection => FirebaseFirestore.instance.collection('certificateTypes');

@@ -1,5 +1,6 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../features/notifications/presentation/providers/notification_providers.dart';
 import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../../core/firebase/firebase_services.dart';
 import '../../domain/models/attendance_record.dart';
@@ -15,7 +16,13 @@ final attendanceRepoProvider = Provider<AttendanceRepository>((ref) {
     return mockAttendanceRepo;
   }
   final firestoreService = ref.watch(firestoreServiceProvider);
-  return FirebaseAttendanceRepository(firestoreService);
+  final currentUser = ref.watch(currentUserProvider);
+  final notificationService = ref.watch(notificationServiceProvider);
+  return FirebaseAttendanceRepository(
+    firestoreService, 
+    currentUser,
+    notificationService: notificationService,
+  );
 });
 
 // ---------------------------------------------------------
@@ -26,10 +33,17 @@ final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
 final assignedClassesProvider = FutureProvider<List<AssignedClass>>((ref) async {
   final date = ref.watch(selectedDateProvider);
   final repo = ref.watch(attendanceRepoProvider);
-  // In a real app, facultyId comes from Auth
-  return repo.getAssignedClasses('faculty1', date);
+  final currentUser = ref.watch(currentUserProvider);
+  
+  if (currentUser == null || currentUser.id.isEmpty) {
+    if (FirebaseInitializer.shouldUseMock) {
+      return repo.getAssignedClasses('faculty1', date);
+    }
+    return [];
+  }
+  
+  return repo.getAssignedClasses(currentUser.id, date);
 });
-
 
 // ---------------------------------------------------------
 // Active Session (Marking Screen)
@@ -71,10 +85,6 @@ class MarkingSessionNotifier extends StateNotifier<List<AttendanceRecord>> {
   void clearAll() {
     state = [
       for (final rec in state)
-        // using the fact that our copyWith allows setting if we just don't pass anything?
-        // Wait, copyWith in attendance_record doesn't allow setting status to null easily if we use `??`.
-        // Let's explicitly create a new object or we modify copyWith.
-        // Actually, we can just instantiate a new record with status: null
         AttendanceRecord(
           id: rec.id,
           studentId: rec.studentId,
@@ -102,24 +112,33 @@ class MarkingSessionNotifier extends StateNotifier<List<AttendanceRecord>> {
 }
 
 final markingSessionProvider = StateNotifierProvider<MarkingSessionNotifier, List<AttendanceRecord>>((ref) {
-  // Sync the future provider data into the state notifier initially
   final asyncList = ref.watch(activeStudentListProvider);
   return MarkingSessionNotifier(asyncList.valueOrNull ?? []);
 });
 
-
 // ---------------------------------------------------------
 // Save Action
 // ---------------------------------------------------------
-final saveSessionProvider = FutureProvider.family<bool, String>((ref, facultyId) async {
+final saveSessionProvider = FutureProvider.family<bool, String>((ref, activeClassId) async {
   final activeClass = ref.read(activeClassProvider);
   if (activeClass == null) return false;
   
   final records = ref.read(markingSessionProvider);
   final repo = ref.read(attendanceRepoProvider);
-  
+  final currentUser = ref.read(currentUserProvider);
+
+  final facultyId = currentUser?.id ?? (FirebaseInitializer.shouldUseMock ? 'faculty1' : '');
+  final collegeId = currentUser?.collegeId ?? (FirebaseInitializer.shouldUseMock ? 'col-1' : '');
+  final departmentId = currentUser?.departmentId ?? (FirebaseInitializer.shouldUseMock ? 'dept-1' : '');
+
+  if (!FirebaseInitializer.shouldUseMock && (facultyId.isEmpty || collegeId.isEmpty)) {
+    throw StateError("Cannot save attendance: Incomplete user profile.");
+  }
+
   final session = AttendanceSession(
-    id: DateTime.now().millisecondsSinceEpoch.toString(),
+    id: '${activeClass.sectionId}_${activeClass.subjectId}_${activeClass.date.year}${activeClass.date.month.toString().padLeft(2, '0')}${activeClass.date.day.toString().padLeft(2, '0')}',
+    collegeId: collegeId,
+    departmentId: departmentId,
     facultyId: facultyId,
     subjectId: activeClass.subjectId,
     subjectName: activeClass.subjectName,

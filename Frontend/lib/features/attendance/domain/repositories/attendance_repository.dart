@@ -28,7 +28,7 @@ abstract class AttendanceRepository {
   // Student Methods
   Future<List<SubjectAttendance>> getStudentSubjectAttendance(String studentId);
   Future<StudentAttendanceOverview> getStudentAttendanceOverview(String studentId);
-  Future<List<AttendanceHistoryRecord>> getStudentAttendanceHistory(String studentId);
+  Future<List<AttendanceHistoryRecord>> getStudentAttendanceHistory(String studentId, {DateTime? startDate, DateTime? endDate});
   Future<List<MonthlyAttendanceSummary>> getStudentMonthlySummary(String studentId);
 
   // Faculty Methods

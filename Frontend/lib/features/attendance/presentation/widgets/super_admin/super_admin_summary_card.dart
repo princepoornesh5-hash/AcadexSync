@@ -9,30 +9,43 @@ class SuperAdminSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: DashboardColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: DashboardColors.border),
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusXl,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          width: 1,
+        ),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Platform Overview", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: DashboardColors.textPrimary)),
+          Text(
+            "PLATFORM ATTENDANCE OVERVIEW",
+            style: AcadexTypography.eyebrow(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ),
+          ),
           const SizedBox(height: 16),
           Row(
             children: [
               _buildMetricCard(
                 "System Attendance",
                 "${summary.todayAttendancePercentage}%",
-                summary.todayAttendancePercentage >= 80 ? DashboardColors.success : DashboardColors.warning,
+                summary.todayAttendancePercentage >= 80 ? AcadexColors.success : AcadexColors.warning,
+                isDark,
               ),
               const SizedBox(width: 12),
               _buildMetricCard(
                 "Total Students",
                 summary.totalStudents.toString(),
-                DashboardColors.primary,
+                AcadexColors.primary,
+                isDark,
               ),
             ],
           ),
@@ -42,13 +55,15 @@ class SuperAdminSummaryCard extends StatelessWidget {
               _buildMetricCard(
                 "Colleges Online",
                 summary.totalColleges.toString(),
-                DashboardColors.textSecondary,
+                isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                isDark,
               ),
               const SizedBox(width: 12),
               _buildMetricCard(
                 "Pending Colleges",
                 summary.pendingColleges.toString(),
-                summary.pendingColleges > 0 ? DashboardColors.error : DashboardColors.success,
+                summary.pendingColleges > 0 ? AcadexColors.error : AcadexColors.success,
+                isDark,
               ),
             ],
           ),
@@ -57,20 +72,28 @@ class SuperAdminSummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricCard(String title, String value, Color valueColor) {
+  Widget _buildMetricCard(String title, String value, Color valueColor, bool isDark) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: DashboardColors.background,
-          borderRadius: BorderRadius.circular(8),
+          color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+          borderRadius: AcadexRadius.borderRadiusMd,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontSize: 12, color: DashboardColors.textSecondary)),
+            Text(
+              title,
+              style: AcadexTypography.caption(
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: valueColor)),
+            Text(
+              value,
+              style: AcadexTypography.heading2(color: valueColor),
+            ),
           ],
         ),
       ),

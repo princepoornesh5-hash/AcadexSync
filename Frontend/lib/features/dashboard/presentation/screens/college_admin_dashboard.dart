@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/domain/models/user_model.dart';
@@ -13,10 +13,10 @@ import '../providers/dashboard_providers.dart';
 import '../widgets/activity_feed.dart';
 import '../widgets/quick_action_card.dart';
 import '../widgets/section_header.dart';
-import '../widgets/section_header.dart';
 import '../widgets/stat_card.dart';
 import '../../../timetable/presentation/providers/timetable_providers.dart';
 import '../../../timetable/presentation/widgets/timetable_widgets.dart';
+import '../../../academic_structure/presentation/widgets/academic_structure_summary_widget.dart';
 
 class CollegeAdminDashboard extends ConsumerWidget {
   const CollegeAdminDashboard({super.key});
@@ -31,16 +31,13 @@ class CollegeAdminDashboard extends ConsumerWidget {
     UserModel? user;
     if (authState is AuthAuthenticated) user = authState.user;
 
-    return Theme(
-      data: AppTheme.lightTheme,
-      child: Scaffold(
-        backgroundColor: DashboardColors.background,
-        body: _CollegeAdminBody(
-          user: user,
-          stats: stats,
-          quickActions: quickActions,
-          activity: activity,
-        ),
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: _CollegeAdminBody(
+        user: user,
+        stats: stats,
+        quickActions: quickActions,
+        activity: activity,
       ),
     );
   }
@@ -63,11 +60,11 @@ class _CollegeAdminBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
       final width = constraints.maxWidth;
-      final statCols = width > 1024 ? 4 : width > 600 ? 3 : 2;
+      final statCols = AcadexLayout.statGridColumns(context);
       final firstName = user?.name.split(' ').first ?? 'Admin';
 
-      return SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+      return AcadexPageContainer(
+        particleSphereVariant: ParticleSphereVariant.dashboard,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -80,12 +77,12 @@ class _CollegeAdminBody extends StatelessWidget {
                     children: [
                       Text(
                         'Hello, $firstName 👋',
-                        style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700, color: DashboardColors.textPrimary),
+                        style: AcadexTypography.heading2(color: Theme.of(context).colorScheme.onSurface),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         'Manage your college operations from here.',
-                        style: GoogleFonts.inter(fontSize: 14, color: DashboardColors.textSecondary),
+                        style: AcadexTypography.body(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
                       ),
                     ],
                   ),
@@ -93,9 +90,9 @@ class _CollegeAdminBody extends StatelessWidget {
                 _RolePill(label: user?.role.displayName ?? 'Admin'),
               ],
             ),
-            const SizedBox(height: 28),
+            AcadexLayout.sectionSpacer,
             const SectionHeader(title: "Today's Timetable"),
-            const SizedBox(height: 12),
+            AcadexLayout.headerGap,
             Consumer(
               builder: (context, ref, _) {
                 final todayAsync = ref.watch(todayScheduleProvider);
@@ -106,9 +103,11 @@ class _CollegeAdminBody extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 28),
+            AcadexLayout.sectionSpacer,
+            const AcademicStructureSummaryWidget(),
+            AcadexLayout.sectionSpacer,
             const SectionHeader(title: 'Overview'),
-            const SizedBox(height: 12),
+            AcadexLayout.headerGap,
             stats.when(
               loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
               error: (err, stack) => Text('Error: $err'),
@@ -118,31 +117,31 @@ class _CollegeAdminBody extends StatelessWidget {
                 itemCount: data.length,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: statCols,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
+                  crossAxisSpacing: AcadexLayout.gridSpacing,
+                  mainAxisSpacing: AcadexLayout.gridSpacing,
                   childAspectRatio: width > 600 ? 1.15 : 1.05,
                 ),
                 itemBuilder: (_, i) => StatCard(stat: data[i], animationDelay: i * 80),
               ),
             ),
-            const SizedBox(height: 28),
+            AcadexLayout.sectionSpacer,
             const SectionHeader(title: 'Quick Actions'),
-            const SizedBox(height: 12),
+            AcadexLayout.headerGap,
             GridView.builder(
               physics: const NeverScrollableScrollPhysics(),
               shrinkWrap: true,
               itemCount: quickActions.length,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: width > 600 ? 6 : 3,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
+                crossAxisSpacing: AcadexLayout.gridSpacing,
+                mainAxisSpacing: AcadexLayout.gridSpacing,
                 childAspectRatio: 0.9,
               ),
               itemBuilder: (_, i) => QuickActionCard(action: quickActions[i]),
             ),
-            const SizedBox(height: 28),
+            AcadexLayout.sectionSpacer,
             SectionHeader(title: 'Recent Activity', actionLabel: 'View All', onAction: () {}),
-            const SizedBox(height: 12),
+            AcadexLayout.headerGap,
             activity.when(
               loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
               error: (err, stack) => Text('Error: $err'),
@@ -162,18 +161,18 @@ class _RolePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: DashboardColors.primaryLight,
-        borderRadius: BorderRadius.circular(9999),
-        border: Border.all(color: DashboardColors.primary.withValues(alpha: 0.2)),
+        color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+        borderRadius: AcadexRadius.borderRadiusFull,
+        border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 8, height: 8, decoration: const BoxDecoration(color: DashboardColors.success, shape: BoxShape.circle)),
+          Container(width: 8, height: 8, decoration: const BoxDecoration(color: AcadexColors.success, shape: BoxShape.circle)),
           const SizedBox(width: 6),
-          Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: DashboardColors.primary)),
+          Text(label, style: AcadexTypography.eyebrow(color: Theme.of(context).primaryColor)),
         ],
       ),
     );

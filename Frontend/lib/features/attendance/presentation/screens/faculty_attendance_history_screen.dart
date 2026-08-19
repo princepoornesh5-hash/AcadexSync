@@ -4,7 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_search_bar.dart';
-import '../../../../core/presentation/widgets/acadex_empty_state.dart';
+import '../../../../core/presentation/widgets/acadex_chip.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../providers/faculty_history_providers.dart';
 import '../widgets/faculty/attendance_record_card.dart';
 
@@ -20,27 +21,34 @@ class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendan
   Widget build(BuildContext context) {
     final historyAsync = ref.watch(filteredFacultyHistoryProvider);
     final statusFilter = ref.watch(historyStatusFilterProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: DashboardColors.background,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: DashboardColors.surface,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(LucideIcons.arrowLeft, color: DashboardColors.textPrimary),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.pop(),
         ),
-        title: const Text("Attendance Records", style: TextStyle(color: DashboardColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(
+          "Attendance Sessions History",
+          style: AcadexTypography.title(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
+        ),
       ),
       body: Column(
         children: [
           Container(
-            color: DashboardColors.surface,
+            color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
                 AcadexSearchFilterBar(
-                  searchHint: "Search by subject or section...",
+                  searchHint: "Search by subject, section, or keyword...",
                   onSearchChanged: (val) {
                     ref.read(historySearchQueryProvider.notifier).state = val;
                   },
@@ -48,76 +56,83 @@ class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendan
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    _buildFilterChip("All", statusFilter == null, () {
-                      ref.read(historyStatusFilterProvider.notifier).state = null;
-                    }),
+                    AcadexChip(
+                      label: "All Records",
+                      isSelected: statusFilter == null,
+                      onSelected: (_) {
+                        ref.read(historyStatusFilterProvider.notifier).state = null;
+                      },
+                    ),
                     const SizedBox(width: 8),
-                    _buildFilterChip("Locked", statusFilter == 'Locked', () {
-                      ref.read(historyStatusFilterProvider.notifier).state = 'Locked';
-                    }),
+                    AcadexChip(
+                      label: "Locked",
+                      isSelected: statusFilter == 'Locked',
+                      onSelected: (_) {
+                        ref.read(historyStatusFilterProvider.notifier).state = 'Locked';
+                      },
+                    ),
                     const SizedBox(width: 8),
-                    _buildFilterChip("Drafts", statusFilter == 'Draft', () {
-                      ref.read(historyStatusFilterProvider.notifier).state = 'Draft';
-                    }),
+                    AcadexChip(
+                      label: "Drafts",
+                      isSelected: statusFilter == 'Draft',
+                      onSelected: (_) {
+                        ref.read(historyStatusFilterProvider.notifier).state = 'Draft';
+                      },
+                    ),
                   ],
-                )
+                ),
               ],
             ),
           ),
+          Divider(
+            height: 1,
+            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          ),
           Expanded(
             child: historyAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text("Error: $err")),
+              loading: () => const Center(
+                child: AcadexLoadingState(message: "Loading past attendance sessions..."),
+              ),
+              error: (err, stack) => Center(
+                child: AcadexErrorState(
+                  message: "Unable to load session history: $err",
+                  onRetry: () => ref.refresh(facultyHistoryListProvider),
+                ),
+              ),
               data: (sessions) {
                 if (sessions.isEmpty) {
-                  return const AcadexEmptyState(
-                    title: "No Records Found",
-                    subtitle: "Try adjusting your search or filters.",
-                    icon: LucideIcons.calendarOff,
+                  return const Center(
+                    child: AcadexEmptyState(
+                      title: "No Attendance Sessions Found",
+                      subtitle: "No historical sessions match your search query or filter selection.",
+                      icon: LucideIcons.calendarOff,
+                    ),
                   );
                 }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: sessions.length,
-                  itemBuilder: (context, index) {
-                    final session = sessions[index];
-                    return AttendanceRecordCard(
-                      session: session,
-                      onTap: () {
-                        ref.read(activeSessionIdProvider.notifier).state = session.id;
-                        context.push('/attendance/faculty/detail');
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 900),
+                    child: ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+                      itemCount: sessions.length,
+                      itemBuilder: (context, index) {
+                        final session = sessions[index];
+                        return AttendanceRecordCard(
+                          session: session,
+                          onTap: () {
+                            ref.read(activeSessionIdProvider.notifier).state = session.id;
+                            context.push('/attendance/faculty/detail');
+                          },
+                        );
                       },
-                    );
-                  },
+                    ),
+                  ),
                 );
               },
             ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? DashboardColors.primary : DashboardColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? DashboardColors.primary : DashboardColors.border),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : DashboardColors.textSecondary,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 13,
           ),
-        ),
+        ],
       ),
     );
   }

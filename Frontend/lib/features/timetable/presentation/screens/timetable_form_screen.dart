@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../auth/domain/models/auth_state.dart';
+import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../academic_structure/domain/models/academic_models.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
+import '../../data/repositories/timetable_repository.dart';
 import '../../domain/models/timetable_models.dart';
 import '../providers/timetable_providers.dart';
 import 'timetable_management_screen.dart';
@@ -38,6 +42,7 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
   TimetableSessionType _sessionType = TimetableSessionType.lecture;
 
   String? _assignmentError;
+  String? _conflictErrorMessage;
 
   @override
   void initState() {
@@ -68,8 +73,12 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
   }
 
   TimeOfDay _parseTime(String time) {
-    final parts = time.split(':');
-    return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+    try {
+      final parts = time.split(':');
+      return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+    } catch (_) {
+      return const TimeOfDay(hour: 9, minute: 0);
+    }
   }
 
   String _formatTime(TimeOfDay time) {
@@ -83,35 +92,82 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
 
     if (_facultyId == null || _subjectId == null || _sectionId == null) return;
 
-    final facultyList = ref.read(facultyProvider).value ?? [];
-    final faculty = facultyList.firstWhere((f) => f.id == _facultyId, orElse: () => throw Exception('Faculty not found'));
+    try {
+      final assignments = ref.read(facultyAssignmentsProvider).valueOrNull ?? [];
+      final activeForFaculty = assignments.where((a) => a.facultyId == _facultyId && a.isActive).toList();
+      if (activeForFaculty.isNotEmpty) {
+        final matches = activeForFaculty.where((a) => a.subjectId == _subjectId && a.sectionId == _sectionId);
+        if (matches.isEmpty) {
+          setState(() {
+            _assignmentError = "Faculty is not assigned to the selected subject and section.";
+          });
+          return;
+        }
+      } else {
+        final facultyList = ref.read(facultyProvider(null)).items;
+        final faculty = facultyList.where((f) => f.id == _facultyId).firstOrNull;
 
-    if (!faculty.subjectIds.contains(_subjectId) || !faculty.sectionIds.contains(_sectionId)) {
+        if (faculty != null) {
+          final hasSubject = faculty.subjectIds.isEmpty || faculty.subjectIds.contains(_subjectId);
+          final hasSection = faculty.sectionIds.isEmpty || faculty.sectionIds.contains(_sectionId);
+          if (!hasSubject || !hasSection) {
+            setState(() {
+              _assignmentError = "Faculty is not assigned to the selected subject and section.";
+            });
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _pickTime(bool isStart) async {
+    final initial = isStart ? _startTime : _endTime;
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initial,
+    );
+    if (picked != null) {
       setState(() {
-        _assignmentError = "This faculty member is not assigned to the selected subject and section.";
+        if (isStart) {
+          _startTime = picked;
+        } else {
+          _endTime = picked;
+        }
       });
     }
   }
 
   Future<void> _submit() async {
+    setState(() {
+      _conflictErrorMessage = null;
+    });
+
     _validateFacultyAssignment();
     
     if (!_formKey.currentState!.validate() || _assignmentError != null) return;
 
-    if (_startTime.hour > _endTime.hour || (_startTime.hour == _endTime.hour && _startTime.minute >= _endTime.minute)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('End time must be after start time')));
+    final startMinutes = _startTime.hour * 60 + _startTime.minute;
+    final endMinutes = _endTime.hour * 60 + _endTime.minute;
+    if (startMinutes >= endMinutes) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid Time Range: End time must be strictly after start time.'),
+          backgroundColor: AcadexColors.error,
+        ),
+      );
       return;
     }
 
     final authState = ref.read(authProvider);
     if (authState is! AuthAuthenticated) return;
 
+    final isEdit = widget.existingEntry != null && widget.existingEntry!.id.isNotEmpty;
     final entry = TimetableModel(
-      id: widget.existingEntry?.id ?? '', // Will be generated in repo if empty
+      id: isEdit ? widget.existingEntry!.id : '',
       collegeId: authState.user.collegeId ?? '',
       departmentId: _departmentId!,
       courseId: _courseId!,
-      academicYearId: _academicYearId!,
+      academicYearId: _academicYearId ?? 'ay-current',
       semesterId: _semesterId!,
       sectionId: _sectionId!,
       subjectId: _subjectId!,
@@ -119,158 +175,576 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
       dayOfWeek: _dayOfWeek,
       startTime: _formatTime(_startTime),
       endTime: _formatTime(_endTime),
-      roomNumber: _roomController.text,
-      building: _buildingController.text.isEmpty ? null : _buildingController.text,
+      roomNumber: _roomController.text.trim(),
+      building: _buildingController.text.trim().isEmpty ? null : _buildingController.text.trim(),
       sessionType: _sessionType,
       createdAt: widget.existingEntry?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
     );
 
     try {
-      if (widget.existingEntry == null) {
-        await ref.read(timetableManagementProvider.notifier).createEntry(entry);
-      } else {
+      if (isEdit) {
         await ref.read(timetableManagementProvider.notifier).updateEntry(entry);
+      } else {
+        await ref.read(timetableManagementProvider.notifier).createEntry(entry);
       }
       
-      // Refresh management screen if needed, though streams might auto-update or FutureProvider needs refresh
+      // ignore: unused_result
+      ref.refresh(weeklyTimetableProvider);
+      // ignore: unused_result
       ref.refresh(managementTimetableProvider);
       
-      if (mounted) context.pop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isEdit ? 'Timetable schedule updated successfully.' : 'Timetable schedule created successfully.'),
+            backgroundColor: AcadexColors.success,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        context.pop();
+      }
+    } on TimetableConflictException catch (conflict) {
+      if (mounted) {
+        setState(() {
+          _conflictErrorMessage = conflict.message;
+        });
+        _showConflictDialog(conflict);
+      }
     } catch (e) {
       if (mounted) {
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Schedule Conflict Detected', style: TextStyle(color: DashboardColors.error)),
-            content: Text(e.toString()),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
-            ],
-          ),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving schedule: $e'), backgroundColor: AcadexColors.error),
         );
       }
     }
   }
 
+  void _showConflictDialog(TimetableConflictException conflict) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusXl),
+        title: const Row(
+          children: [
+            Icon(LucideIcons.alertTriangle, color: AcadexColors.error, size: 20),
+            SizedBox(width: 8),
+            Text('Schedule Conflict Detected'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              conflict.message,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            if (conflict.conflictingEntry != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AcadexColors.error.withValues(alpha: 0.08),
+                  borderRadius: AcadexRadius.borderRadiusMd,
+                  border: Border.all(color: AcadexColors.error.withValues(alpha: 0.2)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Conflicting Slot: ${conflict.conflictingEntry!.startTime} – ${conflict.conflictingEntry!.endTime}',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AcadexColors.error),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Day: ${conflict.conflictingEntry!.dayOfWeek.displayName}',
+                      style: AcadexTypography.caption(color: Theme.of(context).colorScheme.onSurface),
+                    ),
+                    if (conflict.conflictingEntry!.roomNumber.isNotEmpty)
+                      Text(
+                        'Room: ${conflict.conflictingEntry!.roomNumber}',
+                        style: AcadexTypography.caption(color: Theme.of(context).colorScheme.onSurface),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Adjust Schedule'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    if (authState is! AuthAuthenticated) return const SizedBox.shrink();
+    
+    final user = authState.user;
+    if (user.role == AppRole.student || user.role == AppRole.faculty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Unauthorized')),
+        body: const Center(child: Text('Unauthorized: Only administrators and HODs can create or edit timetable entries.')),
+      );
+    }
+
     final mgtState = ref.watch(timetableManagementProvider);
     final isLoading = mgtState.isLoading;
+    final isEdit = widget.existingEntry != null && widget.existingEntry!.id.isNotEmpty;
+    final isHod = user.role == AppRole.hod;
+
+    // Pre-populate department for HOD
+    if (isHod && _departmentId == null && user.departmentId != null) {
+      _departmentId = user.departmentId;
+    }
 
     return Scaffold(
-      backgroundColor: DashboardColors.background,
-      appBar: AppBar(
-        title: Text(widget.existingEntry == null ? 'Create Timetable Entry' : 'Edit Timetable Entry', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: DashboardColors.textPrimary)),
-        backgroundColor: DashboardColors.surface,
-        iconTheme: const IconThemeData(color: DashboardColors.textPrimary),
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: Card(
-            margin: const EdgeInsets.all(24),
-            color: DashboardColors.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 900),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(24),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Dynamic Dropdowns
-                    _buildDropdowns(),
-                    const SizedBox(height: 24),
-                    const Divider(),
-                    const SizedBox(height: 24),
-                    // Schedule Details
-                    Row(
+                    // Header
+                    AcadexPageHeader(
+                      title: isEdit ? 'Edit Timetable Schedule' : 'Create Timetable Schedule',
+                      subtitle: isEdit
+                          ? 'Modify slot details, timings, or assigned faculty'
+                          : 'Configure academic parameters, faculty assignment, and timings',
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Conflict Banner with smooth animated expansion
+                    AnimatedSize(
+                      duration: AcadexMotion.resolveDuration(context, AcadexMotion.normal),
+                      curve: AcadexMotion.curveStandard,
+                      child: _conflictErrorMessage != null
+                          ? Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AcadexColors.error.withValues(alpha: 0.1),
+                                borderRadius: AcadexRadius.borderRadiusMd,
+                                border: Border.all(color: AcadexColors.error),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(LucideIcons.alertTriangle, color: AcadexColors.error, size: 20),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      _conflictErrorMessage!,
+                                      style: const TextStyle(color: AcadexColors.error, fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+
+                    // Section 1: Academic Information
+                    _buildSectionCard(
+                      title: '1. Academic Information',
+                      icon: LucideIcons.graduationCap,
                       children: [
-                        Expanded(
-                          child: DropdownButtonFormField<TimetableDay>(
-                            value: _dayOfWeek,
-                            decoration: const InputDecoration(labelText: 'Day', border: OutlineInputBorder()),
-                            items: TimetableDay.values.map((d) => DropdownMenuItem(value: d, child: Text(d.displayName))).toList(),
-                            onChanged: (val) => setState(() => _dayOfWeek = val!),
+                        // Department (Locked for HOD, Dropdown for Admins)
+                        if (!isHod)
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final deptsAsync = ref.watch(departmentsProvider);
+                              return deptsAsync.maybeWhen(
+                                data: (depts) => DropdownButtonFormField<String>(
+                                  initialValue: _departmentId,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Department *',
+                                    prefixIcon: Icon(LucideIcons.building2, size: 18),
+                                  ),
+                                  items: depts.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name.isNotEmpty ? d.name : d.code))).toList(),
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _departmentId = val;
+                                      _courseId = null;
+                                      _semesterId = null;
+                                      _sectionId = null;
+                                      _subjectId = null;
+                                    });
+                                  },
+                                  validator: (v) => v == null ? 'Please select a department' : null,
+                                ),
+                                orElse: () => const LinearProgressIndicator(),
+                              );
+                            },
                           ),
+                        const SizedBox(height: 14),
+
+                        // Course
+                        Consumer(
+                          builder: (context, ref, _) {
+                            final coursesAsync = ref.watch(coursesProvider);
+                            return coursesAsync.maybeWhen(
+                              data: (courses) {
+                                final filtered = _departmentId != null
+                                    ? courses.where((c) => c.departmentId == _departmentId).toList()
+                                    : courses;
+                                return DropdownButtonFormField<String>(
+                                  initialValue: _courseId,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Course *',
+                                    prefixIcon: Icon(LucideIcons.bookMarked, size: 18),
+                                  ),
+                                  items: filtered.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name.isNotEmpty ? c.name : c.code))).toList(),
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _courseId = val;
+                                      _semesterId = null;
+                                      _sectionId = null;
+                                      _subjectId = null;
+                                      _facultyId = null;
+                                    });
+                                  },
+                                  validator: (v) => v == null ? 'Please select a course' : null,
+                                );
+                              },
+                              orElse: () => const LinearProgressIndicator(),
+                            );
+                          },
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: DropdownButtonFormField<TimetableSessionType>(
-                            value: _sessionType,
-                            decoration: const InputDecoration(labelText: 'Session Type', border: OutlineInputBorder()),
-                            items: TimetableSessionType.values.map((s) => DropdownMenuItem(value: s, child: Text(s.displayName))).toList(),
-                            onChanged: (val) => setState(() => _sessionType = val!),
-                          ),
+                        const SizedBox(height: 14),
+
+                        // Semester & Section in a Row
+                        Row(
+                          children: [
+                            // Semester
+                            Expanded(
+                              child: Consumer(
+                                builder: (context, ref, _) {
+                                  final semestersAsync = ref.watch(semestersProvider);
+                                  return semestersAsync.maybeWhen(
+                                    data: (semesters) {
+                                      final filtered = _courseId != null
+                                          ? semesters.where((s) => s.courseId == _courseId).toList()
+                                          : semesters;
+                                      return DropdownButtonFormField<String>(
+                                        initialValue: _semesterId,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Semester *',
+                                          prefixIcon: Icon(LucideIcons.calendarRange, size: 18),
+                                        ),
+                                        items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name.isNotEmpty ? s.name : 'Semester ${s.number}'))).toList(),
+                                        onChanged: (val) {
+                                          setState(() {
+                                            _semesterId = val;
+                                            _sectionId = null;
+                                            _subjectId = null;
+                                            _facultyId = null;
+                                          });
+                                        },
+                                        validator: (v) => v == null ? 'Select semester' : null,
+                                      );
+                                    },
+                                    orElse: () => const SizedBox.shrink(),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+
+                            // Section
+                            Expanded(
+                              child: Consumer(
+                                builder: (context, ref, _) {
+                                  final sectionsAsync = ref.watch(sectionsProvider);
+                                  return sectionsAsync.maybeWhen(
+                                    data: (sections) {
+                                      final filtered = _semesterId != null
+                                          ? sections.where((s) => s.semesterId == _semesterId).toList()
+                                          : sections;
+                                      return DropdownButtonFormField<String>(
+                                        initialValue: _sectionId,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Section *',
+                                          prefixIcon: Icon(LucideIcons.layoutGrid, size: 18),
+                                        ),
+                                        items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
+                                        onChanged: (val) {
+                                          setState(() {
+                                            _sectionId = val;
+                                            _facultyId = null;
+                                          });
+                                          _validateFacultyAssignment();
+                                        },
+                                        validator: (v) => v == null ? 'Select section' : null,
+                                      );
+                                    },
+                                    orElse: () => const SizedBox.shrink(),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    Row(
+                    const SizedBox(height: 20),
+
+                    // Section 2: Teaching Assignment
+                    _buildSectionCard(
+                      title: '2. Teaching Assignment',
+                      icon: LucideIcons.userCheck,
                       children: [
-                        Expanded(
-                          child: ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: const Text('Start Time'),
-                            subtitle: Text(_startTime.format(context), style: const TextStyle(fontWeight: FontWeight.bold)),
-                            trailing: const Icon(LucideIcons.clock),
-                            onTap: () async {
-                              final time = await showTimePicker(context: context, initialTime: _startTime);
-                              if (time != null) setState(() => _startTime = time);
-                            },
-                          ),
+                        // Subject
+                        Consumer(
+                          builder: (context, ref, _) {
+                            final subjectsAsync = ref.watch(subjectsProvider);
+                            return subjectsAsync.maybeWhen(
+                              data: (subjects) {
+                                final filtered = _semesterId != null
+                                    ? subjects.where((s) => s.semesterId == _semesterId).toList()
+                                    : (_departmentId != null ? subjects.where((s) => s.departmentId == _departmentId).toList() : subjects);
+                                return DropdownButtonFormField<String>(
+                                  initialValue: _subjectId,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Subject *',
+                                    prefixIcon: Icon(LucideIcons.bookOpen, size: 18),
+                                  ),
+                                  items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.code})'))).toList(),
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _subjectId = val;
+                                      _facultyId = null;
+                                    });
+                                    _validateFacultyAssignment();
+                                  },
+                                  validator: (v) => v == null ? 'Please select a subject' : null,
+                                );
+                              },
+                              orElse: () => const LinearProgressIndicator(),
+                            );
+                          },
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: const Text('End Time'),
-                            subtitle: Text(_endTime.format(context), style: const TextStyle(fontWeight: FontWeight.bold)),
-                            trailing: const Icon(LucideIcons.clock),
-                            onTap: () async {
-                              final time = await showTimePicker(context: context, initialTime: _endTime);
-                              if (time != null) setState(() => _endTime = time);
-                            },
-                          ),
+                        const SizedBox(height: 14),
+
+                        // Faculty (Directly connected to Faculty Assignments for chosen subject & section)
+                        Consumer(
+                          builder: (context, ref, _) {
+                            List<Faculty> candidateFaculty = [];
+                            if (_subjectId != null && _sectionId != null) {
+                              candidateFaculty = ref.watch(assignedFacultyForSubjectSectionProvider((subjectId: _subjectId!, sectionId: _sectionId!)));
+                            }
+                            if (candidateFaculty.isEmpty) {
+                              final facultyState = ref.watch(facultyProvider(_departmentId));
+                              candidateFaculty = facultyState.items;
+                            }
+
+                            return DropdownButtonFormField<String>(
+                              initialValue: _facultyId,
+                              decoration: InputDecoration(
+                                labelText: 'Assigned Faculty *',
+                                prefixIcon: const Icon(LucideIcons.user, size: 18),
+                                helperText: _subjectId != null && _sectionId != null
+                                    ? (candidateFaculty.isNotEmpty ? "Filtering assigned faculty for this subject & section" : "No faculty assignment found; showing department faculty")
+                                    : null,
+                                errorText: _assignmentError,
+                              ),
+                              items: candidateFaculty.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name.isNotEmpty ? f.name : f.email))).toList(),
+                              onChanged: (val) {
+                                setState(() {
+                                  _facultyId = val;
+                                });
+                                _validateFacultyAssignment();
+                              },
+                              validator: (v) => v == null ? 'Please assign a faculty member' : null,
+                            );
+                          },
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    Row(
+                    const SizedBox(height: 20),
+
+                    // Section 3: Schedule & Timing
+                    _buildSectionCard(
+                      title: '3. Schedule & Timing',
+                      icon: LucideIcons.clock,
                       children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _roomController,
-                            decoration: const InputDecoration(labelText: 'Room Number', border: OutlineInputBorder()),
-                            validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-                          ),
+                        Row(
+                          children: [
+                            // Day of Week
+                            Expanded(
+                              child: DropdownButtonFormField<TimetableDay>(
+                                initialValue: _dayOfWeek,
+                                decoration: const InputDecoration(
+                                  labelText: 'Day of Week *',
+                                  prefixIcon: Icon(LucideIcons.calendar, size: 18),
+                                ),
+                                items: TimetableDay.values.map((d) => DropdownMenuItem(value: d, child: Text(d.displayName))).toList(),
+                                onChanged: (val) {
+                                  if (val != null) setState(() => _dayOfWeek = val);
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+
+                            // Session Type
+                            Expanded(
+                              child: DropdownButtonFormField<TimetableSessionType>(
+                                initialValue: _sessionType,
+                                decoration: const InputDecoration(
+                                  labelText: 'Session Type *',
+                                  prefixIcon: Icon(LucideIcons.tag, size: 18),
+                                ),
+                                items: TimetableSessionType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.displayName))).toList(),
+                                onChanged: (val) {
+                                  if (val != null) setState(() => _sessionType = val);
+                                },
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _buildingController,
-                            decoration: const InputDecoration(labelText: 'Building (Optional)', border: OutlineInputBorder()),
-                          ),
+                        const SizedBox(height: 14),
+
+                        // Time Range Selectors
+                        Row(
+                          children: [
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => _pickTime(true),
+                                child: InputDecorator(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Start Time *',
+                                    prefixIcon: Icon(LucideIcons.clock4, size: 18),
+                                  ),
+                                  child: Text(_formatTime(_startTime), style: const TextStyle(fontWeight: FontWeight.w600)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => _pickTime(false),
+                                child: InputDecorator(
+                                  decoration: const InputDecoration(
+                                    labelText: 'End Time *',
+                                    prefixIcon: Icon(LucideIcons.clock9, size: 18),
+                                  ),
+                                  child: Text(_formatTime(_endTime), style: const TextStyle(fontWeight: FontWeight.w600)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Section 4: Location & Classroom
+                    _buildSectionCard(
+                      title: '4. Classroom & Location',
+                      icon: LucideIcons.mapPin,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _roomController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Room Number *',
+                                  hintText: 'e.g. C-204, Lab-1',
+                                  prefixIcon: Icon(LucideIcons.doorOpen, size: 18),
+                                ),
+                                validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter room number' : null,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _buildingController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Building / Block (Optional)',
+                                  hintText: 'e.g. Main Block, Science Wing',
+                                  prefixIcon: Icon(LucideIcons.building, size: 18),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Section 5: Audit & Distribution Status
+                    _buildSectionCard(
+                      title: '5. Audit & Distribution Status',
+                      icon: LucideIcons.shieldCheck,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AcadexColors.success.withValues(alpha: 0.15),
+                                borderRadius: AcadexRadius.borderRadiusXs,
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(LucideIcons.checkCircle2, size: 14, color: AcadexColors.success),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'ACTIVE',
+                                    style: TextStyle(color: AcadexColors.success, fontWeight: FontWeight.bold, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Realtime schedule distribution to enrolled students and assigned faculty.',
+                                style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                     const SizedBox(height: 32),
-                    if (mgtState.hasError)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Text(mgtState.error.toString(), style: const TextStyle(color: DashboardColors.error)),
-                      ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: DashboardColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      onPressed: isLoading ? null : _submit,
-                      child: isLoading
-                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : Text(widget.existingEntry == null ? 'Create Schedule' : 'Save Changes', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+
+                    // Submit & Cancel Buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        OutlinedButton(
+                          onPressed: isLoading ? null : () => context.pop(),
+                          child: const Text('Cancel'),
+                        ),
+                        const SizedBox(width: 14),
+                        AcadexButton(
+                          label: isEdit ? 'Save Changes' : 'Create Schedule',
+                          icon: isEdit ? LucideIcons.save : LucideIcons.plus,
+                          isLoading: isLoading,
+                          onPressed: isLoading ? null : _submit,
+                          variant: AcadexButtonVariant.primary,
+                          size: AcadexButtonSize.md,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -282,177 +756,42 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
     );
   }
 
-  Widget _buildDropdowns() {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Consumer(builder: (ctx, ref, _) {
-                final deptsAsync = ref.watch(departmentsProvider);
-                return deptsAsync.maybeWhen(
-                  data: (depts) => DropdownButtonFormField<String>(
-                    value: _departmentId,
-                    decoration: const InputDecoration(labelText: 'Department', border: OutlineInputBorder()),
-                    items: depts.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name))).toList(),
-                    onChanged: (val) => setState(() {
-                      _departmentId = val;
-                      _courseId = null;
-                      _subjectId = null;
-                      _facultyId = null;
-                    }),
-                    validator: (val) => val == null ? 'Required' : null,
-                  ),
-                  orElse: () => const CircularProgressIndicator(),
-                );
-              }),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Consumer(builder: (ctx, ref, _) {
-                final coursesAsync = ref.watch(coursesProvider);
-                return coursesAsync.maybeWhen(
-                  data: (courses) {
-                    final filtered = courses.where((c) => c.departmentId == _departmentId).toList();
-                    return DropdownButtonFormField<String>(
-                      value: _courseId,
-                      decoration: const InputDecoration(labelText: 'Course', border: OutlineInputBorder()),
-                      items: filtered.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
-                      onChanged: (val) => setState(() {
-                        _courseId = val;
-                        _semesterId = null;
-                      }),
-                      validator: (val) => val == null ? 'Required' : null,
-                    );
-                  },
-                  orElse: () => const CircularProgressIndicator(),
-                );
-              }),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: Consumer(builder: (ctx, ref, _) {
-                final ayAsync = ref.watch(academicYearsProvider);
-                return ayAsync.maybeWhen(
-                  data: (ays) => DropdownButtonFormField<String>(
-                    value: _academicYearId,
-                    decoration: const InputDecoration(labelText: 'Academic Year', border: OutlineInputBorder()),
-                    items: ays.map((ay) => DropdownMenuItem(value: ay.id, child: Text(ay.name))).toList(),
-                    onChanged: (val) => setState(() => _academicYearId = val),
-                    validator: (val) => val == null ? 'Required' : null,
-                  ),
-                  orElse: () => const CircularProgressIndicator(),
-                );
-              }),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Consumer(builder: (ctx, ref, _) {
-                final semsAsync = ref.watch(semestersProvider);
-                return semsAsync.maybeWhen(
-                  data: (sems) {
-                    final filtered = sems.where((s) => s.courseId == _courseId && s.academicYearId == _academicYearId).toList();
-                    return DropdownButtonFormField<String>(
-                      value: _semesterId,
-                      decoration: const InputDecoration(labelText: 'Semester', border: OutlineInputBorder()),
-                      items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
-                      onChanged: (val) => setState(() {
-                        _semesterId = val;
-                        _sectionId = null;
-                        _subjectId = null;
-                      }),
-                      validator: (val) => val == null ? 'Required' : null,
-                    );
-                  },
-                  orElse: () => const CircularProgressIndicator(),
-                );
-              }),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: Consumer(builder: (ctx, ref, _) {
-                final secsAsync = ref.watch(sectionsProvider);
-                return secsAsync.maybeWhen(
-                  data: (secs) {
-                    final filtered = secs.where((s) => s.semesterId == _semesterId).toList();
-                    return DropdownButtonFormField<String>(
-                      value: _sectionId,
-                      decoration: const InputDecoration(labelText: 'Section', border: OutlineInputBorder()),
-                      items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
-                      onChanged: (val) {
-                        setState(() => _sectionId = val);
-                        _validateFacultyAssignment();
-                      },
-                      validator: (val) => val == null ? 'Required' : null,
-                    );
-                  },
-                  orElse: () => const CircularProgressIndicator(),
-                );
-              }),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Consumer(builder: (ctx, ref, _) {
-                final subsAsync = ref.watch(subjectsProvider);
-                return subsAsync.maybeWhen(
-                  data: (subs) {
-                    final filtered = subs.where((s) => s.semesterId == _semesterId).toList();
-                    return DropdownButtonFormField<String>(
-                      value: _subjectId,
-                      decoration: const InputDecoration(labelText: 'Subject', border: OutlineInputBorder()),
-                      items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
-                      onChanged: (val) {
-                        setState(() => _subjectId = val);
-                        _validateFacultyAssignment();
-                      },
-                      validator: (val) => val == null ? 'Required' : null,
-                    );
-                  },
-                  orElse: () => const CircularProgressIndicator(),
-                );
-              }),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Consumer(builder: (ctx, ref, _) {
-          final facsAsync = ref.watch(facultyProvider);
-          return facsAsync.maybeWhen(
-            data: (facs) {
-              final filtered = facs.where((f) => f.departmentId == _departmentId).toList();
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  DropdownButtonFormField<String>(
-                    value: _facultyId,
-                    decoration: const InputDecoration(labelText: 'Faculty', border: OutlineInputBorder()),
-                    items: filtered.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name))).toList(),
-                    onChanged: (val) {
-                      setState(() => _facultyId = val);
-                      _validateFacultyAssignment();
-                    },
-                    validator: (val) => val == null ? 'Required' : null,
-                  ),
-                  if (_assignmentError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(_assignmentError!, style: const TextStyle(color: DashboardColors.error, fontSize: 12)),
-                    ),
-                ],
-              );
-            },
-            orElse: () => const CircularProgressIndicator(),
-          );
-        }),
-      ],
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(color: Theme.of(context).dividerColor),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: Theme.of(context).primaryColor),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24),
+          ...children,
+        ],
+      ),
     );
   }
 }

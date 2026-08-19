@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../domain/models/user_profile_model.dart';
 import '../../domain/models/user_status_enum.dart';
 import '../providers/user_providers.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_form_card.dart';
 
 class UserFormScreen extends ConsumerStatefulWidget {
   final String? userId; // If null, create mode
@@ -109,62 +111,89 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: DashboardColors.background,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        title: Text(widget.userId == null ? 'Create User' : 'Edit User'),
-        backgroundColor: DashboardColors.surface,
-        foregroundColor: DashboardColors.textPrimary,
+        leading: IconButton(
+          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          widget.userId == null ? 'Create User' : 'Edit User',
+          style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+        ),
         elevation: 0,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+          : AcadexPageContainer(
+              maxWidth: AcadexLayout.formMaxWidth,
               child: Form(
                 key: _formKey,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSectionTitle('Basic Information'),
-                    _buildTextField('Full Name', _nameCtrl, required: true),
-                    const SizedBox(height: 16),
-                    _buildTextField('Email Address', _emailCtrl, required: true, isEmail: true),
-                    const SizedBox(height: 16),
-                    _buildTextField('Phone Number', _phoneCtrl, required: true),
-                    const SizedBox(height: 24),
-                    
-                    _buildSectionTitle('Role & Status'),
-                    Row(
-                      children: [
-                        Expanded(child: _buildDropdown<AppRole>('Role', AppRole.values, _selectedRole, (v) => setState(() => _selectedRole = v!))),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildDropdown<UserStatus>('Status', UserStatus.values, _selectedStatus, (v) => setState(() => _selectedStatus = v!))),
-                      ],
+                    AcadexFormCard(
+                      title: "Basic Information",
+                      icon: LucideIcons.user,
+                      child: Column(
+                        children: [
+                          _buildTextField('Full Name', _nameCtrl, required: true, icon: LucideIcons.user),
+                          const SizedBox(height: 16),
+                          _buildTextField('Email Address', _emailCtrl, required: true, isEmail: true, icon: LucideIcons.mail),
+                          const SizedBox(height: 16),
+                          _buildTextField('Phone Number', _phoneCtrl, required: true, icon: LucideIcons.phone),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 24),
-
-                    _buildSectionTitle('Identifiers'),
-                    if (_selectedRole != AppRole.student)
-                      _buildTextField('Employee ID', _empIdCtrl),
-                    if (_selectedRole == AppRole.student)
-                      _buildTextField('Roll Number', _rollNoCtrl),
-                      
-                    const SizedBox(height: 40),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: ref.watch(userManagementProvider).isLoading ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: DashboardColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: ref.watch(userManagementProvider).isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : Text('Save User', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                    AcadexFormCard(
+                      title: "Role & Status",
+                      icon: LucideIcons.shield,
+                      child: Row(
+                        children: [
+                          Expanded(child: _buildDropdown<AppRole>('Role', AppRole.values, _selectedRole, (v) => setState(() => _selectedRole = v!))),
+                          const SizedBox(width: 16),
+                          Expanded(child: _buildDropdown<UserStatus>('Status', UserStatus.values, _selectedStatus, (v) => setState(() => _selectedStatus = v!))),
+                        ],
                       ),
+                    ),
+                    const SizedBox(height: 24),
+                    AcadexFormCard(
+                      title: "Identifiers",
+                      icon: LucideIcons.hash,
+                      child: Column(
+                        children: [
+                          if (_selectedRole != AppRole.student)
+                            _buildTextField('Employee ID', _empIdCtrl, icon: LucideIcons.idCard),
+                          if (_selectedRole == AppRole.student)
+                            _buildTextField('Roll Number', _rollNoCtrl, icon: LucideIcons.hash),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => context.pop(),
+                          child: Text("Cancel", style: AcadexTypography.body(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted)),
+                        ),
+                        const SizedBox(width: 16),
+                        ElevatedButton(
+                          onPressed: ref.watch(userManagementProvider).isLoading ? null : _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                          ),
+                          child: ref.watch(userManagementProvider).isLoading
+                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              : Text('Save User', style: AcadexTypography.body(color: Colors.white).copyWith(fontWeight: FontWeight.w600)),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -173,22 +202,12 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16, top: 8),
-      child: Text(title, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: DashboardColors.textPrimary)),
-    );
-  }
-
-  Widget _buildTextField(String label, TextEditingController controller, {bool required = false, bool isEmail = false}) {
+  Widget _buildTextField(String label, TextEditingController controller, {bool required = false, bool isEmail = false, IconData? icon}) {
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        filled: true,
-        fillColor: DashboardColors.surface,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: DashboardColors.border)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: DashboardColors.border)),
+        prefixIcon: icon != null ? Icon(icon, size: 18) : null,
       ),
       validator: (val) {
         if (required && (val == null || val.isEmpty)) return 'This field is required';
@@ -199,17 +218,15 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   }
 
   Widget _buildDropdown<T>(String label, List<T> items, T value, ValueChanged<T?> onChanged) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecorator(
       decoration: InputDecoration(
         labelText: label,
-        filled: true,
-        fillColor: DashboardColors.surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: DashboardColors.border)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: DashboardColors.border)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
+          dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
           value: value,
           isExpanded: true,
           items: items.map((e) {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/domain/models/user_model.dart';
@@ -15,6 +15,7 @@ import '../widgets/stat_card.dart';
 import '../../../notifications/presentation/widgets/notification_preview_list.dart';
 import '../../../timetable/presentation/providers/timetable_providers.dart';
 import '../../../timetable/presentation/widgets/timetable_widgets.dart';
+import '../../../academic_structure/presentation/providers/academic_providers.dart';
 
 class StudentDashboard extends ConsumerWidget {
   const StudentDashboard({super.key});
@@ -28,21 +29,24 @@ class StudentDashboard extends ConsumerWidget {
 
     UserModel? user;
     if (authState is AuthAuthenticated) user = authState.user;
+    final profileAsync = ref.watch(currentStudentAcademicProfileProvider);
+    final scheduleAsync = ref.watch(todayScheduleProvider);
 
-    return Theme(
-      data: AppTheme.lightTheme,
-      child: Scaffold(
-        backgroundColor: DashboardColors.background,
-        body: LayoutBuilder(builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final statCols = width > 1024 ? 4 : width > 600 ? 3 : 2;
-          final firstName = user?.name.split(' ').first ?? 'Student';
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: LayoutBuilder(builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final statCols = AcadexLayout.statGridColumns(context);
+        final firstName = user?.name.split(' ').first ?? 'Student';
+        final classesToday = scheduleAsync.value?.length ?? 0;
+        final profile = profileAsync.value;
+        final attPercentage = profile?.overallAttendancePercentage ?? 85.0;
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+        return AcadexPageContainer(
+          particleSphereVariant: ParticleSphereVariant.dashboard,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
                 // Greeting
                 Row(
                   children: [
@@ -51,37 +55,77 @@ class StudentDashboard extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Hey, $firstName! 🎓',
-                              style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700, color: DashboardColors.textPrimary)),
+                              style: AcadexTypography.heading2(color: Theme.of(context).colorScheme.onSurface)),
                           const SizedBox(height: 6),
-                          Text('You have 4 classes today. Keep it up!',
-                              style: GoogleFonts.inter(fontSize: 14, color: DashboardColors.textSecondary)),
+                          Text(
+                            classesToday > 0 
+                                ? 'You have $classesToday classes scheduled today. Keep it up!'
+                                : 'No classes scheduled for today. Have a great day!',
+                            style: AcadexTypography.body(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                          ),
                         ],
                       ),
                     ),
                     _RolePill(label: user?.role.displayName ?? 'Student'),
                   ],
                 ),
+                const SizedBox(height: 16),
+
+                // Academic Placement Banner
+                if (profile != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AcadexColors.primary.withValues(alpha: 0.08),
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                      border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(LucideIcons.graduationCap, color: AcadexColors.primary, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            "${profile.course?.name ?? 'Course'} • ${profile.semester?.name ?? 'Semester'} • Section ${profile.section?.name ?? 'A'} (${profile.academicYear?.name ?? 'Current Academic Year'})",
+                            style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AcadexColors.primary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                          ),
+                          child: Text(
+                            "Roll: ${profile.student.rollNumber}",
+                            style: const TextStyle(color: AcadexColors.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 24),
 
-                // Attendance Warning Banner (conditional example)
+              // Attendance Warning Banner (conditional only if attendance < 75%)
+              if (attPercentage < 75.0) ...[
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: DashboardColors.warningLight,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: DashboardColors.warning.withValues(alpha: 0.3)),
+                    color: AcadexColors.warning.withValues(alpha: 0.1),
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                    border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(LucideIcons.alertTriangle, color: DashboardColors.warning, size: 22),
+                      const Icon(LucideIcons.alertTriangle, color: AcadexColors.warning, size: 22),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Attendance Alert', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: DashboardColors.warning)),
-                            Text('Your attendance in DBMS is below 75%. Please attend regularly.',
-                                style: GoogleFonts.inter(fontSize: 12, color: DashboardColors.warning)),
+                            Text('Attendance Alert', style: AcadexTypography.bodySmall(color: AcadexColors.warning).copyWith(fontWeight: FontWeight.w700)),
+                            Text('Your overall attendance is currently at ${attPercentage.toStringAsFixed(1)}% (below the required 75%). Please attend classes regularly.',
+                                style: AcadexTypography.caption(color: AcadexColors.warning)),
                           ],
                         ),
                       ),
@@ -89,10 +133,11 @@ class StudentDashboard extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
+              ],
 
                 // Stats
                 const SectionHeader(title: 'My Overview'),
-                const SizedBox(height: 12),
+                AcadexLayout.headerGap,
                 stats.when(
                   loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
                   error: (err, stack) => Text('Error: $err'),
@@ -102,18 +147,18 @@ class StudentDashboard extends ConsumerWidget {
                     itemCount: data.length,
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: statCols,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
+                      crossAxisSpacing: AcadexLayout.gridSpacing,
+                      mainAxisSpacing: AcadexLayout.gridSpacing,
                       childAspectRatio: width > 600 ? 1.15 : 1.05,
                     ),
                     itemBuilder: (_, i) => StatCard(stat: data[i], animationDelay: i * 80),
                   ),
                 ),
-                const SizedBox(height: 28),
+                AcadexLayout.sectionSpacer,
 
                 // Today's timetable preview
                 const SectionHeader(title: "Today's Timetable"),
-                const SizedBox(height: 12),
+                AcadexLayout.headerGap,
                 Consumer(
                   builder: (context, ref, _) {
                     final todayAsync = ref.watch(todayScheduleProvider);
@@ -124,37 +169,36 @@ class StudentDashboard extends ConsumerWidget {
                     );
                   },
                 ),
-                const SizedBox(height: 28),
+                AcadexLayout.sectionSpacer,
 
                 const SectionHeader(title: 'Quick Actions'),
-                const SizedBox(height: 12),
+                AcadexLayout.headerGap,
                 GridView.builder(
                   physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
                   itemCount: quickActions.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: width > 600 ? 6 : 3,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
+                    crossAxisSpacing: AcadexLayout.gridSpacing,
+                    mainAxisSpacing: AcadexLayout.gridSpacing,
                     childAspectRatio: 0.9,
                   ),
                   itemBuilder: (_, i) => QuickActionCard(action: quickActions[i]),
                 ),
-                const SizedBox(height: 28),
+                AcadexLayout.sectionSpacer,
                 const NotificationPreviewList(),
-                const SizedBox(height: 28),
+                AcadexLayout.sectionSpacer,
                 SectionHeader(title: 'Recent Activity', actionLabel: 'View All', onAction: () {}),
-                const SizedBox(height: 12),
+                AcadexLayout.headerGap,
                 activity.when(
                   loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
                   error: (err, stack) => Text('Error: $err'),
                   data: (data) => ActivityFeed(items: data),
                 ),
-              ],
-            ),
-          );
-        }),
-      ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }
@@ -167,18 +211,18 @@ class _RolePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: DashboardColors.primaryLight,
-        borderRadius: BorderRadius.circular(9999),
-        border: Border.all(color: DashboardColors.primary.withValues(alpha: 0.2)),
+        color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+        borderRadius: AcadexRadius.borderRadiusFull,
+        border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 8, height: 8, decoration: const BoxDecoration(color: DashboardColors.success, shape: BoxShape.circle)),
+          Container(width: 8, height: 8, decoration: const BoxDecoration(color: AcadexColors.success, shape: BoxShape.circle)),
           const SizedBox(width: 6),
-          Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: DashboardColors.primary)),
+          Text(label, style: AcadexTypography.eyebrow(color: Theme.of(context).primaryColor)),
         ],
       ),
     );

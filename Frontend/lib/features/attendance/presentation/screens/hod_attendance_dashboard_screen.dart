@@ -7,28 +7,36 @@ import '../widgets/hod/department_summary_card.dart';
 import '../widgets/hod/faculty_completion_card.dart';
 import '../widgets/hod/student_shortage_card.dart';
 import '../widgets/hod/section_attendance_card.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
 
 class HodAttendanceDashboardScreen extends ConsumerWidget {
   const HodAttendanceDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return DefaultTabController(
       length: 4,
       child: Scaffold(
-        backgroundColor: DashboardColors.background,
+        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
         appBar: AppBar(
-          backgroundColor: DashboardColors.surface,
-          elevation: 0,
-          title: const Text("Department Attendance", style: TextStyle(color: DashboardColors.textPrimary, fontWeight: FontWeight.bold)),
-          bottom: const TabBar(
+          title: Text(
+            "Department Attendance",
+            style: AcadexTypography.title(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
+          ),
+          bottom: TabBar(
             isScrollable: true,
-            labelColor: DashboardColors.primary,
-            unselectedLabelColor: DashboardColors.textSecondary,
-            indicatorColor: DashboardColors.primary,
-            tabs: [
+            labelColor: AcadexColors.primary,
+            unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            indicatorColor: AcadexColors.primary,
+            indicatorWeight: 2.5,
+            tabs: const [
               Tab(text: "Overview"),
-              Tab(text: "Faculty"),
+              Tab(text: "Faculty Status"),
               Tab(text: "Shortages"),
               Tab(text: "Sections"),
             ],
@@ -36,7 +44,7 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
         ),
         body: TabBarView(
           children: [
-            _buildOverviewTab(ref),
+            _buildOverviewTab(ref, isDark),
             _buildFacultyTab(ref),
             _buildShortageTab(ref),
             _buildSectionTab(ref),
@@ -46,30 +54,41 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildOverviewTab(WidgetRef ref) {
+  Widget _buildOverviewTab(WidgetRef ref, bool isDark) {
     final summaryAsync = ref.watch(hodDepartmentSummaryProvider);
     
     return summaryAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text("Error: $err")),
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Loading departmental attendance metrics..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load department summary: $err",
+          onRetry: () => ref.refresh(hodDepartmentSummaryProvider),
+        ),
+      ),
       data: (summary) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+        return AcadexPageContainer(
+          maxWidth: AcadexLayout.contentMaxWidth,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               DepartmentSummaryCard(summary: summary),
-              const SizedBox(height: 24),
-              const Text("Quick Actions", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: DashboardColors.textPrimary)),
+              const SizedBox(height: 28),
+              Text(
+                "QUICK ACTIONS",
+                style: AcadexTypography.eyebrow(
+                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                ),
+              ),
               const SizedBox(height: 12),
-              // Dummy actions
               Wrap(
                 spacing: 12,
                 runSpacing: 12,
                 children: [
-                  _buildActionChip(LucideIcons.fileSpreadsheet, "Export Report"),
-                  _buildActionChip(LucideIcons.mail, "Email Defaulters"),
-                  _buildActionChip(LucideIcons.lock, "Lock All Drafts"),
+                  _buildActionChip(LucideIcons.fileSpreadsheet, "Export Attendance Report", isDark),
+                  _buildActionChip(LucideIcons.mail, "Notify Defaulters", isDark),
+                  _buildActionChip(LucideIcons.lock, "Lock Completed Sessions", isDark),
                 ],
               )
             ],
@@ -83,15 +102,26 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
     final facultyAsync = ref.watch(hodFacultyCompletionProvider);
     
     return facultyAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text("Error: $err")),
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Loading faculty completion records..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load faculty status: $err",
+          onRetry: () => ref.refresh(hodFacultyCompletionProvider),
+        ),
+      ),
       data: (faculties) {
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: faculties.length,
-          itemBuilder: (context, index) {
-            return FacultyCompletionCard(completion: faculties[index]);
-          },
+        return AcadexPageContainer(
+          maxWidth: AcadexLayout.contentMaxWidth,
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: faculties.length,
+            itemBuilder: (context, index) {
+              return FacultyCompletionCard(completion: faculties[index]);
+            },
+          ),
         );
       },
     );
@@ -101,15 +131,26 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
     final shortageAsync = ref.watch(hodStudentShortageProvider);
     
     return shortageAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text("Error: $err")),
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Loading critical shortage alerts..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load shortage roster: $err",
+          onRetry: () => ref.refresh(hodStudentShortageProvider),
+        ),
+      ),
       data: (shortages) {
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: shortages.length,
-          itemBuilder: (context, index) {
-            return StudentShortageCard(shortage: shortages[index]);
-          },
+        return AcadexPageContainer(
+          maxWidth: AcadexLayout.contentMaxWidth,
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: shortages.length,
+            itemBuilder: (context, index) {
+              return StudentShortageCard(shortage: shortages[index]);
+            },
+          ),
         );
       },
     );
@@ -119,34 +160,52 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
     final sectionAsync = ref.watch(hodSectionAttendanceProvider);
     
     return sectionAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text("Error: $err")),
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Loading section-wise breakdown..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load sections: $err",
+          onRetry: () => ref.refresh(hodSectionAttendanceProvider),
+        ),
+      ),
       data: (sections) {
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: sections.length,
-          itemBuilder: (context, index) {
-            return SectionAttendanceCard(summary: sections[index]);
-          },
+        return AcadexPageContainer(
+          maxWidth: AcadexLayout.contentMaxWidth,
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: sections.length,
+            itemBuilder: (context, index) {
+              return SectionAttendanceCard(summary: sections[index]);
+            },
+          ),
         );
       },
     );
   }
 
-  Widget _buildActionChip(IconData icon, String label) {
+  Widget _buildActionChip(IconData icon, String label, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: DashboardColors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: DashboardColors.border),
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusMd,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: DashboardColors.primary),
+          Icon(icon, size: 16, color: AcadexColors.primary),
           const SizedBox(width: 8),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w600, color: DashboardColors.textPrimary)),
+          Text(
+            label,
+            style: AcadexTypography.bodySmall(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ).copyWith(fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );

@@ -7,48 +7,50 @@ class CertificateTypeBadge extends StatelessWidget {
   final CertificateType type;
   const CertificateTypeBadge({super.key, required this.type});
 
-  static Color _bgColor(CertificateType t) {
+  static Color _color(CertificateType t) {
     switch (t) {
-      case CertificateType.academic: return DashboardColors.primaryLight;
-      case CertificateType.technical: return DashboardColors.purpleLight;
-      case CertificateType.internship: return DashboardColors.orangeLight;
-      case CertificateType.workshop: return DashboardColors.tealLight;
-      case CertificateType.participation: return DashboardColors.infoLight;
-      case CertificateType.achievement: return DashboardColors.warningLight;
-      case CertificateType.sports: return DashboardColors.successLight;
-      case CertificateType.cultural: return const Color(0xFFFCE7F3);
-      case CertificateType.other: return DashboardColors.divider;
-    }
-  }
-
-  static Color _textColor(CertificateType t) {
-    switch (t) {
-      case CertificateType.academic: return DashboardColors.primary;
-      case CertificateType.technical: return DashboardColors.purple;
-      case CertificateType.internship: return DashboardColors.orange;
-      case CertificateType.workshop: return DashboardColors.teal;
-      case CertificateType.participation: return DashboardColors.info;
-      case CertificateType.achievement: return DashboardColors.warning;
-      case CertificateType.sports: return DashboardColors.success;
-      case CertificateType.cultural: return const Color(0xFFDB2777);
-      case CertificateType.other: return DashboardColors.textSecondary;
+      case CertificateType.academic:
+        return AcadexColors.primary;
+      case CertificateType.technical:
+        return AcadexColors.accentPurple;
+      case CertificateType.internship:
+        return AcadexColors.accentOrange;
+      case CertificateType.workshop:
+        return AcadexColors.accentTeal;
+      case CertificateType.participation:
+        return AcadexColors.info;
+      case CertificateType.achievement:
+        return AcadexColors.warning;
+      case CertificateType.sports:
+        return AcadexColors.success;
+      case CertificateType.cultural:
+        return AcadexColors.accentPink;
+      case CertificateType.other:
+        return AcadexColors.inkMuted;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = _color(type);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: _bgColor(type),
-        borderRadius: BorderRadius.circular(20),
+        color: isDark ? baseColor.withValues(alpha: 0.2) : baseColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AcadexRadius.full),
+        border: Border.all(
+          color: isDark ? baseColor.withValues(alpha: 0.4) : baseColor.withValues(alpha: 0.25),
+          width: 1,
+        ),
       ),
       child: Text(
         type.displayName,
         style: GoogleFonts.inter(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: _textColor(type),
+          color: isDark ? baseColor.withValues(alpha: 0.95) : baseColor,
         ),
       ),
     );

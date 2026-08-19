@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../../app/theme/app_theme.dart';
+import '../../../../../core/presentation/widgets/acadex_chip.dart';
 
 class AttendanceFilterBar extends StatelessWidget {
   final List<String> subjects;
@@ -28,47 +28,48 @@ class AttendanceFilterBar extends StatelessWidget {
         // Subject Filters
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             children: [
-              _buildChip(
+              AcadexChip(
                 label: "All Subjects",
                 isSelected: selectedSubject == null,
-                onTap: () => onSubjectSelected(null),
+                onSelected: (_) => onSubjectSelected(null),
               ),
               const SizedBox(width: 8),
               ...subjects.map((sub) => Padding(
                 padding: const EdgeInsets.only(right: 8),
-                child: _buildChip(
+                child: AcadexChip(
                   label: sub,
                   isSelected: selectedSubject == sub,
-                  onTap: () => onSubjectSelected(sub),
+                  onSelected: (selected) => onSubjectSelected(selected ? sub : null),
                 ),
               )),
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
+        
         // Month Filters
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             children: [
-              _buildChip(
-                label: "All Time",
+              AcadexChip(
+                label: "All Months",
                 isSelected: selectedMonth == null,
-                onTap: () => onMonthSelected(null),
+                onSelected: (_) => onMonthSelected(null),
               ),
               const SizedBox(width: 8),
               ...List.generate(12, (index) {
                 final m = index + 1;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: _buildChip(
+                  child: AcadexChip(
                     label: months[index],
                     isSelected: selectedMonth == m,
-                    onTap: () => onMonthSelected(m),
+                    onSelected: (selected) => onMonthSelected(selected ? m : null),
                   ),
                 );
               }),
@@ -76,29 +77,6 @@ class AttendanceFilterBar extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildChip({required String label, required bool isSelected, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? DashboardColors.primary : DashboardColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? DashboardColors.primary : DashboardColors.border),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : DashboardColors.textSecondary,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 13,
-          ),
-        ),
-      ),
     );
   }
 }

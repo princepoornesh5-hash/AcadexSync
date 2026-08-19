@@ -8,26 +8,34 @@ import '../widgets/super_admin/system_health_card.dart';
 import '../widgets/super_admin/super_admin_faculty_card.dart';
 import '../widgets/super_admin/super_admin_shortage_card.dart';
 import '../widgets/super_admin/super_admin_insight_card.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
 
 class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
   const SuperAdminAttendanceDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return DefaultTabController(
       length: 6,
       child: Scaffold(
-        backgroundColor: DashboardColors.background,
+        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
         appBar: AppBar(
-          backgroundColor: DashboardColors.surface,
-          elevation: 0,
-          title: const Text("Super Admin Attendance", style: TextStyle(color: DashboardColors.textPrimary, fontWeight: FontWeight.bold)),
-          bottom: const TabBar(
+          title: Text(
+            "Multi-Campus Attendance",
+            style: AcadexTypography.title(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
+          ),
+          bottom: TabBar(
             isScrollable: true,
-            labelColor: DashboardColors.primary,
-            unselectedLabelColor: DashboardColors.textSecondary,
-            indicatorColor: DashboardColors.primary,
-            tabs: [
+            labelColor: AcadexColors.primary,
+            unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            indicatorColor: AcadexColors.primary,
+            indicatorWeight: 2.5,
+            tabs: const [
               Tab(text: "Overview"),
               Tab(text: "Colleges"),
               Tab(text: "Faculty"),
@@ -55,19 +63,22 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
     final summaryAsync = ref.watch(superAdminSummaryProvider);
     
     return summaryAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text("Error: $err")),
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Loading platform overview..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load platform overview: $err",
+          onRetry: () => ref.refresh(superAdminSummaryProvider),
+        ),
+      ),
       data: (summary) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+        return AcadexPageContainer(
+          maxWidth: AcadexLayout.contentMaxWidth,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SuperAdminSummaryCard(summary: summary),
-              const SizedBox(height: 24),
-              const Text("Top Colleges", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: DashboardColors.textPrimary)),
-              const SizedBox(height: 12),
-              _buildTopCollegesPreview(ref),
             ],
           ),
         );
@@ -75,36 +86,33 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTopCollegesPreview(WidgetRef ref) {
-    final comparisonAsync = ref.watch(collegeComparisonProvider);
-    return comparisonAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => const SizedBox(),
-      data: (comparisons) {
-        // Show top 2
-        return Column(
-          children: comparisons.take(2).map((comp) {
-            final index = comparisons.indexOf(comp);
-            return CollegeComparisonCard(comparison: comp, rank: index + 1);
-          }).toList(),
-        );
-      },
-    );
-  }
-
   Widget _buildCollegesTab(WidgetRef ref) {
-    final comparisonAsync = ref.watch(collegeComparisonProvider);
+    final collegesAsync = ref.watch(collegeComparisonProvider);
     
-    return comparisonAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text("Error: $err")),
-      data: (comparisons) {
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: comparisons.length,
-          itemBuilder: (context, index) {
-            return CollegeComparisonCard(comparison: comparisons[index], rank: index + 1);
-          },
+    return collegesAsync.when(
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Loading college performance comparison..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load colleges: $err",
+          onRetry: () => ref.refresh(collegeComparisonProvider),
+        ),
+      ),
+      data: (colleges) {
+        return AcadexPageContainer(
+          maxWidth: AcadexLayout.contentMaxWidth,
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: colleges.length,
+            itemBuilder: (context, index) {
+              return CollegeComparisonCard(
+                comparison: colleges[index],
+                rank: index + 1,
+              );
+            },
+          ),
         );
       },
     );
@@ -114,15 +122,26 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
     final facultyAsync = ref.watch(superAdminFacultyProvider);
     
     return facultyAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text("Error: $err")),
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Loading faculty tracking records..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load faculty: $err",
+          onRetry: () => ref.refresh(superAdminFacultyProvider),
+        ),
+      ),
       data: (faculties) {
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: faculties.length,
-          itemBuilder: (context, index) {
-            return SuperAdminFacultyCard(completion: faculties[index]);
-          },
+        return AcadexPageContainer(
+          maxWidth: AcadexLayout.contentMaxWidth,
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: faculties.length,
+            itemBuilder: (context, index) {
+              return SuperAdminFacultyCard(completion: faculties[index]);
+            },
+          ),
         );
       },
     );
@@ -132,15 +151,26 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
     final shortageAsync = ref.watch(superAdminShortageProvider);
     
     return shortageAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text("Error: $err")),
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Loading cross-campus shortages..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load shortages: $err",
+          onRetry: () => ref.refresh(superAdminShortageProvider),
+        ),
+      ),
       data: (shortages) {
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: shortages.length,
-          itemBuilder: (context, index) {
-            return SuperAdminShortageCard(shortage: shortages[index]);
-          },
+        return AcadexPageContainer(
+          maxWidth: AcadexLayout.contentMaxWidth,
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: shortages.length,
+            itemBuilder: (context, index) {
+              return SuperAdminShortageCard(shortage: shortages[index]);
+            },
+          ),
         );
       },
     );
@@ -150,15 +180,26 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
     final insightsAsync = ref.watch(superAdminInsightsProvider);
     
     return insightsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text("Error: $err")),
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Loading platform insights..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load insights: $err",
+          onRetry: () => ref.refresh(superAdminInsightsProvider),
+        ),
+      ),
       data: (insights) {
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: insights.length,
-          itemBuilder: (context, index) {
-            return SuperAdminInsightCard(insight: insights[index]);
-          },
+        return AcadexPageContainer(
+          maxWidth: AcadexLayout.contentMaxWidth,
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: insights.length,
+            itemBuilder: (context, index) {
+              return SuperAdminInsightCard(insight: insights[index]);
+            },
+          ),
         );
       },
     );
@@ -168,17 +209,19 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
     final healthAsync = ref.watch(superAdminSystemHealthProvider);
     
     return healthAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text("Error: $err")),
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Checking system telemetry..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load health metrics: $err",
+          onRetry: () => ref.refresh(superAdminSystemHealthProvider),
+        ),
+      ),
       data: (health) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SystemHealthCard(health: health),
-            ],
-          ),
+        return AcadexPageContainer(
+          maxWidth: AcadexLayout.contentMaxWidth,
+          child: SystemHealthCard(health: health),
         );
       },
     );

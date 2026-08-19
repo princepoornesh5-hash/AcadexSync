@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/firebase/firebase_services.dart';
 import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
@@ -14,8 +13,8 @@ final mockCertificateRequestRepositoryProvider = Provider<CertificateRequestRepo
 });
 
 final firebaseCertificateRequestRepositoryProvider = Provider<CertificateRequestRepository>((ref) {
-  final firestoreService = ref.watch(firestoreServiceProvider);
-  return FirebaseCertificateRequestRepository(firestoreService);
+  // final firestoreService = ref.watch(firestoreServiceProvider);
+  return FirebaseCertificateRequestRepository();
 });
 
 final certificateRequestRepositoryProvider = Provider<CertificateRequestRepository>((ref) {
@@ -41,11 +40,14 @@ final userCertificateRequestsProvider = StreamProvider<List<CertificateRequest>>
   final repository = ref.watch(certificateRequestRepositoryProvider);
 
   if (user.role == AppRole.student) {
-    await for (final requests in repository.watchStudentRequests(user.id)) {
+    await for (final requests in repository.watchStudentRequests(user.firebaseUid ?? user.id)) {
       yield requests;
     }
   } else if (user.role == AppRole.hod) {
-    await for (final requests in repository.watchAdminRequests(departmentId: user.departmentId)) {
+    await for (final requests in repository.watchAdminRequests(
+      collegeId: user.collegeId,
+      departmentId: user.departmentId,
+    )) {
       yield requests;
     }
   } else if (user.role == AppRole.collegeAdmin) {
@@ -57,9 +59,16 @@ final userCertificateRequestsProvider = StreamProvider<List<CertificateRequest>>
       yield requests;
     }
   } else {
-    // Faculty usually don't process general requests unless configured, we will return empty or read-only scope
     yield [];
   }
+});
+
+final certificateRequestByIdProvider = Provider.family<CertificateRequest?, String>((ref, requestId) {
+  final async = ref.watch(userCertificateRequestsProvider);
+  return async.maybeWhen(
+    data: (requests) => requests.where((r) => r.id == requestId).firstOrNull,
+    orElse: () => null,
+  );
 });
 
 class CertificateRequestFilterState {

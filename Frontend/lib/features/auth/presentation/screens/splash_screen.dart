@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import '../../../../app/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../../domain/models/auth_state.dart';
 import '../../domain/models/role_enum.dart';
+
+import '../../../../core/presentation/widgets/animated_particle_sphere.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -58,50 +59,52 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return const Scaffold(
-      backgroundColor: AppColors.canvasDark,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(LucideIcons.graduationCap, color: AppColors.primary, size: 80),
-            SizedBox(height: 24),
-            Text(
-              "Acadex",
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textLight,
-                letterSpacing: 1.2,
+      backgroundColor: Color(0xFF020617),
+      body: AnimatedParticleSphereBackground(
+        variant: ParticleSphereVariant.splash,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(LucideIcons.graduationCap, color: Color(0xFF818CF8), size: 80),
+              SizedBox(height: 24),
+              Text(
+                "Acadex",
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 1.2,
+                ),
               ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              "Empowering Education",
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textMuted,
+              SizedBox(height: 8),
+              Text(
+                "Empowering Education",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF94A3B8),
+                ),
               ),
-            ),
-            SizedBox(height: 48),
-            SizedBox(
-              width: 32,
-              height: 32,
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-                strokeWidth: 3,
+              SizedBox(height: 48),
+              SizedBox(
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(
+                  color: Color(0xFF818CF8),
+                  strokeWidth: 3,
+                ),
               ),
-            ),
-            SizedBox(height: 48),
-            Text(
-              "v1.0.0",
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textDarkMute,
+              SizedBox(height: 48),
+              Text(
+                "v1.0.0",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF64748B),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

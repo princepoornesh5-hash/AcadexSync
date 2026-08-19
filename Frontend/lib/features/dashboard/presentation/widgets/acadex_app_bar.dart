@@ -1,127 +1,158 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../notifications/presentation/widgets/notification_badge.dart';
+import '../../../settings/presentation/providers/settings_providers.dart';
+import '../../../../core/presentation/widgets/acadex_avatar.dart';
 
 class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
   final List<Widget>? extraActions;
+  final bool showDrawerButton;
 
   const AcadexAppBar({
     super.key,
     this.title = 'Acadex',
     this.extraActions,
+    this.showDrawerButton = true,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(72);
+  Size get preferredSize => const Size.fromHeight(64);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final authState = ref.watch(authProvider);
+    final settingsAsync = ref.watch(appSettingsProvider);
+
     UserModel? user;
     if (authState is AuthAuthenticated) {
       user = authState.user;
     }
 
-    final initials = user != null
-        ? user.name.split(' ').map((w) => w.isNotEmpty ? w[0] : '').take(2).join()
-        : 'U';
-
     return Container(
-      height: 72,
-      decoration: const BoxDecoration(
-        color: DashboardColors.surface,
-        border: Border(bottom: BorderSide(color: DashboardColors.border, width: 1)),
+      height: 64,
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+            width: 1,
+          ),
+        ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: SafeArea(
         child: Row(
           children: [
-            // Drawer toggle (hamburger)
-            Builder(
-              builder: (ctx) => IconButton(
-                icon: const Icon(LucideIcons.menu, color: DashboardColors.textSecondary, size: 22),
-                tooltip: 'Open menu',
-                onPressed: () => Scaffold.of(ctx).openDrawer(),
-                splashRadius: 22,
+            if (showDrawerButton)
+              Builder(
+                builder: (ctx) => IconButton(
+                  icon: Icon(
+                    LucideIcons.menu,
+                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                    size: 20,
+                  ),
+                  tooltip: 'Menu',
+                  onPressed: () => Scaffold.of(ctx).openDrawer(),
+                  splashRadius: 20,
+                ),
+              ),
+            if (showDrawerButton) const SizedBox(width: 8),
+
+            // Logo & Brand
+            GestureDetector(
+              onTap: () => context.go('/dashboard'),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: AcadexColors.primary,
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                    ),
+                    child: const Icon(LucideIcons.graduationCap, color: Colors.white, size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Acadex',
+                    style: AcadexTypography.title(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ).copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 8),
-            // Logo & Title
-            Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: DashboardColors.primary,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(LucideIcons.graduationCap, color: Colors.white, size: 18),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Acadex',
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: DashboardColors.textPrimary,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-              ],
-            ),
+
             const Spacer(),
-            // Global Search icon
+
+            // Extra actions if any
+            if (extraActions != null) ...extraActions!,
+
+            // Search Icon
             IconButton(
-              icon: const Icon(LucideIcons.search, color: DashboardColors.textSecondary, size: 22),
-              tooltip: 'Search',
+              icon: Icon(
+                LucideIcons.search,
+                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                size: 19,
+              ),
+              tooltip: 'Search (Cmd+K)',
               onPressed: () => context.push('/search'),
-              splashRadius: 22,
+              splashRadius: 20,
             ),
-            const SizedBox(width: 4),
-            // Notification icon
+            const SizedBox(width: 2),
+
+            // Notifications
             const NotificationBadge(),
-            const SizedBox(width: 4),
-            // Settings icon
+            const SizedBox(width: 2),
+
+            // Theme Toggle Button (Light / Dark)
             IconButton(
-              icon: const Icon(LucideIcons.settings, color: DashboardColors.textSecondary, size: 22),
-              tooltip: 'Settings',
-              onPressed: () => context.go('/module/Settings'),
-              splashRadius: 22,
+              icon: Icon(
+                isDark ? LucideIcons.sun : LucideIcons.moon,
+                color: isDark ? const Color(0xFFFBBF24) : AcadexColors.primary,
+                size: 19,
+              ),
+              tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+              onPressed: () {
+                final newMode = isDark ? ThemeMode.light : ThemeMode.dark;
+                settingsAsync.whenData((settings) {
+                  ref.read(appSettingsProvider.notifier).updateSettings(
+                        settings.copyWith(themeMode: newMode),
+                      );
+                });
+              },
+              splashRadius: 20,
             ),
-            const SizedBox(width: 8),
-            // Avatar with tooltip
-            Tooltip(
-              message: user?.name ?? 'User',
-              child: GestureDetector(
-                onTap: () => context.go('/module/Profile'),
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: DashboardColors.primaryLight,
-                    borderRadius: BorderRadius.circular(9999),
-                    border: Border.all(color: DashboardColors.primary.withValues(alpha: 0.3), width: 2),
-                  ),
-                  child: Center(
-                    child: Text(
-                      initials.toUpperCase(),
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: DashboardColors.primary,
-                      ),
-                    ),
-                  ),
-                ),
+            const SizedBox(width: 2),
+
+            // Settings Icon
+            IconButton(
+              icon: Icon(
+                LucideIcons.settings,
+                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                size: 19,
+              ),
+              tooltip: 'Settings',
+              onPressed: () => context.push('/settings'),
+              splashRadius: 20,
+            ),
+            const SizedBox(width: 10),
+
+            // User Avatar & Profile Quick Link
+            GestureDetector(
+              onTap: () => context.push('/profile'),
+              child: AcadexAvatar(
+                name: user?.name ?? 'User',
+                size: 34,
+                isOnline: true,
               ),
             ),
           ],

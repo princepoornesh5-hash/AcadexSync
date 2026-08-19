@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/domain/models/auth_state.dart';
 import '../../features/auth/domain/models/role_enum.dart';
+import '../../features/auth/domain/models/user_model.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../core/presentation/providers/navigation_provider.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
@@ -27,6 +28,10 @@ import '../../features/academic_structure/presentation/screens/section_screens.d
 import '../../features/academic_structure/presentation/screens/subject_screens.dart';
 import '../../features/academic_structure/presentation/screens/faculty_screens.dart';
 import '../../features/academic_structure/presentation/screens/student_screens.dart';
+import '../../features/academic_structure/presentation/screens/faculty_assignments_management_screen.dart';
+import '../../features/academic_structure/presentation/screens/faculty_workload_screen.dart';
+import '../../features/academic_structure/presentation/screens/my_assignments_screen.dart';
+import '../../features/academic_structure/presentation/screens/student_profile_screen.dart';
 
 import '../../features/attendance/presentation/screens/attendance_dashboard_router.dart';
 import '../../features/attendance/presentation/screens/mark_attendance_screen.dart';
@@ -64,9 +69,22 @@ import '../../features/notes/presentation/screens/note_detail_screen.dart';
 import '../../features/notes/presentation/screens/note_form_screen.dart';
 import '../../features/notes/domain/models/note_model.dart';
 
+import '../../features/certificates/presentation/screens/official_certificates_router.dart';
+import '../../features/certificates/presentation/screens/official_certificates_admin_dashboard_screen.dart';
+import '../../features/certificates/presentation/screens/official_certificate_requirement_form_screen.dart';
+import '../../features/certificates/presentation/screens/official_certificate_submission_detail_screen.dart';
+import '../../features/certificates/presentation/screens/official_certificate_upload_screen.dart';
+import '../../features/certificates/domain/models/official_certificate_models.dart';
+
+import '../../features/achievements/presentation/screens/achievements_router.dart';
+import '../../features/achievements/presentation/screens/achievement_form_screen.dart';
+import '../../features/achievements/presentation/screens/achievement_detail_screen.dart';
+import '../../features/achievements/domain/models/achievement_models.dart';
+
 import '../../features/dashboard/presentation/widgets/acadex_drawer.dart';
 import '../../features/dashboard/presentation/widgets/acadex_bottom_nav.dart';
 import '../../features/dashboard/presentation/widgets/acadex_nav_rail.dart';
+import '../../features/dashboard/presentation/widgets/acadex_app_bar.dart';
 import '../theme/app_theme.dart';
 
 class ShellWrapper extends ConsumerWidget {
@@ -77,23 +95,15 @@ class ShellWrapper extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final width = MediaQuery.of(context).size.width;
-    final isMobile = width <= 600;
-    final isTablet = width > 600 && width <= 1024;
+    final isMobile = width <= AcadexBreakpoints.mobileMax;
+    final isTablet = width > AcadexBreakpoints.mobileMax && width <= AcadexBreakpoints.tabletMax;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(navigationProvider.notifier).updateRoute(activeRoute);
     });
 
     return Scaffold(
-      appBar: isMobile
-          ? AppBar(
-              title: const Text('Acadex'),
-              backgroundColor: DashboardColors.surface,
-              foregroundColor: DashboardColors.textPrimary,
-              elevation: 0,
-              iconTheme: const IconThemeData(color: DashboardColors.textPrimary),
-            )
-          : null,
+      appBar: isMobile ? const AcadexAppBar(showDrawerButton: true) : null,
       drawer: isMobile ? AcadexDrawer(activeRoute: activeRoute, isModal: true) : null,
       bottomNavigationBar: isMobile
           ? AcadexBottomNav(
@@ -117,7 +127,7 @@ class ShellWrapper extends ConsumerWidget {
   }
 }
 
-// Fade transition helper
+// Fade + subtle slide transition helper (Acadex Motion standard: 200ms ease-out)
 CustomTransitionPage<T> fadeTransitionPage<T>({
   required BuildContext context,
   required GoRouterState state,
@@ -127,9 +137,22 @@ CustomTransitionPage<T> fadeTransitionPage<T>({
     key: state.pageKey,
     child: child,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      return FadeTransition(opacity: animation, child: child);
+      if (AcadexMotion.isReducedMotion(context)) {
+        return child;
+      }
+      final curve = CurvedAnimation(parent: animation, curve: AcadexMotion.curveStandard);
+      return FadeTransition(
+        opacity: curve,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.0, 0.02),
+            end: Offset.zero,
+          ).animate(curve),
+          child: child,
+        ),
+      );
     },
-    transitionDuration: const Duration(milliseconds: 250),
+    transitionDuration: const Duration(milliseconds: 200),
   );
 }
 
@@ -137,7 +160,8 @@ class RouterNotifier extends ChangeNotifier {
   RouterNotifier(Ref ref) {
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (previous != next) {
-        notifyListeners();
+        // Prevent synchronous dispatch stack overflows by deferring notifyListeners
+        Future.microtask(() => notifyListeners());
       }
     });
   }
@@ -181,13 +205,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       );
 
       if (currentAuthState is AuthProfileLoading) {
-        // Stay on splash or loading screen
-        return isGoingToAuth && state.matchedLocation != '/' ? '/' : null;
+        // Stay on splash or loading screen if trying to access auth screens,
+        // otherwise block access to protected routes while loading.
+        return isGoingToAuth && state.matchedLocation != '/' ? '/' : (isGoingToAuth ? null : '/');
       }
 
       if (currentAuthState is AuthProfileError) {
-        // Force to login if profile fails
-        return '/login';
+        // Force to login if profile fails, but avoid infinite redirect loop if already on an auth route
+        return isGoingToAuth ? null : '/login';
       }
 
       if (currentAuthState is! AuthAuthenticated) {
@@ -196,6 +221,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // User is logged in
       final role = currentAuthState.user.role;
+      final status = currentAuthState.user.accountStatus;
+
+      // Inactive/suspended users should not access protected routes
+      if (status != AccountStatus.active) {
+        // We'll log them out automatically via authProvider logic if needed, 
+        // but for router level, if they are inactive, redirect to login
+        return isGoingToAuth ? null : '/login';
+      }
 
       if (isGoingToAuth) {
         return getHomeRouteForRole(role);
@@ -211,10 +244,42 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         }
       }
 
-      // Admins only routes
-      if (loc.startsWith('/academics')) {
-        if (role != AppRole.superAdmin && role != AppRole.collegeAdmin) {
-          return getHomeRouteForRole(role);
+      // Normalize /academic singular aliases to /academics canonical routes
+      if (loc.startsWith('/academic/')) {
+        final rest = loc.substring('/academic/'.length);
+        if (rest == 'years') return '/academics/academic_years';
+        if (rest == 'assignments' || rest == 'faculty/assignments') return '/faculty-assignments';
+        if (rest == 'workload' || rest == 'faculty/workload') return '/faculty-workload';
+        if (rest == 'assignments/my') return '/my-assignments';
+        return '/academics/$rest';
+      }
+
+      // Academic routes & role protection
+      if (loc.startsWith('/academics') || loc.startsWith('/academic')) {
+        if (loc.startsWith('/academics/assignments/my') || loc.startsWith('/academic/assignments/my') || loc == '/my-assignments') {
+          if (role != AppRole.faculty && role != AppRole.hod && role != AppRole.collegeAdmin) {
+            return getHomeRouteForRole(role);
+          }
+        } else if (loc.startsWith('/academics/workload') || loc.startsWith('/academic/workload') || loc == '/faculty-workload') {
+          if (role != AppRole.faculty && role != AppRole.hod && role != AppRole.collegeAdmin && role != AppRole.superAdmin) {
+            return getHomeRouteForRole(role);
+          }
+        } else if (loc.startsWith('/academics/colleges') || loc.startsWith('/academic/colleges')) {
+          if (role != AppRole.superAdmin) {
+            return getHomeRouteForRole(role);
+          }
+        } else if (loc.startsWith('/academics/departments') || loc.startsWith('/academic/departments') ||
+                   loc.startsWith('/academics/courses') || loc.startsWith('/academic/courses') ||
+                   loc.startsWith('/academics/academic_years') || loc.startsWith('/academic/years') ||
+                   loc.startsWith('/academics/semesters') || loc.startsWith('/academic/semesters')) {
+          if (role != AppRole.superAdmin && role != AppRole.collegeAdmin) {
+            return getHomeRouteForRole(role);
+          }
+        } else {
+          // Subjects, Sections, Faculty, Students, Assignments (HOD, College Admin, Super Admin)
+          if (role == AppRole.student) {
+            return getHomeRouteForRole(role);
+          }
         }
       }
       
@@ -222,6 +287,42 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         if (role == AppRole.student || role == AppRole.faculty) {
           return getHomeRouteForRole(role);
         }
+      }
+
+      // Timetable management routes (HOD, College Admin, Super Admin only)
+      if (loc.startsWith('/timetable/manage') || loc.startsWith('/timetable/new') || loc.startsWith('/timetable/edit')) {
+        if (role == AppRole.student || role == AppRole.faculty) {
+          return '/timetable';
+        }
+      }
+
+      // Notes authoring routes (Faculty, HOD, Super Admin only; Students and College Admins redirected)
+      if (loc.startsWith('/notes/new') || loc.startsWith('/notes/edit')) {
+        if (role == AppRole.student || role == AppRole.collegeAdmin) {
+          return '/notes';
+        }
+      }
+
+      // Official Certificates requirement authoring (College Admin & HOD only)
+      if (loc.startsWith('/official-certificates/requirements/new') || (loc.startsWith('/official-certificates/requirements') && loc.endsWith('/edit'))) {
+        if (role == AppRole.student || role == AppRole.faculty) {
+          return '/official-certificates';
+        }
+      }
+
+      // Official Certificates upload (Students only)
+      if (loc.startsWith('/official-certificates/upload')) {
+        if (role != AppRole.student) {
+          return '/official-certificates';
+        }
+      }
+
+      // Super Admin platform boundary: redirect away from routine college certificates & achievements
+      if (loc.startsWith('/official-certificates') && role == AppRole.superAdmin) {
+        return '/colleges';
+      }
+      if (loc.startsWith('/achievements') && role == AppRole.superAdmin) {
+        return '/colleges';
       }
 
       return null;
@@ -327,9 +428,52 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/academics/faculty/new', builder: (context, state) => const FacultyFormScreen()),
       GoRoute(path: '/academics/faculty/edit/:id', builder: (context, state) => FacultyFormScreen(id: state.pathParameters['id'])),
 
+      // Faculty Assignments & Workload Routes
+      GoRoute(
+        path: '/faculty-assignments',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/faculty-assignments', child: FacultyAssignmentsManagementScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/academics/faculty/assignments',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/faculty-assignments', child: FacultyAssignmentsManagementScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/faculty-workload',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/faculty-workload', child: FacultyWorkloadScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/academics/faculty/workload',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/faculty-workload', child: FacultyWorkloadScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/my-assignments',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/my-assignments', child: MyAssignmentsScreen()),
+        ),
+      ),
+
       GoRoute(path: '/academics/students', builder: (context, state) => const ShellWrapper(activeRoute: '/academics/students', child: StudentListScreen())),
       GoRoute(path: '/academics/students/new', builder: (context, state) => const StudentFormScreen()),
       GoRoute(path: '/academics/students/edit/:id', builder: (context, state) => StudentFormScreen(id: state.pathParameters['id'])),
+      GoRoute(path: '/academics/students/:id', builder: (context, state) => StudentProfileScreen(studentId: state.pathParameters['id']!)),
 
       // Attendance Routes
       GoRoute(path: '/attendance', builder: (context, state) => const ShellWrapper(activeRoute: '/attendance', child: AttendanceDashboardRouter())),
@@ -440,13 +584,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: 'new',
-            builder: (context, state) => const TimetableFormScreen(),
+            pageBuilder: (context, state) => fadeTransitionPage(
+              context: context,
+              state: state,
+              child: const TimetableFormScreen(),
+            ),
           ),
           GoRoute(
             path: 'edit/:id',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final entry = state.extra as TimetableModel?;
-              return TimetableFormScreen(existingEntry: entry);
+              return fadeTransitionPage(
+                context: context,
+                state: state,
+                child: TimetableFormScreen(existingEntry: entry),
+              );
             },
           ),
         ],
@@ -482,6 +634,152 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 child: NoteDetailScreen(note: note),
               );
             },
+          ),
+        ],
+      ),
+
+      // Redirect legacy /certificates to /official-certificates
+      GoRoute(
+        path: '/certificates',
+        redirect: (context, state) => '/official-certificates',
+      ),
+
+      // Official Certificates Module
+      GoRoute(
+        path: '/official-certificates',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/official-certificates', child: OfficialCertificatesRouter()),
+        ),
+        routes: [
+          GoRoute(
+            path: 'requirements',
+            pageBuilder: (context, state) => fadeTransitionPage(
+              context: context,
+              state: state,
+              child: const ShellWrapper(
+                activeRoute: '/official-certificates',
+                child: OfficialCertificatesAdminDashboardScreen(),
+              ),
+            ),
+            routes: [
+              GoRoute(
+                path: 'new',
+                pageBuilder: (context, state) => fadeTransitionPage(
+                  context: context,
+                  state: state,
+                  child: const OfficialCertificateRequirementFormScreen(),
+                ),
+              ),
+              GoRoute(
+                path: ':id/edit',
+                pageBuilder: (context, state) {
+                  final id = state.pathParameters['id'] ?? '';
+                  final req = state.extra as OfficialCertificateRequirement?;
+                  return fadeTransitionPage(
+                    context: context,
+                    state: state,
+                    child: OfficialCertificateRequirementFormScreen(requirementId: id, requirement: req),
+                  );
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'submissions',
+            pageBuilder: (context, state) => fadeTransitionPage(
+              context: context,
+              state: state,
+              child: const ShellWrapper(
+                activeRoute: '/official-certificates',
+                child: OfficialCertificatesAdminDashboardScreen(),
+              ),
+            ),
+            routes: [
+              GoRoute(
+                path: ':id',
+                pageBuilder: (context, state) {
+                  final id = state.pathParameters['id'] ?? '';
+                  final sub = state.extra as OfficialCertificate?;
+                  return fadeTransitionPage(
+                    context: context,
+                    state: state,
+                    child: OfficialCertificateSubmissionDetailScreen(submissionId: id, submission: sub),
+                  );
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'upload/:requirementId',
+            pageBuilder: (context, state) {
+              final reqId = state.pathParameters['requirementId'] ?? '';
+              final req = state.extra as OfficialCertificateRequirement?;
+              return fadeTransitionPage(
+                context: context,
+                state: state,
+                child: OfficialCertificateUploadScreen(requirementId: reqId, requirement: req),
+              );
+            },
+          ),
+        ],
+      ),
+
+      // Achievements Module
+      GoRoute(
+        path: '/achievements',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/achievements', child: AchievementsRouter()),
+        ),
+        routes: [
+          GoRoute(
+            path: 'new',
+            pageBuilder: (context, state) => fadeTransitionPage(
+              context: context,
+              state: state,
+              child: const AchievementFormScreen(),
+            ),
+          ),
+          GoRoute(
+            path: ':id',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id'] ?? '';
+              final ach = state.extra as Achievement?;
+              return fadeTransitionPage(
+                context: context,
+                state: state,
+                child: AchievementDetailScreen(achievementId: id, achievement: ach),
+              );
+            },
+            routes: [
+              GoRoute(
+                path: 'edit',
+                pageBuilder: (context, state) {
+                  final id = state.pathParameters['id'] ?? '';
+                  final ach = state.extra as Achievement?;
+                  return fadeTransitionPage(
+                    context: context,
+                    state: state,
+                    child: AchievementFormScreen(achievementId: id, achievement: ach),
+                  );
+                },
+              ),
+              GoRoute(
+                path: 'verify',
+                pageBuilder: (context, state) {
+                  final id = state.pathParameters['id'] ?? '';
+                  final ach = state.extra as Achievement?;
+                  return fadeTransitionPage(
+                    context: context,
+                    state: state,
+                    child: AchievementDetailScreen(achievementId: id, achievement: ach),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),

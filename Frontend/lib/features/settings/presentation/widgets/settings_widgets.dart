@@ -10,29 +10,45 @@ class SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 8, bottom: 8),
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
             title.toUpperCase(),
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
+            style: AcadexTypography.eyebrow(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Theme.of(context).dividerColor),
+            color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+            borderRadius: AcadexRadius.borderRadiusLg,
+            border: Border.all(
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              width: 1,
+            ),
+            boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
           ),
-          child: Column(
-            children: children,
+          child: ClipRRect(
+            borderRadius: AcadexRadius.borderRadiusLg,
+            child: Column(
+              children: [
+                for (int i = 0; i < children.length; i++) ...[
+                  children[i],
+                  if (i < children.length - 1)
+                    Divider(
+                      height: 1,
+                      indent: 56,
+                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    ),
+                ],
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -61,36 +77,59 @@ class SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: (iconColor ?? AppColors.primary).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final defaultIconColor = iconColor ?? (isDark ? AcadexColors.primaryMuted : AcadexColors.primary);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: defaultIconColor.withValues(alpha: 0.1),
+                  borderRadius: AcadexRadius.borderRadiusMd,
+                ),
+                child: Icon(icon, size: 18, color: defaultIconColor),
               ),
-              child: Icon(icon, size: 20, color: iconColor ?? AppColors.primary),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w500)),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(subtitle!, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 12)),
-                  ]
-                ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AcadexTypography.body(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ).copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: AcadexTypography.caption(
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-            if (trailing != null) trailing! else if (onTap != null) Icon(LucideIcons.chevronRight, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
-          ],
+              if (trailing != null)
+                trailing!
+              else if (onTap != null)
+                Icon(
+                  LucideIcons.chevronRight,
+                  size: 16,
+                  color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -122,10 +161,8 @@ class ToggleTile extends StatelessWidget {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeThumbColor: AppColors.primary,
-        activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
-        inactiveThumbColor: AppColors.textMuted,
-        inactiveTrackColor: AppColors.surfaceDarkElevated,
+        activeTrackColor: AcadexColors.primary,
+        activeThumbColor: Colors.white,
       ),
     );
   }
@@ -181,30 +218,43 @@ class _ThemeOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final selectedBg = isDark
+        ? AcadexColors.primaryHover.withValues(alpha: 0.25)
+        : AcadexColors.primaryLight;
+    final selectedBorder = isDark ? AcadexColors.primaryMuted : AcadexColors.primary;
+    final selectedFg = isDark ? Colors.white : AcadexColors.primary;
+
+    final unselectedBg = isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface;
+    final unselectedBorder = isDark ? AcadexColors.darkHairline : AcadexColors.hairline;
+    final unselectedFg = isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted;
+
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.canvasDark,
+            color: isSelected ? selectedBg : unselectedBg,
             border: Border.all(
-              color: isSelected ? AppColors.primary : AppColors.hairlineDark,
+              color: isSelected ? selectedBorder : unselectedBorder,
               width: isSelected ? 2 : 1,
             ),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AcadexRadius.borderRadiusLg,
+            boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: isSelected ? AppColors.primary : AppColors.textMuted),
-              const SizedBox(height: 8),
+              Icon(icon, color: isSelected ? selectedFg : unselectedFg, size: 22),
+              const SizedBox(height: 10),
               Text(
                 title,
-                style: TextStyle(
-                  color: isSelected ? AppColors.primary : AppColors.textMuted,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
+                style: AcadexTypography.caption(
+                  color: isSelected ? selectedFg : unselectedFg,
+                ).copyWith(fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500),
               )
             ],
           ),

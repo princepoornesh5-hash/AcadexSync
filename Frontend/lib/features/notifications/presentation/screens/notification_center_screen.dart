@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_theme.dart';
@@ -9,6 +8,8 @@ import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/notification_providers.dart';
 import '../widgets/notification_card.dart';
+import '../../../../core/presentation/widgets/acadex_chip.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 
 class NotificationCenterScreen extends ConsumerWidget {
   const NotificationCenterScreen({super.key});
@@ -18,6 +19,7 @@ class NotificationCenterScreen extends ConsumerWidget {
     final notificationsAsync = ref.watch(notificationsProvider);
     final filteredNotifications = ref.watch(filteredNotificationsProvider);
     final authState = ref.watch(authProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final bool canCreateAnnouncement = authState is AuthAuthenticated && 
         (authState.user.role == AppRole.superAdmin || 
@@ -25,19 +27,14 @@ class NotificationCenterScreen extends ConsumerWidget {
          authState.user.role == AppRole.hod);
 
     return Scaffold(
-      backgroundColor: DashboardColors.background,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
         title: Text(
-          'Notifications',
-          style: GoogleFonts.inter(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: DashboardColors.textPrimary,
+          'Notification Center',
+          style: AcadexTypography.title(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
         ),
-        backgroundColor: DashboardColors.surface,
-        elevation: 0,
-        centerTitle: false,
         actions: [
           TextButton.icon(
             onPressed: () {
@@ -46,43 +43,37 @@ class NotificationCenterScreen extends ConsumerWidget {
                 const SnackBar(content: Text('All notifications marked as read')),
               );
             },
-            icon: const Icon(LucideIcons.checkCheck, size: 18),
+            icon: const Icon(LucideIcons.checkCheck, size: 16),
             label: const Text('Mark all read'),
-            style: TextButton.styleFrom(
-              foregroundColor: DashboardColors.primary,
-            ),
           ),
           const SizedBox(width: 8),
         ],
-        iconTheme: const IconThemeData(color: DashboardColors.textPrimary),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: _FilterBar(),
+          preferredSize: const Size.fromHeight(56),
+          child: _FilterBar(isDark: isDark),
         ),
       ),
       body: notificationsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const AcadexLoadingState(message: "Loading notifications..."),
         error: (err, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(LucideIcons.alertCircle, color: DashboardColors.error, size: 48),
-              const SizedBox(height: 16),
-              Text('Failed to load notifications', style: GoogleFonts.inter(fontSize: 16)),
-              TextButton(
-                onPressed: () => ref.refresh(notificationsProvider),
-                child: const Text('Retry'),
-              ),
-            ],
+          child: AcadexErrorState(
+            message: 'Failed to load notifications: $err',
+            onRetry: () => ref.refresh(notificationsProvider),
           ),
         ),
         data: (_) {
           if (filteredNotifications.isEmpty) {
-            return _EmptyState();
+            return const Center(
+              child: AcadexEmptyState(
+                icon: LucideIcons.bellRing,
+                title: "All caught up!",
+                subtitle: "You don't have any notifications right now.",
+              ),
+            );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
             itemCount: filteredNotifications.length,
             itemBuilder: (context, index) {
               final notification = filteredNotifications[index];
@@ -98,15 +89,7 @@ class NotificationCenterScreen extends ConsumerWidget {
                 onDelete: () {
                   ref.read(notificationsProvider.notifier).deleteNotification(notification.id);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Notification deleted'),
-                      action: SnackBarAction(
-                        label: 'Undo',
-                        onPressed: () {
-                          // Undo functionality not implemented in mock yet
-                        },
-                      ),
-                    ),
+                    const SnackBar(content: Text('Notification dismissed')),
                   );
                 },
               );
@@ -117,9 +100,12 @@ class NotificationCenterScreen extends ConsumerWidget {
       floatingActionButton: canCreateAnnouncement
           ? FloatingActionButton.extended(
               onPressed: () => context.go('/settings/notifications/create'),
-              backgroundColor: DashboardColors.primary,
-              icon: const Icon(LucideIcons.megaphone, color: Colors.white),
-              label: Text('New Announcement', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+              backgroundColor: AcadexColors.primary,
+              icon: const Icon(LucideIcons.megaphone, color: Colors.white, size: 18),
+              label: Text(
+                'New Announcement',
+                style: AcadexTypography.button(color: Colors.white),
+              ),
             )
           : null,
     );
@@ -127,16 +113,23 @@ class NotificationCenterScreen extends ConsumerWidget {
 }
 
 class _FilterBar extends ConsumerWidget {
+  final bool isDark;
+  const _FilterBar({required this.isDark});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentFilter = ref.watch(notificationFilterProvider);
 
     return Container(
-      height: 60,
+      height: 56,
       padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: const BoxDecoration(
-        color: DashboardColors.surface,
-        border: Border(bottom: BorderSide(color: DashboardColors.border)),
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          ),
+        ),
       ),
       child: ListView(
         scrollDirection: Axis.horizontal,
@@ -148,89 +141,17 @@ class _FilterBar extends ConsumerWidget {
 
           return Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(label),
-              selected: isSelected,
+            child: AcadexChip(
+              label: label,
+              isSelected: isSelected,
               onSelected: (selected) {
                 if (selected) {
                   ref.read(notificationFilterProvider.notifier).state = filter;
                 }
               },
-              backgroundColor: DashboardColors.background,
-              selectedColor: DashboardColors.primaryLight,
-              labelStyle: TextStyle(
-                color: isSelected ? DashboardColors.primary : DashboardColors.textSecondary,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-              side: BorderSide(
-                color: isSelected ? DashboardColors.primary.withValues(alpha: 0.5) : DashboardColors.border,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
             ),
           );
         }).toList(),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final currentFilter = ref.watch(notificationFilterProvider);
-    
-    String title = "All caught up!";
-    String message = "You don't have any notifications right now.";
-    IconData icon = LucideIcons.bellRing;
-
-    if (currentFilter != NotificationFilter.all) {
-      title = "No matches found";
-      message = "You don't have any notifications for the selected filter.";
-      icon = LucideIcons.filterX;
-    }
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: DashboardColors.surface,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 48, color: DashboardColors.textSecondary.withValues(alpha: 0.5)),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: DashboardColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: DashboardColors.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          if (currentFilter != NotificationFilter.all)
-            Padding(
-              padding: const EdgeInsets.only(top: 24),
-              child: TextButton.icon(
-                onPressed: () => ref.read(notificationFilterProvider.notifier).state = NotificationFilter.all,
-                icon: const Icon(LucideIcons.x),
-                label: const Text('Clear Filters'),
-              ),
-            ),
-        ],
       ),
     );
   }

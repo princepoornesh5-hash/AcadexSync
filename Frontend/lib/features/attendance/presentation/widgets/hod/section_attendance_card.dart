@@ -9,16 +9,21 @@ class SectionAttendanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: DashboardColors.surface,
-      elevation: 0,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: DashboardColors.border),
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          width: 1,
+        ),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -27,23 +32,34 @@ class SectionAttendanceCard extends StatelessWidget {
               children: [
                 Text(
                   summary.sectionName,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: DashboardColors.textPrimary),
+                  style: AcadexTypography.title(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ),
                 ),
                 Text(
                   summary.semester,
-                  style: const TextStyle(fontSize: 12, color: DashboardColors.textSecondary),
+                  style: AcadexTypography.caption(
+                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildStat("Attendance", "${summary.attendancePercentage}%", DashboardColors.primary),
-                _buildStat("Present", summary.present.toString(), DashboardColors.success),
-                _buildStat("Absent", summary.absent.toString(), DashboardColors.error),
-                _buildStat("Late", summary.late.toString(), DashboardColors.warning),
-              ],
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+                borderRadius: AcadexRadius.borderRadiusMd,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildStat("Attendance", "${summary.attendancePercentage}%", AcadexColors.primary, isDark),
+                  _buildStat("Present", summary.present.toString(), AcadexColors.success, isDark),
+                  _buildStat("Late", summary.late.toString(), AcadexColors.warning, isDark),
+                  _buildStat("Absent", summary.absent.toString(), AcadexColors.error, isDark),
+                ],
+              ),
             ),
           ],
         ),
@@ -51,17 +67,19 @@ class SectionAttendanceCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStat(String label, String value, Color color) {
+  Widget _buildStat(String label, String value, Color color, bool isDark) {
     return Column(
       children: [
         Text(
           value,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
+          style: AcadexTypography.title(color: color),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(fontSize: 11, color: DashboardColors.textSecondary),
+          style: AcadexTypography.caption(
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ).copyWith(fontSize: 11),
         ),
       ],
     );

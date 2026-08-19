@@ -28,6 +28,10 @@ class BackendStorageException extends AcadexBackendException {
   const BackendStorageException(super.message);
 }
 
+class BackendValidationException extends AcadexBackendException {
+  const BackendValidationException(super.message);
+}
+
 class UnknownBackendException extends AcadexBackendException {
   const UnknownBackendException(super.message);
 }

@@ -53,19 +53,19 @@ class FirebaseNotificationRepository implements NotificationRepository {
     subs.add(_firestoreService.watchQuery('notifications', {
       'recipientUserId': user.id,
       'audienceType': NotificationAudienceType.personal.name,
-    }).listen(handleStreamUpdate));
+    }, limit: 50, orderBy: 'timestamp', descending: true).listen(handleStreamUpdate));
 
     // 2. Platform Scope
     subs.add(_firestoreService.watchQuery('notifications', {
       'audienceType': NotificationAudienceType.platform.name,
-    }).listen(handleStreamUpdate));
+    }, limit: 20, orderBy: 'timestamp', descending: true).listen(handleStreamUpdate));
 
     // 3. College Scope (if user has collegeId)
     if (user.collegeId != null) {
       subs.add(_firestoreService.watchQuery('notifications', {
         'collegeId': user.collegeId,
         'audienceType': NotificationAudienceType.college.name,
-      }).listen(handleStreamUpdate));
+      }, limit: 20, orderBy: 'timestamp', descending: true).listen(handleStreamUpdate));
     }
 
     // 4. Department Scope (if user has departmentId)
@@ -73,14 +73,14 @@ class FirebaseNotificationRepository implements NotificationRepository {
       subs.add(_firestoreService.watchQuery('notifications', {
         'departmentId': user.departmentId,
         'audienceType': NotificationAudienceType.department.name,
-      }).listen(handleStreamUpdate));
+      }, limit: 20, orderBy: 'timestamp', descending: true).listen(handleStreamUpdate));
     }
 
     // 5. Role Scope
     subs.add(_firestoreService.watchQuery('notifications', {
       'recipientRole': user.role.value,
       'audienceType': NotificationAudienceType.role.name,
-    }).listen(handleStreamUpdate));
+    }, limit: 20, orderBy: 'timestamp', descending: true).listen(handleStreamUpdate));
 
     controller.onCancel = () {
       for (final sub in subs) {

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/models/quick_action_model.dart';
 
@@ -13,8 +12,7 @@ class QuickActionCard extends StatefulWidget {
   State<QuickActionCard> createState() => _QuickActionCardState();
 }
 
-class _QuickActionCardState extends State<QuickActionCard>
-    with SingleTickerProviderStateMixin {
+class _QuickActionCardState extends State<QuickActionCard> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnim;
 
@@ -22,9 +20,9 @@ class _QuickActionCardState extends State<QuickActionCard>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 120),
+      duration: const Duration(milliseconds: 100),
       vsync: this,
-      lowerBound: 0.93,
+      lowerBound: 0.95,
       upperBound: 1.0,
       value: 1.0,
     );
@@ -46,6 +44,8 @@ class _QuickActionCardState extends State<QuickActionCard>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
@@ -53,37 +53,41 @@ class _QuickActionCardState extends State<QuickActionCard>
       child: ScaleTransition(
         scale: _scaleAnim,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
           decoration: BoxDecoration(
-            color: DashboardColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: DashboardColors.border),
+            color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+            borderRadius: AcadexRadius.borderRadiusLg,
+            border: Border.all(
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              width: 1,
+            ),
+            boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 52,
-                height: 52,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: widget.action.iconBackground,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: AcadexRadius.borderRadiusMd,
                 ),
                 child: Icon(
                   widget.action.icon,
                   color: widget.action.iconColor,
-                  size: 26,
+                  size: 22,
                 ),
               ),
               const SizedBox(height: 10),
               Text(
                 widget.action.label,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: DashboardColors.textPrimary,
-                ),
+                style: AcadexTypography.caption(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ).copyWith(fontWeight: FontWeight.w600),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

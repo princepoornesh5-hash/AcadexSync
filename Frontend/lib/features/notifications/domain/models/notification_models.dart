@@ -25,6 +25,7 @@ enum NotificationAudienceType {
   department,
   college,
   platform,
+  section,
 }
 
 class NotificationModel {
@@ -43,6 +44,7 @@ class NotificationModel {
   final AppRole? recipientRole;
   final String? collegeId;
   final String? departmentId;
+  final String? sectionId;
 
   // Context fields
   final String? relatedEntityId;
@@ -63,6 +65,7 @@ class NotificationModel {
     this.recipientRole,
     this.collegeId,
     this.departmentId,
+    this.sectionId,
     this.relatedEntityId,
     this.relatedEntityType,
     this.navigationTarget,
@@ -82,6 +85,7 @@ class NotificationModel {
     AppRole? recipientRole,
     String? collegeId,
     String? departmentId,
+    String? sectionId,
     String? relatedEntityId,
     String? relatedEntityType,
     String? navigationTarget,
@@ -100,6 +104,7 @@ class NotificationModel {
       recipientRole: recipientRole ?? this.recipientRole,
       collegeId: collegeId ?? this.collegeId,
       departmentId: departmentId ?? this.departmentId,
+      sectionId: sectionId ?? this.sectionId,
       relatedEntityId: relatedEntityId ?? this.relatedEntityId,
       relatedEntityType: relatedEntityType ?? this.relatedEntityType,
       navigationTarget: navigationTarget ?? this.navigationTarget,
@@ -134,6 +139,7 @@ class NotificationModel {
           : null,
       collegeId: json['collegeId'],
       departmentId: json['departmentId'],
+      sectionId: json['sectionId'],
       relatedEntityId: json['relatedEntityId'],
       relatedEntityType: json['relatedEntityType'],
       navigationTarget: json['navigationTarget'],
@@ -155,6 +161,7 @@ class NotificationModel {
       'recipientRole': recipientRole?.value,
       'collegeId': collegeId,
       'departmentId': departmentId,
+      'sectionId': sectionId,
       'relatedEntityId': relatedEntityId,
       'relatedEntityType': relatedEntityType,
       'navigationTarget': navigationTarget,

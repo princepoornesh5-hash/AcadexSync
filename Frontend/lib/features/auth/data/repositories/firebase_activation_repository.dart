@@ -24,6 +24,7 @@ class FirebaseActivationRepository implements AccountActivationRepository {
       id: recordId,
       studentId: student.id,
       rollNumber: student.rollNumber,
+      role: AppRole.student,
       codeHash: ActivationRecord.hashCodeString(plaintextCode),
       status: ActivationStatus.pending,
       expiresAt: DateTime.now().add(const Duration(hours: 48)),
@@ -40,7 +41,32 @@ class FirebaseActivationRepository implements AccountActivationRepository {
   }
 
   @override
-  Future<Student> validateActivation(String rollNumber, String code) async {
+  Future<String> generateFacultyActivationCode(Faculty faculty) async {
+    final String plaintextCode = const Uuid().v4().substring(0, 8).toUpperCase();
+    final recordId = ActivationRecord.hashCodeString(plaintextCode);
+    
+    final record = ActivationRecord(
+      id: recordId,
+      facultyId: faculty.id,
+      employeeId: faculty.employeeId,
+      role: AppRole.faculty,
+      codeHash: ActivationRecord.hashCodeString(plaintextCode),
+      status: ActivationStatus.pending,
+      expiresAt: DateTime.now().add(const Duration(hours: 48)),
+      createdAt: DateTime.now(),
+    );
+
+    await _firestoreService.setDocument(
+      'activationCodes',
+      recordId,
+      record.toJson(),
+    );
+
+    return plaintextCode;
+  }
+
+  @override
+  Future<dynamic> validateActivation(String identifier, String code) async {
     final inputHash = ActivationRecord.hashCodeString(code);
     
     final docSnapshot = await FirebaseFirestore.instance
@@ -53,7 +79,7 @@ class FirebaseActivationRepository implements AccountActivationRepository {
     }
 
     final record = ActivationRecord.fromJson(docSnapshot.data()!);
-    if (record.rollNumber != rollNumber) {
+    if (record.rollNumber != identifier && record.employeeId != identifier) {
       throw Exception("Invalid activation details.");
     }
 
@@ -67,17 +93,23 @@ class FirebaseActivationRepository implements AccountActivationRepository {
       throw Exception("This activation code has been disabled.");
     }
 
-    // Now fetch the student record
-    final studentDoc = await FirebaseFirestore.instance.collection('students').doc(record.studentId).get();
-    if (!studentDoc.exists || studentDoc.data() == null) {
-      throw Exception("Associated student record not found.");
+    if (record.role == AppRole.student) {
+      final studentDoc = await FirebaseFirestore.instance.collection('students').doc(record.studentId).get();
+      if (!studentDoc.exists || studentDoc.data() == null) {
+        throw Exception("Associated student record not found.");
+      }
+      return Student.fromJson(studentDoc.data()!).toJson();
+    } else {
+      final facultyDoc = await FirebaseFirestore.instance.collection('faculty').doc(record.facultyId).get();
+      if (!facultyDoc.exists || facultyDoc.data() == null) {
+        throw Exception("Associated faculty record not found.");
+      }
+      return Faculty.fromJson(facultyDoc.data()!).toJson();
     }
-
-    return Student.fromJson(studentDoc.data()!);
   }
 
   @override
-  Future<String> completeActivation(String rollNumber, String code, String newPassword) async {
+  Future<String> completeActivation(String identifier, String code, String newPassword) async {
     final inputHash = ActivationRecord.hashCodeString(code);
     
     final docSnapshot = await FirebaseFirestore.instance
@@ -92,7 +124,7 @@ class FirebaseActivationRepository implements AccountActivationRepository {
     final recordDoc = docSnapshot;
     final record = ActivationRecord.fromJson(recordDoc.data()!);
 
-    if (record.rollNumber != rollNumber) {
+    if (record.rollNumber != identifier && record.employeeId != identifier) {
       throw Exception("Invalid activation details.");
     }
 
@@ -100,18 +132,42 @@ class FirebaseActivationRepository implements AccountActivationRepository {
       throw Exception("This activation code is no longer valid for activation.");
     }
 
-    final studentDoc = await FirebaseFirestore.instance.collection('students').doc(record.studentId).get();
-    if (!studentDoc.exists || studentDoc.data() == null) {
-      throw Exception("Associated student record not found.");
+    // Determine target record
+    String email = '';
+    String name = '';
+    String? collegeId;
+    String? departmentId;
+
+    if (record.role == AppRole.student) {
+      final studentDoc = await FirebaseFirestore.instance.collection('students').doc(record.studentId).get();
+      if (!studentDoc.exists || studentDoc.data() == null) {
+        throw Exception("Associated student record not found.");
+      }
+      final student = Student.fromJson(studentDoc.data()!);
+      email = student.email;
+      name = student.name;
+      collegeId = student.collegeId;
+      departmentId = student.departmentId;
+    } else {
+      final facultyDoc = await FirebaseFirestore.instance.collection('faculty').doc(record.facultyId).get();
+      if (!facultyDoc.exists || facultyDoc.data() == null) {
+        throw Exception("Associated faculty record not found.");
+      }
+      final faculty = Faculty.fromJson(facultyDoc.data()!);
+      email = faculty.email;
+      name = faculty.name;
+      departmentId = faculty.departmentId;
+      
+      final deptDoc = await FirebaseFirestore.instance.collection('departments').doc(departmentId).get();
+      collegeId = deptDoc.data()?['collegeId'] as String? ?? 'col-1';
     }
-    final student = Student.fromJson(studentDoc.data()!);
 
     // Run in a transaction to ensure atomicity for Firestore updates (Firebase Auth is external to transaction)
     UserCredential credential;
     try {
       // 1. Create Firebase Auth user
       credential = await _firebaseAuth.createUserWithEmailAndPassword(
-        email: student.email,
+        email: email,
         password: newPassword,
       );
     } on FirebaseAuthException catch (e) {
@@ -142,11 +198,11 @@ class FirebaseActivationRepository implements AccountActivationRepository {
         final userProfile = u.UserModel(
           id: uid, // Use Firebase UID as document ID
           firebaseUid: uid,
-          name: student.name,
-          email: student.email,
-          role: AppRole.student,
-          collegeId: student.collegeId,
-          departmentId: student.departmentId,
+          name: name,
+          email: email,
+          role: record.role,
+          collegeId: collegeId,
+          departmentId: departmentId,
           accountStatus: u.AccountStatus.active,
           createdAt: DateTime.now(),
         );

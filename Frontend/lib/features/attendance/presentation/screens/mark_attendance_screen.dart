@@ -3,12 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/presentation/widgets/acadex_search_bar.dart';
 import '../../domain/models/attendance_status.dart';
 import '../providers/attendance_providers.dart';
 import '../widgets/attendance_summary_card.dart';
 import '../widgets/student_attendance_card.dart';
 import '../widgets/save_attendance_button.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 
 class MarkAttendanceScreen extends ConsumerStatefulWidget {
   const MarkAttendanceScreen({super.key});
@@ -19,6 +20,71 @@ class MarkAttendanceScreen extends ConsumerStatefulWidget {
 
 class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
   String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSave() async {
+    final activeClass = ref.read(activeClassProvider);
+    if (activeClass == null) return;
+
+    setState(() => _isSaving = true);
+    try {
+      final success = await ref.read(saveSessionProvider(activeClass.id).future);
+      if (mounted) {
+        setState(() => _isSaving = false);
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(LucideIcons.checkCircle2, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Attendance session saved successfully!',
+                    style: AcadexTypography.bodySmall(color: Colors.white),
+                  ),
+                ],
+              ),
+              backgroundColor: AcadexColors.success,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          context.pop();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Unable to save attendance. Please try again.',
+                style: AcadexTypography.bodySmall(color: Colors.white),
+              ),
+              backgroundColor: AcadexColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error saving attendance: $e',
+              style: AcadexTypography.bodySmall(color: Colors.white),
+            ),
+            backgroundColor: AcadexColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,175 +92,332 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
     final sessionAsync = ref.watch(activeStudentListProvider);
     final records = ref.watch(markingSessionProvider);
     final notifier = ref.read(markingSessionProvider.notifier);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (activeClass == null) {
-      return const Scaffold(
-        body: Center(child: Text("No active class selected")),
+      return Scaffold(
+        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+        appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: const Center(
+          child: AcadexEmptyState(
+            title: "No Class Selected",
+            subtitle: "Please select a teaching class from your schedule first.",
+            icon: LucideIcons.calendarX,
+          ),
+        ),
       );
     }
 
-    // Filter records
+    // Filter records by local search query
     final filteredRecords = records.where((r) {
       final matchesSearch = r.studentName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                            r.rollNumber.toLowerCase().contains(_searchQuery.toLowerCase());
+          r.rollNumber.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchesSearch;
     }).toList();
 
     return Scaffold(
-      backgroundColor: DashboardColors.background,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: DashboardColors.surface,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(LucideIcons.arrowLeft, color: DashboardColors.textPrimary),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () => context.pop(),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(activeClass.subjectName, style: const TextStyle(color: DashboardColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
-            Text("${activeClass.sectionName} • ${activeClass.timeSlot}", style: const TextStyle(color: DashboardColors.textSecondary, fontSize: 12)),
+            Text(
+              activeClass.subjectName,
+              style: AcadexTypography.title(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ),
+            ),
+            const SizedBox(height: 1),
+            Text(
+              "${activeClass.sectionName} • ${activeClass.timeSlot}",
+              style: AcadexTypography.caption(
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+              ),
+            ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(LucideIcons.refreshCw, color: DashboardColors.primary),
-            tooltip: "Refresh List",
+            icon: Icon(
+              LucideIcons.refreshCw,
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+              size: 18,
+            ),
+            tooltip: "Refresh Roster",
             onPressed: () {
               ref.invalidate(activeStudentListProvider);
             },
           ),
-          PopupMenuButton<String>(
-            icon: const Icon(LucideIcons.moreVertical, color: DashboardColors.textPrimary),
-            onSelected: (val) {
-              if (val == 'mark_all_present') {
-                notifier.markAll(AttendanceStatus.present);
-              } else if (val == 'clear_all') {
-                notifier.clearAll();
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'mark_all_present',
-                child: Row(
-                  children: [
-                    Icon(LucideIcons.checkCircle2, color: DashboardColors.success),
-                    SizedBox(width: 8),
-                    Text("Mark All Present"),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'clear_all',
-                child: Row(
-                  children: [
-                    Icon(LucideIcons.rotateCcw, color: DashboardColors.warning),
-                    SizedBox(width: 8),
-                    Text("Clear All"),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: sessionAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: DashboardColors.primary)),
-        error: (err, stack) => Center(child: Text("Error: $err")),
-        data: (initialList) {
-          if (initialList.isEmpty) {
-            return const Center(child: Text("No students found in this section."));
-          }
+        loading: () => const Center(
+          child: AcadexLoadingState(message: "Loading student roster..."),
+        ),
+        error: (err, stack) => Center(
+          child: AcadexErrorState(
+            message: "Unable to load student roster: $err",
+            onRetry: () => ref.refresh(activeStudentListProvider),
+          ),
+        ),
+        data: (_) {
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final isDesktop = constraints.maxWidth >= 1024;
 
-          return Column(
-            children: [
-              // Summary and Search
-              Container(
-                color: DashboardColors.surface,
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                child: Column(
-                  children: [
-                    AttendanceSummaryCard(
-                      summary: notifier.summary,
-                      remainingCount: notifier.remainingCount,
-                      totalStudents: records.length,
-                    ),
-                    const SizedBox(height: 16),
-                    AcadexSearchFilterBar(
-                      searchHint: "Search by Name or Roll Number...",
-                      onSearchChanged: (v) => setState(() => _searchQuery = v),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // List
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  itemCount: filteredRecords.length,
-                  itemBuilder: (context, index) {
-                    final record = filteredRecords[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: StudentAttendanceCard(
-                        record: record,
-                        onStatusChanged: (status) {
-                          notifier.markStatus(record.studentId, status);
-                        },
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
+              if (isDesktop) {
+                return _buildDesktopLayout(
+                  context,
+                  notifier,
+                  records,
+                  filteredRecords,
+                  isDark,
+                );
+              }
+
+              return _buildMobileTabletLayout(
+                context,
+                notifier,
+                records,
+                filteredRecords,
+                isDark,
+              );
+            },
           );
         },
       ),
-      bottomNavigationBar: SafeArea(
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: DashboardColors.surface,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: SaveAttendanceButton(
-            remainingCount: notifier.remainingCount,
-            onSave: () async {
-              // Wait for save dialog
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text("Save Attendance"),
-                  content: const Text("Are you sure you want to save this attendance record?"),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: DashboardColors.primary, foregroundColor: Colors.white),
-                      onPressed: () => Navigator.pop(context, true),
-                      child: const Text("Save"),
+    );
+  }
+
+  Widget _buildDesktopLayout(
+    BuildContext context,
+    MarkingSessionNotifier notifier,
+    List<dynamic> records,
+    List<dynamic> filteredRecords,
+    bool isDark,
+  ) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1200),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Left: Search & Student Roster
+              Expanded(
+                flex: 7,
+                child: Column(
+                  children: [
+                    _buildSearchBar(isDark),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: _buildStudentList(filteredRecords, notifier, isDark),
                     ),
                   ],
                 ),
-              );
-
-              if (confirm == true && context.mounted) {
-                // In a real app we would call saveSessionProvider or repository.saveSession
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Attendance saved successfully!"), backgroundColor: DashboardColors.success),
-                );
-                context.pop();
-              }
-            },
+              ),
+              const SizedBox(width: 24),
+              
+              // Right: Sticky Side Panel
+              Expanded(
+                flex: 4,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AttendanceSummaryCard(
+                        summary: notifier.summary,
+                        remainingCount: notifier.remainingCount,
+                        totalStudents: records.length,
+                        isVertical: true,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildQuickActionButtons(notifier, isDark),
+                      const SizedBox(height: 20),
+                      SaveAttendanceButton(
+                        remainingCount: notifier.remainingCount,
+                        isLoading: _isSaving,
+                        isFullWidth: true,
+                        onSave: _handleSave,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildMobileTabletLayout(
+    BuildContext context,
+    MarkingSessionNotifier notifier,
+    List<dynamic> records,
+    List<dynamic> filteredRecords,
+    bool isDark,
+  ) {
+    return Column(
+      children: [
+        // Top Summary & Search
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Column(
+            children: [
+              AttendanceSummaryCard(
+                summary: notifier.summary,
+                remainingCount: notifier.remainingCount,
+                totalStudents: records.length,
+                isVertical: false,
+              ),
+              const SizedBox(height: 12),
+              _buildSearchBar(isDark),
+              const SizedBox(height: 8),
+              _buildQuickActionButtons(notifier, isDark),
+            ],
+          ),
+        ),
+        
+        // Student List
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _buildStudentList(filteredRecords, notifier, isDark),
+          ),
+        ),
+
+        // Bottom Sticky Action Bar
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+            border: Border(
+              top: BorderSide(
+                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              ),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: SaveAttendanceButton(
+              remainingCount: notifier.remainingCount,
+              isLoading: _isSaving,
+              isFullWidth: true,
+              onSave: _handleSave,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchBar(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusMd,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
+      ),
+      child: TextField(
+        controller: _searchController,
+        style: AcadexTypography.body(
+          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+        ),
+        decoration: InputDecoration(
+          hintText: "Search students by name or roll number...",
+          prefixIcon: Icon(
+            LucideIcons.search,
+            size: 18,
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    LucideIcons.x,
+                    size: 16,
+                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        ),
+        onChanged: (val) => setState(() => _searchQuery = val),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionButtons(MarkingSessionNotifier notifier, bool isDark) {
+    return Row(
+      children: [
+        Expanded(
+          child: AcadexButton(
+            label: "Mark All Present",
+            icon: LucideIcons.checkCheck,
+            variant: AcadexButtonVariant.secondary,
+            onPressed: () => notifier.markAll(AttendanceStatus.present),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: AcadexButton(
+            label: "Clear All",
+            icon: LucideIcons.rotateCcw,
+            variant: AcadexButtonVariant.ghost,
+            onPressed: () => notifier.clearAll(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStudentList(
+    List<dynamic> filteredRecords,
+    MarkingSessionNotifier notifier,
+    bool isDark,
+  ) {
+    if (filteredRecords.isEmpty) {
+      return Center(
+        child: AcadexEmptyState(
+          title: "No Matching Students",
+          subtitle: "No student matches \"$_searchQuery\". Try adjusting your search query.",
+          icon: LucideIcons.userX,
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: filteredRecords.length,
+      itemBuilder: (context, index) {
+        final record = filteredRecords[index];
+        return StudentAttendanceCard(
+          record: record,
+          onStatusChanged: (status) {
+            notifier.markStatus(record.studentId, status);
+          },
+        );
+      },
     );
   }
 }

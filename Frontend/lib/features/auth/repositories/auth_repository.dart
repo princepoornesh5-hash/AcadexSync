@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../domain/models/role_enum.dart';
 import '../domain/models/user_model.dart';
 
@@ -11,6 +12,12 @@ abstract class AuthRepository {
 }
 
 class MockAuthRepository implements AuthRepository {
+  MockAuthRepository() {
+    if (!kDebugMode) {
+      throw StateError('CRITICAL: MockAuthRepository must not be instantiated in release builds.');
+    }
+  }
+
   // Dummy Users
   final List<UserModel> _mockUsers = [
     const UserModel(
@@ -18,30 +25,42 @@ class MockAuthRepository implements AuthRepository {
       name: 'Super Admin User',
       email: 'admin@acadex.com',
       role: AppRole.superAdmin,
+      accountStatus: AccountStatus.active,
     ),
     const UserModel(
       id: '2',
       name: 'College Admin User',
       email: 'college@acadex.com',
       role: AppRole.collegeAdmin,
+      collegeId: 'mock-college-1',
+      accountStatus: AccountStatus.active,
     ),
     const UserModel(
       id: '3',
       name: 'HOD User',
       email: 'hod@acadex.com',
       role: AppRole.hod,
+      collegeId: 'mock-college-1',
+      departmentId: 'mock-dept-1',
+      accountStatus: AccountStatus.active,
     ),
     const UserModel(
       id: '4',
       name: 'Faculty User',
       email: 'faculty@acadex.com',
       role: AppRole.faculty,
+      collegeId: 'mock-college-1',
+      departmentId: 'mock-dept-1',
+      accountStatus: AccountStatus.active,
     ),
     const UserModel(
       id: '5',
       name: 'Student User',
       email: 'student@acadex.com',
       role: AppRole.student,
+      collegeId: 'mock-college-1',
+      departmentId: 'mock-dept-1',
+      accountStatus: AccountStatus.active,
     ),
   ];
 

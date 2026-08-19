@@ -1,17 +1,29 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../core/firebase/firebase_initializer.dart';
 import '../../domain/models/subject_attendance.dart';
 import '../../domain/models/attendance_history_record.dart';
 import '../../domain/models/monthly_attendance_summary.dart';
-import 'attendance_providers.dart'; // To get attendanceRepoProvider
+import 'attendance_providers.dart';
 
-// In a real app, this would come from the auth state
-final currentStudentIdProvider = Provider<String>((ref) => 'student123');
+final currentStudentIdProvider = Provider<String>((ref) {
+  final user = ref.watch(currentUserProvider);
+  if (user != null && user.id.isNotEmpty) {
+    return user.id;
+  }
+  if (FirebaseInitializer.shouldUseMock) {
+    return 'student123';
+  }
+  return '';
+});
 
 // ---------------------------------------------------------
 // Overview Stats
 // ---------------------------------------------------------
 final studentSubjectAttendanceProvider = FutureProvider<List<SubjectAttendance>>((ref) async {
   final studentId = ref.watch(currentStudentIdProvider);
+  if (studentId.isEmpty) return [];
+  
   final repo = ref.watch(attendanceRepoProvider);
   return repo.getStudentSubjectAttendance(studentId);
 });
@@ -43,6 +55,8 @@ final selectedHistoryMonthProvider = StateProvider<int?>((ref) => null); // 1-12
 
 final studentHistoryProvider = FutureProvider<List<AttendanceHistoryRecord>>((ref) async {
   final studentId = ref.watch(currentStudentIdProvider);
+  if (studentId.isEmpty) return [];
+
   final repo = ref.watch(attendanceRepoProvider);
   return repo.getStudentAttendanceHistory(studentId);
 });
@@ -70,6 +84,8 @@ final filteredStudentHistoryProvider = Provider<AsyncValue<List<AttendanceHistor
 // ---------------------------------------------------------
 final studentMonthlySummaryProvider = FutureProvider<List<MonthlyAttendanceSummary>>((ref) async {
   final studentId = ref.watch(currentStudentIdProvider);
+  if (studentId.isEmpty) return [];
+
   final repo = ref.watch(attendanceRepoProvider);
   return repo.getStudentMonthlySummary(studentId);
 });

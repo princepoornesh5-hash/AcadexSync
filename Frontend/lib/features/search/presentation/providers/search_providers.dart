@@ -3,6 +3,20 @@ import '../../domain/models/search_models.dart';
 import '../../data/repositories/mock_search_repository.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
+import '../../domain/repositories/search_repository.dart';
+import '../../data/repositories/firebase_search_repository.dart';
+import '../../../../core/firebase/firebase_services.dart';
+import '../../../../core/firebase/firebase_initializer.dart';
+
+// --- Repositories ---
+
+final searchRepositoryProvider = Provider<SearchRepository>((ref) {
+  if (FirebaseInitializer.shouldUseMock) {
+    return MockSearchRepository();
+  }
+  final firestoreService = ref.watch(firestoreServiceProvider);
+  return FirebaseSearchRepository(firestoreService);
+});
 
 // --- State Providers ---
 
@@ -66,5 +80,6 @@ final searchResultsProvider = FutureProvider.autoDispose<List<SearchResult>>((re
   // If the provider was disposed during the delay (e.g. user typed a new character),
   // this execution will be cancelled. We can check if it's still alive, but FutureProvider handles basic cancellation.
   
-  return mockSearchRepo.search(query, authState.user, filterType: filter);
+  final searchRepo = ref.read(searchRepositoryProvider);
+  return searchRepo.search(query, authState.user, filterType: filter);
 });

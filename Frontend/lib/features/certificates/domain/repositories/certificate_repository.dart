@@ -4,6 +4,7 @@ import '../models/certificate_type.dart';
 
 abstract class CertificateRepository {
   // Student operations — scoped to the student's own identity
+  Stream<List<Certificate>> watchStudentCertificates(String studentUid);
   Future<List<Certificate>> getStudentCertificates(String studentUid);
   Future<Certificate?> getCertificate(String certificateId);
   Future<Certificate> createCertificate(Certificate certificate);
@@ -23,6 +24,12 @@ abstract class CertificateRepository {
   });
 
   // Faculty operations — returns certificates for students in the authorized scope
+  Stream<List<Certificate>> watchFacultyStudentCertificates({
+    required String facultyUid,
+    required String collegeId,
+    required String departmentId,
+    String? sectionId,
+  });
   Future<List<Certificate>> getFacultyStudentCertificates({
     required String facultyUid,
     required String collegeId,

@@ -22,55 +22,28 @@ class AcadexEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(48),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceDarkCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.hairlineDark, style: BorderStyle.solid),
-      ),
+      padding: EdgeInsets.symmetric(vertical: 64, horizontal: 32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceDarkElevated,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 48, color: AppColors.textMuted),
-          ),
+          Icon(icon, size: 48, color: Theme.of(context).disabledColor.withValues(alpha: 0.3)),
           const SizedBox(height: 24),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.onDark,
-            ),
+            style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface),
           ),
           const SizedBox(height: 8),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 16,
-              color: AppColors.textMuted,
-            ),
+            style: AcadexTypography.body(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
           ),
           if (onActionTap != null && actionLabel != null) ...[
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: onActionTap,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9999)),
-              ),
-              child: Text(
-                actionLabel!,
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-              ),
+              child: Text(actionLabel!),
             ),
           ]
         ],

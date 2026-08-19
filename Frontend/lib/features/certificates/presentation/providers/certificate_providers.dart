@@ -13,6 +13,8 @@ import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../../core/firebase/firebase_services.dart';
 import '../../data/repositories/firebase_certificate_repository.dart';
 
+import '../../../storage/presentation/providers/storage_providers.dart';
+
 // ---- Repository Provider ----
 
 final certificateRepositoryProvider = Provider<CertificateRepository>((ref) {
@@ -20,7 +22,11 @@ final certificateRepositoryProvider = Provider<CertificateRepository>((ref) {
     return MockCertificateRepository();
   }
   final firestoreService = ref.watch(firestoreServiceProvider);
-  return FirebaseCertificateRepository(firestoreService);
+  final fileStorageRepo = ref.watch(fileStorageRepositoryProvider);
+  return FirebaseCertificateRepository(
+    firestoreService,
+    fileStorageRepository: fileStorageRepo,
+  );
 });
 
 // ---- Upload State ----
@@ -37,26 +43,26 @@ class UploadState {
 
 final certificateUploadStateProvider = StateProvider<UploadState>((_) => const UploadState());
 
-// ---- Student Certificates ----
+// ---- Student Certificates (Real-time Stream) ----
 
-final studentCertificatesProvider = FutureProvider<List<Certificate>>((ref) async {
+final studentCertificatesProvider = StreamProvider<List<Certificate>>((ref) {
   final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) return [];
+  if (authState is! AuthAuthenticated) return Stream.value([]);
   final user = authState.user;
-  if (user.role != AppRole.student) return [];
+  if (user.role != AppRole.student) return Stream.value([]);
   final repo = ref.watch(certificateRepositoryProvider);
-  return repo.getStudentCertificates(user.firebaseUid ?? user.id);
+  return repo.watchStudentCertificates(user.firebaseUid ?? user.id);
 });
 
-// ---- Faculty Certificates (scoped to their department) ----
+// ---- Faculty Certificates (Real-time Stream scoped to department) ----
 
-final facultyCertificatesProvider = FutureProvider<List<Certificate>>((ref) async {
+final facultyCertificatesProvider = StreamProvider<List<Certificate>>((ref) {
   final authState = ref.watch(authProvider);
-  if (authState is! AuthAuthenticated) return [];
+  if (authState is! AuthAuthenticated) return Stream.value([]);
   final user = authState.user;
-  if (user.collegeId == null || user.departmentId == null) return [];
+  if (user.collegeId == null || user.departmentId == null) return Stream.value([]);
   final repo = ref.watch(certificateRepositoryProvider);
-  return repo.getFacultyStudentCertificates(
+  return repo.watchFacultyStudentCertificates(
     facultyUid: user.firebaseUid ?? user.id,
     collegeId: user.collegeId!,
     departmentId: user.departmentId!,

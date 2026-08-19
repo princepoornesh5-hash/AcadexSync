@@ -86,6 +86,18 @@ class FirebaseAuthService {
 
 // --- Firestore Service Wrapper ---
 
+class PaginatedResponse<T> {
+  final List<T> data;
+  final DocumentSnapshot? lastDocument;
+  final bool hasMore;
+
+  const PaginatedResponse({
+    required this.data,
+    this.lastDocument,
+    required this.hasMore,
+  });
+}
+
 class FirestoreService {
   final Map<String, Map<String, Map<String, dynamic>>> _memoryStore = {};
 
@@ -140,6 +152,42 @@ class FirestoreService {
     }
   }
 
+  Future<void> batchSetDocuments(Map<String, Map<String, dynamic>> documentPathToDataMap) async {
+    if (Firebase.apps.isNotEmpty) {
+      try {
+        final batch = FirebaseFirestore.instance.batch();
+        for (final entry in documentPathToDataMap.entries) {
+          final parts = entry.key.split('/');
+          if (parts.length >= 2) {
+            final collection = parts[0];
+            final docId = parts.sublist(1).join('/');
+            final docRef = FirebaseFirestore.instance.collection(collection).doc(docId);
+            batch.set(docRef, entry.value, SetOptions(merge: true));
+          }
+        }
+        await batch.commit();
+      } catch (e) {
+        developer.log('Firestore batchSetDocuments error: $e', name: 'Acadex.Firestore');
+        if (!FirebaseInitializer.shouldUseMock) {
+          rethrow;
+        }
+      }
+    } else if (!FirebaseInitializer.shouldUseMock) {
+      throw const BackendNetworkException('Firebase is uninitialized.');
+    }
+
+    if (FirebaseInitializer.shouldUseMock) {
+      for (final entry in documentPathToDataMap.entries) {
+        final parts = entry.key.split('/');
+        if (parts.length >= 2) {
+          final collection = parts[0];
+          final docId = parts.sublist(1).join('/');
+          _memoryStore.putIfAbsent(collection, () => {})[docId] = entry.value;
+        }
+      }
+    }
+  }
+
   Future<List<Map<String, dynamic>>> getCollection(String collection) async {
     if (Firebase.apps.isNotEmpty) {
       try {
@@ -171,6 +219,93 @@ class FirestoreService {
       throw const BackendNetworkException('Firebase is uninitialized.');
     }
     _memoryStore[collection]?.remove(id);
+  }
+
+  Future<PaginatedResponse<Map<String, dynamic>>> queryCollectionPaginated(
+    String collection, 
+    Map<String, dynamic> filters, {
+    int limit = 20,
+    String? orderBy,
+    bool descending = false,
+    DocumentSnapshot? startAfterDocument,
+  }) async {
+    if (Firebase.apps.isNotEmpty) {
+      try {
+        Query query = FirebaseFirestore.instance.collection(collection);
+        filters.forEach((key, value) {
+          if (value is Iterable) {
+            query = query.where(key, whereIn: value.toList());
+          } else {
+            query = query.where(key, isEqualTo: value);
+          }
+        });
+
+        if (orderBy != null) {
+          query = query.orderBy(orderBy, descending: descending);
+        }
+
+        if (startAfterDocument != null) {
+          query = query.startAfterDocument(startAfterDocument);
+        }
+
+        query = query.limit(limit);
+
+        final snapshot = await query.get();
+        final docs = snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+        
+        return PaginatedResponse(
+          data: docs,
+          lastDocument: snapshot.docs.isNotEmpty ? snapshot.docs.last : null,
+          hasMore: docs.length == limit,
+        );
+      } catch (e) {
+        developer.log('Firestore queryCollectionPaginated error for $collection: $e', name: 'Acadex.Firestore');
+        if (!FirebaseInitializer.shouldUseMock) {
+          rethrow;
+        }
+      }
+    } else if (!FirebaseInitializer.shouldUseMock) {
+      throw const BackendNetworkException('Firebase is uninitialized.');
+    }
+
+    // Mock mode implementation
+    final allDocs = _memoryStore[collection]?.values.toList() ?? [];
+    var filtered = allDocs.where((doc) {
+      for (final entry in filters.entries) {
+        if (entry.value is Iterable) {
+          if (!(entry.value as Iterable).contains(doc[entry.key])) return false;
+        } else {
+          if (doc[entry.key] != entry.value) return false;
+        }
+      }
+      return true;
+    }).toList();
+
+    if (orderBy != null) {
+      filtered.sort((a, b) {
+        final aVal = a[orderBy] as Comparable?;
+        final bVal = b[orderBy] as Comparable?;
+        if (aVal == null && bVal == null) return 0;
+        if (aVal == null) return descending ? 1 : -1;
+        if (bVal == null) return descending ? -1 : 1;
+        return descending ? bVal.compareTo(aVal) : aVal.compareTo(bVal);
+      });
+    }
+
+    int startIndex = 0;
+    if (startAfterDocument != null && startAfterDocument.id.isNotEmpty) {
+      final idx = filtered.indexWhere((doc) => doc['id'] == startAfterDocument.id);
+      if (idx != -1) startIndex = idx + 1;
+    }
+
+    final endIndex = (startIndex + limit) > filtered.length ? filtered.length : (startIndex + limit);
+    final pagedDocs = filtered.sublist(startIndex, endIndex);
+
+    return PaginatedResponse(
+      data: pagedDocs,
+      lastDocument: null, // Mock mode doesn't use real snapshots
+      hasMore: endIndex < filtered.length,
+    );
   }
 
   Future<List<Map<String, dynamic>>> queryCollection(String collection, Map<String, dynamic> filters) async {
@@ -208,6 +343,51 @@ class FirestoreService {
     }).toList();
   }
 
+  Future<List<Map<String, dynamic>>> queryCollectionPrefix(String collection, String searchField, String prefix, {Map<String, dynamic>? filters, int limit = 20}) async {
+    if (Firebase.apps.isNotEmpty) {
+      try {
+        Query query = FirebaseFirestore.instance.collection(collection);
+        if (filters != null) {
+          filters.forEach((key, value) {
+            if (value is Iterable) {
+              query = query.where(key, whereIn: value.toList());
+            } else {
+              query = query.where(key, isEqualTo: value);
+            }
+          });
+        }
+        query = query.where(searchField, isGreaterThanOrEqualTo: prefix)
+                     .where(searchField, isLessThan: '$prefix\uf8ff')
+                     .limit(limit);
+                     
+        final snapshot = await query.get();
+        return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+      } catch (e) {
+        developer.log('Firestore queryCollectionPrefix error for $collection: $e', name: 'Acadex.Firestore');
+        if (!FirebaseInitializer.shouldUseMock) {
+          rethrow;
+        }
+      }
+    } else if (!FirebaseInitializer.shouldUseMock) {
+      throw const BackendNetworkException('Firebase is uninitialized.');
+    }
+    
+    final allDocs = _memoryStore[collection]?.values.toList() ?? [];
+    return allDocs.where((doc) {
+      if (filters != null) {
+        for (final entry in filters.entries) {
+          if (entry.value is Iterable) {
+            if (!(entry.value as Iterable).contains(doc[entry.key])) return false;
+          } else {
+            if (doc[entry.key] != entry.value) return false;
+          }
+        }
+      }
+      final fieldValue = doc[searchField]?.toString().toLowerCase() ?? '';
+      return fieldValue.startsWith(prefix.toLowerCase());
+    }).take(limit).toList();
+  }
+
   Stream<Map<String, dynamic>?> watchDocument(String collection, String id) {
     if (Firebase.apps.isNotEmpty) {
       try {
@@ -242,7 +422,13 @@ class FirestoreService {
     return Stream.value(_memoryStore[collection]?.values.toList() ?? []);
   }
 
-  Stream<List<Map<String, dynamic>>> watchQuery(String collection, Map<String, dynamic> filters) {
+  Stream<List<Map<String, dynamic>>> watchQuery(
+    String collection, 
+    Map<String, dynamic> filters, {
+    int? limit,
+    String? orderBy,
+    bool descending = false,
+  }) {
     if (Firebase.apps.isNotEmpty) {
       try {
         Query query = FirebaseFirestore.instance.collection(collection);
@@ -253,6 +439,15 @@ class FirestoreService {
             query = query.where(key, isEqualTo: value);
           }
         });
+
+        if (orderBy != null) {
+          query = query.orderBy(orderBy, descending: descending);
+        }
+
+        if (limit != null) {
+          query = query.limit(limit);
+        }
+
         return query.snapshots().map(
           (snapshot) => snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList()
         );
@@ -267,7 +462,8 @@ class FirestoreService {
     }
     
     final allDocs = _memoryStore[collection]?.values.toList() ?? [];
-    final filtered = allDocs.where((doc) {
+    
+    var filtered = allDocs.where((doc) {
       for (final entry in filters.entries) {
         if (entry.value is Iterable) {
           if (!(entry.value as Iterable).contains(doc[entry.key])) return false;
@@ -277,6 +473,22 @@ class FirestoreService {
       }
       return true;
     }).toList();
+
+    if (orderBy != null) {
+      filtered.sort((a, b) {
+        final aVal = a[orderBy] as Comparable?;
+        final bVal = b[orderBy] as Comparable?;
+        if (aVal == null && bVal == null) return 0;
+        if (aVal == null) return descending ? 1 : -1;
+        if (bVal == null) return descending ? -1 : 1;
+        return descending ? bVal.compareTo(aVal) : aVal.compareTo(bVal);
+      });
+    }
+
+    if (limit != null && filtered.length > limit) {
+      filtered = filtered.sublist(0, limit);
+    }
+
     return Stream.value(filtered);
   }
 }

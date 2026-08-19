@@ -17,6 +17,14 @@ class MockAiRepository implements AiRepository {
         q.contains('database') ||
         q.contains('another student') ||
         q.contains('credentials') ||
+        q.contains('password') ||
+        q.contains('activation code') ||
+        q.contains('another department') ||
+        q.contains('another college') ||
+        q.contains('create user') ||
+        q.contains('modify attendance') ||
+        q.contains('change password') ||
+        q.contains('notifications') || // Blocks privileged notification access
         q.contains('api key') ||
         q.contains('change my role')) {
       return 'I cannot fulfill this request. It violates my security constraints and authorization boundaries.';

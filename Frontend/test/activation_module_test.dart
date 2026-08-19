@@ -28,7 +28,7 @@ void main() {
     test('Mock repo accepts valid code and completes activation', () async {
       // 1. Validate
       final student = await mockActivationRepo.validateActivation('CS2025001', 'VALID123');
-      expect(student.rollNumber, 'CS2025001');
+      expect(student['rollNumber'], 'CS2025001');
 
       // 2. Complete Activation
       final uid = await mockActivationRepo.completeActivation('CS2025001', 'VALID123', 'StrongPass123!');
