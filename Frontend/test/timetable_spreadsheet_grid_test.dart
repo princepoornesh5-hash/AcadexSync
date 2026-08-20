@@ -29,21 +29,6 @@ void main() {
   group('ACADEX Phase 5A: Spreadsheet Grid Foundation Tests', () {
     late MockTimetableRepository mockRepo;
 
-    final superAdminUser = UserModel(
-      id: 'usr-sa',
-      name: 'Super Admin',
-      email: 'sa@acadex.edu',
-      role: AppRole.superAdmin,
-    );
-
-    final collegeAdminUser = UserModel(
-      id: 'usr-ca',
-      name: 'College Admin',
-      email: 'ca@col1.edu',
-      role: AppRole.collegeAdmin,
-      collegeId: 'col-1',
-    );
-
     final hodCseUser = UserModel(
       id: 'usr-hod',
       name: 'HOD CSE',
@@ -51,25 +36,6 @@ void main() {
       role: AppRole.hod,
       collegeId: 'col-1',
       departmentId: 'dept-cse',
-    );
-
-    final facultyNormalUser = UserModel(
-      id: 'usr-fac',
-      name: 'Normal Faculty',
-      email: 'fac@col1.edu',
-      role: AppRole.faculty,
-      collegeId: 'col-1',
-      departmentId: 'dept-cse',
-    );
-
-    final studentUser = UserModel(
-      id: 'usr-student',
-      name: 'Student One',
-      email: 'student@col1.edu',
-      role: AppRole.student,
-      collegeId: 'col-1',
-      departmentId: 'dept-cse',
-      sectionId: 'sec-4a',
     );
 
     TimetableContainerModel createSampleContainer({

@@ -13,8 +13,6 @@ import 'package:file_picker/file_picker.dart';
 import '../../domain/models/note_model.dart';
 import '../../domain/utils/note_mime_helper.dart';
 import '../providers/notes_providers.dart';
-import '../../../../features/storage/domain/models/file_category.dart';
-import '../../../../features/storage/presentation/providers/storage_providers.dart';
 
 class NoteFormScreen extends ConsumerStatefulWidget {
   final NoteModel? existingNote;
@@ -557,85 +555,54 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
 
     setState(() => _isUploading = true);
 
-    String? uploadedUrl = widget.existingNote?.fileUrl;
-    String? uploadedName = widget.existingNote?.fileName;
-    int? uploadedSize = widget.existingNote?.fileSize;
-    String? uploadedType = widget.existingNote?.fileType;
-    String? newlyUploadedStoragePath;
-    final oldStoragePath = widget.existingNote?.storagePath;
-
     try {
-      if (_resourceType == ResourceType.fileAttachment && _selectedFile != null && _selectedFile!.bytes != null) {
-        final storageRepo = ref.read(fileStorageRepositoryProvider);
-        final mime = NoteMimeHelper.resolveMimeType(_selectedFile!.name);
-        final stored = await storageRepo.uploadFile(
-          bytes: _selectedFile!.bytes!,
-          fileName: _selectedFile!.name,
-          contentType: mime,
-          category: FileCategory.noteAttachment,
-          ownerUid: user.id,
-          collegeId: user.collegeId,
-          departmentId: user.departmentId,
-          facultyUid: user.id,
-        );
-        uploadedUrl = stored.downloadUrl;
-        uploadedName = stored.fileName;
-        uploadedSize = stored.sizeBytes;
-        uploadedType = _selectedFile!.extension ?? 'unknown';
-        newlyUploadedStoragePath = stored.storagePath;
-      }
-
-      final note = NoteModel(
-        id: widget.existingNote?.id ?? '',
-        title: _titleController.text.trim(),
-        description: _descController.text.trim(),
-        chapter: _chapterController.text.trim(),
-        content: _resourceType == ResourceType.textNote ? _contentController.text.trim() : null,
-        externalUrl: _resourceType == ResourceType.externalLink ? _urlController.text.trim() : null,
-        resourceType: _resourceType,
-        fileName: _resourceType == ResourceType.fileAttachment ? uploadedName : null,
-        fileSize: _resourceType == ResourceType.fileAttachment ? uploadedSize : null,
-        fileType: _resourceType == ResourceType.fileAttachment ? uploadedType : null,
-        fileUrl: _resourceType == ResourceType.fileAttachment ? uploadedUrl : null,
-        storagePath: _resourceType == ResourceType.fileAttachment ? (newlyUploadedStoragePath ?? oldStoragePath) : null,
-        subjectId: _selectedSubjectId!,
-        sectionId: _selectedSectionId!,
-        courseId: _selectedCourseId!,
-        departmentId: user.departmentId ?? widget.existingNote?.departmentId ?? '',
-        collegeId: user.collegeId ?? widget.existingNote?.collegeId ?? '',
-        semesterId: _selectedSemesterId!,
-        facultyId: user.role == AppRole.faculty ? user.id : widget.existingNote?.facultyId ?? user.id,
-        authorUserId: user.id,
-        status: _status,
-        publishedAt: widget.existingNote?.publishedAt,
-        createdAt: widget.existingNote?.createdAt ?? DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
       final notifier = ref.read(noteManagementProvider.notifier);
-      if (widget.existingNote == null) {
-        await notifier.createNote(note);
-      } else {
-        await notifier.updateNote(note);
 
-        // Delete old replaced storage file if a new file was uploaded successfully
-        if (newlyUploadedStoragePath != null && oldStoragePath != null && oldStoragePath != newlyUploadedStoragePath) {
-          try {
-            final storageRepo = ref.read(fileStorageRepositoryProvider);
-            await storageRepo.deleteFile(oldStoragePath);
-          } catch (_) {}
+      if (_resourceType == ResourceType.fileAttachment && _selectedFile != null && _selectedFile!.bytes != null) {
+        await notifier.uploadAndPublishNote(
+          subjectId: _selectedSubjectId!,
+          title: _titleController.text.trim(),
+          description: _descController.text.trim(),
+          chapter: _chapterController.text.trim().isNotEmpty ? _chapterController.text.trim() : null,
+          fileName: _selectedFile!.name,
+          fileBytes: _selectedFile!.bytes!,
+          semesterId: _selectedSemesterId,
+          courseId: _selectedCourseId,
+          departmentId: user.departmentId,
+          sectionId: _selectedSectionId,
+        );
+      } else {
+        final note = NoteModel(
+          id: widget.existingNote?.id ?? '',
+          title: _titleController.text.trim(),
+          description: _descController.text.trim(),
+          chapter: _chapterController.text.trim().isNotEmpty ? _chapterController.text.trim() : null,
+          content: _resourceType == ResourceType.textNote ? _contentController.text.trim() : null,
+          externalUrl: _resourceType == ResourceType.externalLink ? _urlController.text.trim() : null,
+          resourceType: _resourceType,
+          subjectId: _selectedSubjectId!,
+          sectionId: _selectedSectionId ?? '',
+          courseId: _selectedCourseId ?? '',
+          departmentId: user.departmentId ?? widget.existingNote?.departmentId ?? '',
+          collegeId: user.collegeId ?? widget.existingNote?.collegeId ?? '',
+          semesterId: _selectedSemesterId!,
+          facultyId: user.role == AppRole.faculty ? user.id : widget.existingNote?.facultyId ?? user.id,
+          authorUserId: user.id,
+          status: _status,
+          publishedAt: widget.existingNote?.publishedAt,
+          createdAt: widget.existingNote?.createdAt ?? DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        if (widget.existingNote == null) {
+          await notifier.createNote(note);
+        } else {
+          await notifier.updateNote(note);
         }
       }
 
       if (mounted) context.pop();
     } catch (e) {
-      // Failure compensation: Clean up freshly uploaded storage file if metadata write failed
-      if (newlyUploadedStoragePath != null) {
-        try {
-          final storageRepo = ref.read(fileStorageRepositoryProvider);
-          await storageRepo.deleteFile(newlyUploadedStoragePath);
-        } catch (_) {}
-      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save note: $e')));
         setState(() => _isUploading = false);

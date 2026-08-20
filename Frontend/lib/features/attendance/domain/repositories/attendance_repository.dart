@@ -20,6 +20,7 @@ import '../models/super_admin_faculty_completion.dart';
 import '../models/super_admin_insight.dart';
 import '../models/super_admin_student_shortage.dart';
 import '../models/super_admin_system_health.dart';
+import '../models/attendance_analytics_models.dart';
 
 abstract class AttendanceRepository {
   Future<List<AssignedClass>> getAssignedClasses(String facultyId, DateTime date);
@@ -32,7 +33,7 @@ abstract class AttendanceRepository {
   Future<List<MonthlyAttendanceSummary>> getStudentMonthlySummary(String studentId);
 
   // Faculty Methods
-  Future<List<AttendanceRecord>> getStudentsForSection(String sectionId, String subjectId, DateTime date);
+  Future<List<AttendanceRecord>> getStudentsForSection(String sectionId, String subjectId, DateTime date, {String? timetableEntryId});
   Future<bool> saveSession(AttendanceSession session);
   Future<List<AttendanceSession>> getRecentSessions(String facultyId);
 
@@ -59,4 +60,11 @@ abstract class AttendanceRepository {
   Future<List<SuperAdminStudentShortage>> getSuperAdminStudentShortages();
   Future<List<SuperAdminInsight>> getSuperAdminInsights();
   Future<SuperAdminSystemHealth> getSuperAdminSystemHealth();
+
+  // Phase 8A Attendance Analytics Aggregation Engine Methods
+  Future<StudentAttendanceAnalytics> getStudentAttendanceAnalytics(String studentId, {AttendanceDateRange? dateRange});
+  Future<SubjectAttendanceAnalytics> getSubjectAttendanceAnalytics(String subjectId, {String? sectionId, AttendanceDateRange? dateRange});
+  Future<SectionAttendanceAnalytics> getSectionAttendanceAnalytics(String sectionId, {AttendanceDateRange? dateRange});
+  Future<FacultyAttendanceAnalytics> getFacultyAttendanceAnalytics(String facultyId, {AttendanceDateRange? dateRange});
+  Future<AttendanceDateRangeSummary> getAttendanceDateRangeSummary({AttendanceDateRange? dateRange, String? departmentId, String? sectionId});
 }

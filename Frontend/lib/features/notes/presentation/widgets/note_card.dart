@@ -263,6 +263,9 @@ class _NoteCardState extends ConsumerState<NoteCard> {
       case NoteStatus.unpublished:
         color = AcadexColors.error;
         break;
+      case NoteStatus.archived:
+        color = AcadexColors.inkMuted;
+        break;
     }
 
     return Container(

@@ -115,7 +115,7 @@ class StudentAttendanceCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                _buildSegmentedControl(isDark),
+                _buildSegmentedControl(isDark, width: 330),
               ],
             );
           },
@@ -158,8 +158,8 @@ class StudentAttendanceCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSegmentedControl(bool isDark) {
-    return Container(
+  Widget _buildSegmentedControl(bool isDark, {double? width}) {
+    final control = Container(
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
         borderRadius: AcadexRadius.borderRadiusMd,
@@ -170,43 +170,66 @@ class StudentAttendanceCard extends StatelessWidget {
       ),
       padding: const EdgeInsets.all(3),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          _buildSegmentButton(
-            label: 'Present',
-            shortLabel: 'P',
-            icon: LucideIcons.check,
-            status: AttendanceStatus.present,
-            activeBg: isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight,
-            activeBorder: AcadexColors.success,
-            activeFg: AcadexColors.success,
-            isDark: isDark,
+          Expanded(
+            child: _buildSegmentButton(
+              label: 'Present',
+              shortLabel: 'P',
+              icon: LucideIcons.check,
+              status: AttendanceStatus.present,
+              activeBg: isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight,
+              activeBorder: AcadexColors.success,
+              activeFg: AcadexColors.success,
+              isDark: isDark,
+            ),
           ),
           const SizedBox(width: 4),
-          _buildSegmentButton(
-            label: 'Late',
-            shortLabel: 'L',
-            icon: LucideIcons.clock,
-            status: AttendanceStatus.late,
-            activeBg: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
-            activeBorder: AcadexColors.warning,
-            activeFg: AcadexColors.warning,
-            isDark: isDark,
+          Expanded(
+            child: _buildSegmentButton(
+              label: 'Late',
+              shortLabel: 'L',
+              icon: LucideIcons.clock,
+              status: AttendanceStatus.late,
+              activeBg: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+              activeBorder: AcadexColors.warning,
+              activeFg: AcadexColors.warning,
+              isDark: isDark,
+            ),
           ),
           const SizedBox(width: 4),
-          _buildSegmentButton(
-            label: 'Absent',
-            shortLabel: 'A',
-            icon: LucideIcons.x,
-            status: AttendanceStatus.absent,
-            activeBg: isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight,
-            activeBorder: AcadexColors.error,
-            activeFg: AcadexColors.error,
-            isDark: isDark,
+          Expanded(
+            child: _buildSegmentButton(
+              label: 'Absent',
+              shortLabel: 'A',
+              icon: LucideIcons.x,
+              status: AttendanceStatus.absent,
+              activeBg: isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight,
+              activeBorder: AcadexColors.error,
+              activeFg: AcadexColors.error,
+              isDark: isDark,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: _buildSegmentButton(
+              label: 'Excused',
+              shortLabel: 'E',
+              icon: LucideIcons.shieldCheck,
+              status: AttendanceStatus.excused,
+              activeBg: isDark ? const Color(0xFF312E81) : const Color(0xFFEEF2FF),
+              activeBorder: const Color(0xFF6366F1),
+              activeFg: const Color(0xFF6366F1),
+              isDark: isDark,
+            ),
           ),
         ],
       ),
     );
+
+    if (width != null) {
+      return SizedBox(width: width, child: control);
+    }
+    return control;
   }
 
   Widget _buildSegmentButton({
@@ -225,7 +248,7 @@ class StudentAttendanceCard extends StatelessWidget {
       onTap: () => onStatusChanged(status),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected ? activeBg : Colors.transparent,
           borderRadius: AcadexRadius.borderRadiusSm,
@@ -235,19 +258,22 @@ class StudentAttendanceCard extends StatelessWidget {
           ),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              size: 13,
+              size: 12,
               color: isSelected ? activeFg : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
             ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: AcadexTypography.caption(
-                color: isSelected ? activeFg : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-              ).copyWith(fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500),
+            const SizedBox(width: 3),
+            Flexible(
+              child: Text(
+                label,
+                style: AcadexTypography.caption(
+                  color: isSelected ? activeFg : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                ).copyWith(fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500, fontSize: 11),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),

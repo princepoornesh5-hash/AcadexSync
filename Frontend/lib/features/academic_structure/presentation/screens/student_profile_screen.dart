@@ -365,11 +365,6 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                       label: const Text("View Notes"),
                       onPressed: () => context.push('/notes'),
                     ),
-                    OutlinedButton.icon(
-                      icon: const Icon(LucideIcons.award, size: 16),
-                      label: const Text("View Certificates"),
-                      onPressed: () => context.push('/certificates'),
-                    ),
                   ],
                 ),
               ],

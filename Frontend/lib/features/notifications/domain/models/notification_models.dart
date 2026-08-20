@@ -112,37 +112,45 @@ class NotificationModel {
   }
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    final rawId = json['id'] ?? json['_id'] ?? '';
+    final rawTitle = json['title'] ?? '';
+    final rawMessage = json['body'] ?? json['message'] ?? '';
+    final rawCreatedAt = json['createdAt'] ?? json['timestamp'];
+    final rawDeepLink = json['deepLink'] ?? json['navigationTarget'];
+    final rawEntityType = json['entityType'] ?? json['relatedEntityType'];
+    final rawEntityId = json['entityId'] ?? json['relatedEntityId'];
+
     return NotificationModel(
-      id: json['id'] ?? '',
-      title: json['title'] ?? '',
-      message: json['message'] ?? '',
+      id: rawId.toString(),
+      title: rawTitle.toString(),
+      message: rawMessage.toString(),
       category: NotificationCategory.values.firstWhere(
-        (e) => e.name == json['category'],
+        (e) => e.name.toLowerCase() == (json['category']?.toString().toLowerCase() ?? ''),
         orElse: () => NotificationCategory.general,
       ),
       priority: NotificationPriority.values.firstWhere(
-        (e) => e.name == json['priority'],
+        (e) => e.name.toLowerCase() == (json['priority']?.toString().toLowerCase() ?? ''),
         orElse: () => NotificationPriority.normal,
       ),
       audienceType: NotificationAudienceType.values.firstWhere(
-        (e) => e.name == json['audienceType'],
+        (e) => e.name.toLowerCase() == (json['audienceType']?.toString().toLowerCase() ?? ''),
         orElse: () => NotificationAudienceType.personal,
       ),
-      timestamp: json['timestamp'] != null 
-          ? DateTime.parse(json['timestamp']) 
+      timestamp: rawCreatedAt != null 
+          ? DateTime.tryParse(rawCreatedAt.toString()) ?? DateTime.now() 
           : DateTime.now(),
       isRead: json['isRead'] ?? false,
-      readAt: json['readAt'] != null ? DateTime.parse(json['readAt']) : null,
-      recipientUserId: json['recipientUserId'],
+      readAt: json['readAt'] != null ? DateTime.tryParse(json['readAt'].toString()) : null,
+      recipientUserId: json['recipientUserId']?.toString(),
       recipientRole: json['recipientRole'] != null
           ? AppRole.values.firstWhere((e) => e.value == json['recipientRole'], orElse: () => AppRole.student)
           : null,
-      collegeId: json['collegeId'],
-      departmentId: json['departmentId'],
-      sectionId: json['sectionId'],
-      relatedEntityId: json['relatedEntityId'],
-      relatedEntityType: json['relatedEntityType'],
-      navigationTarget: json['navigationTarget'],
+      collegeId: json['collegeId']?.toString(),
+      departmentId: json['departmentId']?.toString(),
+      sectionId: json['sectionId']?.toString(),
+      relatedEntityId: rawEntityId?.toString(),
+      relatedEntityType: rawEntityType?.toString(),
+      navigationTarget: rawDeepLink?.toString(),
     );
   }
 

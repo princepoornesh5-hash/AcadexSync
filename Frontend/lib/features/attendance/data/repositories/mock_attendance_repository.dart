@@ -21,6 +21,7 @@ import '../../domain/models/super_admin_system_health.dart';
 import '../../domain/models/super_admin_faculty_completion.dart';
 import '../../domain/models/super_admin_student_shortage.dart';
 import '../../domain/models/student_attendance_overview.dart';
+import '../../domain/models/attendance_analytics_models.dart';
 import '../../domain/repositories/attendance_repository.dart';
 
 class MockAttendanceRepository implements AttendanceRepository {
@@ -79,11 +80,59 @@ class MockAttendanceRepository implements AttendanceRepository {
   Future<List<AssignedClass>> getAssignedClasses(String facultyId, DateTime date) async {
     await _delay();
     // Return dummy classes for the day
-    return [
-      AssignedClass(id: 'ac1', subjectId: 'sub1', subjectName: 'Java Programming', sectionId: 'sec1', sectionName: 'DCME 3-A', semester: 'Semester 3', timeSlot: '08:30 - 09:20', date: date),
-      AssignedClass(id: 'ac2', subjectId: 'sub2', subjectName: 'Operating Systems', sectionId: 'sec2', sectionName: 'DCME 5-A', semester: 'Semester 5', timeSlot: '09:30 - 10:20', date: date, isAttendanceMarked: true),
-      AssignedClass(id: 'ac3', subjectId: 'sub3', subjectName: 'DBMS Lab', sectionId: 'sec3', sectionName: 'DCME 3-B', semester: 'Semester 3', timeSlot: '10:30 - 11:20', date: date),
+    final list = [
+      AssignedClass(
+        id: 'ac1',
+        timetableEntryId: 'pub_tt1_ac1',
+        facultyId: facultyId,
+        subjectId: 'sub1',
+        subjectName: 'Java Programming',
+        sectionId: 'sec1',
+        sectionName: 'DCME 3-A',
+        semester: 'Semester 3',
+        timeSlot: '08:30 - 09:20',
+        startTime: '08:30',
+        endTime: '09:20',
+        roomNumber: 'LH-101',
+        building: 'CS Block',
+        date: date,
+      ),
+      AssignedClass(
+        id: 'ac2',
+        timetableEntryId: 'pub_tt1_ac2',
+        facultyId: facultyId,
+        subjectId: 'sub2',
+        subjectName: 'Operating Systems',
+        sectionId: 'sec2',
+        sectionName: 'DCME 5-A',
+        semester: 'Semester 5',
+        timeSlot: '09:30 - 10:20',
+        startTime: '09:30',
+        endTime: '10:20',
+        roomNumber: 'LH-102',
+        building: 'CS Block',
+        date: date,
+        isAttendanceMarked: true,
+      ),
+      AssignedClass(
+        id: 'ac3',
+        timetableEntryId: 'pub_tt1_ac3',
+        facultyId: facultyId,
+        subjectId: 'sub3',
+        subjectName: 'DBMS Lab',
+        sectionId: 'sec3',
+        sectionName: 'DCME 3-B',
+        semester: 'Semester 3',
+        timeSlot: '10:30 - 12:20',
+        startTime: '10:30',
+        endTime: '12:20',
+        roomNumber: 'Lab-201',
+        building: 'CS Block',
+        date: date,
+      ),
     ];
+    list.sort((a, b) => (a.startTime ?? '').compareTo(b.startTime ?? ''));
+    return list;
   }
 
   @override
@@ -145,12 +194,24 @@ class MockAttendanceRepository implements AttendanceRepository {
   /// Generates a dummy list of students for a given section.
   /// If the session was already saved, it returns the saved records.
   @override
-  Future<List<AttendanceRecord>> getStudentsForSection(String sectionId, String subjectId, DateTime date) async {
+  Future<List<AttendanceRecord>> getStudentsForSection(
+    String sectionId,
+    String subjectId,
+    DateTime date, {
+    String? timetableEntryId,
+  }) async {
     await _delay();
     
     // Check if session already exists
     try {
-      final existing = _sessions.firstWhere((s) => s.sectionId == sectionId && s.subjectId == subjectId && s.date.year == date.year && s.date.month == date.month && s.date.day == date.day);
+      final existing = _sessions.firstWhere((s) {
+        final matchesBasic = s.sectionId == sectionId && s.subjectId == subjectId && s.date.year == date.year && s.date.month == date.month && s.date.day == date.day;
+        if (!matchesBasic) return false;
+        if (timetableEntryId != null && timetableEntryId.isNotEmpty) {
+          return s.id.contains(timetableEntryId.replaceAll('pub_', '')) || s.timeSlot.isNotEmpty;
+        }
+        return true;
+      });
       return List.from(existing.records);
     } catch (_) {
       // Session doesn't exist, generate fresh students (no status)
@@ -197,7 +258,9 @@ class MockAttendanceRepository implements AttendanceRepository {
   @override
   Future<List<AttendanceSession>> getRecentSessions(String facultyId) async {
     await _delay();
-    return _sessions.where((s) => s.facultyId == facultyId).toList();
+    final list = _sessions.where((s) => s.facultyId == facultyId).toList();
+    list.sort((a, b) => b.date.compareTo(a.date));
+    return list;
   }
 
   // ==========================================
@@ -401,6 +464,379 @@ class MockAttendanceRepository implements AttendanceRepository {
       activeUsers: 3450,
     );
   }
+
+  // =========================================================================
+  // Phase 8A: Mock Attendance Analytics Engine Implementation
+  // =========================================================================
+
+  @override
+  Future<StudentAttendanceAnalytics> getStudentAttendanceAnalytics(
+    String studentId, {
+    AttendanceDateRange? dateRange,
+  }) async {
+    await _delay();
+    int present = 0;
+    int absent = 0;
+    int late = 0;
+    int excused = 0;
+    int unmarked = 0;
+    int totalSessions = 0;
+    String studentName = '';
+    String rollNumber = '';
+    String sectionId = '';
+
+    for (final session in _sessions) {
+      if (dateRange != null && !dateRange.contains(session.date)) {
+        continue;
+      }
+      final record = session.records.where((r) => r.studentId == studentId).firstOrNull;
+      if (record != null) {
+        totalSessions++;
+        studentName = record.studentName;
+        rollNumber = record.rollNumber;
+        sectionId = record.sectionId.isNotEmpty ? record.sectionId : session.sectionId;
+
+        if (record.status == null) {
+          unmarked++;
+          continue;
+        }
+
+        switch (record.status!) {
+          case AttendanceStatus.present:
+            present++;
+            break;
+          case AttendanceStatus.absent:
+            absent++;
+            break;
+          case AttendanceStatus.late:
+            late++;
+            break;
+          case AttendanceStatus.excused:
+            excused++;
+            break;
+          default:
+            unmarked++;
+            break;
+        }
+      }
+    }
+
+    return StudentAttendanceAnalytics.compute(
+      studentId: studentId,
+      studentName: studentName,
+      rollNumber: rollNumber,
+      sectionId: sectionId,
+      totalSessions: totalSessions,
+      presentCount: present,
+      absentCount: absent,
+      lateCount: late,
+      excusedCount: excused,
+      unmarkedCount: unmarked,
+      dateRange: dateRange,
+    );
+  }
+
+  @override
+  Future<SubjectAttendanceAnalytics> getSubjectAttendanceAnalytics(
+    String subjectId, {
+    String? sectionId,
+    AttendanceDateRange? dateRange,
+  }) async {
+    await _delay();
+    int present = 0;
+    int absent = 0;
+    int late = 0;
+    int excused = 0;
+    int unmarked = 0;
+    int totalRecords = 0;
+    int matchingSessions = 0;
+    String subjectName = '';
+
+    for (final session in _sessions) {
+      if (session.subjectId != subjectId) continue;
+      if (sectionId != null && sectionId.isNotEmpty && session.sectionId != sectionId) continue;
+      if (dateRange != null && !dateRange.contains(session.date)) continue;
+
+      matchingSessions++;
+      subjectName = session.subjectName;
+
+      for (final r in session.records) {
+        totalRecords++;
+        if (r.status == null) {
+          unmarked++;
+          continue;
+        }
+        switch (r.status!) {
+          case AttendanceStatus.present:
+            present++;
+            break;
+          case AttendanceStatus.absent:
+            absent++;
+            break;
+          case AttendanceStatus.late:
+            late++;
+            break;
+          case AttendanceStatus.excused:
+            excused++;
+            break;
+          default:
+            unmarked++;
+            break;
+        }
+      }
+    }
+
+    return SubjectAttendanceAnalytics.compute(
+      subjectId: subjectId,
+      subjectName: subjectName,
+      sectionId: sectionId,
+      totalSessions: matchingSessions,
+      totalStudentRecords: totalRecords,
+      presentCount: present,
+      absentCount: absent,
+      lateCount: late,
+      excusedCount: excused,
+      unmarkedCount: unmarked,
+      dateRange: dateRange,
+    );
+  }
+
+  @override
+  Future<SectionAttendanceAnalytics> getSectionAttendanceAnalytics(
+    String sectionId, {
+    AttendanceDateRange? dateRange,
+  }) async {
+    await _delay();
+    int present = 0;
+    int absent = 0;
+    int late = 0;
+    int excused = 0;
+    int unmarked = 0;
+    int matchingSessions = 0;
+    String sectionName = '';
+    final studentMap = <String, _MockStudentTracker>{};
+
+    for (final session in _sessions) {
+      if (session.sectionId != sectionId) continue;
+      if (dateRange != null && !dateRange.contains(session.date)) continue;
+
+      matchingSessions++;
+      sectionName = session.sectionName;
+
+      for (final r in session.records) {
+        final tracker = studentMap.putIfAbsent(
+          r.studentId,
+          () => _MockStudentTracker(
+            studentId: r.studentId,
+            studentName: r.studentName,
+            rollNumber: r.rollNumber,
+            sectionId: sectionId,
+          ),
+        );
+        tracker.totalSessions++;
+
+        if (r.status == null) {
+          unmarked++;
+          tracker.unmarked++;
+          continue;
+        }
+
+        switch (r.status!) {
+          case AttendanceStatus.present:
+            present++;
+            tracker.present++;
+            break;
+          case AttendanceStatus.absent:
+            absent++;
+            tracker.absent++;
+            break;
+          case AttendanceStatus.late:
+            late++;
+            tracker.late++;
+            break;
+          case AttendanceStatus.excused:
+            excused++;
+            tracker.excused++;
+            break;
+          default:
+            unmarked++;
+            tracker.unmarked++;
+            break;
+        }
+      }
+    }
+
+    final studentAnalyticsList = studentMap.values.map((t) {
+      return StudentAttendanceAnalytics.compute(
+        studentId: t.studentId,
+        studentName: t.studentName,
+        rollNumber: t.rollNumber,
+        sectionId: t.sectionId,
+        totalSessions: t.totalSessions,
+        presentCount: t.present,
+        absentCount: t.absent,
+        lateCount: t.late,
+        excusedCount: t.excused,
+        unmarkedCount: t.unmarked,
+        dateRange: dateRange,
+      );
+    }).toList();
+
+    return SectionAttendanceAnalytics.compute(
+      sectionId: sectionId,
+      sectionName: sectionName,
+      totalSessions: matchingSessions,
+      totalStudents: studentMap.length,
+      presentCount: present,
+      absentCount: absent,
+      lateCount: late,
+      excusedCount: excused,
+      unmarkedCount: unmarked,
+      studentAnalytics: studentAnalyticsList,
+      dateRange: dateRange,
+    );
+  }
+
+  @override
+  Future<FacultyAttendanceAnalytics> getFacultyAttendanceAnalytics(
+    String facultyId, {
+    AttendanceDateRange? dateRange,
+  }) async {
+    await _delay();
+    int present = 0;
+    int absent = 0;
+    int late = 0;
+    int excused = 0;
+    int unmarked = 0;
+    int totalRecords = 0;
+    int matchingSessions = 0;
+
+    for (final session in _sessions) {
+      if (session.facultyId != facultyId) continue;
+      if (dateRange != null && !dateRange.contains(session.date)) continue;
+
+      matchingSessions++;
+      for (final r in session.records) {
+        totalRecords++;
+        if (r.status == null) {
+          unmarked++;
+          continue;
+        }
+
+        switch (r.status!) {
+          case AttendanceStatus.present:
+            present++;
+            break;
+          case AttendanceStatus.absent:
+            absent++;
+            break;
+          case AttendanceStatus.late:
+            late++;
+            break;
+          case AttendanceStatus.excused:
+            excused++;
+            break;
+          default:
+            unmarked++;
+            break;
+        }
+      }
+    }
+
+    return FacultyAttendanceAnalytics.compute(
+      facultyId: facultyId,
+      totalSessionsConducted: matchingSessions,
+      totalStudentRecords: totalRecords,
+      presentCount: present,
+      absentCount: absent,
+      lateCount: late,
+      excusedCount: excused,
+      unmarkedCount: unmarked,
+      dateRange: dateRange,
+    );
+  }
+
+  @override
+  Future<AttendanceDateRangeSummary> getAttendanceDateRangeSummary({
+    AttendanceDateRange? dateRange,
+    String? departmentId,
+    String? sectionId,
+  }) async {
+    await _delay();
+    final effectiveRange = dateRange ?? AttendanceDateRange.thisMonth();
+    int present = 0;
+    int absent = 0;
+    int late = 0;
+    int excused = 0;
+    int unmarked = 0;
+    int totalRecords = 0;
+    int matchingSessions = 0;
+
+    for (final session in _sessions) {
+      if (departmentId != null && departmentId.isNotEmpty && session.departmentId != departmentId) continue;
+      if (sectionId != null && sectionId.isNotEmpty && session.sectionId != sectionId) continue;
+      if (!effectiveRange.contains(session.date)) continue;
+
+      matchingSessions++;
+      for (final r in session.records) {
+        totalRecords++;
+        if (r.status == null) {
+          unmarked++;
+          continue;
+        }
+
+        switch (r.status!) {
+          case AttendanceStatus.present:
+            present++;
+            break;
+          case AttendanceStatus.absent:
+            absent++;
+            break;
+          case AttendanceStatus.late:
+            late++;
+            break;
+          case AttendanceStatus.excused:
+            excused++;
+            break;
+          default:
+            unmarked++;
+            break;
+        }
+      }
+    }
+
+    return AttendanceDateRangeSummary.compute(
+      startDate: effectiveRange.startDate,
+      endDate: effectiveRange.endDate,
+      totalSessions: matchingSessions,
+      totalStudentRecords: totalRecords,
+      presentCount: present,
+      absentCount: absent,
+      lateCount: late,
+      excusedCount: excused,
+      unmarkedCount: unmarked,
+    );
+  }
+}
+
+class _MockStudentTracker {
+  final String studentId;
+  final String studentName;
+  final String rollNumber;
+  final String sectionId;
+  int totalSessions = 0;
+  int present = 0;
+  int absent = 0;
+  int late = 0;
+  int excused = 0;
+  int unmarked = 0;
+
+  _MockStudentTracker({
+    required this.studentId,
+    required this.studentName,
+    required this.rollNumber,
+    required this.sectionId,
+  });
 }
 
 final mockAttendanceRepo = MockAttendanceRepository();

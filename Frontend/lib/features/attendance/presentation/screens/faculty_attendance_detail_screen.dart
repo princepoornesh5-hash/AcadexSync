@@ -12,6 +12,9 @@ import '../widgets/faculty/validation_banner.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_empty_state.dart';
 
+import '../../domain/models/attendance_status.dart';
+import '../widgets/attendance_summary_card.dart';
+
 class FacultyAttendanceDetailScreen extends ConsumerWidget {
   const FacultyAttendanceDetailScreen({super.key});
 
@@ -113,7 +116,17 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
                           AttendanceLockChip(isLocked: session.isLocked),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
+                      AttendanceSummaryCard(
+                        summary: {
+                          for (final status in AttendanceStatus.values)
+                            status: session.records.where((r) => r.status == status).length
+                        },
+                        remainingCount: session.records.where((r) => r.status == null).length,
+                        totalStudents: session.records.length,
+                        isVertical: false,
+                      ),
+                      const SizedBox(height: 14),
                       AuditInfoCard(session: session),
                     ],
                   ),

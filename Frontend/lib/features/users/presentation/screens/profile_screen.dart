@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
-import '../../../../app/theme/app_theme.dart';
-import '../../../academic_structure/presentation/providers/academic_providers.dart';
+import 'package:file_picker/file_picker.dart';
+import '../../../../core/presentation/design_system/acadex_colors.dart';
+import '../../../../core/presentation/design_system/acadex_spacing.dart';
+import '../../../../core/presentation/design_system/acadex_typography.dart';
+import '../../../../core/presentation/widgets/app_avatar.dart';
+import '../../../../core/presentation/widgets/app_button.dart';
+import '../../../../core/presentation/widgets/app_card.dart';
+import '../../../../core/presentation/widgets/app_scaffold.dart';
+import '../../../../core/presentation/widgets/app_section_header.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../academic_structure/presentation/providers/academic_providers.dart';
+import '../../../profile/data/repositories/profile_repository.dart';
+import '../../../profile/presentation/providers/profile_providers.dart';
 import '../../domain/models/user_profile_model.dart';
 import '../../domain/models/user_status_enum.dart';
-import '../providers/user_profile_providers.dart';
-import '../../../../core/presentation/widgets/acadex_button.dart';
-import '../../../../core/presentation/widgets/acadex_card.dart';
-import '../../../../core/presentation/widgets/acadex_avatar.dart';
-import '../../../../core/presentation/widgets/acadex_badge.dart';
-import '../../../../core/presentation/widgets/acadex_page_header.dart';
-import '../../../../core/presentation/widgets/acadex_page_container.dart';
-import '../../../../core/presentation/widgets/acadex_form_controls.dart';
-import '../../../../core/presentation/widgets/acadex_dialogs.dart';
+import '../providers/user_providers.dart';
+import '../widgets/user_role_badge.dart';
+import '../widgets/user_status_badge.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -28,11 +30,14 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  bool _isEditing = false;
   final _formKey = GlobalKey<FormState>();
-  
+
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
+
+  bool _isEditing = false;
+  bool _isSaving = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -48,7 +53,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.dispose();
   }
 
-  void _populateControllers(UserModel user) {
+  void _populateFields(UserModel user) {
     if (_nameController.text.isEmpty) {
       _nameController.text = user.name;
     }
@@ -57,392 +62,370 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  Future<void> _saveProfile(UserProfileModel currentProfile) async {
+  Future<void> _pickAndUploadProfileImage(String userId) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ProfileRepository.allowedImageExtensions,
+      withData: true,
+      allowMultiple: false,
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      final file = result.files.first;
+      if (file.bytes == null) return;
+
+      if (file.size > ProfileRepository.maxProfileImageSizeBytes) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Image must be under 5MB (JPG, PNG, or WebP)'),
+              backgroundColor: AcadexColors.coral,
+            ),
+          );
+        }
+        return;
+      }
+
+      try {
+        await ref.read(profileImageUploadProvider.notifier).uploadProfileImage(
+          fileName: file.name,
+          bytes: file.bytes!,
+          targetUserId: userId,
+        );
+
+        ref.invalidate(userDetailProvider(userId));
+        ref.invalidate(usersListProvider);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile picture updated successfully via ImageKit'),
+              backgroundColor: AcadexColors.emerald,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to upload profile picture: $e'),
+              backgroundColor: AcadexColors.coral,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _saveProfile(UserModel currentUser) async {
     if (!_formKey.currentState!.validate()) return;
 
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
     try {
-      final updatedProfile = currentProfile.copyWith(
+      final updatedProfile = UserProfileModel(
+        id: currentUser.id,
         name: _nameController.text.trim(),
+        email: currentUser.email,
         phone: _phoneController.text.trim(),
-        updatedAt: DateTime.now(),
+        role: currentUser.role,
+        status: UserStatus.active,
+        collegeId: currentUser.collegeId,
+        departmentId: currentUser.departmentId,
+        sectionId: currentUser.sectionId,
+        semesterId: currentUser.semesterId,
+        accountStatus: currentUser.accountStatus,
+        profilePictureUrl: currentUser.profilePictureUrl,
       );
 
-      // Save to repository
-      await ref.read(userProfileRepositoryProvider).saveUserProfile(updatedProfile);
+      await ref.read(userManagementProvider.notifier).updateUser(updatedProfile);
 
-      // Update state in AuthProvider
+      // Update in-memory auth state
       ref.read(authProvider.notifier).updateCurrentUser(updatedProfile);
 
-      if (mounted) {
-        setState(() {
-          _isEditing = false;
-        });
+      setState(() {
+        _isEditing = false;
+      });
 
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Profile updated successfully'),
-            backgroundColor: AcadexColors.success,
+            content: Text('Profile details updated successfully.'),
+            backgroundColor: AcadexColors.emerald,
           ),
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update profile: $e'),
-            backgroundColor: AcadexColors.error,
-          ),
-        );
-      }
+      setState(() {
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+      });
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     if (authState is! AuthAuthenticated) {
-      return Scaffold(
-        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-        body: const Center(child: Text('Authentication required')),
+      return const AppScaffold(
+        title: 'My Profile',
+        body: Center(child: Text('Please log in to view your profile.')),
       );
     }
 
     final user = authState.user;
-    
-    // Cast to UserProfileModel or create one if the type is base UserModel
-    final UserProfileModel profile = user is UserProfileModel
-        ? user
-        : UserProfileModel(
-            id: user.id,
-            firebaseUid: user.firebaseUid,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            profilePictureUrl: user.profilePictureUrl,
-            collegeId: user.collegeId,
-            departmentId: user.departmentId,
-            accountStatus: user.accountStatus,
-            createdAt: user.createdAt,
-            updatedAt: user.updatedAt,
-            lastLoginAt: user.lastLoginAt,
-            status: UserStatus.active,
-            phone: '',
-          );
+    _populateFields(user);
 
-    _populateControllers(profile);
-
-    // Watch academic structure lists to resolve names
-    final collegesAsync = ref.watch(collegesProvider);
+    final uploadState = ref.watch(profileImageUploadProvider);
     final departmentsAsync = ref.watch(departmentsProvider);
-    final coursesAsync = ref.watch(coursesProvider);
-    final semestersAsync = ref.watch(semestersProvider);
-    final sectionsAsync = ref.watch(sectionsProvider);
-    final studentsAsync = ref.watch(studentsProvider((departmentId: null, sectionId: null)));
-    final facultyAsync = ref.watch(facultyProvider(null));
+    final collegesAsync = ref.watch(collegesProvider);
 
-    // Resolve Student academic details
-    dynamic resolvedStudent;
-    if (user.role == AppRole.student) {
-      final studentsList = studentsAsync.items;
-      resolvedStudent = studentsList.where((s) => s.id == user.id).firstOrNull;
-    }
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    // Resolve Faculty/HOD details
-    dynamic resolvedFaculty;
-    if (user.role == AppRole.faculty || user.role == AppRole.hod) {
-      final facultyList = facultyAsync.items;
-      resolvedFaculty = facultyList.where((f) => f.id == user.id).firstOrNull;
-    }
-
-    String collegeName = profile.collegeId ?? 'Not Assigned';
-    String departmentName = profile.departmentId ?? 'Not Assigned';
-    String courseName = 'Not Assigned';
-    String semesterName = 'Not Assigned';
-    String sectionName = 'Not Assigned';
-    String rollNumber = 'Not Assigned';
-    String employeeId = 'Not Assigned';
-
-    if (resolvedStudent != null) {
-      if (collegesAsync.value != null) {
-        final matches = collegesAsync.value!.where((c) => c.id == resolvedStudent.collegeId);
-        if (matches.isNotEmpty) collegeName = matches.first.name;
-      }
-      if (departmentsAsync.value != null) {
-        final matches = departmentsAsync.value!.where((d) => d.id == resolvedStudent.departmentId);
-        if (matches.isNotEmpty) departmentName = matches.first.name;
-      }
-      if (coursesAsync.value != null) {
-        final matches = coursesAsync.value!.where((c) => c.id == resolvedStudent.courseId);
-        if (matches.isNotEmpty) courseName = matches.first.name;
-      }
-      if (semestersAsync.value != null) {
-        final matches = semestersAsync.value!.where((s) => s.id == resolvedStudent.semesterId);
-        if (matches.isNotEmpty) semesterName = matches.first.name;
-      }
-      if (sectionsAsync.value != null) {
-        final matches = sectionsAsync.value!.where((s) => s.id == resolvedStudent.sectionId);
-        if (matches.isNotEmpty) sectionName = matches.first.name;
-      }
-      rollNumber = resolvedStudent.rollNumber;
-    } else if (resolvedFaculty != null) {
-      if (collegesAsync.value != null) {
-        final matches = collegesAsync.value!.where((c) => c.id == profile.collegeId);
-        if (matches.isNotEmpty) collegeName = matches.first.name;
-      }
-      if (departmentsAsync.value != null) {
-        final matches = departmentsAsync.value!.where((d) => d.id == resolvedFaculty.departmentId);
-        if (matches.isNotEmpty) departmentName = matches.first.name;
-      }
-      employeeId = resolvedFaculty.employeeId;
-    } else {
-      if (collegesAsync.value != null && profile.collegeId != null) {
-        final matches = collegesAsync.value!.where((c) => c.id == profile.collegeId);
-        if (matches.isNotEmpty) collegeName = matches.first.name;
-      }
-      if (departmentsAsync.value != null && profile.departmentId != null) {
-        final matches = departmentsAsync.value!.where((d) => d.id == profile.departmentId);
-        if (matches.isNotEmpty) departmentName = matches.first.name;
+    String deptName = '—';
+    final depts = departmentsAsync.value;
+    if (depts != null && user.departmentId != null) {
+      for (var d in depts) {
+        if (d.id == user.departmentId) {
+          deptName = d.name;
+          break;
+        }
       }
     }
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      body: AcadexPageContainer(
-        maxWidth: AcadexLayout.formMaxWidth,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    String collegeName = '—';
+    final colleges = collegesAsync.value;
+    if (colleges != null && user.collegeId != null) {
+      for (var c in colleges) {
+        if (c.id == user.collegeId) {
+          collegeName = c.name;
+          break;
+        }
+      }
+    }
+
+    return AppScaffold(
+      title: 'My Profile',
+      subtitle: 'Manage your personal account details and profile picture',
+      topBarActions: [
+        if (!_isEditing)
+          AppButton(
+            label: 'Edit Profile',
+            icon: Icons.edit_outlined,
+            variant: AppButtonVariant.outline,
+            onPressed: () => setState(() => _isEditing = true),
+          )
+        else ...[
+          AppButton(
+            label: 'Cancel',
+            variant: AppButtonVariant.text,
+            onPressed: () => setState(() => _isEditing = false),
+          ),
+          const SizedBox(width: AcadexSpacing.xs),
+          AppButton(
+            label: 'Save Changes',
+            icon: Icons.check,
+            isLoading: _isSaving,
+            onPressed: () => _saveProfile(user),
+          ),
+        ],
+      ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AcadexSpacing.lg,
+          vertical: AcadexSpacing.md,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_errorMessage != null) ...[
+              Container(
+                padding: const EdgeInsets.all(AcadexSpacing.md),
+                decoration: BoxDecoration(
+                  color: AcadexColors.coral.withAlpha(25),
+                  borderRadius: BorderRadius.circular(AcadexRadius.md),
+                  border: Border.all(color: AcadexColors.coral.withAlpha(80)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: AcadexColors.coral),
+                    const SizedBox(width: AcadexSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: AcadexColors.coral, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AcadexSpacing.md),
+            ],
+
+            // Profile Header Card
+            AppCard(
+              padding: const EdgeInsets.all(AcadexSpacing.lg),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  AcadexPageHeader(
-                    title: 'My Profile',
-                    subtitle: 'Manage your institutional profile and personal contact details.',
-                    actions: [
-                      if (!_isEditing)
-                        AcadexButton(
-                          label: 'Edit Profile',
-                          icon: LucideIcons.edit3,
-                          variant: AcadexButtonVariant.secondary,
-                          onPressed: () => setState(() => _isEditing = true),
+                  Stack(
+                    children: [
+                      AppAvatar(
+                        name: user.name,
+                        imageUrl: user.profilePictureUrl,
+                        size: 80,
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Material(
+                          color: AcadexColors.navy,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: uploadState.isUploading
+                                ? null
+                                : () => _pickAndUploadProfileImage(user.id),
+                            child: const Padding(
+                              padding: EdgeInsets.all(6.0),
+                              child: Icon(
+                                Icons.camera_alt_outlined,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                         ),
+                      ),
                     ],
                   ),
-
-                  // Header Profile Card
-                  AcadexCard(
-                    padding: const EdgeInsets.all(28),
+                  const SizedBox(width: AcadexSpacing.lg),
+                  Expanded(
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        AcadexAvatar(
-                          name: profile.name,
-                          size: 72,
-                          imageUrl: profile.profilePictureUrl,
-                          isOnline: true,
-                        ),
-                        const SizedBox(height: 16),
                         Text(
-                          profile.name,
-                          style: AcadexTypography.heading2(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          user.name,
+                          style: AcadexTypography.h2.copyWith(
+                            color: isDark ? AcadexColors.darkTextPrimary : AcadexColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          profile.email,
-                          style: AcadexTypography.bodySmall(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        const SizedBox(height: AcadexSpacing.xs),
+                        Wrap(
+                          spacing: AcadexSpacing.xs,
+                          runSpacing: AcadexSpacing.xxs,
                           children: [
-                            AcadexBadge(
-                              label: profile.role.displayName,
-                              variant: AcadexBadgeVariant.primary,
-                            ),
-                            const SizedBox(width: 8),
-                            AcadexBadge(
-                              label: profile.accountStatus.name.toUpperCase(),
-                              variant: AcadexBadgeVariant.success,
-                              icon: LucideIcons.checkCircle,
-                            ),
+                            UserRoleBadge(role: user.role),
+                            UserStatusBadge(status: user.accountStatus),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Personal Information Section
-                  const AcadexSectionHeader(title: 'Personal Information'),
-                  AcadexCard(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        if (_isEditing) ...[
-                          AcadexTextField(
-                            controller: _nameController,
-                            label: 'Full Name',
-                            prefixIcon: LucideIcons.user,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Name is required';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          AcadexTextField(
-                            controller: _phoneController,
-                            label: 'Phone Number',
-                            prefixIcon: LucideIcons.phone,
-                            keyboardType: TextInputType.phone,
-                          ),
-                        ] else ...[
-                          _buildDetailRow('Full Name', profile.name, LucideIcons.user, isDark),
-                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                          _buildDetailRow('Email Address', profile.email, LucideIcons.mail, isDark),
-                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                          _buildDetailRow(
-                            'Phone Number',
-                            profile.phone.isNotEmpty ? profile.phone : 'Not Added',
-                            LucideIcons.phone,
-                            isDark,
+                        if (uploadState.isUploading) ...[
+                          const SizedBox(height: AcadexSpacing.sm),
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              const SizedBox(width: AcadexSpacing.xs),
+                              Text(
+                                'Uploading to ImageKit: ${(uploadState.progress * 100).toInt()}%',
+                                style: AcadexTypography.caption,
+                              ),
+                            ],
                           ),
                         ],
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Academic Details Section
-                  const AcadexSectionHeader(title: 'Academic Details'),
-                  AcadexCard(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        _buildDetailRow('College / Institution', collegeName, LucideIcons.school, isDark),
-                        if (profile.role != AppRole.superAdmin) ...[
-                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                          _buildDetailRow('Department', departmentName, LucideIcons.building, isDark),
-                        ],
-                        if (profile.role == AppRole.student) ...[
-                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                          _buildDetailRow('Course', courseName, LucideIcons.book, isDark),
-                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                          _buildDetailRow('Semester', semesterName, LucideIcons.calendar, isDark),
-                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                          _buildDetailRow('Section', sectionName, LucideIcons.users, isDark),
-                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                          _buildDetailRow('Roll Number', rollNumber, LucideIcons.hash, isDark),
-                        ],
-                        if (profile.role == AppRole.faculty || profile.role == AppRole.hod) ...[
-                          Divider(height: 20, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                          _buildDetailRow('Employee / Faculty ID', employeeId, LucideIcons.creditCard, isDark),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // Edit Actions
-                  if (_isEditing) ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: AcadexButton(
-                            label: 'Cancel',
-                            variant: AcadexButtonVariant.secondary,
-                            onPressed: () {
-                              setState(() {
-                                _isEditing = false;
-                                _nameController.text = profile.name;
-                                _phoneController.text = profile.phone;
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: AcadexButton(
-                            label: 'Save Changes',
-                            icon: LucideIcons.check,
-                            onPressed: () => _saveProfile(profile),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Sign Out Button
-                  AcadexButton(
-                    label: 'Sign Out from Acadex',
-                    icon: LucideIcons.logOut,
-                    variant: AcadexButtonVariant.danger,
-                    isFullWidth: true,
-                    onPressed: () async {
-                      final confirmed = await AcadexConfirmationDialog.show(
-                        context: context,
-                        title: 'Sign Out',
-                        message: 'Are you sure you want to sign out of Acadex?',
-                        confirmLabel: 'Sign Out',
-                        isDestructive: true,
-                      );
-                      if (confirmed == true && context.mounted) {
-                        await ref.read(authProvider.notifier).logout();
-                        if (context.mounted) context.go('/login');
-                      }
-                    },
                   ),
                 ],
               ),
             ),
-          ),
+            const SizedBox(height: AcadexSpacing.lg),
+
+            // Profile Form / Details Card
+            AppCard(
+              padding: const EdgeInsets.all(AcadexSpacing.lg),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const AppSectionHeader(title: 'Personal & Contact Information'),
+                    const SizedBox(height: AcadexSpacing.md),
+                    if (_isEditing) ...[
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Full Name',
+                          prefixIcon: Icon(Icons.person_outline),
+                        ),
+                        validator: (val) => (val == null || val.trim().isEmpty) ? 'Name cannot be empty' : null,
+                      ),
+                      const SizedBox(height: AcadexSpacing.md),
+                      TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          labelText: 'Phone Number',
+                          prefixIcon: Icon(Icons.phone_outlined),
+                        ),
+                        validator: (val) => (val == null || val.trim().isEmpty) ? 'Phone cannot be empty' : null,
+                      ),
+                    ] else ...[
+                      _buildDetailRow('Email Address', user.email),
+                      _buildDetailRow('Phone Number', (user is UserProfileModel && user.phone.isNotEmpty) ? user.phone : '—'),
+                    ],
+                    const Divider(height: AcadexSpacing.xl),
+
+                    const AppSectionHeader(title: 'Academic & Institutional Record'),
+                    const SizedBox(height: AcadexSpacing.sm),
+                    _buildDetailRow('Institutional Role', user.role.displayName),
+                    if (collegeName != '—') _buildDetailRow('College / Campus', collegeName),
+                    if (deptName != '—') _buildDetailRow('Department', deptName),
+                    _buildDetailRow('Account Status', user.accountStatus.name.toUpperCase()),
+                    if (user.createdAt != null)
+                      _buildDetailRow('Member Since', user.createdAt!.toLocal().toString().substring(0, 10)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value, IconData icon, bool isDark) {
-    return Row(
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
-            borderRadius: AcadexRadius.borderRadiusMd,
-          ),
-          child: Icon(
-            icon,
-            size: 18,
-            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: AcadexTypography.caption(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                ),
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AcadexSpacing.xs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 160,
+            child: Text(
+              label,
+              style: AcadexTypography.caption.copyWith(
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade600,
               ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: AcadexTypography.body(
-                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                ).copyWith(fontWeight: FontWeight.w500),
-              ),
-            ],
+            ),
           ),
-        ),
-      ],
+          Expanded(
+            child: Text(
+              value,
+              style: AcadexTypography.body.copyWith(fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

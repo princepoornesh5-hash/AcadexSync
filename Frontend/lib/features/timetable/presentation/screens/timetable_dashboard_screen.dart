@@ -11,6 +11,10 @@ import '../providers/timetable_providers.dart';
 import '../providers/timetable_lookup_providers.dart';
 import '../widgets/timetable_widgets.dart';
 
+import 'package:go_router/go_router.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
+import 'timetable_setup_screen.dart';
+
 class TimetableDashboardScreen extends ConsumerWidget {
   const TimetableDashboardScreen({super.key});
 
@@ -33,6 +37,7 @@ class TimetableDashboardScreen extends ConsumerWidget {
     final viewMode = ref.watch(timetableViewModeProvider);
     final authState = ref.watch(authProvider);
     final user = authState is AuthAuthenticated ? authState.user : null;
+    final canManage = user?.role == AppRole.hod || user?.role == AppRole.collegeAdmin;
     final width = MediaQuery.of(context).size.width;
     final isMobile = width < 640;
 
@@ -52,6 +57,16 @@ class TimetableDashboardScreen extends ConsumerWidget {
                     title: 'My Timetable',
                     subtitle: _getSubtitleForRole(user?.role),
                     actions: [
+                      if (canManage) ...[
+                        AcadexButton(
+                          label: 'Manage & Create',
+                          icon: LucideIcons.calendarPlus,
+                          variant: AcadexButtonVariant.primary,
+                          size: AcadexButtonSize.sm,
+                          onPressed: () => context.go('/timetable/manage'),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                       // View Mode Switcher with animated feedback
                       SegmentedButton<TimetableViewMode>(
                         segments: const [
@@ -167,9 +182,32 @@ class TimetableDashboardScreen extends ConsumerWidget {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    'Your timetable will appear here once classes are assigned.',
+                                    canManage
+                                        ? 'No master timetable has been published yet. Create your first timetable below.'
+                                        : 'Your timetable will appear here once classes are assigned.',
                                     style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                                    textAlign: TextAlign.center,
                                   ),
+                                  if (canManage) ...[
+                                    const SizedBox(height: 20),
+                                    AcadexButton(
+                                      label: 'Create First Timetable',
+                                      icon: LucideIcons.sparkles,
+                                      variant: AcadexButtonVariant.primary,
+                                      onPressed: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(builder: (_) => const TimetableSetupScreen()),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(height: 8),
+                                    AcadexButton(
+                                      label: 'Go to Timetable Management',
+                                      icon: LucideIcons.settings,
+                                      variant: AcadexButtonVariant.ghost,
+                                      onPressed: () => context.go('/timetable/manage'),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),

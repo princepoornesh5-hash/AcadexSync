@@ -6,6 +6,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../domain/models/notification_models.dart';
 import '../providers/notification_providers.dart';
 import '../widgets/notification_card.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
@@ -40,11 +41,19 @@ class NotificationCenterScreen extends ConsumerWidget {
             onPressed: () {
               ref.read(notificationsProvider.notifier).markAllAsRead();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('All notifications marked as read')),
+                const SnackBar(
+                  content: Text('All notifications marked as read'),
+                  backgroundColor: AcadexColors.success,
+                ),
               );
             },
             icon: const Icon(LucideIcons.checkCheck, size: 16),
             label: const Text('Mark all read'),
+          ),
+          IconButton(
+            icon: const Icon(LucideIcons.settings, size: 20),
+            tooltip: 'Notification Settings',
+            onPressed: () => context.push('/settings/notifications/preferences'),
           ),
           const SizedBox(width: 8),
         ],
@@ -72,28 +81,48 @@ class NotificationCenterScreen extends ConsumerWidget {
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-            itemCount: filteredNotifications.length,
-            itemBuilder: (context, index) {
-              final notification = filteredNotifications[index];
-              return NotificationCard(
-                notification: notification,
-                onReadToggle: () {
-                  if (notification.isRead) {
-                    ref.read(notificationsProvider.notifier).markAsUnread(notification.id);
-                  } else {
-                    ref.read(notificationsProvider.notifier).markAsRead(notification.id);
-                  }
-                },
-                onDelete: () {
-                  ref.read(notificationsProvider.notifier).deleteNotification(notification.id);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Notification dismissed')),
-                  );
-                },
-              );
+          final grouped = _groupNotificationsByTime(filteredNotifications);
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(notificationsProvider);
             },
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+              itemCount: grouped.length,
+              itemBuilder: (context, index) {
+                final item = grouped[index];
+                if (item is _GroupHeader) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 16, bottom: 8, left: 4),
+                    child: Text(
+                      item.title,
+                      style: AcadexTypography.caption(
+                        color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                      ).copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                    ),
+                  );
+                }
+
+                final notification = (item as _GroupItem).notification;
+                return NotificationCard(
+                  notification: notification,
+                  onReadToggle: () {
+                    if (notification.isRead) {
+                      ref.read(notificationsProvider.notifier).markAsUnread(notification.id);
+                    } else {
+                      ref.read(notificationsProvider.notifier).markAsRead(notification.id);
+                    }
+                  },
+                  onDelete: () {
+                    ref.read(notificationsProvider.notifier).deleteNotification(notification.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Notification dismissed')),
+                    );
+                  },
+                );
+              },
+            ),
           );
         },
       ),
@@ -110,6 +139,52 @@ class NotificationCenterScreen extends ConsumerWidget {
           : null,
     );
   }
+
+  List<dynamic> _groupNotificationsByTime(List<NotificationModel> notifications) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    final todayItems = <NotificationModel>[];
+    final yesterdayItems = <NotificationModel>[];
+    final earlierItems = <NotificationModel>[];
+
+    for (final notif in notifications) {
+      final notifDate = DateTime(notif.timestamp.year, notif.timestamp.month, notif.timestamp.day);
+      if (notifDate.isAtSameMomentAs(today) || notifDate.isAfter(today)) {
+        todayItems.add(notif);
+      } else if (notifDate.isAtSameMomentAs(yesterday)) {
+        yesterdayItems.add(notif);
+      } else {
+        earlierItems.add(notif);
+      }
+    }
+
+    final result = <dynamic>[];
+    if (todayItems.isNotEmpty) {
+      result.add(_GroupHeader('TODAY'));
+      result.addAll(todayItems.map((n) => _GroupItem(n)));
+    }
+    if (yesterdayItems.isNotEmpty) {
+      result.add(_GroupHeader('YESTERDAY'));
+      result.addAll(yesterdayItems.map((n) => _GroupItem(n)));
+    }
+    if (earlierItems.isNotEmpty) {
+      result.add(_GroupHeader('EARLIER'));
+      result.addAll(earlierItems.map((n) => _GroupItem(n)));
+    }
+    return result;
+  }
+}
+
+class _GroupHeader {
+  final String title;
+  _GroupHeader(this.title);
+}
+
+class _GroupItem {
+  final NotificationModel notification;
+  _GroupItem(this.notification);
 }
 
 class _FilterBar extends ConsumerWidget {

@@ -3,21 +3,26 @@ import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../../core/firebase/firebase_services.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
+import '../../../settings/domain/models/settings_models.dart';
 import '../../../settings/presentation/providers/settings_providers.dart';
 import '../../domain/models/notification_models.dart';
 import '../../domain/services/notification_service.dart';
+import '../../../attendance/domain/services/attendance_notification_dispatcher.dart';
 import '../../data/repositories/notification_repository.dart';
-import '../../data/repositories/firebase_notification_repository.dart';
+import '../../data/repositories/api_notification_repository.dart';
 import '../../data/repositories/mock_notification_repository.dart';
 
 // --- Repository Provider ---
+final apiNotificationRepositoryProvider = Provider<ApiNotificationRepository>((ref) {
+  return ApiNotificationRepository();
+});
+
 final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
   if (FirebaseInitializer.shouldUseMock) {
     return mockNotificationRepo;
   }
   
-  final firestoreService = ref.watch(firestoreServiceProvider);
-  return FirebaseNotificationRepository(firestoreService);
+  return ref.watch(apiNotificationRepositoryProvider);
 });
 
 final notificationServiceProvider = Provider<NotificationService>((ref) {
@@ -26,9 +31,14 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
   return NotificationService(repo, firestoreService);
 });
 
+final attendanceNotificationDispatcherProvider = Provider<AttendanceNotificationDispatcher>((ref) {
+  final repo = ref.watch(notificationRepositoryProvider);
+  return AttendanceNotificationDispatcher(notificationRepository: repo);
+});
+
 
 // --- Filter Providers ---
-enum NotificationFilter { all, unread, read, attendance, academic, system, security }
+enum NotificationFilter { all, unread, read, attendance, academic, notes, timetable, system, security }
 
 final notificationFilterProvider = StateProvider<NotificationFilter>((ref) => NotificationFilter.all);
 
@@ -43,8 +53,15 @@ class NotificationsNotifier extends StreamNotifier<List<NotificationModel>> {
       return Stream.value([]);
     }
     
-    final prefs = prefsAsync.valueOrNull;
-    if (prefs == null) return Stream.value([]);
+    final prefs = prefsAsync.value ??
+        NotificationPreferences(
+          attendanceAlerts: true,
+          academicUpdates: true,
+          announcements: true,
+          notesUploaded: true,
+          certificateUpdates: true,
+          generalNotifications: true,
+        );
 
     final repo = ref.watch(notificationRepositoryProvider);
     return repo.watchNotifications(authState.user, prefs);
@@ -117,6 +134,10 @@ final filteredNotificationsProvider = Provider<List<NotificationModel>>((ref) {
           return notifications.where((n) => n.category == NotificationCategory.attendance).toList();
         case NotificationFilter.academic:
           return notifications.where((n) => n.category == NotificationCategory.academic).toList();
+        case NotificationFilter.notes:
+          return notifications.where((n) => n.category == NotificationCategory.notes).toList();
+        case NotificationFilter.timetable:
+          return notifications.where((n) => n.category == NotificationCategory.timetable).toList();
         case NotificationFilter.system:
           return notifications.where((n) => n.category == NotificationCategory.system).toList();
         case NotificationFilter.security:

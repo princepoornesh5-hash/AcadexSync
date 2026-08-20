@@ -7,7 +7,6 @@ import '../providers/activation_providers.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_form_controls.dart';
-import '../../../../core/presentation/widgets/acadex_badge.dart';
 
 class ActivationScreen extends ConsumerStatefulWidget {
   const ActivationScreen({super.key});
@@ -19,17 +18,19 @@ class ActivationScreen extends ConsumerStatefulWidget {
 class _ActivationScreenState extends ConsumerState<ActivationScreen> {
   final _step1FormKey = GlobalKey<FormState>();
   final _step2FormKey = GlobalKey<FormState>();
-  
-  final _rollNumberController = TextEditingController();
-  final _codeController = TextEditingController();
-  
+
+  final _collegeCodeController = TextEditingController();
+  final _instituteIdController = TextEditingController();
+  final _activationCodeController = TextEditingController();
+
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
   @override
   void dispose() {
-    _rollNumberController.dispose();
-    _codeController.dispose();
+    _collegeCodeController.dispose();
+    _instituteIdController.dispose();
+    _activationCodeController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -37,9 +38,10 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
 
   void _submitStep1() {
     if (!_step1FormKey.currentState!.validate()) return;
-    ref.read(activationNotifierProvider.notifier).validateCode(
-      _rollNumberController.text.trim(),
-      _codeController.text.trim(),
+    ref.read(activationNotifierProvider.notifier).proceedToPasswordStep(
+      _collegeCodeController.text.trim(),
+      _instituteIdController.text.trim(),
+      _activationCodeController.text.trim(),
     );
   }
 
@@ -111,7 +113,7 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              "Enter your institutional ID and the 8-character activation code provided by your administrator.",
+              "Enter your college code, institutional ID, and the activation code provided by your administrator.",
               textAlign: TextAlign.center,
               style: AcadexTypography.body(
                 color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
@@ -119,7 +121,16 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
             ),
             const SizedBox(height: 28),
             AcadexTextField(
-              controller: _rollNumberController,
+              controller: _collegeCodeController,
+              label: "College Code",
+              hint: "e.g., ACME-UNIV",
+              prefixIcon: LucideIcons.building2,
+              enabled: !state.isLoading,
+              validator: (val) => val == null || val.isEmpty ? "Please enter the college code" : null,
+            ),
+            const SizedBox(height: 16),
+            AcadexTextField(
+              controller: _instituteIdController,
               label: "Student or Employee ID",
               hint: "e.g., CS2025001 or EMP101",
               prefixIcon: LucideIcons.idCard,
@@ -128,16 +139,16 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
             ),
             const SizedBox(height: 16),
             AcadexTextField(
-              controller: _codeController,
+              controller: _activationCodeController,
               label: "Activation Code",
-              hint: "Enter 8-character code",
+              hint: "Enter activation code",
               prefixIcon: LucideIcons.keyRound,
               enabled: !state.isLoading,
               validator: (val) => val == null || val.isEmpty ? "Please enter your activation code" : null,
             ),
             const SizedBox(height: 28),
             AcadexButton(
-              label: "Verify & Continue",
+              label: "Continue",
               icon: LucideIcons.arrowRight,
               isLoading: state.isLoading,
               isFullWidth: true,
@@ -150,7 +161,6 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
     }
 
     Widget buildStep2() {
-      final user = state.validatedUser!;
       final strength = _calculatePasswordStrength(_passwordController.text);
 
       return Form(
@@ -179,51 +189,13 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              "Set a secure password for your new Acadex account.",
+              "Set a secure password for your new Acadex account.\nPassword must contain at least one letter and one number.",
               textAlign: TextAlign.center,
               style: AcadexTypography.body(
                 color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
               ),
             ),
-            const SizedBox(height: 20),
-
-            // Verified Identity Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.15) : AcadexColors.primaryLight,
-                borderRadius: AcadexRadius.borderRadiusLg,
-                border: Border.all(
-                  color: isDark ? AcadexColors.primaryMuted.withValues(alpha: 0.3) : AcadexColors.primary.withValues(alpha: 0.2),
-                  width: 1,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const AcadexBadge(
-                    label: 'VERIFIED IDENTITY',
-                    variant: AcadexBadgeVariant.success,
-                    icon: LucideIcons.check,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    user['name'] ?? 'Academic Member',
-                    style: AcadexTypography.title(
-                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    "ID: ${user['rollNumber'] ?? user['employeeId'] ?? ''} • ${user['email'] ?? ''}",
-                    style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             AcadexTextField(
               controller: _passwordController,
@@ -235,6 +207,8 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
               enabled: !state.isLoading,
               validator: (val) {
                 if (val == null || val.length < 8) return "Password must be at least 8 characters";
+                if (!RegExp(r'[a-zA-Z]').hasMatch(val)) return "Password must contain at least one letter";
+                if (!RegExp(r'[0-9]').hasMatch(val)) return "Password must contain at least one number";
                 return null;
               },
             ),

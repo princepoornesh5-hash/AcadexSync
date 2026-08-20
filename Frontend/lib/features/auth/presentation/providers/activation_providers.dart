@@ -1,25 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/firebase/firebase_initializer.dart';
-import '../../../../core/firebase/firebase_services.dart';
-import '../../domain/repositories/activation_repository.dart';
-import '../../data/repositories/mock_activation_repository.dart';
-import '../../data/repositories/firebase_activation_repository.dart';
-
-final activationRepositoryProvider = Provider<AccountActivationRepository>((ref) {
-  if (FirebaseInitializer.shouldUseMock) {
-    return mockActivationRepo;
-  }
-  
-  final firestoreService = ref.watch(firestoreServiceProvider);
-  return FirebaseActivationRepository(firestoreService);
-});
+import '../../data/repositories/api_auth_repository.dart';
+import '../providers/auth_provider.dart';
 
 class ActivationState {
-  final int step; // 0: Input ID/Code, 1: Password Creation, 2: Success
+  final int step; // 0: Input college code + ID + activation code, 1: Set password, 2: Success
   final bool isLoading;
   final String? error;
   final Map<String, dynamic>? validatedUser;
-  final String? identifier;
+  final String? collegeCode;
+  final String? instituteId;
   final String? activationCode;
 
   const ActivationState({
@@ -27,7 +16,8 @@ class ActivationState {
     this.isLoading = false,
     this.error,
     this.validatedUser,
-    this.identifier,
+    this.collegeCode,
+    this.instituteId,
     this.activationCode,
   });
 
@@ -36,7 +26,8 @@ class ActivationState {
     bool? isLoading,
     String? error,
     Map<String, dynamic>? validatedUser,
-    String? identifier,
+    String? collegeCode,
+    String? instituteId,
     String? activationCode,
     bool clearError = false,
   }) {
@@ -45,54 +36,54 @@ class ActivationState {
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
       validatedUser: validatedUser ?? this.validatedUser,
-      identifier: identifier ?? this.identifier,
+      collegeCode: collegeCode ?? this.collegeCode,
+      instituteId: instituteId ?? this.instituteId,
       activationCode: activationCode ?? this.activationCode,
     );
   }
 }
 
 class ActivationNotifier extends StateNotifier<ActivationState> {
-  final AccountActivationRepository _repository;
+  final ApiAuthRepository _authRepository;
 
-  ActivationNotifier(this._repository) : super(const ActivationState());
+  ActivationNotifier(this._authRepository) : super(const ActivationState());
 
   void reset() {
     state = const ActivationState();
   }
 
-  Future<void> validateCode(String identifier, String code) async {
-    state = state.copyWith(isLoading: true, clearError: true);
-    
-    try {
-      final user = await _repository.validateActivation(identifier, code);
-      state = state.copyWith(
-        isLoading: false,
-        step: 1, // Move to Password step
-        validatedUser: user as Map<String, dynamic>?,
-        identifier: identifier,
-        activationCode: code,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString().replaceAll("Exception: ", ""),
-      );
-    }
+  /// Advance to password step — save credentials locally (no validation request to backend yet)
+  void proceedToPasswordStep(String collegeCode, String instituteId, String activationCode) {
+    state = state.copyWith(
+      step: 1,
+      collegeCode: collegeCode,
+      instituteId: instituteId,
+      activationCode: activationCode,
+    );
   }
 
+  /// Complete the activation in a single backend call with all credentials + password.
+  /// The backend validates the code AND activates the account atomically.
   Future<void> completeActivation(String password) async {
-    if (state.identifier == null || state.activationCode == null) {
-      state = state.copyWith(error: "Missing activation details.");
+    if (state.collegeCode == null || state.instituteId == null || state.activationCode == null) {
+      state = state.copyWith(error: "Missing activation details. Please start over.");
       return;
     }
 
     state = state.copyWith(isLoading: true, clearError: true);
-    
+
     try {
-      await _repository.completeActivation(state.identifier!, state.activationCode!, password);
+      final result = await _authRepository.activateAccount(
+        collegeCode: state.collegeCode!,
+        instituteId: state.instituteId!,
+        activationCode: state.activationCode!,
+        password: password,
+      );
+
       state = state.copyWith(
         isLoading: false,
-        step: 2, // Move to Success step
+        step: 2, // Success step
+        validatedUser: result['user'] as Map<String, dynamic>?,
       );
     } catch (e) {
       state = state.copyWith(
@@ -101,13 +92,13 @@ class ActivationNotifier extends StateNotifier<ActivationState> {
       );
     }
   }
-  
+
   void clearError() {
     state = state.copyWith(clearError: true);
   }
 }
 
 final activationNotifierProvider = StateNotifierProvider<ActivationNotifier, ActivationState>((ref) {
-  final repository = ref.watch(activationRepositoryProvider);
-  return ActivationNotifier(repository);
+  final authRepository = ref.watch(apiAuthRepositoryProvider);
+  return ActivationNotifier(authRepository);
 });

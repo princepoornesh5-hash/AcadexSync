@@ -6,6 +6,7 @@ import '../../domain/models/timetable_models.dart';
 import '../../data/repositories/timetable_repository.dart';
 import '../../data/repositories/mock_timetable_repository.dart';
 import '../../data/repositories/firebase_timetable_repository.dart';
+import '../../data/repositories/api_timetable_repository.dart';
 import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
@@ -26,11 +27,15 @@ final firebaseTimetableRepositoryProvider = Provider<TimetableRepository>((ref) 
   );
 });
 
+final apiTimetableRepositoryProvider = Provider<TimetableRepository>((ref) {
+  return ApiTimetableRepository();
+});
+
 final timetableRepositoryProvider = Provider<TimetableRepository>((ref) {
   if (FirebaseInitializer.shouldUseMock) {
     return ref.watch(mockTimetableRepositoryProvider);
   }
-  return ref.watch(firebaseTimetableRepositoryProvider);
+  return ref.watch(apiTimetableRepositoryProvider);
 });
 
 final weeklyTimetableProvider = StreamProvider<Map<TimetableDay, List<TimetableModel>>>((ref) async* {
@@ -95,6 +100,26 @@ final todayScheduleProvider = Provider<AsyncValue<List<TimetableModel>>>((ref) {
     final currentDay = TimetableDay.values[now.weekday - 1];
     
     return weekly[currentDay] ?? [];
+  });
+});
+
+final nextClassProvider = Provider<AsyncValue<TimetableModel?>>((ref) {
+  final todayAsync = ref.watch(todayScheduleProvider);
+  return todayAsync.whenData((todayClasses) {
+    if (todayClasses.isEmpty) return null;
+    final now = DateTime.now();
+    final currentMinutes = now.hour * 60 + now.minute;
+
+    for (final entry in todayClasses) {
+      try {
+        final endParts = entry.endTime.split(':');
+        final endMinutes = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
+        if (endMinutes > currentMinutes) {
+          return entry;
+        }
+      } catch (_) {}
+    }
+    return null;
   });
 });
 

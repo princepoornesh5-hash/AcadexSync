@@ -46,6 +46,24 @@ class AcadexAvatar extends StatelessWidget {
     return colors[hash.abs() % colors.length];
   }
 
+  Widget _buildInitialsFallback(Color bg, Color fg) {
+    return Container(
+      width: size,
+      height: size,
+      color: bg,
+      child: Center(
+        child: Text(
+          _initials,
+          style: TextStyle(
+            color: fg,
+            fontSize: size * 0.4,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bg = backgroundColor ?? _generateColor(name);
@@ -56,28 +74,35 @@ class AcadexAvatar extends StatelessWidget {
         Container(
           width: size,
           height: size,
-          decoration: BoxDecoration(
-            color: bg,
+          decoration: const BoxDecoration(
             shape: BoxShape.circle,
-            image: imageUrl != null && imageUrl!.isNotEmpty
-                ? DecorationImage(
-                    image: NetworkImage(imageUrl!),
-                    fit: BoxFit.cover,
-                  )
-                : null,
           ),
-          child: imageUrl == null || imageUrl!.isEmpty
-              ? Center(
-                  child: Text(
-                    _initials,
-                    style: TextStyle(
-                      color: fg,
-                      fontSize: size * 0.4,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                )
-              : null,
+          child: ClipOval(
+            child: imageUrl != null && imageUrl!.isNotEmpty
+                ? Image.network(
+                    imageUrl!,
+                    width: size,
+                    height: size,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => _buildInitialsFallback(bg, fg),
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        width: size,
+                        height: size,
+                        color: bg.withValues(alpha: 0.2),
+                        child: Center(
+                          child: SizedBox(
+                            width: size * 0.4,
+                            height: size * 0.4,
+                            child: const CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                : _buildInitialsFallback(bg, fg),
+          ),
         ),
         if (isOnline)
           Positioned(

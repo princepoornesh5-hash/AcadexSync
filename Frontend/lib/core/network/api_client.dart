@@ -2,68 +2,145 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
-  static const String baseUrl = 'http://localhost:8000/api/v1';
-  static const String aiUrl = 'http://localhost:8001/api/v1/ai';
+  static const String defaultBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:5000/api/v1',
+  );
+  static const String defaultAiUrl = String.fromEnvironment(
+    'AI_BASE_URL',
+    defaultValue: 'http://localhost:5001/api/v1/ai',
+  );
+
+  static const String keyAccessToken = 'access_token';
+  static const String keyRefreshToken = 'refresh_token';
 
   late final Dio dio;
   late final Dio aiDio;
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final FlutterSecureStorage _storage;
+  bool _isRefreshing = false;
 
-  ApiClient() {
-    dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
-      headers: {'Content-Type': 'application/json'},
-    ));
+  ApiClient({
+    String? baseUrl,
+    String? aiUrl,
+    Dio? customDio,
+    Dio? customAiDio,
+    FlutterSecureStorage? storage,
+  }) : _storage = storage ?? const FlutterSecureStorage() {
+    final activeBaseUrl = baseUrl ?? defaultBaseUrl;
+    final activeAiUrl = aiUrl ?? defaultAiUrl;
 
-    aiDio = Dio(BaseOptions(
-      baseUrl: aiUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
-      headers: {'Content-Type': 'application/json'},
-    ));
+    dio = customDio ??
+        Dio(BaseOptions(
+          baseUrl: activeBaseUrl,
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 15),
+          headers: {'Content-Type': 'application/json'},
+        ));
 
-    // Auth Interceptor for main backend
-    dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        final token = await _storage.read(key: 'access_token');
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        return handler.next(options);
-      },
-      onError: (DioException error, handler) async {
-        if (error.response?.statusCode == 401) {
-          await _storage.delete(key: 'access_token');
-        }
-        return handler.next(error);
-      },
-    ));
+    aiDio = customAiDio ??
+        Dio(BaseOptions(
+          baseUrl: activeAiUrl,
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 15),
+          headers: {'Content-Type': 'application/json'},
+        ));
 
-    // Auth Interceptor for AI backend (Strict Security Requirement)
-    aiDio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        final token = await _storage.read(key: 'access_token');
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        return handler.next(options);
-      },
-    ));
+    if (customDio == null) {
+      // Primary Auth & Refresh Interceptor
+      dio.interceptors.add(InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          try {
+            final token = await _storage.read(key: keyAccessToken);
+            if (token != null && token.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
+          } catch (_) {}
+          return handler.next(options);
+        },
+        onError: (DioException error, handler) async {
+          final isAuthEndpoint = error.requestOptions.path.contains('/auth/login') ||
+              error.requestOptions.path.contains('/auth/refresh') ||
+              error.requestOptions.path.contains('/auth/activate');
+
+          if (error.response?.statusCode == 401 && !isAuthEndpoint && !_isRefreshing) {
+            _isRefreshing = true;
+            try {
+              final refreshToken = await _storage.read(key: keyRefreshToken);
+              if (refreshToken != null && refreshToken.isNotEmpty) {
+                // Isolated Dio to avoid infinite interceptor loops
+                final refreshDio = Dio(BaseOptions(baseUrl: activeBaseUrl));
+                final response = await refreshDio.post('/auth/refresh', data: {
+                  'refreshToken': refreshToken,
+                });
+
+                if (response.statusCode == 200 && response.data != null) {
+                  final data = response.data['data'] as Map<String, dynamic>? ?? response.data;
+                  final newAccessToken = data['accessToken'] as String?;
+                  if (newAccessToken != null) {
+                    await _storage.write(key: keyAccessToken, value: newAccessToken);
+
+                    // Retry original request with fresh access token
+                    final opts = error.requestOptions;
+                    opts.headers['Authorization'] = 'Bearer $newAccessToken';
+                    final clonedRequest = await dio.fetch(opts);
+                    _isRefreshing = false;
+                    return handler.resolve(clonedRequest);
+                  }
+                }
+              }
+            } catch (_) {
+              // Refresh failed — clear stored tokens
+              await clearTokens();
+            } finally {
+              _isRefreshing = false;
+            }
+          }
+
+          return handler.next(error);
+        },
+      ));
+    }
+
+    if (customAiDio == null) {
+      aiDio.interceptors.add(InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          try {
+            final token = await _storage.read(key: keyAccessToken);
+            if (token != null && token.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
+          } catch (_) {}
+          return handler.next(options);
+        },
+      ));
+    }
+  }
+
+  Future<void> saveTokens({
+    required String accessToken,
+    String? refreshToken,
+  }) async {
+    await _storage.write(key: keyAccessToken, value: accessToken);
+    if (refreshToken != null) {
+      await _storage.write(key: keyRefreshToken, value: refreshToken);
+    }
   }
 
   Future<void> saveToken(String token) async {
-    await _storage.write(key: 'access_token', value: token);
+    await _storage.write(key: keyAccessToken, value: token);
   }
 
-  Future<void> clearToken() async {
-    await _storage.delete(key: 'access_token');
+  Future<void> clearTokens() async {
+    try {
+      await _storage.delete(key: keyAccessToken);
+      await _storage.delete(key: keyRefreshToken);
+    } catch (_) {}
   }
 
-  Future<String?> getToken() async {
-    return await _storage.read(key: 'access_token');
-  }
+  Future<void> clearToken() async => clearTokens();
+
+  Future<String?> getToken() async => _storage.read(key: keyAccessToken);
+  Future<String?> getRefreshToken() async => _storage.read(key: keyRefreshToken);
 }
 
 final apiClient = ApiClient();

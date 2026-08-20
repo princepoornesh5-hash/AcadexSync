@@ -12,9 +12,10 @@ import '../../domain/models/role_enum.dart';
 import '../../domain/models/user_model.dart';
 import '../../repositories/auth_repository.dart';
 import '../../repositories/firebase_auth_repository.dart';
+import '../../data/repositories/api_auth_repository.dart';
 import '../../services/session_manager.dart';
-
 import '../../../users/presentation/providers/user_profile_providers.dart';
+import '../../../notifications/data/repositories/api_notification_repository.dart';
 
 // Providers for dependencies
 final secureStorageProvider = Provider<FlutterSecureStorage>((ref) => const FlutterSecureStorage());
@@ -23,7 +24,11 @@ final sessionManagerProvider = Provider<SessionManager>((ref) {
   return SessionManager(ref.watch(secureStorageProvider));
 });
 
-// We switch between FirebaseAuthRepository and MockAuthRepository based on initialization
+final apiAuthRepositoryProvider = Provider<ApiAuthRepository>((ref) {
+  return ApiAuthRepository();
+});
+
+// Switch between FirebaseAuthRepository and MockAuthRepository based on initialization
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   if (FirebaseInitializer.shouldUseMock) {
     return MockAuthRepository();
@@ -90,16 +95,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     super.dispose();
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(String identifier, String password) async {
     state = const AuthLoading();
     try {
-      final user = await _repository.login(email, password);
+      final user = await _repository.login(identifier, password);
       final token = await _firebaseAuthService.currentUser?.getIdToken() ?? 'token';
       
       await _sessionManager.saveSession(token: token, user: user);
       state = AuthAuthenticated(user: user, token: token);
     } catch (e) {
-      state = AuthError(message: e.toString());
+      final cleanMsg = e.toString().replaceFirst('Exception: ', '');
+      state = AuthError(message: cleanMsg);
     }
   }
 
@@ -168,6 +174,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
         
         final token = await messaging.getToken();
         if (token != null) {
+          // Register with MongoDB backend via ApiNotificationRepository
+          try {
+            final platform = kIsWeb ? 'web' : (defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android');
+            ApiNotificationRepository().registerDeviceToken(deviceToken: token, platform: platform);
+          } catch (_) {}
+
           final doc = await _firestoreService.getDocument('users', uid);
           if (doc != null) {
             final tokens = List<String>.from(doc['fcmTokens'] ?? []);
@@ -182,6 +194,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       } else {
         final token = await messaging.getToken();
         if (token != null) {
+          // Remove from MongoDB backend via ApiNotificationRepository
+          try {
+            ApiNotificationRepository().removeDeviceToken(token);
+          } catch (_) {}
+
           final doc = await _firestoreService.getDocument('users', uid);
           if (doc != null) {
             final tokens = List<String>.from(doc['fcmTokens'] ?? []);

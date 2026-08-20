@@ -46,3 +46,15 @@ final timetableCourseMapProvider = Provider<Map<String, Course>>((ref) {
   final list = coursesAsync.valueOrNull ?? [];
   return {for (var c in list) c.id: c};
 });
+
+final timetableAcademicYearMapProvider = Provider<Map<String, AcademicYear>>((ref) {
+  final yearsAsync = ref.watch(academicYearsProvider);
+  final list = yearsAsync.valueOrNull ?? [];
+  return {for (var y in list) y.id: y};
+});
+
+final timetableSemesterMapProvider = Provider<Map<String, Semester>>((ref) {
+  final semAsync = ref.watch(semestersProvider);
+  final list = semAsync.valueOrNull ?? [];
+  return {for (var s in list) s.id: s};
+});

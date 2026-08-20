@@ -4,6 +4,7 @@ import '../../../../core/firebase/firebase_services.dart';
 import '../../domain/models/academic_models.dart';
 import '../../domain/repositories/academic_repository.dart';
 import '../../data/repositories/firebase_academic_repository.dart';
+import '../../data/repositories/api_academic_repository.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart' as auth;
 import '../../../../features/auth/domain/models/auth_state.dart';
 import '../../../../features/auth/domain/models/user_model.dart';
@@ -12,10 +13,7 @@ import '../../data/repositories/mock_academic_repository.dart';
 import '../../../../core/providers/pagination_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-final academicRepositoryProvider = Provider<AcademicRepository>((ref) {
-  if (FirebaseInitializer.shouldUseMock) {
-    return mockAcademicRepo;
-  }
+final firebaseAcademicRepositoryProvider = Provider<AcademicRepository>((ref) {
   final firestoreService = ref.watch(firestoreServiceProvider);
   final authState = ref.watch(auth.authProvider);
   
@@ -25,6 +23,17 @@ final academicRepositoryProvider = Provider<AcademicRepository>((ref) {
   }
   
   return FirebaseAcademicRepository(firestoreService, currentUser);
+});
+
+final apiAcademicRepositoryProvider = Provider<ApiAcademicRepository>((ref) {
+  return ApiAcademicRepository();
+});
+
+final academicRepositoryProvider = Provider<AcademicRepository>((ref) {
+  if (FirebaseInitializer.shouldUseMock) {
+    return mockAcademicRepo;
+  }
+  return ref.watch(apiAcademicRepositoryProvider);
 });
 
 // Backward compatibility alias

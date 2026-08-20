@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../providers/notification_providers.dart';
@@ -12,7 +11,7 @@ class NotificationBadge extends ConsumerWidget {
 
   const NotificationBadge({
     super.key,
-    this.iconColor = DashboardColors.textSecondary,
+    this.iconColor = AcadexColors.inkMuted,
     this.size = 22,
   });
 
@@ -32,7 +31,7 @@ class NotificationBadge extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.all(4),
                 decoration: const BoxDecoration(
-                  color: DashboardColors.error,
+                  color: AcadexColors.error,
                   shape: BoxShape.circle,
                 ),
                 constraints: const BoxConstraints(
@@ -42,11 +41,9 @@ class NotificationBadge extends ConsumerWidget {
                 child: Center(
                   child: Text(
                     unreadCount > 9 ? '9+' : unreadCount.toString(),
-                    style: GoogleFonts.inter(
+                    style: AcadexTypography.caption(
                       color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    ).copyWith(fontSize: 10, fontWeight: FontWeight.w700),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -55,7 +52,7 @@ class NotificationBadge extends ConsumerWidget {
         ],
       ),
       tooltip: 'Notifications',
-      onPressed: () => context.go('/module/Notifications'),
+      onPressed: () => context.go('/notifications'),
       splashRadius: size,
     );
   }

@@ -1,6 +1,8 @@
 enum UserStatus {
   active,
+  pending,
   inactive,
+  deactivated,
   suspended,
   graduated,
   transferred,
@@ -11,8 +13,12 @@ extension UserStatusExtension on UserStatus {
     switch (this) {
       case UserStatus.active:
         return 'ACTIVE';
+      case UserStatus.pending:
+        return 'PENDING_ACTIVATION';
       case UserStatus.inactive:
         return 'INACTIVE';
+      case UserStatus.deactivated:
+        return 'DEACTIVATED';
       case UserStatus.suspended:
         return 'SUSPENDED';
       case UserStatus.graduated:
@@ -26,8 +32,12 @@ extension UserStatusExtension on UserStatus {
     switch (this) {
       case UserStatus.active:
         return 'Active';
+      case UserStatus.pending:
+        return 'Pending Activation';
       case UserStatus.inactive:
         return 'Inactive';
+      case UserStatus.deactivated:
+        return 'Deactivated';
       case UserStatus.suspended:
         return 'Suspended';
       case UserStatus.graduated:
@@ -38,7 +48,14 @@ extension UserStatusExtension on UserStatus {
   }
 
   static UserStatus fromValue(String value) {
-    switch (value) {
+    final normalized = value.trim().toUpperCase();
+    if (normalized.contains('PENDING') || normalized.contains('INVITED')) {
+      return UserStatus.pending;
+    }
+    if (normalized.contains('DEACTIVAT')) {
+      return UserStatus.deactivated;
+    }
+    switch (normalized) {
       case 'ACTIVE':
         return UserStatus.active;
       case 'INACTIVE':

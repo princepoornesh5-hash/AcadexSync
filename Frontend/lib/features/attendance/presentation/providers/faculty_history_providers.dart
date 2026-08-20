@@ -102,12 +102,20 @@ final saveEditedSessionProvider = FutureProvider<bool>((ref) async {
   final records = ref.read(editSessionProvider);
   final repo = ref.read(attendanceRepoProvider);
   
-  final updatedSession = activeSession.copyWith(records: records);
-  await repo.saveSession(updatedSession);
+  final updatedSession = activeSession.copyWith(
+    records: records,
+    version: activeSession.version + 1,
+    lastModifiedAt: DateTime.now(),
+  );
+  final success = await repo.saveSession(updatedSession);
   
-  // Refresh the list
-  ref.invalidate(facultyHistoryListProvider);
-  ref.read(isEditModeProvider.notifier).state = false;
+  if (success) {
+    // Invalidate history and active assigned classes so all screens update in real time
+    ref.invalidate(facultyHistoryListProvider);
+    ref.invalidate(assignedClassesProvider);
+    ref.invalidate(activeStudentListProvider);
+    ref.read(isEditModeProvider.notifier).state = false;
+  }
   
-  return true;
+  return success;
 });

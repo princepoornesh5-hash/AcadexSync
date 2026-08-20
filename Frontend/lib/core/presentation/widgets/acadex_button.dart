@@ -99,11 +99,14 @@ class AcadexButton extends StatelessWidget {
           const SizedBox(width: 8),
         ],
         if (isLoading && label.isNotEmpty) const SizedBox(width: 8),
-        Text(
-          label,
-          style: AcadexTypography.button(color: fg).copyWith(
-            fontSize: fontSize,
-            fontWeight: FontWeight.w600,
+        Flexible(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: AcadexTypography.button(color: fg).copyWith(
+              fontSize: fontSize,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],

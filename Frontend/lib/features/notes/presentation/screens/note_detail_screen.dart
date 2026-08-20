@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/models/note_model.dart';
 import '../providers/notes_lookup_providers.dart';
+import '../providers/notes_providers.dart';
 
 class NoteDetailScreen extends ConsumerWidget {
   final NoteModel note;
@@ -292,7 +293,7 @@ class NoteDetailScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton.icon(
-                          onPressed: () => _openUrl(context, note.fileUrl!),
+                          onPressed: () => _handleFileDownload(context, ref),
                           icon: Icon(note.isPreviewable ? LucideIcons.eye : LucideIcons.download, size: 18),
                           label: Text(note.isPreviewable ? 'Preview / View File' : 'Download File'),
                           style: ElevatedButton.styleFrom(
@@ -315,6 +316,40 @@ class NoteDetailScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _handleFileDownload(BuildContext context, WidgetRef ref) async {
+    try {
+      String? targetUrl = note.fileUrl;
+
+      // If note has an ID, request fresh short-lived signed download URL from backend
+      if (note.id.isNotEmpty && !note.id.startsWith('mock_')) {
+        try {
+          final repo = ref.read(apiNotesRepositoryProvider);
+          final result = await repo.getDownloadUrl(note.id);
+          targetUrl = result.downloadUrl;
+        } catch (_) {
+          // Fall back to stored fileUrl if available
+        }
+      }
+
+      if (targetUrl == null || targetUrl.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('File URL not available')),
+          );
+        }
+        return;
+      }
+
+      await _openUrl(context, targetUrl);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to open note: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _openUrl(BuildContext context, String urlString) async {
     if (urlString.startsWith('mock://')) {
       if (context.mounted) {
@@ -322,7 +357,7 @@ class NoteDetailScreen extends ConsumerWidget {
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text('Mock Storage'),
-            content: const Text('File access is simulated in mock mode. In production, this opens the authenticated Firebase Storage asset.'),
+            content: const Text('File access is simulated in mock mode.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),

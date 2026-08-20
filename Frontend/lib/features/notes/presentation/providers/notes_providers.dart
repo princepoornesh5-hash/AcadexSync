@@ -1,36 +1,27 @@
+import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/firebase/firebase_services.dart';
 import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../storage/presentation/providers/storage_providers.dart';
-import '../../../notifications/presentation/providers/notification_providers.dart';
 import '../../domain/models/note_model.dart';
 import '../../data/repositories/notes_repository.dart';
 import '../../data/repositories/mock_notes_repository.dart';
-import '../../data/repositories/firebase_notes_repository.dart';
+import '../../data/repositories/api_notes_repository.dart';
 
 final mockNotesRepositoryProvider = Provider<NotesRepository>((ref) {
   return MockNotesRepository();
 });
 
-final firebaseNotesRepositoryProvider = Provider<NotesRepository>((ref) {
-  final firestoreService = ref.watch(firestoreServiceProvider);
-  final storageRepository = ref.watch(fileStorageRepositoryProvider);
-  final notificationService = ref.watch(notificationServiceProvider);
-  return FirebaseNotesRepository(
-    firestoreService,
-    storageRepository: storageRepository,
-    notificationService: notificationService,
-  );
+final apiNotesRepositoryProvider = Provider<ApiNotesRepository>((ref) {
+  return ApiNotesRepository();
 });
 
 final notesRepositoryProvider = Provider<NotesRepository>((ref) {
   if (FirebaseInitializer.shouldUseMock) {
     return ref.watch(mockNotesRepositoryProvider);
   }
-  return ref.watch(firebaseNotesRepositoryProvider);
+  return ref.watch(apiNotesRepositoryProvider);
 });
 
 final userNotesProvider = StreamProvider<List<NoteModel>>((ref) async* {
@@ -41,7 +32,6 @@ final userNotesProvider = StreamProvider<List<NoteModel>>((ref) async* {
   }
 
   final user = authState.user;
-  // Readiness safety guard: Prevent querying with uninitialized/empty user
   if (user.id.isEmpty) {
     yield [];
     return;
@@ -54,17 +44,13 @@ final userNotesProvider = StreamProvider<List<NoteModel>>((ref) async* {
 
   final repository = ref.watch(notesRepositoryProvider);
 
-  // Direct O(1) section & semester resolution directly from UserModel
-  final sectionId = user.sectionId;
-  final semesterId = user.semesterId;
-
   final stream = repository.watchNotes(
     role: user.role,
     userId: user.id,
     collegeId: user.collegeId,
     departmentId: user.departmentId,
-    semesterId: semesterId,
-    sectionId: sectionId,
+    semesterId: user.semesterId,
+    sectionId: user.sectionId,
   );
 
   await for (final notes in stream) {
@@ -133,16 +119,17 @@ final filteredNotesProvider = Provider<AsyncValue<List<NoteModel>>>((ref) {
     return notes.where((note) {
       if (filters.subjectId != null && note.subjectId != filters.subjectId) return false;
       if (filters.facultyId != null && note.facultyId != filters.facultyId) return false;
-      if (filters.sectionId != null && note.sectionId != filters.sectionId) return false;
+      if (filters.sectionId != null && note.sectionId.isNotEmpty && note.sectionId != filters.sectionId) return false;
       if (filters.semesterId != null && note.semesterId != filters.semesterId) return false;
-      if (filters.courseId != null && note.courseId != filters.courseId) return false;
+      if (filters.courseId != null && note.courseId.isNotEmpty && note.courseId != filters.courseId) return false;
       if (filters.status != null && note.status != filters.status) return false;
       if (filters.resourceType != null && note.resourceType != filters.resourceType) return false;
       
       if (filters.searchQuery.isNotEmpty) {
         final query = filters.searchQuery.toLowerCase();
         if (!note.title.toLowerCase().contains(query) &&
-            !note.description.toLowerCase().contains(query)) {
+            !note.description.toLowerCase().contains(query) &&
+            !(note.chapter?.toLowerCase().contains(query) ?? false)) {
           return false;
         }
       }
@@ -151,15 +138,75 @@ final filteredNotesProvider = Provider<AsyncValue<List<NoteModel>>>((ref) {
   });
 });
 
+final noteDownloadUrlProvider = FutureProvider.family<DownloadUrlResult, String>((ref, noteId) async {
+  final repository = ref.watch(apiNotesRepositoryProvider);
+  return await repository.getDownloadUrl(noteId);
+});
+
 class NoteManagementNotifier extends AsyncNotifier<void> {
   @override
   Future<void> build() async {}
+
+  Future<NoteModel?> uploadAndPublishNote({
+    required String subjectId,
+    required String title,
+    String? description,
+    String? chapter,
+    required String fileName,
+    required Uint8List fileBytes,
+    String? semesterId,
+    String? courseId,
+    String? departmentId,
+    String? sectionId,
+    void Function(int sent, int total)? onProgress,
+  }) async {
+    state = const AsyncLoading();
+    NoteModel? result;
+    state = await AsyncValue.guard(() async {
+      final repository = ref.read(notesRepositoryProvider);
+      if (repository is ApiNotesRepository) {
+        result = await repository.uploadAndPublishNote(
+          subjectId: subjectId,
+          title: title,
+          description: description,
+          chapter: chapter,
+          fileName: fileName,
+          fileBytes: fileBytes,
+          semesterId: semesterId,
+          courseId: courseId,
+          departmentId: departmentId,
+          sectionId: sectionId,
+          onProgress: onProgress,
+        );
+      } else {
+        final note = NoteModel(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          title: title,
+          description: description ?? '',
+          chapter: chapter,
+          resourceType: ResourceType.fileAttachment,
+          fileName: fileName,
+          fileSize: fileBytes.lengthInBytes,
+          subjectId: subjectId,
+          semesterId: semesterId ?? '',
+          authorUserId: '',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        await repository.createNote(note);
+        result = note;
+      }
+      ref.invalidate(userNotesProvider);
+    });
+    return result;
+  }
 
   Future<void> createNote(NoteModel note) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final repository = ref.read(notesRepositoryProvider);
       await repository.createNote(note);
+      ref.invalidate(userNotesProvider);
     });
   }
 
@@ -168,6 +215,7 @@ class NoteManagementNotifier extends AsyncNotifier<void> {
     state = await AsyncValue.guard(() async {
       final repository = ref.read(notesRepositoryProvider);
       await repository.updateNote(note);
+      ref.invalidate(userNotesProvider);
     });
   }
 
@@ -176,6 +224,7 @@ class NoteManagementNotifier extends AsyncNotifier<void> {
     state = await AsyncValue.guard(() async {
       final repository = ref.read(notesRepositoryProvider);
       await repository.deleteNote(id);
+      ref.invalidate(userNotesProvider);
     });
   }
 }

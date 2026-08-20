@@ -32,12 +32,29 @@ import '../../features/academic_structure/presentation/screens/faculty_assignmen
 import '../../features/academic_structure/presentation/screens/faculty_workload_screen.dart';
 import '../../features/academic_structure/presentation/screens/my_assignments_screen.dart';
 import '../../features/academic_structure/presentation/screens/student_profile_screen.dart';
+import '../../features/academic_structure/presentation/screens/academic_structure_home_screen.dart';
 
 import '../../features/attendance/presentation/screens/attendance_dashboard_router.dart';
 import '../../features/attendance/presentation/screens/mark_attendance_screen.dart';
 import '../../features/attendance/presentation/screens/student_attendance_history_screen.dart';
 import '../../features/attendance/presentation/screens/faculty_attendance_history_screen.dart';
 import '../../features/attendance/presentation/screens/faculty_attendance_detail_screen.dart';
+import '../../features/attendance/presentation/screens/attendance_analytics_screen.dart';
+import '../../features/attendance/presentation/screens/student_attendance_detail_screen.dart';
+import '../../features/attendance/presentation/screens/subject_attendance_detail_screen.dart';
+import '../../features/attendance/presentation/screens/section_attendance_detail_screen.dart';
+import '../../features/attendance/presentation/screens/attendance_alerts_screen.dart';
+import '../../features/attendance/presentation/screens/attendance_alert_detail_screen.dart';
+import '../../features/attendance/presentation/screens/attendance_report_center_screen.dart';
+import '../../features/attendance/presentation/screens/attendance_session_admin_screen.dart';
+import '../../features/attendance/presentation/screens/attendance_admin_dashboard_screen.dart';
+import '../../features/attendance/presentation/screens/student_attendance_portal_screen.dart';
+import '../../features/attendance/presentation/screens/student_attendance_dashboard_screen.dart';
+import '../../features/attendance/presentation/screens/student_subject_attendance_screen.dart';
+import '../../features/attendance/presentation/screens/student_attendance_calendar_screen.dart';
+import '../../features/attendance/presentation/screens/student_session_detail_screen.dart';
+import '../../features/attendance/domain/models/attendance_alert.dart';
+import '../../features/attendance/presentation/providers/attendance_alert_providers.dart';
 
 import '../../features/users/presentation/screens/user_directory_screen.dart';
 import '../../features/users/presentation/screens/user_detail_screen.dart';
@@ -50,11 +67,14 @@ import '../../features/settings/presentation/screens/misc_settings_screens.dart'
 
 import '../../features/search/presentation/screens/global_search_screen.dart';
 import '../../features/notifications/presentation/screens/notification_center_screen.dart';
+import '../../features/notifications/presentation/screens/notification_preferences_screen.dart';
 import '../../features/notifications/presentation/screens/create_announcement_screen.dart';
 
 import '../../features/timetable/presentation/screens/timetable_dashboard_screen.dart';
 import '../../features/timetable/presentation/screens/timetable_management_screen.dart';
 import '../../features/timetable/presentation/screens/timetable_form_screen.dart';
+import '../../features/timetable/presentation/screens/timetable_setup_screen.dart';
+import '../../features/timetable/presentation/screens/timetable_designer_screen.dart';
 import '../../features/timetable/domain/models/timetable_models.dart';
 
 import '../../features/analytics/presentation/screens/analytics_dashboard_screen.dart';
@@ -68,18 +88,6 @@ import '../../features/notes/presentation/screens/notes_dashboard_screen.dart';
 import '../../features/notes/presentation/screens/note_detail_screen.dart';
 import '../../features/notes/presentation/screens/note_form_screen.dart';
 import '../../features/notes/domain/models/note_model.dart';
-
-import '../../features/certificates/presentation/screens/official_certificates_router.dart';
-import '../../features/certificates/presentation/screens/official_certificates_admin_dashboard_screen.dart';
-import '../../features/certificates/presentation/screens/official_certificate_requirement_form_screen.dart';
-import '../../features/certificates/presentation/screens/official_certificate_submission_detail_screen.dart';
-import '../../features/certificates/presentation/screens/official_certificate_upload_screen.dart';
-import '../../features/certificates/domain/models/official_certificate_models.dart';
-
-import '../../features/achievements/presentation/screens/achievements_router.dart';
-import '../../features/achievements/presentation/screens/achievement_form_screen.dart';
-import '../../features/achievements/presentation/screens/achievement_detail_screen.dart';
-import '../../features/achievements/domain/models/achievement_models.dart';
 
 import '../../features/dashboard/presentation/widgets/acadex_drawer.dart';
 import '../../features/dashboard/presentation/widgets/acadex_bottom_nav.dart';
@@ -303,26 +311,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         }
       }
 
-      // Official Certificates requirement authoring (College Admin & HOD only)
-      if (loc.startsWith('/official-certificates/requirements/new') || (loc.startsWith('/official-certificates/requirements') && loc.endsWith('/edit'))) {
-        if (role == AppRole.student || role == AppRole.faculty) {
-          return '/official-certificates';
+      // Attendance administrative route protection (Students redirected to student portal)
+      if (loc.startsWith('/attendance/mark') ||
+          loc.startsWith('/attendance/admin') ||
+          loc.startsWith('/attendance/sessions/admin') ||
+          loc.startsWith('/attendance/faculty')) {
+        if (role == AppRole.student) {
+          return '/attendance';
         }
-      }
-
-      // Official Certificates upload (Students only)
-      if (loc.startsWith('/official-certificates/upload')) {
-        if (role != AppRole.student) {
-          return '/official-certificates';
-        }
-      }
-
-      // Super Admin platform boundary: redirect away from routine college certificates & achievements
-      if (loc.startsWith('/official-certificates') && role == AppRole.superAdmin) {
-        return '/colleges';
-      }
-      if (loc.startsWith('/achievements') && role == AppRole.superAdmin) {
-        return '/colleges';
       }
 
       return null;
@@ -396,6 +392,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       
       // Academic Structure Routes
+      GoRoute(
+        path: '/academics',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/academics', child: AcademicStructureHomeScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/academic-structure',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/academics', child: AcademicStructureHomeScreen()),
+        ),
+      ),
       GoRoute(path: '/academics/colleges', builder: (context, state) => const ShellWrapper(activeRoute: '/academics/colleges', child: CollegeListScreen())),
       GoRoute(path: '/academics/colleges/new', builder: (context, state) => const CollegeFormScreen()),
       GoRoute(path: '/academics/colleges/edit/:id', builder: (context, state) => CollegeFormScreen(collegeId: state.pathParameters['id'])),
@@ -477,10 +489,126 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // Attendance Routes
       GoRoute(path: '/attendance', builder: (context, state) => const ShellWrapper(activeRoute: '/attendance', child: AttendanceDashboardRouter())),
+      GoRoute(path: '/attendance/student', builder: (context, state) => const ShellWrapper(activeRoute: '/attendance', child: StudentAttendancePortalScreen())),
+      GoRoute(path: '/attendance/student/dashboard', builder: (context, state) => const ShellWrapper(activeRoute: '/attendance', child: StudentAttendanceDashboardScreen())),
+      GoRoute(path: '/attendance/student/subjects', builder: (context, state) => const ShellWrapper(activeRoute: '/attendance', child: StudentAttendancePortalScreen(initialTab: 1))),
+      GoRoute(
+        path: '/attendance/student/subject/:id',
+        builder: (context, state) => ShellWrapper(
+          activeRoute: '/attendance',
+          child: StudentSubjectAttendanceScreen(subjectId: state.pathParameters['id']),
+        ),
+      ),
+      GoRoute(path: '/attendance/student/calendar', builder: (context, state) => const ShellWrapper(activeRoute: '/attendance', child: StudentAttendanceCalendarScreen())),
+      GoRoute(path: '/attendance/student/insights', builder: (context, state) => const ShellWrapper(activeRoute: '/attendance', child: StudentAttendancePortalScreen(initialTab: 3))),
+      GoRoute(
+        path: '/attendance/student/sessions/:id',
+        builder: (context, state) => ShellWrapper(
+          activeRoute: '/attendance',
+          child: StudentSessionDetailScreen(sessionId: state.pathParameters['id']!),
+        ),
+      ),
       GoRoute(path: '/attendance/mark', builder: (context, state) => const MarkAttendanceScreen()),
       GoRoute(path: '/attendance/student/history', builder: (context, state) => const StudentAttendanceHistoryScreen()),
       GoRoute(path: '/attendance/faculty/history', builder: (context, state) => const FacultyAttendanceHistoryScreen()),
       GoRoute(path: '/attendance/faculty/detail', builder: (context, state) => const FacultyAttendanceDetailScreen()),
+      GoRoute(path: '/attendance/analytics', builder: (context, state) => const ShellWrapper(activeRoute: '/attendance/analytics', child: AttendanceAnalyticsScreen())),
+      GoRoute(
+        path: '/attendance/analytics/student/:id',
+        builder: (context, state) => ShellWrapper(
+          activeRoute: '/attendance/analytics',
+          child: StudentAttendanceDetailScreen(studentId: state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/attendance/analytics/subject/:id',
+        builder: (context, state) => ShellWrapper(
+          activeRoute: '/attendance/analytics',
+          child: SubjectAttendanceDetailScreen(subjectId: state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/attendance/analytics/section/:id',
+        builder: (context, state) => ShellWrapper(
+          activeRoute: '/attendance/analytics',
+          child: SectionAttendanceDetailScreen(sectionId: state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/attendance/alerts',
+        builder: (context, state) => const ShellWrapper(
+          activeRoute: '/attendance/alerts',
+          child: AttendanceAlertsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/attendance/alerts/:id',
+        builder: (context, state) {
+          final alertExtra = state.extra as AttendanceAlert?;
+          final alertId = state.pathParameters['id']!;
+          if (alertExtra != null) {
+            return ShellWrapper(
+              activeRoute: '/attendance/alerts',
+              child: AttendanceAlertDetailScreen(alert: alertExtra),
+            );
+          }
+          return ShellWrapper(
+            activeRoute: '/attendance/alerts',
+            child: Consumer(
+              builder: (context, ref, _) {
+                final alertAsync = ref.watch(attendanceAlertDetailProvider(alertId));
+                return alertAsync.when(
+                  data: (a) => a != null
+                      ? AttendanceAlertDetailScreen(alert: a)
+                      : const Scaffold(body: Center(child: Text('Alert not found'))),
+                  loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+                  error: (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
+                );
+              },
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/attendance/reports',
+        builder: (context, state) => const ShellWrapper(
+          activeRoute: '/attendance/reports',
+          child: AttendanceReportCenterScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/attendance/admin',
+        builder: (context, state) => const ShellWrapper(
+          activeRoute: '/attendance/admin',
+          child: AttendanceAdminDashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/attendance/sessions/admin',
+        builder: (context, state) => const ShellWrapper(
+          activeRoute: '/attendance/sessions/admin',
+          child: AttendanceSessionAdminScreen(),
+        ),
+      ),
+
+      // Notification Center Route
+      GoRoute(
+        path: '/notifications',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(
+            activeRoute: '/notifications',
+            child: NotificationCenterScreen(),
+          ),
+        ),
+        routes: [
+          GoRoute(
+            path: 'preferences',
+            builder: (context, state) => const NotificationPreferencesScreen(),
+          ),
+        ],
+      ),
 
       // User Management Routes
       GoRoute(path: '/users', builder: (context, state) => const ShellWrapper(activeRoute: '/users', child: UserDirectoryScreen())),
@@ -513,6 +641,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: 'notifications',
             pageBuilder: (context, state) => fadeTransitionPage(context: context, state: state, child: const ShellWrapper(activeRoute: '/notifications', child: NotificationCenterScreen())),
             routes: [
+              GoRoute(
+                path: 'preferences',
+                builder: (context, state) => const NotificationPreferencesScreen(),
+              ),
               GoRoute(
                 path: 'create',
                 builder: (context, state) => const CreateAnnouncementScreen(),
@@ -583,6 +715,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
+            path: 'setup',
+            pageBuilder: (context, state) => fadeTransitionPage(
+              context: context,
+              state: state,
+              child: const TimetableSetupScreen(),
+            ),
+          ),
+          GoRoute(
+            path: 'designer/:id',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id'] ?? '';
+              return fadeTransitionPage(
+                context: context,
+                state: state,
+                child: TimetableDesignerScreen(timetableId: id),
+              );
+            },
+          ),
+          GoRoute(
             path: 'new',
             pageBuilder: (context, state) => fadeTransitionPage(
               context: context,
@@ -634,152 +785,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 child: NoteDetailScreen(note: note),
               );
             },
-          ),
-        ],
-      ),
-
-      // Redirect legacy /certificates to /official-certificates
-      GoRoute(
-        path: '/certificates',
-        redirect: (context, state) => '/official-certificates',
-      ),
-
-      // Official Certificates Module
-      GoRoute(
-        path: '/official-certificates',
-        pageBuilder: (context, state) => fadeTransitionPage(
-          context: context,
-          state: state,
-          child: const ShellWrapper(activeRoute: '/official-certificates', child: OfficialCertificatesRouter()),
-        ),
-        routes: [
-          GoRoute(
-            path: 'requirements',
-            pageBuilder: (context, state) => fadeTransitionPage(
-              context: context,
-              state: state,
-              child: const ShellWrapper(
-                activeRoute: '/official-certificates',
-                child: OfficialCertificatesAdminDashboardScreen(),
-              ),
-            ),
-            routes: [
-              GoRoute(
-                path: 'new',
-                pageBuilder: (context, state) => fadeTransitionPage(
-                  context: context,
-                  state: state,
-                  child: const OfficialCertificateRequirementFormScreen(),
-                ),
-              ),
-              GoRoute(
-                path: ':id/edit',
-                pageBuilder: (context, state) {
-                  final id = state.pathParameters['id'] ?? '';
-                  final req = state.extra as OfficialCertificateRequirement?;
-                  return fadeTransitionPage(
-                    context: context,
-                    state: state,
-                    child: OfficialCertificateRequirementFormScreen(requirementId: id, requirement: req),
-                  );
-                },
-              ),
-            ],
-          ),
-          GoRoute(
-            path: 'submissions',
-            pageBuilder: (context, state) => fadeTransitionPage(
-              context: context,
-              state: state,
-              child: const ShellWrapper(
-                activeRoute: '/official-certificates',
-                child: OfficialCertificatesAdminDashboardScreen(),
-              ),
-            ),
-            routes: [
-              GoRoute(
-                path: ':id',
-                pageBuilder: (context, state) {
-                  final id = state.pathParameters['id'] ?? '';
-                  final sub = state.extra as OfficialCertificate?;
-                  return fadeTransitionPage(
-                    context: context,
-                    state: state,
-                    child: OfficialCertificateSubmissionDetailScreen(submissionId: id, submission: sub),
-                  );
-                },
-              ),
-            ],
-          ),
-          GoRoute(
-            path: 'upload/:requirementId',
-            pageBuilder: (context, state) {
-              final reqId = state.pathParameters['requirementId'] ?? '';
-              final req = state.extra as OfficialCertificateRequirement?;
-              return fadeTransitionPage(
-                context: context,
-                state: state,
-                child: OfficialCertificateUploadScreen(requirementId: reqId, requirement: req),
-              );
-            },
-          ),
-        ],
-      ),
-
-      // Achievements Module
-      GoRoute(
-        path: '/achievements',
-        pageBuilder: (context, state) => fadeTransitionPage(
-          context: context,
-          state: state,
-          child: const ShellWrapper(activeRoute: '/achievements', child: AchievementsRouter()),
-        ),
-        routes: [
-          GoRoute(
-            path: 'new',
-            pageBuilder: (context, state) => fadeTransitionPage(
-              context: context,
-              state: state,
-              child: const AchievementFormScreen(),
-            ),
-          ),
-          GoRoute(
-            path: ':id',
-            pageBuilder: (context, state) {
-              final id = state.pathParameters['id'] ?? '';
-              final ach = state.extra as Achievement?;
-              return fadeTransitionPage(
-                context: context,
-                state: state,
-                child: AchievementDetailScreen(achievementId: id, achievement: ach),
-              );
-            },
-            routes: [
-              GoRoute(
-                path: 'edit',
-                pageBuilder: (context, state) {
-                  final id = state.pathParameters['id'] ?? '';
-                  final ach = state.extra as Achievement?;
-                  return fadeTransitionPage(
-                    context: context,
-                    state: state,
-                    child: AchievementFormScreen(achievementId: id, achievement: ach),
-                  );
-                },
-              ),
-              GoRoute(
-                path: 'verify',
-                pageBuilder: (context, state) {
-                  final id = state.pathParameters['id'] ?? '';
-                  final ach = state.extra as Achievement?;
-                  return fadeTransitionPage(
-                    context: context,
-                    state: state,
-                    child: AchievementDetailScreen(achievementId: id, achievement: ach),
-                  );
-                },
-              ),
-            ],
           ),
         ],
       ),

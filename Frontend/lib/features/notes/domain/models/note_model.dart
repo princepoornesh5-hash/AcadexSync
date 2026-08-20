@@ -27,20 +27,23 @@ extension ResourceTypeExtension on ResourceType {
   }
 
   static ResourceType fromString(String val) {
-    switch (val) {
+    switch (val.toLowerCase()) {
       case 'text_note':
+      case 'textnote':
         return ResourceType.textNote;
       case 'external_link':
+      case 'externallink':
         return ResourceType.externalLink;
       case 'file_attachment':
+      case 'fileattachment':
         return ResourceType.fileAttachment;
       default:
-        return ResourceType.textNote;
+        return ResourceType.fileAttachment;
     }
   }
 }
 
-enum NoteStatus { draft, published, unpublished }
+enum NoteStatus { draft, published, unpublished, archived }
 
 extension NoteStatusExtension on NoteStatus {
   String get value => name;
@@ -53,11 +56,17 @@ extension NoteStatusExtension on NoteStatus {
         return 'Published';
       case NoteStatus.unpublished:
         return 'Unpublished';
+      case NoteStatus.archived:
+        return 'Archived';
     }
   }
 
   static NoteStatus fromString(String val) {
-    return NoteStatus.values.firstWhere((e) => e.name == val, orElse: () => NoteStatus.draft);
+    final lower = val.toLowerCase();
+    return NoteStatus.values.firstWhere(
+      (e) => e.name.toLowerCase() == lower,
+      orElse: () => NoteStatus.draft,
+    );
   }
 }
 
@@ -75,7 +84,11 @@ class NoteModel {
   final String? fileType;
   final int? fileSize;
   final String? fileUrl;
+  final String? thumbnailUrl;
   final String? storagePath;
+  final String? fileId;
+  final String? mimeType;
+  final int version;
   
   // Context
   final String subjectId;
@@ -87,8 +100,8 @@ class NoteModel {
   final String? academicYearId;
   
   // Ownership
-  final String facultyId; // academic faculty profile ID
-  final String authorUserId; // UserModel ID of the author
+  final String facultyId;
+  final String authorUserId;
 
   // Status
   final NoteStatus status;
@@ -110,15 +123,19 @@ class NoteModel {
     this.fileType,
     this.fileSize,
     this.fileUrl,
+    this.thumbnailUrl,
     this.storagePath,
+    this.fileId,
+    this.mimeType,
+    this.version = 1,
     required this.subjectId,
-    required this.sectionId,
-    required this.courseId,
-    required this.departmentId,
-    required this.collegeId,
+    this.sectionId = '',
+    this.courseId = '',
+    this.departmentId = '',
+    this.collegeId = '',
     required this.semesterId,
     this.academicYearId,
-    required this.facultyId,
+    this.facultyId = '',
     required this.authorUserId,
     this.status = NoteStatus.draft,
     this.publishedAt,
@@ -130,28 +147,40 @@ class NoteModel {
 
   factory NoteModel.fromJson(Map<String, dynamic> json) {
     return NoteModel(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      description: (json['description'] ?? '').toString(),
       content: json['content'] as String?,
       externalUrl: json['externalUrl'] as String?,
-      resourceType: ResourceTypeExtension.fromString(json['resourceType'] as String),
+      resourceType: json['resourceType'] != null
+          ? ResourceTypeExtension.fromString(json['resourceType'].toString())
+          : ResourceType.fileAttachment,
       chapter: json['chapter'] as String?,
-      fileName: json['fileName'] as String?,
-      fileType: json['fileType'] as String?,
-      fileSize: json['fileSize'] as int?,
+      fileName: (json['fileName'] ?? json['originalFileName']) as String?,
+      fileType: (json['fileType'] ?? json['fileExtension'] ?? json['mimeType']) as String?,
+      fileSize: json['fileSize'] is int
+          ? json['fileSize'] as int
+          : (json['fileSize'] != null ? int.tryParse(json['fileSize'].toString()) : null),
       fileUrl: json['fileUrl'] as String?,
-      storagePath: json['storagePath'] as String?,
-      subjectId: json['subjectId'] as String,
-      sectionId: json['sectionId'] as String,
-      courseId: json['courseId'] as String,
-      departmentId: json['departmentId'] as String,
-      collegeId: json['collegeId'] as String,
-      semesterId: json['semesterId'] as String,
-      academicYearId: json['academicYearId'] as String?,
-      facultyId: json['facultyId'] as String,
-      authorUserId: json['authorUserId'] as String,
-      status: json['status'] != null ? NoteStatusExtension.fromString(json['status'] as String) : NoteStatus.draft,
+      thumbnailUrl: json['thumbnailUrl'] as String?,
+      storagePath: (json['storagePath'] ?? json['storageKey']) as String?,
+      fileId: json['fileId'] as String?,
+      mimeType: json['mimeType'] as String?,
+      version: json['version'] is int
+          ? json['version'] as int
+          : (json['version'] != null ? int.tryParse(json['version'].toString()) ?? 1 : 1),
+      subjectId: (json['subjectId'] ?? '').toString(),
+      sectionId: (json['sectionId'] ?? '').toString(),
+      courseId: (json['courseId'] ?? '').toString(),
+      departmentId: (json['departmentId'] ?? '').toString(),
+      collegeId: (json['collegeId'] ?? '').toString(),
+      semesterId: (json['semesterId'] ?? '').toString(),
+      academicYearId: json['academicYearId']?.toString(),
+      facultyId: (json['facultyId'] ?? '').toString(),
+      authorUserId: (json['authorUserId'] ?? '').toString(),
+      status: json['status'] != null
+          ? NoteStatusExtension.fromString(json['status'].toString())
+          : NoteStatus.draft,
       publishedAt: json['publishedAt'] != null ? _parseDate(json['publishedAt']) : null,
       createdAt: json['createdAt'] != null ? _parseDate(json['createdAt'])! : DateTime.now(),
       updatedAt: json['updatedAt'] != null ? _parseDate(json['updatedAt'])! : DateTime.now(),
@@ -171,7 +200,11 @@ class NoteModel {
       'fileType': fileType,
       'fileSize': fileSize,
       'fileUrl': fileUrl,
+      'thumbnailUrl': thumbnailUrl,
       'storagePath': storagePath,
+      'fileId': fileId,
+      'mimeType': mimeType,
+      'version': version,
       'subjectId': subjectId,
       'sectionId': sectionId,
       'courseId': courseId,
@@ -191,7 +224,7 @@ class NoteModel {
   static DateTime? _parseDate(dynamic date) {
     if (date == null) return null;
     if (date is Timestamp) return date.toDate();
-    if (date is String) return DateTime.parse(date);
+    if (date is String) return DateTime.tryParse(date);
     return null;
   }
 
@@ -207,7 +240,11 @@ class NoteModel {
     String? fileType,
     int? fileSize,
     String? fileUrl,
+    String? thumbnailUrl,
     String? storagePath,
+    String? fileId,
+    String? mimeType,
+    int? version,
     String? subjectId,
     String? sectionId,
     String? courseId,
@@ -234,7 +271,11 @@ class NoteModel {
       fileType: fileType ?? this.fileType,
       fileSize: fileSize ?? this.fileSize,
       fileUrl: fileUrl ?? this.fileUrl,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       storagePath: storagePath ?? this.storagePath,
+      fileId: fileId ?? this.fileId,
+      mimeType: mimeType ?? this.mimeType,
+      version: version ?? this.version,
       subjectId: subjectId ?? this.subjectId,
       sectionId: sectionId ?? this.sectionId,
       courseId: courseId ?? this.courseId,

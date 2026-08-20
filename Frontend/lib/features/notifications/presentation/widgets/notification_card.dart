@@ -30,6 +30,16 @@ class NotificationCard extends StatelessWidget {
   }
 
   IconData _getIconForCategory(NotificationCategory category) {
+    if (category == NotificationCategory.attendance) {
+      final titleLower = notification.title.toLowerCase();
+      if (titleLower.contains('recovered')) return LucideIcons.circleCheck;
+      if (titleLower.contains('drop')) return LucideIcons.trendingDown;
+      if (titleLower.contains('absence')) return LucideIcons.userX;
+      if (titleLower.contains('unmarked') || titleLower.contains('missing')) return LucideIcons.calendarX;
+      if (notification.priority == NotificationPriority.critical) return LucideIcons.shieldAlert;
+      return LucideIcons.calendarCheck;
+    }
+
     switch (category) {
       case NotificationCategory.attendance: return LucideIcons.calendarCheck;
       case NotificationCategory.academic: return LucideIcons.bookOpen;
@@ -44,6 +54,10 @@ class NotificationCard extends StatelessWidget {
   }
 
   Color _getColorForPriority(BuildContext context, NotificationPriority priority) {
+    if (notification.category == NotificationCategory.attendance &&
+        notification.title.toLowerCase().contains('recovered')) {
+      return AcadexColors.success;
+    }
     switch (priority) {
       case NotificationPriority.critical: return AcadexColors.error;
       case NotificationPriority.high: return AcadexColors.warning;

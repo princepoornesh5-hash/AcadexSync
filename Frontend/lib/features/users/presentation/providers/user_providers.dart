@@ -1,21 +1,23 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/firebase/firebase_initializer.dart';
-import '../../../../core/firebase/firebase_services.dart';
 import '../../../auth/domain/models/role_enum.dart';
-import '../../data/repositories/firebase_user_repository.dart';
 import '../../data/repositories/mock_user_repository.dart';
+import '../../data/repositories/api_user_repository.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../domain/models/user_profile_model.dart';
 import '../../domain/models/user_status_enum.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
+final apiUserRepositoryProvider = Provider<ApiUserRepository>((ref) {
+  return ApiUserRepository();
+});
+
 final userRepositoryProvider = Provider<UserRepository>((ref) {
   if (FirebaseInitializer.shouldUseMock) {
     return MockUserRepository();
   }
-  final firestoreService = ref.watch(firestoreServiceProvider);
-  return FirebaseUserRepository(firestoreService);
+  return ref.watch(apiUserRepositoryProvider);
 });
 
 // Filters
@@ -39,14 +41,17 @@ final usersListProvider = FutureProvider.autoDispose<List<UserProfileModel>>((re
   String? scopeCollegeId;
   String? scopeDepartmentId;
 
-  if (currentUser.role == AppRole.collegeAdmin) {
+  if (currentUser.role == AppRole.superAdmin) {
+    scopeCollegeId = ref.watch(userCollegeFilterProvider);
+  } else if (currentUser.role == AppRole.collegeAdmin) {
     scopeCollegeId = currentUser.collegeId;
   } else if (currentUser.role == AppRole.hod) {
     scopeCollegeId = currentUser.collegeId;
     scopeDepartmentId = currentUser.departmentId;
   } else if (currentUser.role == AppRole.student || currentUser.role == AppRole.faculty) {
-    // Ordinary Faculty and Students have no business seeing the administrative user list.
-    throw Exception('Unauthorized');
+    // Faculty/Student can only view their own department's roster or authorized directory
+    scopeCollegeId = currentUser.collegeId;
+    scopeDepartmentId = currentUser.departmentId;
   }
 
   final role = ref.watch(userRoleFilterProvider);
@@ -58,7 +63,7 @@ final usersListProvider = FutureProvider.autoDispose<List<UserProfileModel>>((re
     scopeCollegeId: scopeCollegeId,
     scopeDepartmentId: scopeDepartmentId,
     role: role,
-    departmentId: dept,
+    departmentId: dept ?? scopeDepartmentId,
     status: status,
     searchQuery: query,
   );
@@ -123,6 +128,15 @@ class UserManagementNotifier extends StateNotifier<AsyncValue<void>> {
     } catch (e, st) {
       state = AsyncError(e, st);
       rethrow;
+    }
+  }
+
+  Future<String> generateActivationCode(UserProfileModel user) async {
+    try {
+      final apiRepo = _ref.read(apiUserRepositoryProvider);
+      return await apiRepo.generateActivationCode(user);
+    } catch (e) {
+      return 'ACADEX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
     }
   }
 }

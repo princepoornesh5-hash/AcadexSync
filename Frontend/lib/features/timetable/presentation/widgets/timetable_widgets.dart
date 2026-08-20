@@ -4,6 +4,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/models/timetable_models.dart';
 import '../providers/timetable_lookup_providers.dart';
+import '../providers/timetable_providers.dart';
+import 'next_class_card.dart';
 
 // Helper to determine active/upcoming status
 enum TimetableEntryStatus { now, upNext, completed, none }
@@ -848,6 +850,10 @@ class TimetableDayView extends ConsumerWidget {
     final selectedDay = ref.watch(timetableSelectedDayProvider);
     final entries = weeklyData[selectedDay] ?? [];
     final currentIndex = selectedDay.index;
+    final now = DateTime.now();
+    final isToday = selectedDay == TimetableDay.values[now.weekday - 1];
+    final nextClassAsync = ref.watch(nextClassProvider);
+    final nextClass = nextClassAsync.valueOrNull;
 
     return Column(
       children: [
@@ -890,8 +896,8 @@ class TimetableDayView extends ConsumerWidget {
                 children: [
                   TextButton(
                     onPressed: () {
-                      final now = DateTime.now();
-                      ref.read(timetableSelectedDayProvider.notifier).state = TimetableDay.values[now.weekday - 1];
+                      final n = DateTime.now();
+                      ref.read(timetableSelectedDayProvider.notifier).state = TimetableDay.values[n.weekday - 1];
                     },
                     child: const Text('Today'),
                   ),
@@ -948,8 +954,17 @@ class TimetableDayView extends ConsumerWidget {
                 : ListView.builder(
                     key: ValueKey('list_${selectedDay.name}'),
                     padding: const EdgeInsets.all(20),
-                    itemCount: entries.length,
+                    itemCount: isToday && nextClass != null ? entries.length + 1 : entries.length,
                     itemBuilder: (context, index) {
+                      if (isToday && nextClass != null) {
+                        if (index == 0) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16.0),
+                            child: NextClassCard(nextClass: nextClass),
+                          );
+                        }
+                        return TimetableCard(entry: entries[index - 1]);
+                      }
                       return TimetableCard(entry: entries[index]);
                     },
                   ),

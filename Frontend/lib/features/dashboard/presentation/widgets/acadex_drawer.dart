@@ -80,8 +80,8 @@ class AcadexDrawer extends ConsumerWidget {
       const _NavItem(
         label: 'Academic Structure',
         icon: LucideIcons.layers,
-        route: '/academic-structure/departments',
-        allowedRoles: [AppRole.collegeAdmin, AppRole.hod],
+        route: '/academics',
+        allowedRoles: [AppRole.superAdmin, AppRole.collegeAdmin, AppRole.hod, AppRole.faculty, AppRole.student],
       ),
       const _NavItem(
         label: 'Faculty & Staff',
@@ -125,28 +125,16 @@ class AcadexDrawer extends ConsumerWidget {
         route: '/attendance',
         allowedRoles: [AppRole.collegeAdmin, AppRole.hod, AppRole.faculty, AppRole.student],
       ),
-      const _NavItem(
-        label: 'Timetable',
+      _NavItem(
+        label: (role == AppRole.hod || role == AppRole.collegeAdmin) ? 'Manage Timetable' : 'Timetable',
         icon: LucideIcons.calendar,
-        route: '/timetable',
-        allowedRoles: [AppRole.collegeAdmin, AppRole.hod, AppRole.faculty, AppRole.student],
+        route: (role == AppRole.hod || role == AppRole.collegeAdmin) ? '/timetable/manage' : '/timetable',
+        allowedRoles: const [AppRole.collegeAdmin, AppRole.hod, AppRole.faculty, AppRole.student],
       ),
       const _NavItem(
         label: 'Notes & Resources',
         icon: LucideIcons.fileText,
         route: '/notes',
-        allowedRoles: [AppRole.collegeAdmin, AppRole.hod, AppRole.faculty, AppRole.student],
-      ),
-      const _NavItem(
-        label: 'Official Certificates',
-        icon: LucideIcons.fileCheck2,
-        route: '/official-certificates',
-        allowedRoles: [AppRole.collegeAdmin, AppRole.hod, AppRole.faculty, AppRole.student],
-      ),
-      const _NavItem(
-        label: 'Achievements',
-        icon: LucideIcons.trophy,
-        route: '/achievements',
         allowedRoles: [AppRole.collegeAdmin, AppRole.hod, AppRole.faculty, AppRole.student],
       ),
       const _NavItem(

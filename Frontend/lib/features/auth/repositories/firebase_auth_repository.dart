@@ -30,7 +30,7 @@ class FirebaseAuthRepository implements AuthRepository {
     try {
       final credential = await _authService.signIn(trimmedEmail, password);
       final user = credential.user;
-      
+
       if (user == null) {
         developer.log('Firebase sign-in completed but Firebase user was null.', name: 'Acadex.Auth');
         throw Exception("Authentication succeeded but user is null.");
@@ -38,13 +38,12 @@ class FirebaseAuthRepository implements AuthRepository {
 
       developer.log('Firebase authentication succeeded. Firebase UID: ${user.uid}', name: 'Acadex.Auth');
 
-      // After Firebase Auth, load the Acadex User Profile from UserProfileRepository
       final acadexUser = await _userProfileRepository.getUserProfileByUid(user.uid);
       developer.log(
         'User identity lookup result for UID ${user.uid}: ${acadexUser != null ? "Found" : "Not Found"}',
         name: 'Acadex.Auth',
       );
-      
+
       if (acadexUser == null) {
         await _authService.signOut();
         throw const BackendPermissionException(
@@ -56,7 +55,7 @@ class FirebaseAuthRepository implements AuthRepository {
         'Role resolution result for UID ${user.uid}: role=${acadexUser.role.value}, status=${acadexUser.accountStatus.name}',
         name: 'Acadex.Auth',
       );
-      
+
       if (acadexUser.accountStatus != AccountStatus.active) {
         await _authService.signOut();
         throw BackendPermissionException(
@@ -113,5 +112,44 @@ class FirebaseAuthRepository implements AuthRepository {
     final trimmedEmail = email.trim();
     developer.log('Password reset requested for email: $trimmedEmail', name: 'Acadex.Auth');
     await _authService.sendPasswordResetEmail(trimmedEmail);
+  }
+
+  @override
+  Future<String> verifyPasswordResetOtp({
+    required String identifier,
+    required String otpCode,
+  }) async {
+    // Firebase password reset uses email links, not OTP.
+    // This method is provided for interface compliance.
+    throw UnimplementedError('Firebase auth uses email link reset, not OTP verification');
+  }
+
+  @override
+  Future<void> resetPassword({
+    required String resetToken,
+    required String newPassword,
+  }) async {
+    // Firebase password reset uses email links.
+    throw UnimplementedError('Firebase auth uses email link reset, not token-based reset');
+  }
+
+  @override
+  Future<Map<String, dynamic>> activateAccount({
+    required String collegeCode,
+    required String instituteId,
+    required String activationCode,
+    required String password,
+  }) async {
+    // Account activation is handled by the backend API, not Firebase.
+    throw UnimplementedError('Account activation is handled by the backend API');
+  }
+
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    // Firebase password change uses reauthentication.
+    throw UnimplementedError('Use ApiAuthRepository for change password');
   }
 }

@@ -18,7 +18,12 @@ class StatusChip extends StatelessWidget {
         bgColor = DashboardColors.successLight;
         textColor = DashboardColors.success;
         break;
+      case UserStatus.pending:
+        bgColor = DashboardColors.warningLight;
+        textColor = DashboardColors.warning;
+        break;
       case UserStatus.inactive:
+      case UserStatus.deactivated:
         bgColor = DashboardColors.textMuted.withValues(alpha: 0.1);
         textColor = DashboardColors.textSecondary;
         break;

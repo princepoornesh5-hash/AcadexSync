@@ -1,4 +1,5 @@
 import 'attendance_record.dart';
+import 'attendance_status.dart';
 
 class AttendanceSession {
   final String id;
@@ -20,6 +21,10 @@ class AttendanceSession {
   final String? lastModifiedBy;
   final int version;
 
+  final String? timetableEntryId;
+  final String? roomNumber;
+  final String? building;
+
   AttendanceSession({
     required this.id,
     required this.collegeId,
@@ -32,6 +37,9 @@ class AttendanceSession {
     required this.timeSlot,
     required this.date,
     required this.records,
+    this.timetableEntryId,
+    this.roomNumber,
+    this.building,
     this.isSubmitted = false,
     this.isLocked = false,
     this.createdAt,
@@ -40,6 +48,18 @@ class AttendanceSession {
     this.lastModifiedBy,
     this.version = 1,
   });
+
+  int get totalStudents => records.length;
+  int get presentCount => records.where((r) => r.status == AttendanceStatus.present).length;
+  int get absentCount => records.where((r) => r.status == AttendanceStatus.absent).length;
+  int get lateCount => records.where((r) => r.status == AttendanceStatus.late).length;
+  int get excusedCount => records.where((r) => r.status == AttendanceStatus.excused).length;
+  int get unmarkedCount => records.where((r) => r.status == null).length;
+
+  double get attendancePercentage {
+    if (records.isEmpty) return 0.0;
+    return ((presentCount + lateCount) / records.length) * 100;
+  }
 
   AttendanceSession copyWith({
     String? id,
@@ -53,6 +73,9 @@ class AttendanceSession {
     String? timeSlot,
     DateTime? date,
     List<AttendanceRecord>? records,
+    String? timetableEntryId,
+    String? roomNumber,
+    String? building,
     bool? isSubmitted,
     bool? isLocked,
     DateTime? createdAt,
@@ -73,6 +96,9 @@ class AttendanceSession {
       timeSlot: timeSlot ?? this.timeSlot,
       date: date ?? this.date,
       records: records ?? this.records,
+      timetableEntryId: timetableEntryId ?? this.timetableEntryId,
+      roomNumber: roomNumber ?? this.roomNumber,
+      building: building ?? this.building,
       isSubmitted: isSubmitted ?? this.isSubmitted,
       isLocked: isLocked ?? this.isLocked,
       createdAt: createdAt ?? this.createdAt,
@@ -99,6 +125,9 @@ class AttendanceSession {
               ?.map((e) => AttendanceRecord.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      timetableEntryId: json['timetableEntryId'] as String?,
+      roomNumber: json['roomNumber'] as String?,
+      building: json['building'] as String?,
       isSubmitted: json['isSubmitted'] as bool? ?? false,
       isLocked: json['isLocked'] as bool? ?? false,
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'] as String) : null,
@@ -122,6 +151,9 @@ class AttendanceSession {
       'timeSlot': timeSlot,
       'date': date.toIso8601String(),
       'records': records.map((r) => r.toJson()).toList(),
+      if (timetableEntryId != null) 'timetableEntryId': timetableEntryId,
+      if (roomNumber != null) 'roomNumber': roomNumber,
+      if (building != null) 'building': building,
       'isSubmitted': isSubmitted,
       'isLocked': isLocked,
       'createdAt': createdAt?.toIso8601String(),

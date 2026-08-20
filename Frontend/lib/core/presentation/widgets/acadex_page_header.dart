@@ -154,14 +154,12 @@ class AcadexPageHeader extends StatelessWidget {
                 ),
                 if (actions != null && actions!.isNotEmpty) ...[
                   const SizedBox(width: 16),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (int i = 0; i < actions!.length; i++) ...[
-                        actions![i],
-                        if (i < actions!.length - 1) const SizedBox(width: 8),
-                      ],
-                    ],
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.end,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: actions!,
                   ),
                 ],
               ],

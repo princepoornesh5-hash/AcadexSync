@@ -16,9 +16,10 @@ class FirebaseTimetableRepository implements TimetableRepository {
   
   FirebaseTimetableRepository(
     this._firestoreService, {
-    this._notificationService,
-    this._currentUser,
-  });
+    NotificationService? notificationService,
+    UserModel? currentUser,
+  }) : _notificationService = notificationService,
+       _currentUser = currentUser;
 
   void _debugLog(String operation, Map<String, dynamic> metadata) {
     if (kDebugMode) {

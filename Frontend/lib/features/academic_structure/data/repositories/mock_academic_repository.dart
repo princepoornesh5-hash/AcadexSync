@@ -8,8 +8,9 @@ import '../../domain/repositories/academic_repository.dart';
 
 class MockAcademicRepository implements AcademicRepository {
   final UserModel? currentUser;
+  final Duration latency;
 
-  MockAcademicRepository({this.currentUser});
+  MockAcademicRepository({this.currentUser, this.latency = Duration.zero});
 
   // Mock Data Store
   final List<College> _colleges = [
@@ -110,7 +111,11 @@ class MockAcademicRepository implements AcademicRepository {
     ),
   ];
 
-  Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 200));
+  Future<void> _delay() async {
+    if (latency > Duration.zero) {
+      await Future.delayed(latency);
+    }
+  }
 
   // --- Getters ---
   @override

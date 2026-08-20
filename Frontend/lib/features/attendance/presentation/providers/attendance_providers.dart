@@ -8,13 +8,11 @@ import '../../domain/models/attendance_session.dart';
 import '../../domain/models/attendance_status.dart';
 import '../../domain/models/assigned_class.dart';
 import '../../domain/repositories/attendance_repository.dart';
+import '../../data/repositories/api_attendance_repository.dart';
 import '../../data/repositories/firebase_attendance_repository.dart';
 import '../../data/repositories/mock_attendance_repository.dart';
 
-final attendanceRepoProvider = Provider<AttendanceRepository>((ref) {
-  if (FirebaseInitializer.shouldUseMock) {
-    return mockAttendanceRepo;
-  }
+final firebaseAttendanceRepoProvider = Provider<AttendanceRepository>((ref) {
   final firestoreService = ref.watch(firestoreServiceProvider);
   final currentUser = ref.watch(currentUserProvider);
   final notificationService = ref.watch(notificationServiceProvider);
@@ -23,6 +21,17 @@ final attendanceRepoProvider = Provider<AttendanceRepository>((ref) {
     currentUser,
     notificationService: notificationService,
   );
+});
+
+final apiAttendanceRepoProvider = Provider<AttendanceRepository>((ref) {
+  return ApiAttendanceRepository();
+});
+
+final attendanceRepoProvider = Provider<AttendanceRepository>((ref) {
+  if (FirebaseInitializer.shouldUseMock) {
+    return mockAttendanceRepo;
+  }
+  return ref.watch(apiAttendanceRepoProvider);
 });
 
 // ---------------------------------------------------------
@@ -55,7 +64,12 @@ final activeStudentListProvider = FutureProvider<List<AttendanceRecord>>((ref) a
   if (activeClass == null) return [];
   
   final repo = ref.watch(attendanceRepoProvider);
-  return repo.getStudentsForSection(activeClass.sectionId, activeClass.subjectId, activeClass.date);
+  return repo.getStudentsForSection(
+    activeClass.sectionId,
+    activeClass.subjectId,
+    activeClass.date,
+    timetableEntryId: activeClass.effectiveTimetableEntryId,
+  );
 });
 
 class MarkingSessionNotifier extends StateNotifier<List<AttendanceRecord>> {
@@ -79,6 +93,16 @@ class MarkingSessionNotifier extends StateNotifier<List<AttendanceRecord>> {
     state = [
       for (final rec in state)
         rec.copyWith(status: status, lastModified: DateTime.now())
+    ];
+  }
+
+  void markUnmarked(AttendanceStatus status) {
+    state = [
+      for (final rec in state)
+        if (rec.status == null)
+          rec.copyWith(status: status, lastModified: DateTime.now())
+        else
+          rec
     ];
   }
 
@@ -127,7 +151,9 @@ final saveSessionProvider = FutureProvider.family<bool, String>((ref, activeClas
   final repo = ref.read(attendanceRepoProvider);
   final currentUser = ref.read(currentUserProvider);
 
-  final facultyId = currentUser?.id ?? (FirebaseInitializer.shouldUseMock ? 'faculty1' : '');
+  final facultyId = activeClass.facultyId?.isNotEmpty == true
+      ? activeClass.facultyId!
+      : (currentUser?.id ?? (FirebaseInitializer.shouldUseMock ? 'faculty1' : ''));
   final collegeId = currentUser?.collegeId ?? (FirebaseInitializer.shouldUseMock ? 'col-1' : '');
   final departmentId = currentUser?.departmentId ?? (FirebaseInitializer.shouldUseMock ? 'dept-1' : '');
 
@@ -135,8 +161,14 @@ final saveSessionProvider = FutureProvider.family<bool, String>((ref, activeClas
     throw StateError("Cannot save attendance: Incomplete user profile.");
   }
 
+  final dateKey = '${activeClass.date.year}${activeClass.date.month.toString().padLeft(2, '0')}${activeClass.date.day.toString().padLeft(2, '0')}';
+  final slotKey = activeClass.effectiveTimetableEntryId.replaceAll('pub_', '');
+  final sessionId = slotKey.isNotEmpty
+      ? '${activeClass.sectionId}_${activeClass.subjectId}_${dateKey}_$slotKey'
+      : '${activeClass.sectionId}_${activeClass.subjectId}_$dateKey';
+
   final session = AttendanceSession(
-    id: '${activeClass.sectionId}_${activeClass.subjectId}_${activeClass.date.year}${activeClass.date.month.toString().padLeft(2, '0')}${activeClass.date.day.toString().padLeft(2, '0')}',
+    id: sessionId,
     collegeId: collegeId,
     departmentId: departmentId,
     facultyId: facultyId,
@@ -147,7 +179,15 @@ final saveSessionProvider = FutureProvider.family<bool, String>((ref, activeClas
     timeSlot: activeClass.timeSlot,
     date: activeClass.date,
     records: records,
+    timetableEntryId: activeClass.effectiveTimetableEntryId,
+    roomNumber: activeClass.roomNumber,
+    building: activeClass.building,
   );
   
-  return repo.saveSession(session);
+  final success = await repo.saveSession(session);
+  if (success) {
+    // Invalidate assigned classes so that the "Marked" badge updates in real time
+    ref.invalidate(assignedClassesProvider);
+  }
+  return success;
 });

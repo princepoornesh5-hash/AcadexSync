@@ -232,7 +232,7 @@ final collegeAdminQuickActionsProvider = Provider<List<QuickActionModel>>((ref) 
         icon: LucideIcons.calendarDays,
         iconColor: DashboardColors.warning,
         iconBackground: DashboardColors.warningLight,
-        route: '/timetable',
+        route: '/timetable/manage',
       ),
       const QuickActionModel(
         label: 'Attendance',
@@ -357,7 +357,7 @@ final hodQuickActionsProvider = Provider<List<QuickActionModel>>((ref) => [
         icon: LucideIcons.calendarDays,
         iconColor: DashboardColors.warning,
         iconBackground: DashboardColors.warningLight,
-        route: '/timetable',
+        route: '/timetable/manage',
       ),
       const QuickActionModel(
         label: 'Attendance',
@@ -615,20 +615,6 @@ final studentQuickActionsProvider = Provider<List<QuickActionModel>>((ref) => [
         iconColor: DashboardColors.teal,
         iconBackground: DashboardColors.tealLight,
         route: '/notes',
-      ),
-      const QuickActionModel(
-        label: 'Official Docs',
-        icon: LucideIcons.fileCheck2,
-        iconColor: DashboardColors.purple,
-        iconBackground: DashboardColors.purpleLight,
-        route: '/official-certificates',
-      ),
-      const QuickActionModel(
-        label: 'Achievements',
-        icon: LucideIcons.trophy,
-        iconColor: DashboardColors.warning,
-        iconBackground: DashboardColors.warningLight,
-        route: '/achievements',
       ),
       const QuickActionModel(
         label: 'AI Assistant',

@@ -150,6 +150,16 @@ class AssignedClassCard extends StatelessWidget {
                               variant: AcadexBadgeVariant.warning,
                               icon: LucideIcons.clock,
                             ),
+                          if (assignedClass.roomNumber != null && assignedClass.roomNumber!.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            AcadexBadge(
+                              label: assignedClass.building != null && assignedClass.building!.isNotEmpty
+                                  ? '${assignedClass.roomNumber} (${assignedClass.building})'
+                                  : 'Room ${assignedClass.roomNumber}',
+                              variant: AcadexBadgeVariant.neutral,
+                              icon: LucideIcons.mapPin,
+                            ),
+                          ],
                         ],
                       ),
                     ],

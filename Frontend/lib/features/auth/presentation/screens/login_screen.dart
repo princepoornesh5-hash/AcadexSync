@@ -22,7 +22,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
   
   String? _selectedRole;
@@ -41,7 +41,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
     await ref.read(authProvider.notifier).login(
-      _emailController.text.trim(),
+      _identifierController.text.trim(),
       _passwordController.text,
     );
   }
@@ -58,7 +58,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -72,10 +72,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (next is AuthAuthenticated) {
         _navigateBasedOnRole(next.user.role);
       } else if (next is AuthError) {
+        final isPendingActivation = next.message.toLowerCase().contains('pending activation') ||
+            next.message.toLowerCase().contains('activate your account');
+        
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.message),
-            backgroundColor: AcadexColors.error,
+            backgroundColor: isPendingActivation ? AcadexColors.warning : AcadexColors.error,
+            duration: isPendingActivation ? const Duration(seconds: 8) : const Duration(seconds: 4),
+            action: isPendingActivation
+                ? SnackBarAction(
+                    label: 'Activate Now',
+                    textColor: Colors.white,
+                    onPressed: () => context.go('/activate'),
+                  )
+                : null,
           ),
         );
       } else if (next is AuthProfileError) {
@@ -303,17 +315,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Email
+                // Identifier (Email or Phone)
                 AcadexTextField(
-                  controller: _emailController,
-                  label: 'Email Address',
-                  hint: 'user@acadex.edu',
-                  prefixIcon: LucideIcons.mail,
+                  controller: _identifierController,
+                  label: 'Email or Phone Number',
+                  hint: 'user@acadex.edu or +1234567890',
+                  prefixIcon: LucideIcons.user,
                   keyboardType: TextInputType.emailAddress,
                   enabled: !isLoading,
                   validator: (val) {
-                    if (val == null || val.isEmpty) return "Please enter your email";
-                    if (!val.contains('@')) return "Invalid email address";
+                    if (val == null || val.trim().isEmpty) return "Please enter your email or phone number";
                     return null;
                   },
                 ),
@@ -423,23 +434,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       _selectedRole = val;
                       switch (val) {
                         case "Super Admin":
-                          _emailController.text = "admin@acadex.com";
+                          _identifierController.text = "admin@acadex.com";
                           _passwordController.text = "acadex123";
                           break;
                         case "College Admin":
-                          _emailController.text = "college@acadex.com";
+                          _identifierController.text = "college@acadex.com";
                           _passwordController.text = "acadex123";
                           break;
                         case "HOD":
-                          _emailController.text = "hod@acadex.com";
+                          _identifierController.text = "hod@acadex.com";
                           _passwordController.text = "acadex123";
                           break;
                         case "Faculty":
-                          _emailController.text = "faculty@acadex.com";
+                          _identifierController.text = "faculty@acadex.com";
                           _passwordController.text = "acadex123";
                           break;
                         case "Student":
-                          _emailController.text = "student@acadex.com";
+                          _identifierController.text = "student@acadex.com";
                           _passwordController.text = "acadex123";
                           break;
                       }

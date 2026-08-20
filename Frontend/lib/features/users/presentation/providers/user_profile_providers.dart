@@ -7,6 +7,12 @@ import '../../domain/repositories/user_profile_repository.dart';
 import '../../domain/models/user_profile_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
+import '../../data/repositories/api_user_repository.dart';
+
+final apiUserRepositoryProvider = Provider<ApiUserRepository>((ref) {
+  return ApiUserRepository();
+});
+
 final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
   if (FirebaseInitializer.shouldUseMock) {
     return MockUserProfileRepository();
@@ -36,10 +42,9 @@ class ProfileEditState {
 
 class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
   final UserProfileRepository _repository;
-  final FirebaseAuthService _authService;
   final Ref _ref;
 
-  ProfileEditNotifier(this._repository, this._authService, this._ref) : super(const ProfileEditState());
+  ProfileEditNotifier(this._repository, this._ref) : super(const ProfileEditState());
 
   void reset() => state = const ProfileEditState();
 
@@ -49,8 +54,7 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
       final updated = currentProfile.copyWith(name: name.trim(), phone: phone.trim(), updatedAt: DateTime.now());
       await _repository.saveUserProfile(updated);
       
-      // We also update the AuthProvider's current user to reflect UI immediately
-      // The authProvider will be accessed via ref
+      // Update the AuthProvider's current user to reflect UI immediately
       _ref.read(authProvider.notifier).updateCurrentUser(updated);
       
       state = state.copyWith(status: ProfileEditStatus.saved);
@@ -67,21 +71,19 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
     try {
       if (FirebaseInitializer.shouldUseMock) {
         await Future.delayed(const Duration(seconds: 1));
-        // Mock success
         state = state.copyWith(status: ProfileEditStatus.saved);
         return;
       }
 
-      // 1. Re-authenticate logic if necessary (In full version). 
-      // For now, we'll try to just update password. If it fails with requires-recent-login, 
-      // the mapped FirebaseErrorMapper will throw it.
-      await _authService.updatePassword(newPassword);
+      // Use the backend API for password change
+      final authRepo = _ref.read(apiAuthRepositoryProvider);
+      await authRepo.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
       state = state.copyWith(status: ProfileEditStatus.saved);
     } catch (e) {
       String errMsg = e.toString().replaceAll("Exception: ", "");
-      if (errMsg.contains('requires-recent-login')) {
-        errMsg = "Security restriction: Please log out and log back in before changing your password.";
-      }
       state = state.copyWith(status: ProfileEditStatus.error, error: errMsg);
     }
   }
@@ -89,6 +91,5 @@ class ProfileEditNotifier extends StateNotifier<ProfileEditState> {
 
 final profileEditProvider = StateNotifierProvider<ProfileEditNotifier, ProfileEditState>((ref) {
   final repo = ref.watch(userProfileRepositoryProvider);
-  final authService = ref.watch(firebaseAuthServiceProvider);
-  return ProfileEditNotifier(repo, authService, ref);
+  return ProfileEditNotifier(repo, ref);
 });

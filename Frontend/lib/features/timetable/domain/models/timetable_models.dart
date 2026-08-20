@@ -10,6 +10,10 @@ enum TimetableDay {
   String get displayName {
     return name[0].toUpperCase() + name.substring(1);
   }
+
+  String get shortName {
+    return name.substring(0, 3).toUpperCase();
+  }
 }
 
 enum TimetableSessionType {

@@ -7,15 +7,20 @@ import 'timetable_repository.dart';
 class MockTimetableRepository implements TimetableRepository {
   final List<TimetableModel> _entries = [];
   bool _initialized = false;
+  final Duration latency;
   
   final _controller = StreamController<List<TimetableModel>>.broadcast();
 
-  MockTimetableRepository() {
+  MockTimetableRepository({this.latency = Duration.zero}) {
     _generateInitialData();
     _initialized = true;
   }
 
-  Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 200));
+  Future<void> _delay() async {
+    if (latency > Duration.zero) {
+      await Future.delayed(latency);
+    }
+  }
 
   void _emit() {
     if (!_controller.isClosed) {
@@ -412,6 +417,9 @@ class MockTimetableRepository implements TimetableRepository {
       updatedAt: now,
     );
     _containers[timetableId] = updated;
+
+    // Purge previous published projection for this timetable
+    _entries.removeWhere((e) => e.id.startsWith('pub_${timetableId}_'));
 
     for (final entry in entries) {
       final projectedId = 'pub_${timetableId}_${entry.id}';

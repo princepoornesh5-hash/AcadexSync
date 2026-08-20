@@ -111,10 +111,50 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
   final TimetableRepository repository;
   final UserModel? currentUser;
 
+  final List<TimetableAuthoringState> _undoStack = [];
+  final List<TimetableAuthoringState> _redoStack = [];
+
+  bool get canUndo => _undoStack.isNotEmpty;
+  bool get canRedo => _redoStack.isNotEmpty;
+
   TimetableAuthoringNotifier({
     required this.repository,
     this.currentUser,
   }) : super(const TimetableAuthoringState());
+
+  void _recordHistory() {
+    _undoStack.add(state);
+    if (_undoStack.length > 50) {
+      _undoStack.removeAt(0);
+    }
+    _redoStack.clear();
+  }
+
+  /// Reverts the most recent local grid modification.
+  void undo() {
+    if (_undoStack.isEmpty) return;
+    final prev = _undoStack.removeLast();
+    _redoStack.add(state);
+    state = prev.copyWith(
+      isDirty: true,
+      canUndo: _undoStack.isNotEmpty,
+      canRedo: _redoStack.isNotEmpty,
+    );
+    validateLocalState();
+  }
+
+  /// Re-applies a previously undone local grid modification.
+  void redo() {
+    if (_redoStack.isEmpty) return;
+    final next = _redoStack.removeLast();
+    _undoStack.add(state);
+    state = next.copyWith(
+      isDirty: true,
+      canUndo: _undoStack.isNotEmpty,
+      canRedo: _redoStack.isNotEmpty,
+    );
+    validateLocalState();
+  }
 
   /// Loads full timetable data into the local editable authoring state.
   Future<void> loadTimetable(String timetableId) async {
@@ -133,11 +173,16 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       final breaks = await repository.getBreaks(timetableId);
       final entries = await repository.getGridEntries(timetableId);
 
+      _undoStack.clear();
+      _redoStack.clear();
+
       state = TimetableAuthoringState(
         container: container,
         periods: periods,
         breaks: breaks,
         entries: entries,
+        canUndo: false,
+        canRedo: false,
         isDirty: false,
         isLoading: false,
         lastSavedAt: container.updatedAt,
@@ -193,6 +238,8 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
   /// Adds a new teaching entry to the local grid.
   void createEntry(TimetableGridEntryModel entry) {
     entry.validate();
+    _recordHistory();
+
     final newId = entry.id.isNotEmpty ? entry.id : const Uuid().v4();
     final toAdd = entry.copyWith(id: newId);
 
@@ -200,6 +247,8 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
     state = state.copyWith(
       entries: updated,
       selectedEntryId: newId,
+      canUndo: canUndo,
+      canRedo: canRedo,
       isDirty: true,
     );
     validateLocalState();
@@ -211,11 +260,14 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
     final index = state.entries.indexWhere((e) => e.id == entry.id);
     if (index == -1) return;
 
+    _recordHistory();
     final updated = List<TimetableGridEntryModel>.from(state.entries);
     updated[index] = entry;
 
     state = state.copyWith(
       entries: updated,
+      canUndo: canUndo,
+      canRedo: canRedo,
       isDirty: true,
     );
     validateLocalState();
@@ -223,12 +275,128 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
 
   /// Deletes a teaching entry from the local grid.
   void deleteEntry(String entryId) {
+    _recordHistory();
     final updated = List<TimetableGridEntryModel>.from(state.entries)
       ..removeWhere((e) => e.id == entryId);
 
     state = state.copyWith(
       entries: updated,
       clearSelectedEntryId: state.selectedEntryId == entryId,
+      canUndo: canUndo,
+      canRedo: canRedo,
+      isDirty: true,
+    );
+    validateLocalState();
+  }
+
+  /// Merges an existing entry into the next consecutive period to its right.
+  void mergeEntryRight(String entryId) {
+    final entry = state.entries.where((e) => e.id == entryId).firstOrNull;
+    if (entry == null) return;
+    if (!state.canMergeRight(entryId)) {
+      throw StateError('Cannot merge right: Target period is either occupied, a break, or does not exist.');
+    }
+
+    _recordHistory();
+    final nextPeriodIndex = entry.startPeriodIndex + entry.periodSpan;
+    final dayPeriods = state.getPeriodsForDay(entry.dayOfWeek);
+    final nextPeriod = dayPeriods.firstWhere((p) => p.index == nextPeriodIndex);
+
+    final updatedEntry = entry.copyWith(
+      periodSpan: entry.periodSpan + 1,
+      endTime: nextPeriod.endTime,
+    );
+
+    final updated = List<TimetableGridEntryModel>.from(state.entries);
+    final idx = updated.indexWhere((e) => e.id == entryId);
+    updated[idx] = updatedEntry;
+
+    state = state.copyWith(
+      entries: updated,
+      selectedEntryId: entryId,
+      canUndo: canUndo,
+      canRedo: canRedo,
+      isDirty: true,
+    );
+    validateLocalState();
+  }
+
+  /// Moves a class from its current day/period to [targetDay] and [targetStartPeriodIndex].
+  void moveEntry({
+    required String entryId,
+    required TimetableDay targetDay,
+    required int targetStartPeriodIndex,
+  }) {
+    final entry = state.entries.where((e) => e.id == entryId).firstOrNull;
+    if (entry == null) return;
+
+    final targetPeriods = state.getPeriodsForDay(targetDay);
+    final startPeriod = targetPeriods.where((p) => p.index == targetStartPeriodIndex).firstOrNull;
+    final endPeriodIndex = targetStartPeriodIndex + entry.periodSpan - 1;
+    final endPeriod = targetPeriods.where((p) => p.index == endPeriodIndex).firstOrNull;
+
+    if (startPeriod == null || endPeriod == null) {
+      throw ArgumentError('Target period slot does not exist on ${targetDay.displayName}.');
+    }
+
+    final newStartTime = startPeriod.startTime;
+    final newEndTime = endPeriod.endTime;
+
+    // Check if occupied by another class
+    for (int pIdx = targetStartPeriodIndex; pIdx <= endPeriodIndex; pIdx++) {
+      final occ = state.getEntryAtCell(targetDay, pIdx);
+      if (occ != null && occ.id != entryId) {
+        throw TimetableConflictException(
+          'Target period $pIdx on ${targetDay.displayName} is already occupied.',
+          conflictingEntry: TimetableModel(
+            id: occ.id,
+            collegeId: state.container?.collegeId ?? '',
+            departmentId: state.container?.departmentId ?? '',
+            academicYearId: state.container?.academicYearId ?? '',
+            semesterId: state.container?.semesterId ?? '',
+            courseId: state.container?.courseId ?? '',
+            sectionId: state.container?.sectionId ?? '',
+            subjectId: occ.subjectId,
+            facultyId: occ.facultyId,
+            dayOfWeek: targetDay,
+            startTime: occ.startTime,
+            endTime: occ.endTime,
+            roomNumber: occ.roomNumber,
+            sessionType: occ.sessionType,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+      }
+    }
+
+    // Check break overlap
+    final breakAtTarget = state.getBreakAtCell(targetDay, newStartTime, newEndTime);
+    if (breakAtTarget != null) {
+      throw TimetableConflictException(
+        'Target slot on ${targetDay.displayName} overlaps with break "${breakAtTarget.name}".',
+      );
+    }
+
+    _recordHistory();
+
+    final moved = entry.copyWith(
+      dayOfWeek: targetDay,
+      startPeriodIndex: targetStartPeriodIndex,
+      startTime: newStartTime,
+      endTime: newEndTime,
+    );
+
+    final updated = List<TimetableGridEntryModel>.from(state.entries);
+    final idx = updated.indexWhere((e) => e.id == entryId);
+    updated[idx] = moved;
+
+    state = state.copyWith(
+      entries: updated,
+      selectedEntryId: entryId,
+      selectedCell: TimetableCellCoordinate(day: targetDay, periodIndex: targetStartPeriodIndex),
+      canUndo: canUndo,
+      canRedo: canRedo,
       isDirty: true,
     );
     validateLocalState();
@@ -248,6 +416,8 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
     TimetableSessionType sessionType = TimetableSessionType.lab,
   }) {
     if (periodSpan < 1) throw ArgumentError('periodSpan must be >= 1');
+
+    _recordHistory();
 
     // Remove any existing entries that fall within the merged span
     final endPeriodIndex = startPeriodIndex + periodSpan - 1;
@@ -275,6 +445,8 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
     state = state.copyWith(
       entries: updated,
       selectedEntryId: mergedEntry.id,
+      canUndo: canUndo,
+      canRedo: canRedo,
       isDirty: true,
     );
     validateLocalState();
@@ -287,6 +459,8 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
 
     final entry = state.entries[index];
     if (entry.periodSpan <= 1) return;
+
+    _recordHistory();
 
     final updated = List<TimetableGridEntryModel>.from(state.entries);
     updated.removeAt(index);
@@ -324,6 +498,8 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
     state = state.copyWith(
       entries: updated,
       clearSelectedEntryId: true,
+      canUndo: canUndo,
+      canRedo: canRedo,
       isDirty: true,
     );
     validateLocalState();
@@ -334,11 +510,14 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
   /// Adds a new period definition.
   void addPeriod(TimetablePeriodModel period) {
     period.validate();
+    _recordHistory();
     final updated = List<TimetablePeriodModel>.from(state.periods)..add(period);
     updated.sort((a, b) => a.index.compareTo(b.index));
 
     state = state.copyWith(
       periods: updated,
+      canUndo: canUndo,
+      canRedo: canRedo,
       isDirty: true,
     );
     validateLocalState();
@@ -350,24 +529,51 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
     final index = state.periods.indexWhere((p) => p.id == period.id);
     if (index == -1) return;
 
+    _recordHistory();
     final updated = List<TimetablePeriodModel>.from(state.periods);
     updated[index] = period;
     updated.sort((a, b) => a.index.compareTo(b.index));
 
     state = state.copyWith(
       periods: updated,
+      canUndo: canUndo,
+      canRedo: canRedo,
       isDirty: true,
     );
     validateLocalState();
   }
 
-  /// Deletes a period definition.
+  /// Deletes a period definition if not occupied by classes, and recalculates period indexes.
   void deletePeriod(String periodId) {
-    final updated = List<TimetablePeriodModel>.from(state.periods)
-      ..removeWhere((p) => p.id == periodId);
+    final periodToDelete = state.periods.where((p) => p.id == periodId).firstOrNull;
+    if (periodToDelete != null && state.isPeriodUsed(periodToDelete)) {
+      throw StateError('Cannot delete period "${periodToDelete.name}" because it is currently occupied by classes.');
+    }
+
+    _recordHistory();
+    final remaining = List<TimetablePeriodModel>.from(state.periods)..removeWhere((p) => p.id == periodId);
+
+    // Re-index remaining periods to maintain contiguous 1..N indices
+    final reindexed = <TimetablePeriodModel>[];
+    int sharedIdx = 1;
+    final dayIndices = <TimetableDay, int>{};
+
+    remaining.sort((a, b) => a.index.compareTo(b.index));
+
+    for (final p in remaining) {
+      if (p.dayOfWeek == null) {
+        reindexed.add(p.copyWith(index: sharedIdx++));
+      } else {
+        final currentIdx = (dayIndices[p.dayOfWeek!] ?? 0) + 1;
+        dayIndices[p.dayOfWeek!] = currentIdx;
+        reindexed.add(p.copyWith(index: currentIdx));
+      }
+    }
 
     state = state.copyWith(
-      periods: updated,
+      periods: reindexed,
+      canUndo: canUndo,
+      canRedo: canRedo,
       isDirty: true,
     );
     validateLocalState();
@@ -375,13 +581,22 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
 
   /// Reorders and updates the indices of periods.
   void reorderPeriods(List<TimetablePeriodModel> newPeriods) {
+    final targetDay = newPeriods.isNotEmpty ? newPeriods.first.dayOfWeek : null;
+    final otherPeriods = state.periods.where((p) => p.dayOfWeek != targetDay).toList();
+
+    _recordHistory();
     final reindexed = <TimetablePeriodModel>[];
     for (int i = 0; i < newPeriods.length; i++) {
       reindexed.add(newPeriods[i].copyWith(index: i + 1));
     }
 
+    final combined = [...otherPeriods, ...reindexed];
+    combined.sort((a, b) => a.index.compareTo(b.index));
+
     state = state.copyWith(
-      periods: reindexed,
+      periods: combined,
+      canUndo: canUndo,
+      canRedo: canRedo,
       isDirty: true,
     );
     validateLocalState();
@@ -392,10 +607,13 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
   /// Adds a new break definition.
   void addBreak(TimetableBreakModel breakModel) {
     breakModel.validate();
+    _recordHistory();
     final updated = List<TimetableBreakModel>.from(state.breaks)..add(breakModel);
 
     state = state.copyWith(
       breaks: updated,
+      canUndo: canUndo,
+      canRedo: canRedo,
       isDirty: true,
     );
     validateLocalState();
@@ -407,11 +625,14 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
     final index = state.breaks.indexWhere((b) => b.id == breakModel.id);
     if (index == -1) return;
 
+    _recordHistory();
     final updated = List<TimetableBreakModel>.from(state.breaks);
     updated[index] = breakModel;
 
     state = state.copyWith(
       breaks: updated,
+      canUndo: canUndo,
+      canRedo: canRedo,
       isDirty: true,
     );
     validateLocalState();
@@ -419,11 +640,14 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
 
   /// Deletes a break definition.
   void deleteBreak(String breakId) {
+    _recordHistory();
     final updated = List<TimetableBreakModel>.from(state.breaks)
       ..removeWhere((b) => b.id == breakId);
 
     state = state.copyWith(
       breaks: updated,
+      canUndo: canUndo,
+      canRedo: canRedo,
       isDirty: true,
     );
     validateLocalState();
@@ -434,9 +658,12 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
   /// Updates the active days for the timetable.
   void changeActiveDays(List<TimetableDay> activeDays) {
     if (state.container == null) return;
+    _recordHistory();
     final updated = state.container!.copyWith(activeDays: activeDays);
     state = state.copyWith(
       container: updated,
+      canUndo: canUndo,
+      canRedo: canRedo,
       isDirty: true,
     );
     validateLocalState();
@@ -445,9 +672,47 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
   /// Changes the timing mode (sameEveryDay vs differentPerDay).
   void changeTimingMode(TimetableTimingMode mode) {
     if (state.container == null) return;
-    final updated = state.container!.copyWith(timingMode: mode);
+    final currentMode = state.container!.timingMode;
+    if (currentMode == mode) return;
+
+    _recordHistory();
+    final updatedContainer = state.container!.copyWith(timingMode: mode);
+    List<TimetablePeriodModel> updatedPeriods = List.from(state.periods);
+
+    if (mode == TimetableTimingMode.differentPerDay) {
+      final sharedPeriods = state.periods.where((p) => p.dayOfWeek == null).toList();
+      if (sharedPeriods.isNotEmpty) {
+        final dayPeriods = <TimetablePeriodModel>[];
+        for (final day in updatedContainer.activeDays) {
+          for (final p in sharedPeriods) {
+            dayPeriods.add(p.copyWith(
+              id: '${p.id}-${day.name}',
+              dayOfWeek: day,
+            ));
+          }
+        }
+        updatedPeriods = dayPeriods;
+      }
+    } else if (mode == TimetableTimingMode.sameEveryDay) {
+      final activeDays = updatedContainer.activeDays;
+      final firstDay = activeDays.isNotEmpty ? activeDays.first : TimetableDay.monday;
+      final firstDayPeriods = state.getPeriodsForDay(firstDay);
+
+      if (firstDayPeriods.isNotEmpty) {
+        final sharedPeriods = <TimetablePeriodModel>[];
+        for (final p in firstDayPeriods) {
+          sharedPeriods.add(p.copyWith(
+            id: p.id.split('-').first,
+            clearDayOfWeek: true,
+          ));
+        }
+        updatedPeriods = sharedPeriods;
+      }
+    }
+
     state = state.copyWith(
-      container: updated,
+      container: updatedContainer,
+      periods: updatedPeriods,
       isDirty: true,
     );
     validateLocalState();

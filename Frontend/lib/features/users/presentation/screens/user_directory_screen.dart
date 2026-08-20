@@ -1,340 +1,330 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
-import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/design_system/acadex_colors.dart';
+import '../../../../core/presentation/design_system/acadex_breakpoints.dart';
+import '../../../../core/presentation/design_system/acadex_spacing.dart';
+import '../../../../core/presentation/widgets/app_button.dart';
+import '../../../../core/presentation/widgets/app_empty_state.dart';
+import '../../../../core/presentation/widgets/app_error_state.dart';
+import '../../../../core/presentation/widgets/app_filter_bar.dart';
+import '../../../../core/presentation/widgets/app_loading_state.dart';
+import '../../../../core/presentation/widgets/app_scaffold.dart';
+import '../../../../core/presentation/widgets/app_search_field.dart';
+import '../../../../core/presentation/widgets/app_section_header.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
-import '../../../../core/presentation/widgets/acadex_empty_state.dart';
-import '../../../../core/presentation/widgets/acadex_page_container.dart';
-import '../../../../core/presentation/widgets/acadex_page_header.dart';
-import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../domain/models/user_profile_model.dart';
 import '../../domain/models/user_status_enum.dart';
 import '../providers/user_providers.dart';
-import '../widgets/user_card.dart';
+import '../widgets/user_list_item.dart';
+import '../widgets/user_role_badge.dart';
+import '../widgets/user_status_badge.dart';
 
-class UserDirectoryScreen extends ConsumerWidget {
+class UserDirectoryScreen extends ConsumerStatefulWidget {
   const UserDirectoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    if (authState is! AuthAuthenticated || authState.user is! UserProfileModel) return const SizedBox.shrink();
-    final currentUser = authState.user as UserProfileModel;
+  ConsumerState<UserDirectoryScreen> createState() => _UserDirectoryScreenState();
+}
 
-    final usersAsync = ref.watch(usersListProvider);
-    final width = MediaQuery.of(context).size.width;
-    final isDesktop = width > 900;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
+  final TextEditingController _searchController = TextEditingController();
 
-    // Academic Structure for resolving names in table
-    final collegesAsync = ref.watch(collegesProvider);
-    final departmentsAsync = ref.watch(departmentsProvider);
-
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      body: AcadexPageContainer(
-        maxWidth: AcadexLayout.contentMaxWidth,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AcadexPageHeader(
-              title: "User Directory",
-              subtitle: "Manage platform users, administrative roles, and account statuses.",
-              actions: [
-                AcadexButton(
-                  label: "New User",
-                  icon: LucideIcons.plus,
-                  onPressed: () => context.go('/users/new'),
-                ),
-              ],
-            ),
-            _buildFiltersRow(context, ref, currentUser, isDesktop, isDark),
-            const SizedBox(height: 24),
-            usersAsync.when(
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(48.0),
-                  child: CircularProgressIndicator(),
-                ),
-              ),
-              error: (err, stack) => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(48.0),
-                  child: Text('Unable to load users.'),
-                ),
-              ),
-              data: (users) {
-                if (users.isEmpty) {
-                  return const AcadexEmptyState(
-                    title: 'No users found',
-                    subtitle: 'Try adjusting your search or filters.',
-                    icon: LucideIcons.users,
-                  );
-                }
-                
-                if (isDesktop) {
-                  return _buildDesktopTable(context, users, collegesAsync.value, departmentsAsync.value, isDark);
-                }
-
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: width > 600 ? 2 : 1,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 2.2,
-                  ),
-                  itemCount: users.length,
-                  itemBuilder: (context, index) {
-                    final user = users[index];
-                    return UserCard(
-                      user: user,
-                      onTap: () => context.go('/users/${user.id}'),
-                    );
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
-  Widget _buildFiltersRow(BuildContext context, WidgetRef ref, UserProfileModel currentUser, bool isDesktop, bool isDark) {
-    final children = [
-      Expanded(
-        child: TextField(
-          onChanged: (val) => ref.read(userSearchQueryProvider.notifier).state = val,
-          decoration: InputDecoration(
-            hintText: 'Search by name, email, or ID...',
-            prefixIcon: Icon(LucideIcons.search, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-            filled: true,
-            fillColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AcadexColors.primary),
-            ),
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    if (authState is! AuthAuthenticated) {
+      return const AppScaffold(
+        title: 'Users & Roles',
+        body: Center(child: Text('Please log in to access the user directory.')),
+      );
+    }
+
+    final currentUser = authState.user;
+    final isSuperAdmin = currentUser.role == AppRole.superAdmin;
+    final isCollegeAdmin = currentUser.role == AppRole.collegeAdmin;
+    final isHod = currentUser.role == AppRole.hod;
+    final canManageUsers = isSuperAdmin || isCollegeAdmin;
+
+    final usersAsync = ref.watch(usersListProvider);
+    final selectedRole = ref.watch(userRoleFilterProvider);
+    final selectedStatus = ref.watch(userStatusFilterProvider);
+    final selectedDept = ref.watch(userDeptFilterProvider);
+
+    final departmentsAsync = ref.watch(departmentsProvider);
+
+    final isDesktop = AcadexBreakpoints.isDesktop(context);
+
+    // Build role filter options depending on user's role
+    final roleFilterNames = <String>['All'];
+    if (isSuperAdmin) {
+      roleFilterNames.addAll(['College Admin', 'HOD', 'Faculty', 'Student']);
+    } else if (isCollegeAdmin) {
+      roleFilterNames.addAll(['HOD', 'Faculty', 'Student']);
+    } else if (isHod) {
+      roleFilterNames.addAll(['Faculty', 'Student']);
+    }
+
+    final roleFilterOptions = roleFilterNames.map((name) => FilterOption<String>(label: name, value: name)).toList();
+
+    String currentRoleFilterLabel = 'All';
+    if (selectedRole != null) {
+      currentRoleFilterLabel = selectedRole.displayName;
+    }
+
+    return AppScaffold(
+      title: 'Users & Roles',
+      subtitle: isSuperAdmin
+          ? 'Global platform user directory and administrative accounts'
+          : isCollegeAdmin
+              ? 'Campus people hub: manage HODs, faculty, and enrolled students'
+              : isHod
+                  ? 'Department directory: faculty and students'
+                  : 'Campus Directory',
+      topBarActions: canManageUsers
+          ? [
+              AppButton(
+                label: 'Add User',
+                icon: Icons.person_add_outlined,
+                onPressed: () => context.go('/users/new'),
+              ),
+            ]
+          : null,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(usersListProvider);
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AcadexSpacing.lg,
+            vertical: AcadexSpacing.md,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Search & Filter Header
+              AppSearchField(
+                controller: _searchController,
+                hintText: 'Search by name, email, or institutional ID...',
+                onChanged: (query) {
+                  ref.read(userSearchQueryProvider.notifier).state = query;
+                },
+                onClear: () {
+                  _searchController.clear();
+                  ref.read(userSearchQueryProvider.notifier).state = '';
+                },
+              ),
+              const SizedBox(height: AcadexSpacing.sm),
+
+              // Role Tabs Filter
+              AppFilterBar<String>(
+                options: roleFilterOptions,
+                selectedValue: currentRoleFilterLabel,
+                onSelected: (val) {
+                  if (val == 'All') {
+                    ref.read(userRoleFilterProvider.notifier).state = null;
+                  } else if (val == 'College Admin') {
+                    ref.read(userRoleFilterProvider.notifier).state = AppRole.collegeAdmin;
+                  } else if (val == 'HOD') {
+                    ref.read(userRoleFilterProvider.notifier).state = AppRole.hod;
+                  } else if (val == 'Faculty') {
+                    ref.read(userRoleFilterProvider.notifier).state = AppRole.faculty;
+                  } else if (val == 'Student') {
+                    ref.read(userRoleFilterProvider.notifier).state = AppRole.student;
+                  }
+                },
+              ),
+              const SizedBox(height: AcadexSpacing.xs),
+
+              // Status & Department Dropdown Filters
+              Wrap(
+                spacing: AcadexSpacing.sm,
+                runSpacing: AcadexSpacing.xs,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  // Status Filter Dropdown
+                  DropdownButton<UserStatus?>(
+                    value: selectedStatus,
+                    hint: const Text('All Statuses'),
+                    underline: const SizedBox.shrink(),
+                    items: const [
+                      DropdownMenuItem(value: null, child: Text('All Statuses')),
+                      DropdownMenuItem(value: UserStatus.active, child: Text('Active')),
+                      DropdownMenuItem(value: UserStatus.pending, child: Text('Pending Activation')),
+                      DropdownMenuItem(value: UserStatus.deactivated, child: Text('Deactivated')),
+                    ],
+                    onChanged: (val) {
+                      ref.read(userStatusFilterProvider.notifier).state = val;
+                    },
+                  ),
+
+                  // Department Filter Dropdown (if departments available)
+                  if (departmentsAsync.value != null && departmentsAsync.value!.isNotEmpty && !isHod)
+                    DropdownButton<String?>(
+                      value: selectedDept,
+                      hint: const Text('All Departments'),
+                      underline: const SizedBox.shrink(),
+                      items: [
+                        const DropdownMenuItem(value: null, child: Text('All Departments')),
+                        ...departmentsAsync.value!.map((d) => DropdownMenuItem(
+                              value: d.id,
+                              child: Text(d.name),
+                            )),
+                      ],
+                      onChanged: (val) {
+                        ref.read(userDeptFilterProvider.notifier).state = val;
+                      },
+                    ),
+
+                  if (selectedRole != null || selectedStatus != null || selectedDept != null || _searchController.text.isNotEmpty)
+                    TextButton.icon(
+                      icon: const Icon(Icons.clear_all, size: 16),
+                      label: const Text('Reset Filters'),
+                      onPressed: () {
+                        _searchController.clear();
+                        ref.read(userSearchQueryProvider.notifier).state = '';
+                        ref.read(userRoleFilterProvider.notifier).state = null;
+                        ref.read(userStatusFilterProvider.notifier).state = null;
+                        ref.read(userDeptFilterProvider.notifier).state = null;
+                      },
+                    ),
+                ],
+              ),
+              const SizedBox(height: AcadexSpacing.md),
+
+              // User List Content
+              usersAsync.when(
+                loading: () => const AppLoadingState(message: 'Loading users...'),
+                error: (err, _) => AppErrorState(
+                  title: 'Failed to load users',
+                  message: err.toString(),
+                  onRetry: () => ref.refresh(usersListProvider),
+                ),
+                data: (users) {
+                  if (users.isEmpty) {
+                    return AppEmptyState(
+                      title: 'No users found',
+                      description: _searchController.text.isNotEmpty || selectedRole != null || selectedStatus != null
+                          ? 'No matching users found for the selected filters. Try resetting your search query.'
+                          : 'There are currently no registered users in this directory.',
+                      icon: Icons.people_outline,
+                      actionLabel: canManageUsers ? 'Add User' : null,
+                      onAction: canManageUsers ? () => context.go('/users/new') : null,
+                    );
+                  }
+
+                  // Resolve department names helper
+                  final Map<String, String> deptMap = {
+                    for (var d in departmentsAsync.value ?? []) d.id: d.name
+                  };
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppSectionHeader(
+                        title: 'Directory Records',
+                        count: users.length,
+                      ),
+                      const SizedBox(height: AcadexSpacing.sm),
+
+                      // Desktop Table View
+                      if (isDesktop)
+                        _buildDesktopTable(context, users, deptMap)
+                      else
+                        // Mobile & Tablet List
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: users.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: AcadexSpacing.sm),
+                          itemBuilder: (context, index) {
+                            final u = users[index];
+                            return UserListItem(
+                              user: u,
+                              departmentName: u.departmentId != null ? deptMap[u.departmentId] : null,
+                              onTap: () => context.go('/users/${u.id}'),
+                            );
+                          },
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),
-      const SizedBox(width: 12),
-      _buildDropdown<AppRole?>(
-        value: ref.watch(userRoleFilterProvider),
-        hint: 'All Roles',
-        isDark: isDark,
-        items: [
-          const DropdownMenuItem(value: null, child: Text('All Roles')),
-          ...AppRole.values.map((r) => DropdownMenuItem(value: r, child: Text(r.displayName))),
-        ],
-        onChanged: (val) => ref.read(userRoleFilterProvider.notifier).state = val,
-      ),
-      const SizedBox(width: 12),
-      _buildDropdown<UserStatus?>(
-        value: ref.watch(userStatusFilterProvider),
-        hint: 'All Statuses',
-        isDark: isDark,
-        items: [
-          const DropdownMenuItem(value: null, child: Text('All Statuses')),
-          ...UserStatus.values.map((s) => DropdownMenuItem(value: s, child: Text(s.name.toUpperCase()))),
-        ],
-        onChanged: (val) => ref.read(userStatusFilterProvider.notifier).state = val,
-      ),
-    ];
-
-    if (currentUser.role == AppRole.superAdmin) {
-      children.add(const SizedBox(width: 12));
-      
-      final collegesAsync = ref.watch(collegesProvider);
-      final colleges = collegesAsync.value ?? [];
-      
-      children.add(
-        _buildDropdown<String?>(
-          value: ref.watch(userCollegeFilterProvider),
-          hint: 'All Colleges',
-          isDark: isDark,
-          items: [
-            const DropdownMenuItem(value: null, child: Text('All Colleges')),
-            ...colleges.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
-          ],
-          onChanged: (val) => ref.read(userCollegeFilterProvider.notifier).state = val,
-        ),
-      );
-    }
-    
-    if (currentUser.role == AppRole.superAdmin || currentUser.role == AppRole.collegeAdmin) {
-      children.add(const SizedBox(width: 12));
-      
-      final deptsAsync = ref.watch(departmentsProvider);
-      var depts = deptsAsync.value ?? [];
-      
-      if (currentUser.role == AppRole.collegeAdmin) {
-        depts = depts.where((d) => d.collegeId == currentUser.collegeId).toList();
-      } else {
-        final currentCollegeFilter = ref.watch(userCollegeFilterProvider);
-        if (currentCollegeFilter != null) {
-          depts = depts.where((d) => d.collegeId == currentCollegeFilter).toList();
-        }
-      }
-      
-      children.add(
-        _buildDropdown<String?>(
-          value: ref.watch(userDeptFilterProvider),
-          hint: 'All Departments',
-          isDark: isDark,
-          items: [
-            const DropdownMenuItem(value: null, child: Text('All Departments')),
-            ...depts.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name))),
-          ],
-          onChanged: (val) => ref.read(userDeptFilterProvider.notifier).state = val,
-        ),
-      );
-    }
-
-    if (isDesktop) {
-      return Row(children: children);
-    } else {
-      return Column(
-        children: children.map((c) {
-          if (c is Expanded) return c.child;
-          if (c is SizedBox) return const SizedBox(height: 12);
-          return Row(children: [Expanded(child: c)]);
-        }).toList(),
-      );
-    }
-  }
-
-  Widget _buildDropdown<T>({
-    required T value,
-    required String hint,
-    required bool isDark,
-    required List<DropdownMenuItem<T>> items,
-    required Function(T?) onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: value,
-          hint: Text(hint, style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted)),
-          icon: const Icon(LucideIcons.chevronDown, size: 16),
-          items: items,
-          onChanged: onChanged,
-        ),
-      ),
     );
   }
 
-  Widget _buildDesktopTable(BuildContext context, List<UserProfileModel> users, dynamic colleges, dynamic departments, bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-        borderRadius: AcadexRadius.borderRadiusLg,
-        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+  Widget _buildDesktopTable(
+    BuildContext context,
+    List<UserProfileModel> users,
+    Map<String, String> deptMap,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AcadexRadius.md),
+        side: BorderSide(
+          color: isDark ? AcadexColors.darkBorder : AcadexColors.border,
+        ),
       ),
       child: ClipRRect(
-        borderRadius: AcadexRadius.borderRadiusLg,
+        borderRadius: BorderRadius.circular(AcadexRadius.md),
         child: DataTable(
-          headingRowColor: WidgetStateProperty.all(isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft),
-          dataRowMaxHeight: 64,
-          dataRowMinHeight: 64,
-          columns: [
-            DataColumn(label: Text('User', style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Role', style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('College', style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Department', style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Status', style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Actions', style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.bold))),
+          headingRowColor: WidgetStateProperty.all(
+            isDark ? AcadexColors.darkSurfaceElevated : AcadexColors.surfaceMuted,
+          ),
+          columns: const [
+            DataColumn(label: Text('Name & ID', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Email', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Department', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
           ],
-          rows: users.map((user) {
-            String collegeName = 'N/A';
-            String deptName = 'N/A';
-            if (colleges != null && user.collegeId != null) {
-              final matches = (colleges as List).where((c) => c.id == user.collegeId);
-              if (matches.isNotEmpty) collegeName = matches.first.name;
-            }
-            if (departments != null && user.departmentId != null) {
-              final matches = (departments as List).where((d) => d.id == user.departmentId);
-              if (matches.isNotEmpty) deptName = matches.first.name;
-            }
+          rows: users.map((u) {
+            final idLabel = u.employeeId ?? u.rollNumber ?? '';
+            final deptName = u.departmentId != null ? (deptMap[u.departmentId] ?? '') : '—';
 
             return DataRow(
               cells: [
                 DataCell(
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: AcadexColors.primary.withValues(alpha: 0.2),
-                        child: Text(
-                          user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                          style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(user.name, style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.w600)),
-                          Text(user.email, style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted)),
-                        ],
-                      ),
-                    ],
+                  InkWell(
+                    onTap: () => context.go('/users/${u.id}'),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(u.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        if (idLabel.isNotEmpty)
+                          Text(idLabel, style: TextStyle(fontSize: 11, color: isDark ? AcadexColors.darkTextSecondary : AcadexColors.textSecondary)),
+                      ],
+                    ),
                   ),
                 ),
+                DataCell(UserRoleBadge(role: u.role)),
+                DataCell(Text(u.email.isNotEmpty ? u.email : '—')),
+                DataCell(Text(deptName)),
+                DataCell(UserStatusBadge(status: u.accountStatus)),
                 DataCell(
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      user.role.displayName.toUpperCase(),
-                      style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary).copyWith(fontSize: 10, fontWeight: FontWeight.bold),
-                    ),
-                  )
-                ),
-                DataCell(Text(collegeName, style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontSize: 13))),
-                DataCell(Text(deptName, style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontSize: 13))),
-                DataCell(
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: user.status == UserStatus.active ? AcadexColors.success.withValues(alpha: 0.1) : AcadexColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      user.status.name.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: user.status == UserStatus.active ? AcadexColors.success : AcadexColors.error,
-                      ),
-                    ),
-                  )
-                ),
-                DataCell(
-                  TextButton(
-                    onPressed: () => context.go('/users/${user.id}'),
-                    child: const Text('View Details'),
-                  )
+                  IconButton(
+                    icon: const Icon(Icons.arrow_forward, size: 18),
+                    onPressed: () => context.go('/users/${u.id}'),
+                  ),
                 ),
               ],
             );

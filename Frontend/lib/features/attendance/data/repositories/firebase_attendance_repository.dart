@@ -26,6 +26,7 @@ import '../../domain/models/super_admin_faculty_completion.dart';
 import '../../domain/models/super_admin_insight.dart';
 import '../../domain/models/super_admin_student_shortage.dart';
 import '../../domain/models/super_admin_system_health.dart';
+import '../../domain/models/attendance_analytics_models.dart';
 import '../../domain/repositories/attendance_repository.dart';
 import '../../../../features/notifications/domain/services/notification_service.dart';
 import '../../../../features/timetable/domain/models/timetable_models.dart';
@@ -73,24 +74,64 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
     final timetableDocs = await _firestoreService.queryCollection('timetable', filters);
 
     final assignedClasses = <AssignedClass>[];
-    for (var doc in timetableDocs) {
-      final subjectId = doc['subjectId'] as String;
-      final sectionId = doc['sectionId'] as String;
+    final subjectCache = <String, Map<String, dynamic>?>{};
+    final sectionCache = <String, Map<String, dynamic>?>{};
 
-      final subjectDoc = await _firestoreService.getDocument('subjects', subjectId);
-      final sectionDoc = await _firestoreService.getDocument('sections', sectionId);
+    final dateKey = '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
+
+    for (var doc in timetableDocs) {
+      final subjectId = doc['subjectId'] as String? ?? '';
+      final sectionId = doc['sectionId'] as String? ?? '';
+      final entryId = doc['id'] as String? ?? '';
+      final startTime = doc['startTime'] as String? ?? '';
+      final endTime = doc['endTime'] as String? ?? '';
+
+      if (subjectId.isEmpty || sectionId.isEmpty) continue;
+
+      if (!subjectCache.containsKey(subjectId)) {
+        subjectCache[subjectId] = await _firestoreService.getDocument('subjects', subjectId);
+      }
+      if (!sectionCache.containsKey(sectionId)) {
+        sectionCache[sectionId] = await _firestoreService.getDocument('sections', sectionId);
+      }
+
+      final subjectDoc = subjectCache[subjectId];
+      final sectionDoc = sectionCache[sectionId];
+
+      // Check if attendance session was already recorded
+      final slotKey = entryId.replaceAll('pub_', '');
+      final extendedSessionId = '${sectionId}_${subjectId}_${dateKey}_$slotKey';
+      final legacySessionId = '${sectionId}_${subjectId}_$dateKey';
+      
+      final sessionDoc = (await _firestoreService.getDocument('attendanceSessions', extendedSessionId)) ??
+                         (await _firestoreService.getDocument('attendanceSessions', legacySessionId));
 
       assignedClasses.add(AssignedClass(
-        id: doc['id'] as String,
+        id: entryId,
+        timetableEntryId: entryId,
+        facultyId: facultyId,
         subjectId: subjectId,
         subjectName: subjectDoc?['name'] ?? subjectId,
         sectionId: sectionId,
         sectionName: sectionDoc?['name'] ?? sectionId,
         semester: doc['semesterId'] ?? '',
-        timeSlot: '${doc['startTime']} - ${doc['endTime']}',
+        timeSlot: startTime.isNotEmpty && endTime.isNotEmpty ? '$startTime - $endTime' : '',
+        startTime: startTime,
+        endTime: endTime,
+        roomNumber: doc['roomNumber'] as String?,
+        building: doc['building'] as String?,
         date: date,
+        isAttendanceMarked: sessionDoc != null && (sessionDoc['isSubmitted'] == true),
       ));
     }
+
+    // Sort classes chronologically by startTime
+    assignedClasses.sort((a, b) {
+      final aTime = a.startTime ?? a.timeSlot;
+      final bTime = b.startTime ?? b.timeSlot;
+      return aTime.compareTo(bTime);
+    });
+
     return assignedClasses;
   }
 
@@ -100,17 +141,35 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
   }
 
   @override
-  Future<List<AttendanceRecord>> getStudentsForSection(String sectionId, String subjectId, DateTime date) async {
-    final sessionId = '${sectionId}_${subjectId}_${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
+  Future<List<AttendanceRecord>> getStudentsForSection(
+    String sectionId,
+    String subjectId,
+    DateTime date, {
+    String? timetableEntryId,
+  }) async {
+    final dateKey = '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
     final userCollegeId = _currentUser?.collegeId;
+
+    // Check with extended ID first, then fallback to shortKey and legacy ID
+    Map<String, dynamic>? doc;
+    if (timetableEntryId != null && timetableEntryId.isNotEmpty) {
+      final slotKey = timetableEntryId.replaceAll('pub_', '');
+      doc = await _firestoreService.getDocument('attendanceSessions', '${sectionId}_${subjectId}_${dateKey}_$slotKey');
+      if (doc == null && slotKey.contains('_')) {
+        final shortKey = slotKey.split('_').last;
+        doc = await _firestoreService.getDocument('attendanceSessions', '${sectionId}_${subjectId}_${dateKey}_$shortKey');
+      }
+    }
+    doc ??= await _firestoreService.getDocument('attendanceSessions', '${sectionId}_${subjectId}_$dateKey');
+
     _debugLog('getStudentsForSection', {
       'sectionId': sectionId,
       'subjectId': subjectId,
-      'sessionId': sessionId,
+      'dateKey': dateKey,
+      'foundSession': doc != null,
       'collegeId': userCollegeId,
     });
 
-    final doc = await _firestoreService.getDocument('attendanceSessions', sessionId);
     if (doc != null) {
       final session = AttendanceSession.fromJson(doc);
       return session.records;
@@ -136,7 +195,10 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
 
   @override
   Future<bool> saveSession(AttendanceSession session) async {
-    final sessionId = '${session.sectionId}_${session.subjectId}_${session.date.year}${session.date.month.toString().padLeft(2, '0')}${session.date.day.toString().padLeft(2, '0')}';
+    final dateKey = '${session.date.year}${session.date.month.toString().padLeft(2, '0')}${session.date.day.toString().padLeft(2, '0')}';
+    final sessionId = (session.id.isNotEmpty && session.id.contains(dateKey))
+        ? session.id
+        : '${session.sectionId}_${session.subjectId}_$dateKey';
     final now = DateTime.now();
 
     final collegeId = session.collegeId.isNotEmpty 
@@ -499,4 +561,489 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
       activeUsers: 3450,
     );
   }
+
+  // =========================================================================
+  // Phase 8A: Attendance Analytics Engine Implementation
+  // =========================================================================
+
+  @override
+  Future<StudentAttendanceAnalytics> getStudentAttendanceAnalytics(
+    String studentId, {
+    AttendanceDateRange? dateRange,
+  }) async {
+    final userCollegeId = _currentUser?.collegeId;
+    _debugLog('getStudentAttendanceAnalytics', {
+      'studentId': studentId,
+      'collegeId': userCollegeId,
+      'dateRange': dateRange?.toString(),
+    });
+
+    final filters = <String, dynamic>{
+      'studentId': studentId,
+      if (userCollegeId != null && userCollegeId.isNotEmpty)
+        'collegeId': userCollegeId,
+    };
+
+    final docs = await _firestoreService.queryCollection('attendance', filters);
+    
+    // Fetch student info for name, rollNumber, sectionId
+    final studentDoc = await _firestoreService.getDocument('students', studentId);
+    final studentName = studentDoc?['name'] as String? ?? '';
+    final rollNumber = studentDoc?['rollNumber'] as String? ?? '';
+    final sectionId = studentDoc?['sectionId'] as String? ?? '';
+
+    int present = 0;
+    int absent = 0;
+    int late = 0;
+    int excused = 0;
+    int unmarked = 0;
+    final seenSessions = <String>{};
+
+    for (final doc in docs) {
+      final dateStr = doc['date'] as String?;
+      if (dateStr == null) continue;
+      final docDate = DateTime.tryParse(dateStr);
+      if (docDate == null) continue;
+
+      if (dateRange != null && !dateRange.contains(docDate)) {
+        continue;
+      }
+
+      final sessionId = doc['sessionId'] as String? ?? '';
+      if (sessionId.isNotEmpty) {
+        seenSessions.add(sessionId);
+      }
+
+      final statusStr = doc['status'] as String?;
+      final status = AttendanceStatus.values.firstWhere(
+        (s) => s.name == statusStr,
+        orElse: () => AttendanceStatus.absent,
+      );
+
+      switch (status) {
+        case AttendanceStatus.present:
+          present++;
+          break;
+        case AttendanceStatus.absent:
+          absent++;
+          break;
+        case AttendanceStatus.late:
+          late++;
+          break;
+        case AttendanceStatus.excused:
+          excused++;
+          break;
+        default:
+          unmarked++;
+          break;
+      }
+    }
+
+    return StudentAttendanceAnalytics.compute(
+      studentId: studentId,
+      studentName: studentName.isNotEmpty ? studentName : (docs.isNotEmpty ? (docs.first['studentName'] as String? ?? '') : ''),
+      rollNumber: rollNumber.isNotEmpty ? rollNumber : (docs.isNotEmpty ? (docs.first['rollNumber'] as String? ?? '') : ''),
+      sectionId: sectionId.isNotEmpty ? sectionId : (docs.isNotEmpty ? (docs.first['sectionId'] as String? ?? '') : ''),
+      totalSessions: seenSessions.isNotEmpty ? seenSessions.length : (present + absent + late + excused + unmarked),
+      presentCount: present,
+      absentCount: absent,
+      lateCount: late,
+      excusedCount: excused,
+      unmarkedCount: unmarked,
+      dateRange: dateRange,
+    );
+  }
+
+  @override
+  Future<SubjectAttendanceAnalytics> getSubjectAttendanceAnalytics(
+    String subjectId, {
+    String? sectionId,
+    AttendanceDateRange? dateRange,
+  }) async {
+    final userCollegeId = _currentUser?.collegeId;
+    _debugLog('getSubjectAttendanceAnalytics', {
+      'subjectId': subjectId,
+      'sectionId': sectionId,
+      'collegeId': userCollegeId,
+      'dateRange': dateRange?.toString(),
+    });
+
+    final filters = <String, dynamic>{
+      'subjectId': subjectId,
+      if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
+      if (userCollegeId != null && userCollegeId.isNotEmpty)
+        'collegeId': userCollegeId,
+    };
+
+    final docs = await _firestoreService.queryCollection('attendanceSessions', filters);
+    final subjectDoc = await _firestoreService.getDocument('subjects', subjectId);
+    final subjectName = subjectDoc?['name'] as String? ?? '';
+
+    int present = 0;
+    int absent = 0;
+    int late = 0;
+    int excused = 0;
+    int unmarked = 0;
+    int totalRecords = 0;
+    int matchingSessions = 0;
+
+    for (final doc in docs) {
+      final session = AttendanceSession.fromJson(doc);
+      if (dateRange != null && !dateRange.contains(session.date)) {
+        continue;
+      }
+
+      matchingSessions++;
+      for (final r in session.records) {
+        totalRecords++;
+        if (r.status == null) {
+          unmarked++;
+          continue;
+        }
+        switch (r.status!) {
+          case AttendanceStatus.present:
+            present++;
+            break;
+          case AttendanceStatus.absent:
+            absent++;
+            break;
+          case AttendanceStatus.late:
+            late++;
+            break;
+          case AttendanceStatus.excused:
+            excused++;
+            break;
+          default:
+            unmarked++;
+            break;
+        }
+      }
+    }
+
+    return SubjectAttendanceAnalytics.compute(
+      subjectId: subjectId,
+      subjectName: subjectName.isNotEmpty ? subjectName : (docs.isNotEmpty ? (docs.first['subjectName'] as String? ?? '') : ''),
+      sectionId: sectionId,
+      totalSessions: matchingSessions,
+      totalStudentRecords: totalRecords,
+      presentCount: present,
+      absentCount: absent,
+      lateCount: late,
+      excusedCount: excused,
+      unmarkedCount: unmarked,
+      dateRange: dateRange,
+    );
+  }
+
+  @override
+  Future<SectionAttendanceAnalytics> getSectionAttendanceAnalytics(
+    String sectionId, {
+    AttendanceDateRange? dateRange,
+  }) async {
+    final userCollegeId = _currentUser?.collegeId;
+    _debugLog('getSectionAttendanceAnalytics', {
+      'sectionId': sectionId,
+      'collegeId': userCollegeId,
+      'dateRange': dateRange?.toString(),
+    });
+
+    final filters = <String, dynamic>{
+      'sectionId': sectionId,
+      if (userCollegeId != null && userCollegeId.isNotEmpty)
+        'collegeId': userCollegeId,
+    };
+
+    final sessionDocs = await _firestoreService.queryCollection('attendanceSessions', filters);
+    final sectionDoc = await _firestoreService.getDocument('sections', sectionId);
+    final sectionName = sectionDoc?['name'] as String? ?? '';
+
+    final studentDocs = await _firestoreService.queryCollection('students', {
+      'sectionId': sectionId,
+      if (userCollegeId != null && userCollegeId.isNotEmpty)
+        'collegeId': userCollegeId,
+    });
+
+    final studentMap = <String, Map<String, dynamic>>{};
+    for (final s in studentDocs) {
+      final id = s['id'] as String? ?? '';
+      if (id.isNotEmpty) studentMap[id] = s;
+    }
+
+    final perStudentCounts = <String, _StudentAccumulator>{};
+    for (final s in studentDocs) {
+      final id = s['id'] as String? ?? '';
+      if (id.isNotEmpty) {
+        perStudentCounts[id] = _StudentAccumulator(
+          studentId: id,
+          studentName: s['name'] as String? ?? '',
+          rollNumber: s['rollNumber'] as String? ?? '',
+          sectionId: sectionId,
+        );
+      }
+    }
+
+    int present = 0;
+    int absent = 0;
+    int late = 0;
+    int excused = 0;
+    int unmarked = 0;
+    int matchingSessions = 0;
+
+    for (final doc in sessionDocs) {
+      final session = AttendanceSession.fromJson(doc);
+      if (dateRange != null && !dateRange.contains(session.date)) {
+        continue;
+      }
+
+      matchingSessions++;
+      for (final r in session.records) {
+        final acc = perStudentCounts.putIfAbsent(
+          r.studentId,
+          () => _StudentAccumulator(
+            studentId: r.studentId,
+            studentName: r.studentName,
+            rollNumber: r.rollNumber,
+            sectionId: sectionId,
+          ),
+        );
+        acc.totalSessions++;
+
+        if (r.status == null) {
+          unmarked++;
+          acc.unmarked++;
+          continue;
+        }
+
+        switch (r.status!) {
+          case AttendanceStatus.present:
+            present++;
+            acc.present++;
+            break;
+          case AttendanceStatus.absent:
+            absent++;
+            acc.absent++;
+            break;
+          case AttendanceStatus.late:
+            late++;
+            acc.late++;
+            break;
+          case AttendanceStatus.excused:
+            excused++;
+            acc.excused++;
+            break;
+          default:
+            unmarked++;
+            acc.unmarked++;
+            break;
+        }
+      }
+    }
+
+    final studentAnalyticsList = perStudentCounts.values.map((acc) {
+      return StudentAttendanceAnalytics.compute(
+        studentId: acc.studentId,
+        studentName: acc.studentName,
+        rollNumber: acc.rollNumber,
+        sectionId: acc.sectionId,
+        totalSessions: acc.totalSessions,
+        presentCount: acc.present,
+        absentCount: acc.absent,
+        lateCount: acc.late,
+        excusedCount: acc.excused,
+        unmarkedCount: acc.unmarked,
+        dateRange: dateRange,
+      );
+    }).toList();
+
+    return SectionAttendanceAnalytics.compute(
+      sectionId: sectionId,
+      sectionName: sectionName.isNotEmpty ? sectionName : (sessionDocs.isNotEmpty ? (sessionDocs.first['sectionName'] as String? ?? '') : ''),
+      totalSessions: matchingSessions,
+      totalStudents: studentMap.isNotEmpty ? studentMap.length : perStudentCounts.length,
+      presentCount: present,
+      absentCount: absent,
+      lateCount: late,
+      excusedCount: excused,
+      unmarkedCount: unmarked,
+      studentAnalytics: studentAnalyticsList,
+      dateRange: dateRange,
+    );
+  }
+
+  @override
+  Future<FacultyAttendanceAnalytics> getFacultyAttendanceAnalytics(
+    String facultyId, {
+    AttendanceDateRange? dateRange,
+  }) async {
+    final userCollegeId = _currentUser?.collegeId;
+    _debugLog('getFacultyAttendanceAnalytics', {
+      'facultyId': facultyId,
+      'collegeId': userCollegeId,
+      'dateRange': dateRange?.toString(),
+    });
+
+    final filters = <String, dynamic>{
+      'facultyId': facultyId,
+      if (userCollegeId != null && userCollegeId.isNotEmpty)
+        'collegeId': userCollegeId,
+    };
+
+    final docs = await _firestoreService.queryCollection('attendanceSessions', filters);
+    final facultyDoc = await _firestoreService.getDocument('users', facultyId);
+    final facultyName = facultyDoc?['name'] as String? ?? '';
+
+    int present = 0;
+    int absent = 0;
+    int late = 0;
+    int excused = 0;
+    int unmarked = 0;
+    int totalRecords = 0;
+    int matchingSessions = 0;
+
+    for (final doc in docs) {
+      final session = AttendanceSession.fromJson(doc);
+      if (dateRange != null && !dateRange.contains(session.date)) {
+        continue;
+      }
+
+      matchingSessions++;
+      for (final r in session.records) {
+        totalRecords++;
+        if (r.status == null) {
+          unmarked++;
+          continue;
+        }
+
+        switch (r.status!) {
+          case AttendanceStatus.present:
+            present++;
+            break;
+          case AttendanceStatus.absent:
+            absent++;
+            break;
+          case AttendanceStatus.late:
+            late++;
+            break;
+          case AttendanceStatus.excused:
+            excused++;
+            break;
+          default:
+            unmarked++;
+            break;
+        }
+      }
+    }
+
+    return FacultyAttendanceAnalytics.compute(
+      facultyId: facultyId,
+      facultyName: facultyName,
+      totalSessionsConducted: matchingSessions,
+      totalStudentRecords: totalRecords,
+      presentCount: present,
+      absentCount: absent,
+      lateCount: late,
+      excusedCount: excused,
+      unmarkedCount: unmarked,
+      dateRange: dateRange,
+    );
+  }
+
+  @override
+  Future<AttendanceDateRangeSummary> getAttendanceDateRangeSummary({
+    AttendanceDateRange? dateRange,
+    String? departmentId,
+    String? sectionId,
+  }) async {
+    final userCollegeId = _currentUser?.collegeId;
+    final effectiveRange = dateRange ?? AttendanceDateRange.thisMonth();
+    _debugLog('getAttendanceDateRangeSummary', {
+      'collegeId': userCollegeId,
+      'departmentId': departmentId,
+      'sectionId': sectionId,
+      'dateRange': effectiveRange.toString(),
+    });
+
+    final filters = <String, dynamic>{
+      if (departmentId != null && departmentId.isNotEmpty) 'departmentId': departmentId,
+      if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
+      if (userCollegeId != null && userCollegeId.isNotEmpty)
+        'collegeId': userCollegeId,
+    };
+
+    final docs = await _firestoreService.queryCollection('attendanceSessions', filters);
+
+    int present = 0;
+    int absent = 0;
+    int late = 0;
+    int excused = 0;
+    int unmarked = 0;
+    int totalRecords = 0;
+    int matchingSessions = 0;
+
+    for (final doc in docs) {
+      final session = AttendanceSession.fromJson(doc);
+      if (!effectiveRange.contains(session.date)) {
+        continue;
+      }
+
+      matchingSessions++;
+      for (final r in session.records) {
+        totalRecords++;
+        if (r.status == null) {
+          unmarked++;
+          continue;
+        }
+
+        switch (r.status!) {
+          case AttendanceStatus.present:
+            present++;
+            break;
+          case AttendanceStatus.absent:
+            absent++;
+            break;
+          case AttendanceStatus.late:
+            late++;
+            break;
+          case AttendanceStatus.excused:
+            excused++;
+            break;
+          default:
+            unmarked++;
+            break;
+        }
+      }
+    }
+
+    return AttendanceDateRangeSummary.compute(
+      startDate: effectiveRange.startDate,
+      endDate: effectiveRange.endDate,
+      totalSessions: matchingSessions,
+      totalStudentRecords: totalRecords,
+      presentCount: present,
+      absentCount: absent,
+      lateCount: late,
+      excusedCount: excused,
+      unmarkedCount: unmarked,
+    );
+  }
+}
+
+class _StudentAccumulator {
+  final String studentId;
+  final String studentName;
+  final String rollNumber;
+  final String sectionId;
+  int totalSessions = 0;
+  int present = 0;
+  int absent = 0;
+  int late = 0;
+  int excused = 0;
+  int unmarked = 0;
+
+  _StudentAccumulator({
+    required this.studentId,
+    required this.studentName,
+    required this.rollNumber,
+    required this.sectionId,
+  });
 }

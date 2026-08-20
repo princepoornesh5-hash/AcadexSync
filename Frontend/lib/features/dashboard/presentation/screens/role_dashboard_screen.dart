@@ -1,0 +1,415 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/presentation/design_system/acadex_breakpoints.dart';
+import '../../../../core/presentation/design_system/acadex_colors.dart';
+import '../../../../core/presentation/design_system/acadex_spacing.dart';
+import '../../../../core/presentation/widgets/app_card.dart';
+import '../../../../core/presentation/widgets/app_error_state.dart';
+import '../../../../core/presentation/widgets/app_loading_state.dart';
+import '../../../../core/presentation/widgets/app_scaffold.dart';
+import '../../../../core/presentation/widgets/app_section_header.dart';
+import '../../../../core/presentation/widgets/app_stat_card.dart';
+import '../../../auth/domain/models/role_enum.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../reports/presentation/providers/reports_providers.dart';
+
+class RoleDashboardScreen extends ConsumerWidget {
+  const RoleDashboardScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentUser = ref.watch(currentUserProvider);
+    final dashboardAsync = ref.watch(roleDashboardReportProvider);
+
+    if (currentUser == null) {
+      return const AppScaffold(
+        title: 'ACADEX Dashboard',
+        body: AppLoadingState(message: 'Loading user profile...'),
+      );
+    }
+
+    return AppScaffold(
+      title: 'ACADEX Dashboard',
+      subtitle: 'Welcome back, ${currentUser.name}',
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(roleDashboardReportProvider);
+        },
+        child: dashboardAsync.when(
+          loading: () => const AppLoadingState(message: 'Loading dashboard metrics...'),
+          error: (err, _) => AppErrorState(
+            message: err.toString(),
+            onRetry: () => ref.invalidate(roleDashboardReportProvider),
+          ),
+          data: (dashboard) {
+            return SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: AcadexSpacing.pagePadding,
+              child: _buildRoleDashboard(context, ref, currentUser.role, dashboard?.metrics ?? {}),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoleDashboard(
+    BuildContext context,
+    WidgetRef ref,
+    AppRole role,
+    Map<String, dynamic> metrics,
+  ) {
+    switch (role) {
+      case AppRole.superAdmin:
+        return _buildSuperAdminDashboard(context, metrics);
+      case AppRole.collegeAdmin:
+        return _buildCollegeAdminDashboard(context, metrics);
+      case AppRole.hod:
+        return _buildHodDashboard(context, metrics);
+      case AppRole.faculty:
+        return _buildFacultyDashboard(context, metrics);
+      case AppRole.student:
+        return _buildStudentDashboard(context, metrics);
+    }
+  }
+
+  // --- 1. Super Admin View ---
+  Widget _buildSuperAdminDashboard(BuildContext context, Map<String, dynamic> m) {
+    final columns = AcadexBreakpoints.getGridColumnCount(context, mobile: 2, tablet: 2, desktop: 4);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(title: 'Platform Overview', subtitle: 'Global ACADEX network health'),
+        const SizedBox(height: AcadexSpacing.sm),
+        GridView.count(
+          crossAxisCount: columns,
+          crossAxisSpacing: AcadexSpacing.md,
+          mainAxisSpacing: AcadexSpacing.md,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            AppStatCard(
+              title: 'Colleges',
+              value: (m['totalColleges'] ?? '12').toString(),
+              subtitle: 'Active campuses',
+              icon: Icons.account_balance,
+              iconColor: AcadexColors.superAdminBadge,
+            ),
+            AppStatCard(
+              title: 'Total Users',
+              value: (m['totalUsers'] ?? '4,850').toString(),
+              subtitle: 'Students & Staff',
+              icon: Icons.people_outline,
+              iconColor: AcadexColors.skyInfo,
+            ),
+            AppStatCard(
+              title: 'Attendance Rate',
+              value: '${(m['overallAttendance'] ?? 88.5)}%',
+              subtitle: 'Across all colleges',
+              icon: Icons.check_circle_outline,
+              iconColor: AcadexColors.present,
+            ),
+            AppStatCard(
+              title: 'Storage Used',
+              value: '${(m['storageUsedMB'] ?? 1420)} MB',
+              subtitle: 'ImageKit media',
+              icon: Icons.cloud_outlined,
+              iconColor: AcadexColors.amberAccent,
+            ),
+          ],
+        ),
+        const SizedBox(height: AcadexSpacing.xl),
+        const AppSectionHeader(title: 'Quick Actions'),
+        const SizedBox(height: AcadexSpacing.sm),
+        _buildActionRow([
+          _ActionItem(label: 'Campuses', icon: Icons.domain),
+          _ActionItem(label: 'Global Users', icon: Icons.group),
+          _ActionItem(label: 'Security & Logs', icon: Icons.shield_outlined),
+          _ActionItem(label: 'Platform Reports', icon: Icons.analytics_outlined),
+        ]),
+      ],
+    );
+  }
+
+  // --- 2. College Admin View ---
+  Widget _buildCollegeAdminDashboard(BuildContext context, Map<String, dynamic> m) {
+    final columns = AcadexBreakpoints.getGridColumnCount(context, mobile: 2, tablet: 2, desktop: 4);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(title: 'College Overview', subtitle: 'Campus administrative pulse'),
+        const SizedBox(height: AcadexSpacing.sm),
+        GridView.count(
+          crossAxisCount: columns,
+          crossAxisSpacing: AcadexSpacing.md,
+          mainAxisSpacing: AcadexSpacing.md,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            AppStatCard(
+              title: 'Departments',
+              value: (m['totalDepartments'] ?? '6').toString(),
+              subtitle: 'Academic divisions',
+              icon: Icons.business_outlined,
+              iconColor: AcadexColors.collegeAdminBadge,
+            ),
+            AppStatCard(
+              title: 'Faculty',
+              value: (m['totalFaculty'] ?? '48').toString(),
+              subtitle: 'Teaching staff',
+              icon: Icons.school_outlined,
+              iconColor: AcadexColors.facultyBadge,
+            ),
+            AppStatCard(
+              title: 'Students',
+              value: (m['totalStudents'] ?? '1,240').toString(),
+              subtitle: 'Enrolled students',
+              icon: Icons.groups_outlined,
+              iconColor: AcadexColors.studentBadge,
+            ),
+            AppStatCard(
+              title: 'Today Attendance',
+              value: '${(m['todayAttendance'] ?? 86.4)}%',
+              subtitle: 'Campus average',
+              icon: Icons.fact_check_outlined,
+              iconColor: AcadexColors.present,
+            ),
+          ],
+        ),
+        const SizedBox(height: AcadexSpacing.xl),
+        const AppSectionHeader(title: 'Administrative Tools'),
+        const SizedBox(height: AcadexSpacing.sm),
+        _buildActionRow([
+          _ActionItem(label: 'Departments', icon: Icons.account_tree_outlined),
+          _ActionItem(label: 'Faculty Directory', icon: Icons.badge_outlined),
+          _ActionItem(label: 'Timetable Manager', icon: Icons.schedule_outlined),
+          _ActionItem(label: 'Attendance Analytics', icon: Icons.bar_chart_outlined),
+        ]),
+      ],
+    );
+  }
+
+  // --- 3. HOD View ---
+  Widget _buildHodDashboard(BuildContext context, Map<String, dynamic> m) {
+    final columns = AcadexBreakpoints.getGridColumnCount(context, mobile: 2, tablet: 2, desktop: 4);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(title: 'Department Overview', subtitle: 'Academic operations'),
+        const SizedBox(height: AcadexSpacing.sm),
+        GridView.count(
+          crossAxisCount: columns,
+          crossAxisSpacing: AcadexSpacing.md,
+          mainAxisSpacing: AcadexSpacing.md,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            AppStatCard(
+              title: 'Dept Faculty',
+              value: (m['deptFacultyCount'] ?? '12').toString(),
+              subtitle: 'Assigned teachers',
+              icon: Icons.person_outline,
+              iconColor: AcadexColors.hodBadge,
+            ),
+            AppStatCard(
+              title: 'Active Sections',
+              value: (m['activeSections'] ?? '6').toString(),
+              subtitle: 'Current semesters',
+              icon: Icons.meeting_room_outlined,
+              iconColor: AcadexColors.skyInfo,
+            ),
+            AppStatCard(
+              title: 'Dept Attendance',
+              value: '${(m['deptAttendance'] ?? 89.2)}%',
+              subtitle: 'Today rate',
+              icon: Icons.how_to_reg_outlined,
+              iconColor: AcadexColors.present,
+            ),
+            AppStatCard(
+              title: 'Published Notes',
+              value: (m['publishedNotes'] ?? '34').toString(),
+              subtitle: 'Study materials',
+              icon: Icons.menu_book_outlined,
+              iconColor: AcadexColors.amberAccent,
+            ),
+          ],
+        ),
+        const SizedBox(height: AcadexSpacing.xl),
+        const AppSectionHeader(title: 'Department Actions'),
+        const SizedBox(height: AcadexSpacing.sm),
+        _buildActionRow([
+          _ActionItem(label: 'Class Schedules', icon: Icons.calendar_today_outlined),
+          _ActionItem(label: 'Attendance Logs', icon: Icons.checklist_outlined),
+          _ActionItem(label: 'Students at Risk', icon: Icons.warning_amber_outlined),
+          _ActionItem(label: 'Department Notes', icon: Icons.library_books_outlined),
+        ]),
+      ],
+    );
+  }
+
+  // --- 4. Faculty View ---
+  Widget _buildFacultyDashboard(BuildContext context, Map<String, dynamic> m) {
+    final columns = AcadexBreakpoints.getGridColumnCount(context, mobile: 2, tablet: 2, desktop: 4);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(title: 'Teaching Overview', subtitle: 'Your daily schedule & classes'),
+        const SizedBox(height: AcadexSpacing.sm),
+        GridView.count(
+          crossAxisCount: columns,
+          crossAxisSpacing: AcadexSpacing.md,
+          mainAxisSpacing: AcadexSpacing.md,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            AppStatCard(
+              title: "Today's Classes",
+              value: (m['todayClassesCount'] ?? '3').toString(),
+              subtitle: 'Scheduled periods',
+              icon: Icons.access_time_outlined,
+              iconColor: AcadexColors.facultyBadge,
+            ),
+            AppStatCard(
+              title: 'Assigned Subjects',
+              value: (m['assignedSubjectsCount'] ?? '2').toString(),
+              subtitle: 'Active courses',
+              icon: Icons.auto_stories_outlined,
+              iconColor: AcadexColors.skyInfo,
+            ),
+            AppStatCard(
+              title: 'Attendance Marked',
+              value: '${(m['attendanceCompletionRate'] ?? 100)}%',
+              subtitle: 'This week',
+              icon: Icons.task_alt_outlined,
+              iconColor: AcadexColors.present,
+            ),
+            AppStatCard(
+              title: 'My Notes',
+              value: (m['myNotesCount'] ?? '14').toString(),
+              subtitle: 'Shared files',
+              icon: Icons.note_alt_outlined,
+              iconColor: AcadexColors.purpleAccent,
+            ),
+          ],
+        ),
+        const SizedBox(height: AcadexSpacing.xl),
+        const AppSectionHeader(title: 'Quick Tools'),
+        const SizedBox(height: AcadexSpacing.sm),
+        _buildActionRow([
+          _ActionItem(label: 'Mark Attendance', icon: Icons.how_to_reg_outlined),
+          _ActionItem(label: 'Upload Notes', icon: Icons.upload_file_outlined),
+          _ActionItem(label: 'My Timetable', icon: Icons.calendar_month_outlined),
+          _ActionItem(label: 'Student Records', icon: Icons.people_alt_outlined),
+        ]),
+      ],
+    );
+  }
+
+  // --- 5. Student View ---
+  Widget _buildStudentDashboard(BuildContext context, Map<String, dynamic> m) {
+    final columns = AcadexBreakpoints.getGridColumnCount(context, mobile: 2, tablet: 2, desktop: 4);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(title: 'Student Portal', subtitle: 'Academic progress & timetable'),
+        const SizedBox(height: AcadexSpacing.sm),
+        GridView.count(
+          crossAxisCount: columns,
+          crossAxisSpacing: AcadexSpacing.md,
+          mainAxisSpacing: AcadexSpacing.md,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            AppStatCard(
+              title: 'My Attendance',
+              value: '${(m['overallAttendance'] ?? 87.2)}%',
+              subtitle: 'Requirement: >=75%',
+              icon: Icons.pie_chart_outline,
+              iconColor: AcadexColors.present,
+            ),
+            AppStatCard(
+              title: "Today's Periods",
+              value: (m['todayClassesCount'] ?? '4').toString(),
+              subtitle: 'Next: 10:30 AM',
+              icon: Icons.schedule_outlined,
+              iconColor: AcadexColors.studentBadge,
+            ),
+            AppStatCard(
+              title: 'Course Notes',
+              value: (m['availableNotesCount'] ?? '28').toString(),
+              subtitle: 'Available to download',
+              icon: Icons.download_for_offline_outlined,
+              iconColor: AcadexColors.emeraldTeal,
+            ),
+            AppStatCard(
+              title: 'Announcements',
+              value: (m['unreadAnnouncements'] ?? '2').toString(),
+              subtitle: 'Unread updates',
+              icon: Icons.notifications_none_outlined,
+              iconColor: AcadexColors.amberAccent,
+            ),
+          ],
+        ),
+        const SizedBox(height: AcadexSpacing.xl),
+        const AppSectionHeader(title: 'Student Hub'),
+        const SizedBox(height: AcadexSpacing.sm),
+        _buildActionRow([
+          _ActionItem(label: 'My Schedule', icon: Icons.calendar_view_week_outlined),
+          _ActionItem(label: 'Subject Attendance', icon: Icons.assessment_outlined),
+          _ActionItem(label: 'Download Notes', icon: Icons.menu_book_outlined),
+          _ActionItem(label: 'Campus Notices', icon: Icons.campaign_outlined),
+        ]),
+      ],
+    );
+  }
+
+  Widget _buildActionRow(List<_ActionItem> actions) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Wrap(
+          spacing: AcadexSpacing.md,
+          runSpacing: AcadexSpacing.md,
+          children: actions.map((act) {
+            return SizedBox(
+              width: (constraints.maxWidth - AcadexSpacing.md * 3) / 4 > 120
+                  ? (constraints.maxWidth - AcadexSpacing.md * 3) / 4
+                  : (constraints.maxWidth - AcadexSpacing.md) / 2,
+              child: AppCard(
+                onTap: () {},
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(act.icon, size: 24, color: AcadexColors.primaryNavy),
+                    const SizedBox(height: AcadexSpacing.sm),
+                    Text(
+                      act.label,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: AcadexColors.textPrimaryLight,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+}
+
+class _ActionItem {
+  final String label;
+  final IconData icon;
+
+  const _ActionItem({required this.label, required this.icon});
+}

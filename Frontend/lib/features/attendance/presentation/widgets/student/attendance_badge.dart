@@ -32,6 +32,12 @@ class AttendanceBadge extends StatelessWidget {
           variant: AcadexBadgeVariant.danger,
           icon: LucideIcons.xCircle,
         );
+      case AttendanceStatus.excused:
+        return const AcadexBadge(
+          label: 'Excused',
+          variant: AcadexBadgeVariant.purple,
+          icon: LucideIcons.shieldCheck,
+        );
       case AttendanceStatus.medicalLeave:
         return const AcadexBadge(
           label: 'Medical',

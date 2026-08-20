@@ -8,91 +8,160 @@ import 'notification_repository.dart';
 class MockNotificationRepository implements NotificationRepository {
   final List<NotificationModel> _notifications = [];
   bool _initialized = false;
+  final bool autoGenerateInitialData;
   
-  final _controller = StreamController<List<NotificationModel>>.broadcast();
+  final _changeController = StreamController<void>.broadcast();
 
-  Future<void> _delay() async => await Future.delayed(const Duration(milliseconds: 400));
-
-  void _emit() {
-    _notifications.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    if (!_controller.isClosed) {
-      _controller.add(List.from(_notifications));
+  MockNotificationRepository({
+    List<NotificationModel>? initialNotifications,
+    this.autoGenerateInitialData = false,
+  }) {
+    if (initialNotifications != null) {
+      _notifications.addAll(initialNotifications);
+      _initialized = true;
     }
+  }
+
+  void _notifyListeners() {
+    _notifications.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    if (!_changeController.isClosed) {
+      _changeController.add(null);
+    }
+  }
+
+  List<NotificationModel> _filterForUser(UserModel user, NotificationPreferences prefs) {
+    final list = _notifications.where((n) {
+      // 1. Tenant Scoping
+      if (user.role != AppRole.superAdmin &&
+          n.collegeId != null &&
+          n.collegeId!.isNotEmpty &&
+          user.collegeId != null &&
+          user.collegeId!.isNotEmpty) {
+        if (n.collegeId != user.collegeId) return false;
+      }
+
+      // 2. Audience Scoping
+      switch (n.audienceType) {
+        case NotificationAudienceType.personal:
+          if (n.recipientUserId != user.id) return false;
+          break;
+        case NotificationAudienceType.department:
+          if (user.departmentId == null || user.departmentId != n.departmentId) return false;
+          break;
+        case NotificationAudienceType.college:
+          if (user.collegeId == null || user.collegeId != n.collegeId) return false;
+          break;
+        case NotificationAudienceType.role:
+          if (n.recipientRole != user.role) return false;
+          break;
+        case NotificationAudienceType.section:
+          if (n.sectionId != null && n.sectionId != user.departmentId) return false;
+          break;
+        case NotificationAudienceType.platform:
+          break;
+      }
+
+      // 3. User Preferences Scoping (Critical priority always delivers)
+      if (n.priority != NotificationPriority.critical) {
+        if (n.category == NotificationCategory.attendance && !prefs.attendanceAlerts) return false;
+        if (n.category == NotificationCategory.academic && !prefs.academicUpdates) return false;
+        if (n.category == NotificationCategory.notes && !prefs.notesUploaded) return false;
+        if (n.category == NotificationCategory.certificates && !prefs.certificateUpdates) return false;
+        if (n.category == NotificationCategory.system && !prefs.generalNotifications) return false;
+      }
+
+      return true;
+    }).toList();
+
+    list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return list;
   }
 
   @override
   Stream<List<NotificationModel>> watchNotifications(UserModel user, NotificationPreferences prefs) {
-    if (!_initialized) {
+    if (!_initialized && autoGenerateInitialData) {
       _generateInitialData(user, prefs);
       _initialized = true;
-      Future.delayed(const Duration(milliseconds: 100), _emit);
-    } else {
-      Future.delayed(const Duration(milliseconds: 100), _emit);
     }
-    return _controller.stream;
+
+    final controller = StreamController<List<NotificationModel>>.broadcast();
+
+    void emit() {
+      if (!controller.isClosed) {
+        controller.add(_filterForUser(user, prefs));
+      }
+    }
+
+    scheduleMicrotask(emit);
+    final sub = _changeController.stream.listen((_) => emit());
+    controller.onCancel = () => sub.cancel();
+
+    return controller.stream;
   }
 
   @override
   Future<void> markAsRead(String id, String userId) async {
-    await _delay();
     final index = _notifications.indexWhere((n) => n.id == id);
     if (index != -1) {
       _notifications[index] = _notifications[index].copyWith(isRead: true, readAt: DateTime.now());
-      _emit();
+      _notifyListeners();
     }
   }
   
   @override
   Future<void> markAsUnread(String id, String userId) async {
-    await _delay();
     final index = _notifications.indexWhere((n) => n.id == id);
     if (index != -1) {
       _notifications[index] = _notifications[index].copyWith(isRead: false);
-      _emit();
+      _notifyListeners();
     }
   }
 
   @override
   Future<void> markAllAsRead(String userId) async {
-    await _delay();
     for (int i = 0; i < _notifications.length; i++) {
-      _notifications[i] = _notifications[i].copyWith(isRead: true, readAt: DateTime.now());
+      if (_notifications[i].recipientUserId == userId ||
+          _notifications[i].audienceType != NotificationAudienceType.personal) {
+        _notifications[i] = _notifications[i].copyWith(isRead: true, readAt: DateTime.now());
+      }
     }
-    _emit();
+    _notifyListeners();
   }
 
   @override
   Future<void> deleteNotification(String id, String userId) async {
-    await _delay();
     _notifications.removeWhere((n) => n.id == id);
-    _emit();
+    _notifyListeners();
   }
 
   @override
   Future<void> clearAll(String userId) async {
-    await _delay();
     _notifications.clear();
-    _emit();
+    _notifyListeners();
   }
 
   @override
   Future<NotificationModel> createPersonalNotification(NotificationModel notification) async {
-    await _delay();
     final n = notification.copyWith(
-      id: 'mock_${DateTime.now().millisecondsSinceEpoch}',
+      id: notification.id.isNotEmpty
+          ? notification.id
+          : 'mock_${DateTime.now().millisecondsSinceEpoch}',
       audienceType: NotificationAudienceType.personal,
     );
     _notifications.add(n);
-    _emit();
+    _notifyListeners();
     return n;
   }
 
   @override
   Future<NotificationModel> createAnnouncement(NotificationModel notification) async {
-    await _delay();
-    final n = notification.copyWith(id: 'announcement_${DateTime.now().millisecondsSinceEpoch}');
+    final n = notification.copyWith(
+      id: notification.id.isNotEmpty
+          ? notification.id
+          : 'announcement_${DateTime.now().millisecondsSinceEpoch}',
+    );
     _notifications.add(n);
-    _emit();
+    _notifyListeners();
     return n;
   }
 
@@ -132,7 +201,7 @@ class MockNotificationRepository implements NotificationRepository {
           audienceType: NotificationAudienceType.personal,
           recipientUserId: user.id,
           timestamp: now.subtract(const Duration(hours: 2)),
-          navigationTarget: '/module/Attendance',
+          navigationTarget: '/attendance',
         ));
         break;
       case AppRole.faculty:
@@ -145,7 +214,7 @@ class MockNotificationRepository implements NotificationRepository {
           audienceType: NotificationAudienceType.personal,
           recipientUserId: user.id,
           timestamp: now.subtract(const Duration(minutes: 30)),
-          navigationTarget: '/module/Attendance',
+          navigationTarget: '/attendance',
         ));
         break;
       case AppRole.hod:
@@ -158,7 +227,7 @@ class MockNotificationRepository implements NotificationRepository {
           audienceType: NotificationAudienceType.personal,
           recipientUserId: user.id,
           timestamp: now.subtract(const Duration(hours: 1)),
-          navigationTarget: '/module/Attendance',
+          navigationTarget: '/attendance',
         ));
         break;
       case AppRole.collegeAdmin:
@@ -171,7 +240,7 @@ class MockNotificationRepository implements NotificationRepository {
           audienceType: NotificationAudienceType.personal,
           recipientUserId: user.id,
           timestamp: now.subtract(const Duration(hours: 3)),
-          navigationTarget: '/module/Attendance',
+          navigationTarget: '/attendance',
         ));
         break;
       case AppRole.superAdmin:
@@ -184,11 +253,11 @@ class MockNotificationRepository implements NotificationRepository {
           audienceType: NotificationAudienceType.personal,
           recipientUserId: user.id,
           timestamp: now.subtract(const Duration(minutes: 15)),
-          navigationTarget: '/module/Attendance',
+          navigationTarget: '/attendance',
         ));
         break;
     }
   }
 }
 
-final mockNotificationRepo = MockNotificationRepository();
+final mockNotificationRepo = MockNotificationRepository(autoGenerateInitialData: true);
