@@ -21,11 +21,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify validation errors appear
-      expect(find.text('Please enter your email'), findsOneWidget);
+      expect(find.text('Please enter your email or phone number'), findsOneWidget);
       expect(find.text('Please enter your password'), findsOneWidget);
     });
 
-    testWidgets('Malformed email shows validation error', (WidgetTester tester) async {
+    testWidgets('Empty password with identifier entered shows password validation error', (WidgetTester tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -34,19 +34,16 @@ void main() {
         ),
       );
 
-      // Find email field and enter invalid email
-      final emailField = find.byType(TextFormField).first;
-      await tester.enterText(emailField, 'not-an-email');
-      
-      final passwordField = find.byType(TextFormField).last;
-      await tester.enterText(passwordField, 'password123');
+      // Find identifier field and enter identifier
+      final identifierField = find.byType(TextFormField).first;
+      await tester.enterText(identifierField, 'user@acadex.edu');
 
       final loginButton = find.text('Sign In');
       await tester.tap(loginButton);
       await tester.pumpAndSettle();
 
-      // Verify validation error
-      expect(find.text('Invalid email address'), findsOneWidget);
+      // Verify password validation error
+      expect(find.text('Please enter your password'), findsOneWidget);
     });
   });
 }

@@ -114,7 +114,7 @@ void main() {
       await tester.tap(continueBtn);
       await tester.pumpAndSettle();
 
-      expect(find.text('Please enter the college code'), findsOneWidget);
+      expect(find.text('Please enter your college code'), findsOneWidget);
       expect(find.text('Please enter your ID'), findsOneWidget);
       expect(find.text('Please enter your activation code'), findsOneWidget);
     });
