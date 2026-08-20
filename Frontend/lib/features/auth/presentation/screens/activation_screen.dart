@@ -39,9 +39,9 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
   void _submitStep1() {
     if (!_step1FormKey.currentState!.validate()) return;
     ref.read(activationNotifierProvider.notifier).proceedToPasswordStep(
-      _collegeCodeController.text.trim(),
-      _instituteIdController.text.trim(),
-      _activationCodeController.text.trim(),
+      _collegeCodeController.text.trim().toUpperCase(),
+      _instituteIdController.text.trim().toUpperCase(),
+      _activationCodeController.text.trim().toUpperCase(),
     );
   }
 
@@ -56,7 +56,7 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
     if (password.isEmpty) return 0.0;
     double strength = 0.0;
     if (password.length >= 8) strength += 0.25;
-    if (password.contains(RegExp(r'[A-Z]'))) strength += 0.25;
+    if (password.contains(RegExp(r'[a-zA-Z]'))) strength += 0.25;
     if (password.contains(RegExp(r'[0-9]'))) strength += 0.25;
     if (password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) strength += 0.25;
     return strength;
@@ -76,15 +76,56 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
 
     ref.listen<ActivationState>(activationNotifierProvider, (previous, next) {
       if (next.error != null) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.error!),
             backgroundColor: AcadexColors.error,
+            duration: const Duration(seconds: 5),
           ),
         );
         ref.read(activationNotifierProvider.notifier).clearError();
       }
     });
+
+    Widget buildStepIndicator() {
+      if (state.step == 2) return const SizedBox.shrink();
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 24.0),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    state.step == 0 ? 'STEP 1 OF 2' : 'STEP 2 OF 2',
+                    style: AcadexTypography.eyebrow(
+                      color: AcadexColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    state.step == 0 ? 'Account Verification' : 'Create New Password',
+                    style: AcadexTypography.bodySmall(
+                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Row(
+              children: [
+                _buildProgressDot(active: true, completed: state.step > 0),
+                const SizedBox(width: 8),
+                _buildProgressDot(active: state.step >= 1, completed: state.step > 1),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
 
     Widget buildStep1() {
       return Form(
@@ -92,6 +133,7 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            buildStepIndicator(),
             Center(
               child: Container(
                 width: 56,
@@ -113,7 +155,7 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              "Enter your college code, institutional ID, and the activation code provided by your administrator.",
+              "Your administrator created an ACADEX account for you. Activate it once to create your password.",
               textAlign: TextAlign.center,
               style: AcadexTypography.body(
                 color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
@@ -123,28 +165,28 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
             AcadexTextField(
               controller: _collegeCodeController,
               label: "College Code",
-              hint: "e.g., ACME-UNIV",
+              hint: "e.g., TECH-UNIV",
               prefixIcon: LucideIcons.building2,
               enabled: !state.isLoading,
-              validator: (val) => val == null || val.isEmpty ? "Please enter the college code" : null,
+              validator: (val) => val == null || val.trim().isEmpty ? "Please enter your college code" : null,
             ),
             const SizedBox(height: 16),
             AcadexTextField(
               controller: _instituteIdController,
               label: "Student or Employee ID",
-              hint: "e.g., CS2025001 or EMP101",
+              hint: "e.g., STU2026001 or EMP101",
               prefixIcon: LucideIcons.idCard,
               enabled: !state.isLoading,
-              validator: (val) => val == null || val.isEmpty ? "Please enter your ID" : null,
+              validator: (val) => val == null || val.trim().isEmpty ? "Please enter your ID" : null,
             ),
             const SizedBox(height: 16),
             AcadexTextField(
               controller: _activationCodeController,
               label: "Activation Code",
-              hint: "Enter activation code",
+              hint: "8-character code provided by admin",
               prefixIcon: LucideIcons.keyRound,
               enabled: !state.isLoading,
-              validator: (val) => val == null || val.isEmpty ? "Please enter your activation code" : null,
+              validator: (val) => val == null || val.trim().isEmpty ? "Please enter your activation code" : null,
             ),
             const SizedBox(height: 28),
             AcadexButton(
@@ -155,19 +197,39 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
               size: AcadexButtonSize.lg,
               onPressed: state.isLoading ? null : _submitStep1,
             ),
+            const SizedBox(height: 20),
+            Center(
+              child: TextButton(
+                onPressed: state.isLoading ? null : () => context.go('/login'),
+                child: Text(
+                  'Already activated? Sign In',
+                  style: AcadexTypography.bodySmall(
+                    color: AcadexColors.primary,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       );
     }
 
     Widget buildStep2() {
-      final strength = _calculatePasswordStrength(_passwordController.text);
+      final password = _passwordController.text;
+      final confirmPassword = _confirmPasswordController.text;
+      final strength = _calculatePasswordStrength(password);
+
+      final hasMinLength = password.length >= 8;
+      final hasLetter = RegExp(r'[a-zA-Z]').hasMatch(password);
+      final hasNumber = RegExp(r'[0-9]').hasMatch(password);
+      final passwordsMatch = password.isNotEmpty && password == confirmPassword;
 
       return Form(
         key: _step2FormKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            buildStepIndicator(),
             Center(
               child: Container(
                 width: 56,
@@ -189,7 +251,7 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              "Set a secure password for your new Acadex account.\nPassword must contain at least one letter and one number.",
+              "Create a secure password for your ACADEX account.",
               textAlign: TextAlign.center,
               style: AcadexTypography.body(
                 color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
@@ -197,6 +259,7 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
             ),
             const SizedBox(height: 24),
 
+            // New Password
             AcadexTextField(
               controller: _passwordController,
               label: "New Password",
@@ -226,17 +289,48 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
             ),
             const SizedBox(height: 16),
 
+            // Confirm Password
             AcadexTextField(
               controller: _confirmPasswordController,
               label: "Confirm Password",
               hint: "Re-enter your password",
               prefixIcon: LucideIcons.lock,
               isPassword: true,
+              onChanged: (_) => setState(() {}),
               enabled: !state.isLoading,
               validator: (val) {
                 if (val != _passwordController.text) return "Passwords do not match";
                 return null;
               },
+            ),
+            const SizedBox(height: 16),
+
+            // Password Requirements Checklist
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                borderRadius: AcadexRadius.borderRadiusMd,
+                border: Border.all(
+                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Password Requirements:',
+                    style: AcadexTypography.caption(
+                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildRequirementRow("At least 8 characters", hasMinLength, isDark),
+                  _buildRequirementRow("Contains at least one letter", hasLetter, isDark),
+                  _buildRequirementRow("Contains at least one number", hasNumber, isDark),
+                  _buildRequirementRow("Passwords match", passwordsMatch, isDark),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -259,13 +353,13 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
         children: [
           Center(
             child: Container(
-              width: 64,
-              height: 64,
+              width: 68,
+              height: 68,
               decoration: BoxDecoration(
                 color: isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(LucideIcons.checkCircle2, size: 36, color: AcadexColors.success),
+              child: const Icon(LucideIcons.checkCircle2, size: 38, color: AcadexColors.success),
             ),
           ),
           const SizedBox(height: 24),
@@ -278,7 +372,7 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            "Your Acadex account is now fully active.\nYou can now sign in using your credentials.",
+            "Your ACADEX account is now active.\nYou can now sign in securely with your new password.",
             textAlign: TextAlign.center,
             style: AcadexTypography.body(
               color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
@@ -325,7 +419,7 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
+            constraints: const BoxConstraints(maxWidth: 480),
             child: AcadexCard(
               padding: const EdgeInsets.all(32.0),
               child: AnimatedSwitcher(
@@ -339,6 +433,41 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildProgressDot({required bool active, required bool completed}) {
+    return Container(
+      width: completed ? 24 : 10,
+      height: 10,
+      decoration: BoxDecoration(
+        color: active ? AcadexColors.primary : (completed ? AcadexColors.success : AcadexColors.hairline),
+        borderRadius: AcadexRadius.borderRadiusFull,
+      ),
+    );
+  }
+
+  Widget _buildRequirementRow(String text, bool met, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Row(
+        children: [
+          Icon(
+            met ? LucideIcons.check : LucideIcons.circle,
+            size: 14,
+            color: met ? AcadexColors.success : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: AcadexTypography.caption(
+              color: met
+                  ? (isDark ? AcadexColors.darkInk : AcadexColors.ink)
+                  : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+            ),
+          ),
+        ],
       ),
     );
   }
