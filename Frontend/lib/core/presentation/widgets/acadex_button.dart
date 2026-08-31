@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../features/auth/domain/models/auth_state.dart';
+import '../../../features/auth/domain/models/role_enum.dart';
+import '../../../features/auth/presentation/providers/auth_provider.dart';
 
-enum AcadexButtonVariant { primary, secondary, danger, ghost }
+enum AcadexButtonVariant { primary, secondary, soft, danger, ghost }
 enum AcadexButtonSize { sm, md, lg }
 
-class AcadexButton extends StatelessWidget {
+class AcadexButton extends ConsumerWidget {
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
@@ -12,6 +16,7 @@ class AcadexButton extends StatelessWidget {
   final bool isFullWidth;
   final AcadexButtonVariant variant;
   final AcadexButtonSize size;
+  final EdgeInsetsGeometry? padding;
 
   const AcadexButton({
     super.key,
@@ -22,60 +27,77 @@ class AcadexButton extends StatelessWidget {
     this.isFullWidth = false,
     this.variant = AcadexButtonVariant.primary,
     this.size = AcadexButtonSize.md,
+    this.padding,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final isGradientRole = authState is AuthAuthenticated &&
+        (authState.user.role == AppRole.superAdmin ||
+            authState.user.role == AppRole.collegeAdmin ||
+            authState.user.role == AppRole.hod ||
+            authState.user.role == AppRole.faculty ||
+            authState.user.role == AppRole.student);
 
     Color bg;
     Color fg;
+    Color iconColor;
     BorderSide border = BorderSide.none;
 
     switch (variant) {
       case AcadexButtonVariant.primary:
-        bg = AcadexColors.primary;
+        bg = isGradientRole ? AcadexColors.superAdminDeepAction : AcadexColors.primary;
         fg = Colors.white;
+        iconColor = Colors.white;
         break;
       case AcadexButtonVariant.secondary:
-        bg = isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface;
-        fg = isDark ? AcadexColors.darkInk : AcadexColors.ink;
+        bg = Colors.white;
+        fg = isGradientRole ? AcadexColors.superAdminDeepAction : AcadexColors.ink;
+        iconColor = isGradientRole ? AcadexColors.superAdminPrimaryAction : AcadexColors.ink;
         border = BorderSide(
-          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-          width: 1,
+          color: isGradientRole ? AcadexColors.superAdminPrimaryAction : AcadexColors.hairline,
+          width: isGradientRole ? 1.2 : 1.0,
         );
+        break;
+      case AcadexButtonVariant.soft:
+        bg = isGradientRole ? AcadexColors.superAdminSoftAction : AcadexColors.primaryLight;
+        fg = isGradientRole ? AcadexColors.superAdminDeepAction : AcadexColors.primary;
+        iconColor = isGradientRole ? AcadexColors.superAdminPrimaryAction : AcadexColors.primary;
         break;
       case AcadexButtonVariant.danger:
         bg = AcadexColors.error;
         fg = Colors.white;
+        iconColor = Colors.white;
         break;
       case AcadexButtonVariant.ghost:
         bg = Colors.transparent;
-        fg = isDark ? AcadexColors.primaryMuted : AcadexColors.primary;
+        fg = isGradientRole ? AcadexColors.superAdminPrimaryAction : AcadexColors.primary;
+        iconColor = isGradientRole ? AcadexColors.superAdminPrimaryAction : AcadexColors.primary;
         break;
     }
 
     double height;
-    EdgeInsets padding;
+    EdgeInsets defaultPadding;
     double fontSize;
     double iconSize;
 
     switch (size) {
       case AcadexButtonSize.sm:
-        height = 34;
-        padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 6);
-        fontSize = 12;
+        height = 36;
+        defaultPadding = const EdgeInsets.symmetric(horizontal: 12, vertical: 8);
+        fontSize = 12.5;
         iconSize = 14;
         break;
       case AcadexButtonSize.md:
-        height = 42;
-        padding = const EdgeInsets.symmetric(horizontal: 18, vertical: 10);
+        height = 44;
+        defaultPadding = const EdgeInsets.symmetric(horizontal: 18, vertical: 11);
         fontSize = 14;
         iconSize = 16;
         break;
       case AcadexButtonSize.lg:
-        height = 48;
-        padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 14);
+        height = 50;
+        defaultPadding = const EdgeInsets.symmetric(horizontal: 24, vertical: 14);
         fontSize = 15;
         iconSize = 18;
         break;
@@ -95,7 +117,7 @@ class AcadexButton extends StatelessWidget {
             ),
           )
         else if (icon != null) ...[
-          Icon(icon, size: iconSize, color: fg),
+          Icon(icon, size: iconSize, color: iconColor),
           const SizedBox(width: 8),
         ],
         if (isLoading && label.isNotEmpty) const SizedBox(width: 8),
@@ -119,7 +141,7 @@ class AcadexButton extends StatelessWidget {
       disabledForegroundColor: fg.withValues(alpha: 0.5),
       elevation: 0,
       shadowColor: Colors.transparent,
-      padding: padding,
+      padding: padding ?? defaultPadding,
       minimumSize: Size(isFullWidth ? double.infinity : 0, height),
       shape: RoundedRectangleBorder(
         borderRadius: AcadexRadius.borderRadiusMd,
@@ -187,8 +209,7 @@ class AcadexIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final defaultColor = isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary;
+    const defaultColor = AcadexColors.inkSecondary;
 
     final btn = Material(
       color: backgroundColor ?? Colors.transparent,
@@ -196,7 +217,9 @@ class AcadexIconButton extends StatelessWidget {
       child: InkWell(
         onTap: onPressed,
         borderRadius: AcadexRadius.borderRadiusSm,
-        child: Padding(
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          alignment: Alignment.center,
           padding: const EdgeInsets.all(8.0),
           child: Icon(
             icon,

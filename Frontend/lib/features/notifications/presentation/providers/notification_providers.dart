@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/firebase/firebase_services.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
+import '../../../dashboard/presentation/providers/dashboard_providers.dart';
 import '../../../settings/domain/models/settings_models.dart';
 import '../../../settings/presentation/providers/settings_providers.dart';
 import '../../domain/models/notification_models.dart';
@@ -151,6 +152,13 @@ class AnnouncementCreationNotifier extends StateNotifier<AsyncValue<void>> {
     state = const AsyncLoading();
     try {
       await _ref.read(notificationRepositoryProvider).createAnnouncement(model);
+      _ref.invalidate(notificationsProvider);
+      _ref.invalidate(unreadNotificationCountProvider);
+      _ref.invalidate(superAdminActivityProvider);
+      _ref.invalidate(collegeAdminActivityProvider);
+      _ref.invalidate(hodActivityProvider);
+      _ref.invalidate(facultyActivityProvider);
+      _ref.invalidate(studentActivityProvider);
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);

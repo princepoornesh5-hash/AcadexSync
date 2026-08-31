@@ -578,6 +578,16 @@ export class AttendanceService {
       throw ApiError.forbidden('Cross-college attendance correction is strictly prohibited');
     }
 
+    if (requester.role === AppRole.HOD) {
+      if (record.collegeId.toString() !== requester.collegeId) {
+        throw ApiError.forbidden('Cross-college attendance correction is strictly prohibited');
+      }
+      const session = await AttendanceSession.findById(record.sessionId);
+      if (!session || session.departmentId.toString() !== requester.departmentId) {
+        throw ApiError.forbidden('HOD can only correct attendance records within their own department');
+      }
+    }
+
     const previousStatus = record.status;
     record.oldStatus = previousStatus;
     record.status = newStatus;
@@ -652,7 +662,12 @@ export class AttendanceService {
     const skip = (page - 1) * limit;
 
     const [items, total] = await Promise.all([
-      AttendanceRecord.find(filter).sort({ date: -1 }).skip(skip).limit(limit),
+      AttendanceRecord.find(filter)
+        .populate('subjectId', 'name code')
+        .populate('facultyId', 'name')
+        .sort({ date: -1 })
+        .skip(skip)
+        .limit(limit),
       AttendanceRecord.countDocuments(filter),
     ]);
 

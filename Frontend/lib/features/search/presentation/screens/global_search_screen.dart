@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../domain/models/search_models.dart';
 import '../providers/search_providers.dart';
 import '../widgets/search_result_card.dart';
@@ -183,7 +184,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                       LucideIcons.arrowLeft,
                       color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                     ),
-                    onPressed: () => context.pop(),
+                    onPressed: () => context.safePop(fallbackRoute: '/dashboard'),
                   ),
                   const SizedBox(width: 8),
                   Expanded(

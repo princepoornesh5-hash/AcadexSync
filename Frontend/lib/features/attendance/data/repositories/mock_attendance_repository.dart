@@ -263,6 +263,91 @@ class MockAttendanceRepository implements AttendanceRepository {
     return list;
   }
 
+  @override
+  Future<List<AttendanceSession>> getFacultySessions() async {
+    await _delay();
+    return _sessions;
+  }
+
+  @override
+  Future<AttendanceSession> getSessionById(String sessionId) async {
+    await _delay();
+    return _sessions.firstWhere(
+      (s) => s.id == sessionId,
+      orElse: () => _sessions.first,
+    );
+  }
+
+  @override
+  Future<List<AttendanceSession>> listSessions({
+    String? departmentId,
+    String? sectionId,
+    String? subjectId,
+    String? facultyId,
+    String? status,
+    DateTime? from,
+    DateTime? to,
+    int? page,
+    int? limit,
+  }) async {
+    await _delay();
+    return _sessions;
+  }
+
+  @override
+  Future<AttendanceSession> lockSession(String sessionId) async {
+    await _delay();
+    final idx = _sessions.indexWhere((s) => s.id == sessionId);
+    if (idx != -1) {
+      final updated = _sessions[idx].copyWith(status: 'locked', isLocked: true);
+      _sessions[idx] = updated;
+      return updated;
+    }
+    return _sessions.first;
+  }
+
+  @override
+  Future<AttendanceSession> closeSession(String sessionId) async {
+    await _delay();
+    final idx = _sessions.indexWhere((s) => s.id == sessionId);
+    if (idx != -1) {
+      final updated = _sessions[idx].copyWith(status: 'closed', isLocked: true);
+      _sessions[idx] = updated;
+      return updated;
+    }
+    return _sessions.first;
+  }
+
+  @override
+  Future<AttendanceSession> cancelSession(String sessionId) async {
+    await _delay();
+    final idx = _sessions.indexWhere((s) => s.id == sessionId);
+    if (idx != -1) {
+      final updated = _sessions[idx].copyWith(status: 'cancelled');
+      _sessions[idx] = updated;
+      return updated;
+    }
+    return _sessions.first;
+  }
+
+  @override
+  Future<AttendanceRecord> correctRecord(
+    String recordId, {
+    required AttendanceStatus newStatus,
+    required String reason,
+  }) async {
+    await _delay();
+    return AttendanceRecord(
+      id: recordId,
+      studentId: 's1',
+      studentName: 'Student',
+      rollNumber: 'R1',
+      sectionId: 'sec1',
+      status: newStatus,
+      remarks: reason,
+    );
+  }
+
   // ==========================================
   // HOD METHODS
   // ==========================================

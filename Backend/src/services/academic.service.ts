@@ -6,6 +6,8 @@ import { Section, ISection } from '../models/section.model';
 import { Subject, ISubject } from '../models/subject.model';
 import { Student } from '../models/student.model';
 import { StudentEnrollment, IStudentEnrollment } from '../models/studentEnrollment.model';
+import { Faculty } from '../models/faculty.model';
+import { FacultyAssignment, IFacultyAssignment } from '../models/facultyAssignment.model';
 import { College } from '../models/college.model';
 import { Department } from '../models/department.model';
 import { AuditLog } from '../models/auditLog.model';
@@ -1120,5 +1122,292 @@ export class AcademicService {
     );
 
     return { tree };
+  }
+
+  // =========================================================================
+  // 8. FACULTY ASSIGNMENTS & WORKLOAD (MODULE 5B)
+  // =========================================================================
+
+  static async createFacultyAssignment(
+    collegeId: string,
+    data: {
+      facultyId: string;
+      subjectId: string;
+      sectionId: string;
+      courseId?: string;
+      semesterId?: string;
+      academicYearId?: string;
+      departmentId?: string;
+      roomId?: string;
+      maxStudents?: number;
+      assignmentType?: string;
+    },
+    requester: AuthenticatedUser
+  ): Promise<IFacultyAssignment> {
+    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
+      throw ApiError.forbidden('Only administrators and HODs have permission to create faculty assignments');
+    }
+
+    if (requester.role === AppRole.COLLEGE_ADMIN && requester.collegeId !== collegeId) {
+      throw ApiError.forbidden('Cross-college assignment creation is strictly prohibited');
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(data.facultyId)) throw ApiError.badRequest('Invalid facultyId format');
+    if (!mongoose.Types.ObjectId.isValid(data.subjectId)) throw ApiError.badRequest('Invalid subjectId format');
+    if (!mongoose.Types.ObjectId.isValid(data.sectionId)) throw ApiError.badRequest('Invalid sectionId format');
+
+    const [faculty, subject, section] = await Promise.all([
+      Faculty.findById(data.facultyId),
+      Subject.findById(data.subjectId),
+      Section.findById(data.sectionId),
+    ]);
+
+    if (!faculty) throw ApiError.notFound(`Faculty with ID "${data.facultyId}" not found`);
+    if (!subject) throw ApiError.notFound(`Subject with ID "${data.subjectId}" not found`);
+    if (!section) throw ApiError.notFound(`Section with ID "${data.sectionId}" not found`);
+
+    if (
+      faculty.collegeId.toString() !== collegeId ||
+      subject.collegeId.toString() !== collegeId ||
+      section.collegeId.toString() !== collegeId
+    ) {
+      throw ApiError.badRequest('Faculty, Subject, and Section must all belong to the specified college');
+    }
+
+    if (!faculty.isActive || faculty.status === 'inactive') {
+      throw ApiError.forbidden('Cannot assign an inactive faculty member');
+    }
+    if (!subject.isActive) {
+      throw ApiError.forbidden('Cannot assign an inactive subject');
+    }
+    if (!section.isActive || section.status === 'inactive') {
+      throw ApiError.forbidden('Cannot assign to an inactive section');
+    }
+
+    if (requester.role === AppRole.HOD && requester.departmentId !== faculty.departmentId.toString()) {
+      throw ApiError.forbidden('HOD can only assign faculty within their assigned department');
+    }
+
+    // Verify academic lineage: Subject semester must match Section semester
+    if (subject.semesterId.toString() !== section.semesterId.toString()) {
+      throw ApiError.badRequest('Subject semester does not match Section semester');
+    }
+
+    // Check duplicate assignment
+    const existing = await FacultyAssignment.findOne({
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      facultyId: faculty._id,
+      sectionId: section._id,
+      subjectId: subject._id,
+    });
+    if (existing) {
+      throw ApiError.conflict(
+        `Faculty "${faculty.name}" is already assigned to "${subject.name}" for section "${section.name}"`
+      );
+    }
+
+    const assignment = await FacultyAssignment.create({
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      departmentId: faculty.departmentId,
+      facultyId: faculty._id,
+      facultyName: faculty.name,
+      courseId: section.courseId,
+      semesterId: section.semesterId,
+      sectionId: section._id,
+      subjectId: subject._id,
+      academicYearId: section.academicYearId,
+      roomId: data.roomId || null,
+      maxStudents: data.maxStudents || section.capacity,
+      assignmentType: data.assignmentType || 'lecture',
+      assignedBy: requester.id,
+      isActive: true,
+      assignedAt: new Date(),
+    });
+
+    // Update Faculty references
+    await Faculty.updateOne(
+      { _id: faculty._id },
+      { $addToSet: { subjectIds: subject._id, sectionIds: section._id } }
+    );
+
+    await AuditLog.create({
+      collegeId,
+      actorUserId: requester.id,
+      action: 'FACULTY_ASSIGNMENT_CREATED',
+      entityType: 'FacultyAssignment',
+      entityId: assignment.id,
+      newValue: assignment.toJSON(),
+    });
+
+    return assignment;
+  }
+
+  static async listFacultyAssignments(
+    requester: AuthenticatedUser,
+    query: {
+      collegeId?: string;
+      departmentId?: string;
+      facultyId?: string;
+      courseId?: string;
+      semesterId?: string;
+      sectionId?: string;
+      subjectId?: string;
+      academicYearId?: string;
+      isActive?: boolean;
+      page?: number;
+      limit?: number;
+    } = {}
+  ): Promise<{ items: IFacultyAssignment[]; page: number; limit: number; total: number; totalPages: number }> {
+    const mongoQuery: Record<string, unknown> = {};
+
+    if (requester.role === AppRole.STUDENT) {
+      const studentProfile = await Student.findOne({ userId: requester.id });
+      if (!studentProfile || !studentProfile.sectionId) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
+      mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+      mongoQuery.sectionId = studentProfile.sectionId;
+    } else if (requester.role === AppRole.FACULTY) {
+      const facultyProfile = await Faculty.findOne({ userId: requester.id });
+      if (!facultyProfile) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
+      mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+      mongoQuery.facultyId = facultyProfile._id;
+    } else if (requester.role === AppRole.HOD) {
+      if (!requester.collegeId || !requester.departmentId) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
+      mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+      mongoQuery.departmentId = new mongoose.Types.ObjectId(requester.departmentId);
+    } else if (requester.role === AppRole.COLLEGE_ADMIN) {
+      if (!requester.collegeId) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
+      mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+    } else if (query.collegeId) {
+      if (!mongoose.Types.ObjectId.isValid(query.collegeId)) throw ApiError.badRequest('Invalid collegeId');
+      mongoQuery.collegeId = new mongoose.Types.ObjectId(query.collegeId);
+    }
+
+    if (query.departmentId) mongoQuery.departmentId = new mongoose.Types.ObjectId(query.departmentId);
+    if (query.facultyId && requester.role !== AppRole.FACULTY) {
+      mongoQuery.facultyId = new mongoose.Types.ObjectId(query.facultyId);
+    }
+    if (query.courseId) mongoQuery.courseId = new mongoose.Types.ObjectId(query.courseId);
+    if (query.semesterId) mongoQuery.semesterId = new mongoose.Types.ObjectId(query.semesterId);
+    if (query.sectionId && requester.role !== AppRole.STUDENT) {
+      mongoQuery.sectionId = new mongoose.Types.ObjectId(query.sectionId);
+    }
+    if (query.subjectId) mongoQuery.subjectId = new mongoose.Types.ObjectId(query.subjectId);
+    if (query.academicYearId) mongoQuery.academicYearId = new mongoose.Types.ObjectId(query.academicYearId);
+    if (query.isActive !== undefined) mongoQuery.isActive = query.isActive;
+
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(100, Math.max(1, query.limit || 50));
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      FacultyAssignment.find(mongoQuery).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      FacultyAssignment.countDocuments(mongoQuery),
+    ]);
+
+    return { items, page, limit, total, totalPages: Math.ceil(total / limit) };
+  }
+
+  static async getFacultyAssignmentById(id: string, requester: AuthenticatedUser): Promise<IFacultyAssignment> {
+    if (!mongoose.Types.ObjectId.isValid(id)) throw ApiError.badRequest('Invalid FacultyAssignment ID');
+    const assignment = await FacultyAssignment.findById(id);
+    if (!assignment) throw ApiError.notFound('Faculty Assignment not found');
+
+    if (requester.role === AppRole.COLLEGE_ADMIN && assignment.collegeId.toString() !== requester.collegeId) {
+      throw ApiError.forbidden('Cross-college access is strictly prohibited');
+    }
+    if (requester.role === AppRole.HOD && assignment.departmentId.toString() !== requester.departmentId) {
+      throw ApiError.forbidden('Cross-department access is strictly prohibited');
+    }
+    if (requester.role === AppRole.FACULTY) {
+      const faculty = await Faculty.findOne({ userId: requester.id });
+      if (!faculty || assignment.facultyId.toString() !== faculty.id) {
+        throw ApiError.forbidden('Faculty can only access their own assignments');
+      }
+    }
+
+    return assignment;
+  }
+
+  static async deleteFacultyAssignment(id: string, requester: AuthenticatedUser): Promise<void> {
+    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
+      throw ApiError.forbidden('Only administrators and HODs have permission to remove faculty assignments');
+    }
+
+    const assignment = await this.getFacultyAssignmentById(id, requester);
+    const prev = assignment.toJSON();
+
+    await FacultyAssignment.findByIdAndDelete(id);
+
+    // Check if faculty still has other assignments for this subject/section
+    const remainingForFacultySubject = await FacultyAssignment.countDocuments({
+      facultyId: assignment.facultyId,
+      subjectId: assignment.subjectId,
+    });
+    if (remainingForFacultySubject === 0) {
+      await Faculty.updateOne({ _id: assignment.facultyId }, { $pull: { subjectIds: assignment.subjectId } });
+    }
+
+    const remainingForFacultySection = await FacultyAssignment.countDocuments({
+      facultyId: assignment.facultyId,
+      sectionId: assignment.sectionId,
+    });
+    if (remainingForFacultySection === 0) {
+      await Faculty.updateOne({ _id: assignment.facultyId }, { $pull: { sectionIds: assignment.sectionId } });
+    }
+
+    await AuditLog.create({
+      collegeId: assignment.collegeId.toString(),
+      actorUserId: requester.id,
+      action: 'FACULTY_ASSIGNMENT_DELETED',
+      entityType: 'FacultyAssignment',
+      entityId: assignment.id,
+      previousValue: prev,
+    });
+  }
+
+  static async getFacultyWorkload(
+    requester: AuthenticatedUser,
+    departmentId?: string
+  ): Promise<any[]> {
+    const mongoQuery: Record<string, unknown> = {};
+
+    if (requester.role === AppRole.FACULTY) {
+      const faculty = await Faculty.findOne({ userId: requester.id });
+      if (!faculty) return [];
+      mongoQuery._id = faculty._id;
+    } else if (requester.role === AppRole.HOD) {
+      if (!requester.collegeId || !requester.departmentId) return [];
+      mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+      mongoQuery.departmentId = new mongoose.Types.ObjectId(requester.departmentId);
+    } else if (requester.role === AppRole.COLLEGE_ADMIN) {
+      if (!requester.collegeId) return [];
+      mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+      if (departmentId) mongoQuery.departmentId = new mongoose.Types.ObjectId(departmentId);
+    } else if (departmentId) {
+      mongoQuery.departmentId = new mongoose.Types.ObjectId(departmentId);
+    }
+
+    const facultyList = await Faculty.find(mongoQuery).sort({ name: 1 });
+
+    const workloads = await Promise.all(
+      facultyList.map(async (fac) => {
+        const assignments = await FacultyAssignment.find({ facultyId: fac._id, isActive: true });
+        const distinctSubjects = new Set(assignments.map((a) => a.subjectId.toString())).size;
+        const distinctSections = new Set(assignments.map((a) => a.sectionId.toString())).size;
+
+        return {
+          facultyId: fac.id,
+          facultyName: fac.name,
+          employeeId: fac.employeeId || fac.instituteId,
+          departmentId: fac.departmentId?.toString(),
+          assignedSubjectCount: distinctSubjects,
+          assignedSectionCount: distinctSections,
+          totalAssignments: assignments.length,
+          assignments: assignments.map((a) => a.toJSON()),
+        };
+      })
+    );
+
+    return workloads;
   }
 }

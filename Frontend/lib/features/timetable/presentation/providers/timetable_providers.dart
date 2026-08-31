@@ -9,6 +9,7 @@ import '../../data/repositories/firebase_timetable_repository.dart';
 import '../../data/repositories/api_timetable_repository.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
+import '../../../dashboard/presentation/providers/dashboard_providers.dart';
 export 'timetable_authoring_providers.dart';
 
 final mockTimetableRepositoryProvider = Provider<TimetableRepository>((ref) {
@@ -128,6 +129,8 @@ class TimetableManagementNotifier extends AsyncNotifier<void> {
     state = await AsyncValue.guard(() async {
       final repository = ref.read(timetableRepositoryProvider);
       await repository.createEntry(entry);
+      ref.invalidate(weeklyTimetableProvider);
+      ref.invalidate(studentStatsProvider);
     });
   }
 
@@ -136,6 +139,8 @@ class TimetableManagementNotifier extends AsyncNotifier<void> {
     state = await AsyncValue.guard(() async {
       final repository = ref.read(timetableRepositoryProvider);
       await repository.updateEntry(entry);
+      ref.invalidate(weeklyTimetableProvider);
+      ref.invalidate(studentStatsProvider);
     });
   }
 
@@ -144,6 +149,8 @@ class TimetableManagementNotifier extends AsyncNotifier<void> {
     state = await AsyncValue.guard(() async {
       final repository = ref.read(timetableRepositoryProvider);
       await repository.deleteEntry(id);
+      ref.invalidate(weeklyTimetableProvider);
+      ref.invalidate(studentStatsProvider);
     });
   }
 }

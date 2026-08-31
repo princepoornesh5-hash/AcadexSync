@@ -151,3 +151,31 @@ export const enrollmentQuerySchema = z.object({
   collegeId: z.string().optional(),
   status: z.string().optional(),
 });
+
+// Faculty Assignment Validation
+export const createFacultyAssignmentSchema = z.object({
+  facultyId: z.string().min(1, 'facultyId is required'),
+  subjectId: z.string().min(1, 'subjectId is required'),
+  sectionId: z.string().min(1, 'sectionId is required'),
+  courseId: z.string().optional(),
+  semesterId: z.string().optional(),
+  academicYearId: z.string().optional(),
+  departmentId: z.string().optional(),
+  roomId: z.string().optional(),
+  maxStudents: z.number().int().positive().optional(),
+  assignmentType: z.string().optional().default('lecture'),
+});
+
+export const facultyAssignmentQuerySchema = z.object({
+  page: z.string().optional().transform((v) => (v ? parseInt(v, 10) : 1)).pipe(z.number().positive().default(1)),
+  limit: z.string().optional().transform((v) => (v ? parseInt(v, 10) : 50)).pipe(z.number().positive().max(100).default(50)),
+  collegeId: z.string().optional(),
+  departmentId: z.string().optional(),
+  facultyId: z.string().optional(),
+  courseId: z.string().optional(),
+  semesterId: z.string().optional(),
+  sectionId: z.string().optional(),
+  subjectId: z.string().optional(),
+  academicYearId: z.string().optional(),
+  isActive: z.string().optional().transform((v) => (v === 'true' ? true : v === 'false' ? false : undefined)),
+});

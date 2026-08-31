@@ -60,6 +60,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('[LOGIN_VISIBLE]');
+    });
+  }
+
+  @override
   void dispose() {
     _identifierController.dispose();
     _passwordController.dispose();
@@ -349,16 +357,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 24),
 
                 // Identifier Field
-                AcadexTextField(
+                Text(
+                  'PIN Number or Email',
+                  style: AcadexTypography.caption(
+                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                  ).copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 6),
+                TextFormField(
                   controller: _identifierController,
-                  label: 'Email or Phone Number',
-                  hint: 'user@acadex.edu or +1234567890',
-                  prefixIcon: LucideIcons.user,
-                  keyboardType: TextInputType.emailAddress,
                   enabled: !isLoading,
+                  keyboardType: TextInputType.emailAddress,
+                  style: AcadexTypography.body(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'e.g. 26CSE042 or user@acadex.edu',
+                    prefixIcon: Icon(
+                      LucideIcons.user,
+                      size: 18,
+                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    ),
+                  ),
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {
-                      return "Please enter your email or phone number";
+                      return "Please enter your PIN Number or Email";
                     }
                     return null;
                   },

@@ -6,6 +6,7 @@ import '../../domain/models/user_profile_model.dart';
 import '../../domain/models/user_status_enum.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../dashboard/presentation/providers/dashboard_providers.dart';
 
 final apiUserRepositoryProvider = Provider<ApiUserRepository>((ref) {
   return ApiUserRepository();
@@ -49,23 +50,18 @@ final usersListProvider = FutureProvider.autoDispose<List<UserProfileModel>>((re
     scopeDepartmentId = currentUser.departmentId;
   }
 
-  final role = ref.watch(userRoleFilterProvider);
-  final dept = ref.watch(userDeptFilterProvider);
-  final status = ref.watch(userStatusFilterProvider);
-  final query = ref.watch(userSearchQueryProvider);
-
   return repo.getUsers(
     scopeCollegeId: scopeCollegeId,
     scopeDepartmentId: scopeDepartmentId,
-    role: role,
-    departmentId: dept ?? scopeDepartmentId,
-    status: status,
-    searchQuery: query,
+    role: ref.watch(userRoleFilterProvider),
+    departmentId: ref.watch(userDeptFilterProvider) ?? scopeDepartmentId,
+    status: ref.watch(userStatusFilterProvider),
+    searchQuery: ref.watch(userSearchQueryProvider),
   );
 });
 
-// Individual User Detail
-final userDetailProvider = FutureProvider.family<UserProfileModel?, String>((ref, id) async {
+// Detail Provider
+final userDetailProvider = FutureProvider.autoDispose.family<UserProfileModel?, String>((ref, id) async {
   final repo = ref.watch(userRepositoryProvider);
   return repo.getUserById(id);
 });
@@ -75,12 +71,28 @@ class UserManagementNotifier extends StateNotifier<AsyncValue<void>> {
   final Ref _ref;
   UserManagementNotifier(this._ref) : super(const AsyncData(null));
 
-  Future<void> createUser(UserProfileModel user) async {
+  Future<CreateUserResult> createUser(UserProfileModel user) async {
     state = const AsyncLoading();
     try {
-      await _ref.read(userRepositoryProvider).createUser(user);
+      final repo = _ref.read(userRepositoryProvider);
+      CreateUserResult result;
+      if (repo is ApiUserRepository) {
+        result = await repo.createUserWithInvitation(user);
+      } else {
+        final created = await repo.createUser(user);
+        result = CreateUserResult(
+          user: created,
+          activationCode: 'ACT-TEST-000000',
+          invitationId: 'inv_test',
+          collegeCode: 'COLL',
+          expiresAt: DateTime.now().add(const Duration(hours: 48)),
+        );
+      }
       _ref.invalidate(usersListProvider);
+      _ref.invalidate(superAdminStatsProvider);
+      _ref.invalidate(collegeAdminStatsProvider);
       state = const AsyncData(null);
+      return result;
     } catch (e, st) {
       state = AsyncError(e, st);
       rethrow;
@@ -93,6 +105,9 @@ class UserManagementNotifier extends StateNotifier<AsyncValue<void>> {
       await _ref.read(userRepositoryProvider).updateUser(user);
       _ref.invalidate(usersListProvider);
       _ref.invalidate(userDetailProvider(user.id));
+      _ref.invalidate(currentUserProvider);
+      _ref.invalidate(superAdminStatsProvider);
+      _ref.invalidate(collegeAdminStatsProvider);
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
@@ -106,6 +121,8 @@ class UserManagementNotifier extends StateNotifier<AsyncValue<void>> {
       await _ref.read(userRepositoryProvider).deleteUser(id);
       _ref.invalidate(usersListProvider);
       _ref.invalidate(userDetailProvider(id));
+      _ref.invalidate(superAdminStatsProvider);
+      _ref.invalidate(collegeAdminStatsProvider);
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
@@ -119,6 +136,8 @@ class UserManagementNotifier extends StateNotifier<AsyncValue<void>> {
       await _ref.read(userRepositoryProvider).reactivateUser(id);
       _ref.invalidate(usersListProvider);
       _ref.invalidate(userDetailProvider(id));
+      _ref.invalidate(superAdminStatsProvider);
+      _ref.invalidate(collegeAdminStatsProvider);
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
@@ -127,12 +146,13 @@ class UserManagementNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   Future<String> generateActivationCode(UserProfileModel user) async {
-    try {
-      final apiRepo = _ref.read(apiUserRepositoryProvider);
-      return await apiRepo.generateActivationCode(user);
-    } catch (e) {
-      return 'ACADEX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-    }
+    final apiRepo = _ref.read(apiUserRepositoryProvider);
+    return await apiRepo.reissueActivationCodeForUser(user.id);
+  }
+
+  Future<String> reissueActivationCode(String userId) async {
+    final apiRepo = _ref.read(apiUserRepositoryProvider);
+    return await apiRepo.reissueActivationCodeForUser(userId);
   }
 }
 

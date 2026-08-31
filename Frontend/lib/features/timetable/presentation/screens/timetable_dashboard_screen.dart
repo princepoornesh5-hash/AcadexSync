@@ -37,22 +37,24 @@ class TimetableDashboardScreen extends ConsumerWidget {
     final viewMode = ref.watch(timetableViewModeProvider);
     final authState = ref.watch(authProvider);
     final user = authState is AuthAuthenticated ? authState.user : null;
+    final isGradientRole = user?.role == AppRole.superAdmin ||
+        user?.role == AppRole.collegeAdmin ||
+        user?.role == AppRole.hod ||
+        user?.role == AppRole.faculty ||
+        user?.role == AppRole.student;
     final canManage = user?.role == AppRole.hod || user?.role == AppRole.collegeAdmin;
     final width = MediaQuery.of(context).size.width;
     final isMobile = width < 640;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1600),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Page Header
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 16),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1600),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Page Header
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 16),
                   child: AcadexPageHeader(
                     title: 'My Timetable',
                     subtitle: _getSubtitleForRole(user?.role),
@@ -231,9 +233,7 @@ class TimetableDashboardScreen extends ConsumerWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
+        );
   }
 
   Widget _buildMobileDayBar(BuildContext context, WidgetRef ref, Map<TimetableDay, List<TimetableModel>> weeklyData) {

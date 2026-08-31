@@ -10,6 +10,8 @@ import '../../../../features/auth/domain/models/user_model.dart';
 import '../../../../features/auth/domain/models/role_enum.dart';
 import '../../../../core/providers/pagination_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../dashboard/presentation/providers/dashboard_providers.dart';
+import '../../../reports/presentation/providers/reports_providers.dart';
 
 final firebaseAcademicRepositoryProvider = Provider<AcademicRepository>((ref) {
   final firestoreService = ref.watch(firestoreServiceProvider);
@@ -43,17 +45,99 @@ class CollegeNotifier extends AutoDisposeAsyncNotifier<List<College>> {
   Future<void> addCollege(College college) async {
     await ref.read(academicRepositoryProvider).addCollege(college);
     ref.invalidateSelf();
+    ref.invalidate(superAdminStatsProvider);
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(roleDashboardReportProvider);
   }
   Future<void> updateCollege(College college) async {
     await ref.read(academicRepositoryProvider).updateCollege(college);
     ref.invalidateSelf();
+    ref.invalidate(collegeByIdProvider(college.id));
+    ref.invalidate(collegeSummaryProvider(college.id));
+    ref.invalidate(superAdminStatsProvider);
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(roleDashboardReportProvider);
   }
   Future<void> deactivateCollege(String id) async {
     await ref.read(academicRepositoryProvider).deactivateCollege(id);
     ref.invalidateSelf();
+    ref.invalidate(collegeByIdProvider(id));
+    ref.invalidate(collegeSummaryProvider(id));
+    ref.invalidate(superAdminStatsProvider);
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(roleDashboardReportProvider);
+  }
+  Future<void> toggleCollegeStatus(String id, bool activate) async {
+    final repo = ref.read(academicRepositoryProvider);
+    await repo.updateCollegeStatus(id, activate ? 'active' : 'inactive');
+    ref.invalidateSelf();
+    ref.invalidate(collegeByIdProvider(id));
+    ref.invalidate(collegeSummaryProvider(id));
+    ref.invalidate(superAdminStatsProvider);
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(roleDashboardReportProvider);
   }
 }
 final collegesProvider = AsyncNotifierProvider.autoDispose<CollegeNotifier, List<College>>(CollegeNotifier.new);
+
+// --- College Detail by ID ---
+final collegeByIdProvider = FutureProvider.autoDispose.family<College, String>((ref, id) async {
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getCollegeById(id);
+});
+
+// --- College Summary by ID ---
+final collegeSummaryProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, id) async {
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getCollegeSummary(id);
+});
+
+// --- College Admins ---
+final collegeAdminsProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, id) async {
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getCollegeAdmins(id);
+});
+
+class ProvisionCollegeAdminNotifier extends StateNotifier<AsyncValue<ProvisionAdminResult?>> {
+  final Ref ref;
+  ProvisionCollegeAdminNotifier(this.ref) : super(const AsyncData(null));
+
+  Future<ProvisionAdminResult> provision(String collegeId, Map<String, dynamic> data) async {
+    final link = ref.keepAlive();
+    state = const AsyncLoading();
+    try {
+      final repo = ref.read(apiAcademicRepositoryProvider);
+      final result = await repo.provisionCollegeAdmin(collegeId, data);
+      if (mounted) {
+        state = AsyncData(result);
+      }
+      // Invalidate admins list so detail screen refreshes
+      ref.invalidate(collegeAdminsProvider(collegeId));
+      ref.invalidate(collegeSummaryProvider(collegeId));
+      ref.invalidate(superAdminStatsProvider);
+      ref.invalidate(collegeAdminStatsProvider);
+      return result;
+    } catch (e, st) {
+      if (mounted) {
+        state = AsyncError(e, st);
+      }
+      rethrow;
+    } finally {
+      link.close();
+    }
+  }
+
+  void reset() {
+    if (mounted) {
+      state = const AsyncData(null);
+    }
+  }
+}
+
+final provisionCollegeAdminProvider = StateNotifierProvider.autoDispose<ProvisionCollegeAdminNotifier, AsyncValue<ProvisionAdminResult?>>((ref) {
+  return ProvisionCollegeAdminNotifier(ref);
+});
+
 
 // --- Department Notifier ---
 class DepartmentNotifier extends AutoDisposeAsyncNotifier<List<Department>> {
@@ -64,21 +148,70 @@ class DepartmentNotifier extends AutoDisposeAsyncNotifier<List<Department>> {
   Future<void> addDepartment(Department department) async {
     await ref.read(academicRepositoryProvider).addDepartment(department);
     ref.invalidateSelf();
+    ref.invalidate(collegeSummaryProvider(department.collegeId));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(roleDashboardReportProvider);
   }
   Future<void> updateDepartment(Department department) async {
     await ref.read(academicRepositoryProvider).updateDepartment(department);
     ref.invalidateSelf();
+    ref.invalidate(departmentByIdProvider(department.id));
+    ref.invalidate(departmentSummaryProvider(department.id));
+    ref.invalidate(collegeSummaryProvider(department.collegeId));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(roleDashboardReportProvider);
   }
   Future<void> deactivateDepartment(String id) async {
     await ref.read(academicRepositoryProvider).deactivateDepartment(id);
     ref.invalidateSelf();
+    ref.invalidate(departmentByIdProvider(id));
+    ref.invalidate(departmentSummaryProvider(id));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(roleDashboardReportProvider);
+  }
+  Future<void> toggleDepartmentStatus(String id, bool activate) async {
+    final repo = ref.read(academicRepositoryProvider);
+    await repo.updateDepartmentStatus(id, activate ? 'active' : 'inactive');
+    ref.invalidateSelf();
+    ref.invalidate(departmentByIdProvider(id));
+    ref.invalidate(departmentSummaryProvider(id));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(roleDashboardReportProvider);
   }
   Future<void> assignHod(String departmentId, String hodUserId) async {
     await ref.read(academicRepositoryProvider).assignHodToDepartment(departmentId, hodUserId);
     ref.invalidateSelf();
+    ref.invalidate(departmentByIdProvider(departmentId));
+    ref.invalidate(departmentHodProvider(departmentId));
+    ref.invalidate(hodsProvider);
+    ref.invalidate(hodByIdProvider(hodUserId));
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(collegeAdminStatsProvider);
   }
 }
 final departmentsProvider = AsyncNotifierProvider.autoDispose<DepartmentNotifier, List<Department>>(DepartmentNotifier.new);
+
+// --- Department Detail by ID ---
+final departmentByIdProvider = FutureProvider.autoDispose.family<Department, String>((ref, id) async {
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getDepartmentById(id);
+});
+
+// --- Department Summary by ID ---
+final departmentSummaryProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, id) async {
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getDepartmentSummary(id);
+});
+
+// --- Department HOD by Department ID ---
+final departmentHodProvider = FutureProvider.autoDispose.family<Map<String, dynamic>?, String>((ref, departmentId) async {
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getDepartmentHod(departmentId);
+});
 
 // --- Course Notifier ---
 class CourseNotifier extends AutoDisposeAsyncNotifier<List<Course>> {
@@ -93,13 +226,27 @@ class CourseNotifier extends AutoDisposeAsyncNotifier<List<Course>> {
   Future<void> updateCourse(Course course) async {
     await ref.read(academicRepositoryProvider).updateCourse(course);
     ref.invalidateSelf();
+    ref.invalidate(courseByIdProvider(course.id));
+  }
+  Future<void> toggleCourseStatus(String id, bool activate) async {
+    final repo = ref.read(academicRepositoryProvider);
+    await repo.updateCourseStatus(id, activate);
+    ref.invalidateSelf();
+    ref.invalidate(courseByIdProvider(id));
   }
   Future<void> deactivateCourse(String id) async {
     await ref.read(academicRepositoryProvider).deactivateCourse(id);
     ref.invalidateSelf();
+    ref.invalidate(courseByIdProvider(id));
   }
 }
 final coursesProvider = AsyncNotifierProvider.autoDispose<CourseNotifier, List<Course>>(CourseNotifier.new);
+
+// --- Course Detail by ID ---
+final courseByIdProvider = FutureProvider.autoDispose.family<Course, String>((ref, id) async {
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getCourseById(id);
+});
 
 // --- AcademicYear Notifier ---
 class AcademicYearNotifier extends AutoDisposeAsyncNotifier<List<AcademicYear>> {
@@ -110,21 +257,48 @@ class AcademicYearNotifier extends AutoDisposeAsyncNotifier<List<AcademicYear>> 
   Future<void> addAcademicYear(AcademicYear academicYear) async {
     await ref.read(academicRepositoryProvider).addAcademicYear(academicYear);
     ref.invalidateSelf();
+    ref.invalidate(collegeAdminStatsProvider);
   }
   Future<void> updateAcademicYear(AcademicYear academicYear) async {
     await ref.read(academicRepositoryProvider).updateAcademicYear(academicYear);
     ref.invalidateSelf();
+    ref.invalidate(academicYearByIdProvider(academicYear.id));
+    ref.invalidate(collegeAdminStatsProvider);
+  }
+  Future<void> setAsCurrent(String id) async {
+    final repo = ref.read(academicRepositoryProvider);
+    await repo.setCurrentAcademicYear(id);
+    ref.invalidateSelf();
+    ref.invalidate(academicYearByIdProvider(id));
+    ref.invalidate(collegeAdminStatsProvider);
+  }
+  Future<void> toggleStatus(String id, bool activate) async {
+    final repo = ref.read(academicRepositoryProvider);
+    await repo.updateAcademicYearStatus(id, activate);
+    ref.invalidateSelf();
+    ref.invalidate(academicYearByIdProvider(id));
+    ref.invalidate(collegeAdminStatsProvider);
   }
   Future<void> deactivateAcademicYear(String id) async {
     await ref.read(academicRepositoryProvider).deactivateAcademicYear(id);
     ref.invalidateSelf();
+    ref.invalidate(academicYearByIdProvider(id));
+    ref.invalidate(collegeAdminStatsProvider);
   }
   Future<void> activateAcademicYear(String collegeId, String academicYearId) async {
     await ref.read(academicRepositoryProvider).activateAcademicYear(collegeId, academicYearId);
     ref.invalidateSelf();
+    ref.invalidate(academicYearByIdProvider(academicYearId));
+    ref.invalidate(collegeAdminStatsProvider);
   }
 }
 final academicYearsProvider = AsyncNotifierProvider.autoDispose<AcademicYearNotifier, List<AcademicYear>>(AcademicYearNotifier.new);
+
+// --- AcademicYear Detail by ID ---
+final academicYearByIdProvider = FutureProvider.autoDispose.family<AcademicYear, String>((ref, id) async {
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getAcademicYearById(id);
+});
 
 // --- Semester Notifier ---
 class SemesterNotifier extends AutoDisposeAsyncNotifier<List<Semester>> {
@@ -139,21 +313,43 @@ class SemesterNotifier extends AutoDisposeAsyncNotifier<List<Semester>> {
   Future<void> updateSemester(Semester semester) async {
     await ref.read(academicRepositoryProvider).updateSemester(semester);
     ref.invalidateSelf();
+    ref.invalidate(semesterByIdProvider(semester.id));
+  }
+  Future<void> toggleStatus(String id, bool activate) async {
+    final repo = ref.read(academicRepositoryProvider);
+    await repo.updateSemesterStatus(id, activate);
+    ref.invalidateSelf();
+    ref.invalidate(semesterByIdProvider(id));
+  }
+  Future<void> toggleCurrent(String id, bool isCurrent) async {
+    final repo = ref.read(academicRepositoryProvider);
+    await repo.toggleSemesterCurrent(id, isCurrent);
+    ref.invalidateSelf();
+    ref.invalidate(semesterByIdProvider(id));
   }
   Future<void> deactivateSemester(String id) async {
     await ref.read(academicRepositoryProvider).deactivateSemester(id);
     ref.invalidateSelf();
+    ref.invalidate(semesterByIdProvider(id));
   }
   Future<void> activateSemester(String collegeId, String courseId, String semesterId) async {
     await ref.read(academicRepositoryProvider).activateSemester(collegeId, courseId, semesterId);
     ref.invalidateSelf();
+    ref.invalidate(semesterByIdProvider(semesterId));
   }
   Future<void> completeSemester(String semesterId) async {
     await ref.read(academicRepositoryProvider).completeSemester(semesterId);
     ref.invalidateSelf();
+    ref.invalidate(semesterByIdProvider(semesterId));
   }
 }
 final semestersProvider = AsyncNotifierProvider.autoDispose<SemesterNotifier, List<Semester>>(SemesterNotifier.new);
+
+// --- Semester Detail by ID ---
+final semesterByIdProvider = FutureProvider.autoDispose.family<Semester, String>((ref, id) async {
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getSemesterById(id);
+});
 
 // --- Section Notifier ---
 class SectionNotifier extends AutoDisposeAsyncNotifier<List<Section>> {
@@ -168,27 +364,44 @@ class SectionNotifier extends AutoDisposeAsyncNotifier<List<Section>> {
   Future<void> updateSection(Section section) async {
     await ref.read(academicRepositoryProvider).updateSection(section);
     ref.invalidateSelf();
+    ref.invalidate(sectionByIdProvider(section.id));
+  }
+  Future<void> toggleStatus(String id, bool activate) async {
+    final repo = ref.read(academicRepositoryProvider);
+    await repo.updateSectionStatus(id, activate);
+    ref.invalidateSelf();
+    ref.invalidate(sectionByIdProvider(id));
   }
   Future<void> updateSectionCapacity(String sectionId, int newCapacity) async {
     await ref.read(academicRepositoryProvider).updateSectionCapacity(sectionId, newCapacity);
     ref.invalidateSelf();
+    ref.invalidate(sectionByIdProvider(sectionId));
   }
   Future<void> transferStudents(List<String> studentIds, String targetSectionId) async {
     await ref.read(academicRepositoryProvider).transferStudentsSection(studentIds: studentIds, targetSectionId: targetSectionId);
     ref.invalidateSelf();
+    ref.invalidate(sectionByIdProvider(targetSectionId));
     ref.invalidate(studentsProvider);
   }
   Future<void> executeBulkTransfer(List<String> studentIds, String targetSectionId) async {
     await ref.read(academicRepositoryProvider).executeBulkSectionTransfer(studentIds: studentIds, targetSectionId: targetSectionId);
     ref.invalidateSelf();
+    ref.invalidate(sectionByIdProvider(targetSectionId));
     ref.invalidate(studentsProvider);
   }
   Future<void> deactivateSection(String id) async {
     await ref.read(academicRepositoryProvider).deactivateSection(id);
     ref.invalidateSelf();
+    ref.invalidate(sectionByIdProvider(id));
   }
 }
 final sectionsProvider = AsyncNotifierProvider.autoDispose<SectionNotifier, List<Section>>(SectionNotifier.new);
+
+// --- Section Detail by ID ---
+final sectionByIdProvider = FutureProvider.autoDispose.family<Section, String>((ref, id) async {
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getSectionById(id);
+});
 
 // --- Subject Notifier ---
 class SubjectNotifier extends AutoDisposeAsyncNotifier<List<Subject>> {
@@ -199,17 +412,99 @@ class SubjectNotifier extends AutoDisposeAsyncNotifier<List<Subject>> {
   Future<void> addSubject(Subject subject) async {
     await ref.read(academicRepositoryProvider).addSubject(subject);
     ref.invalidateSelf();
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> updateSubject(Subject subject) async {
     await ref.read(academicRepositoryProvider).updateSubject(subject);
     ref.invalidateSelf();
+    ref.invalidate(subjectByIdProvider(subject.id));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
+  }
+  Future<void> toggleStatus(String id, bool activate) async {
+    final repo = ref.read(academicRepositoryProvider);
+    await repo.updateSubjectStatus(id, activate);
+    ref.invalidateSelf();
+    ref.invalidate(subjectByIdProvider(id));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> deactivateSubject(String id) async {
     await ref.read(academicRepositoryProvider).deactivateSubject(id);
     ref.invalidateSelf();
+    ref.invalidate(subjectByIdProvider(id));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
 }
 final subjectsProvider = AsyncNotifierProvider.autoDispose<SubjectNotifier, List<Subject>>(SubjectNotifier.new);
+
+// --- Subject Detail by ID ---
+final subjectByIdProvider = FutureProvider.autoDispose.family<Subject, String>((ref, id) async {
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getSubjectById(id);
+});
+
+// --- HOD Notifier ---
+class HodNotifier extends AutoDisposeAsyncNotifier<List<UserModel>> {
+  @override
+  Future<List<UserModel>> build() async {
+    return ref.watch(academicRepositoryProvider).getHods();
+  }
+
+  Future<ProvisionHodResult> provisionHod({
+    required String departmentId,
+    required String name,
+    required String instituteId,
+    required String email,
+    String? phone,
+  }) async {
+    final result = await ref.read(academicRepositoryProvider).provisionHod(
+      departmentId: departmentId,
+      name: name,
+      instituteId: instituteId,
+      email: email,
+      phone: phone,
+    );
+    ref.invalidateSelf();
+    ref.invalidate(departmentHodProvider(departmentId));
+    ref.invalidate(departmentByIdProvider(departmentId));
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(collegeAdminStatsProvider);
+    return result;
+  }
+
+  Future<void> updateProfile(String id, {String? name, String? email, String? phone}) async {
+    await ref.read(academicRepositoryProvider).updateHodProfile(id, name: name, email: email, phone: phone);
+    ref.invalidateSelf();
+    ref.invalidate(hodByIdProvider(id));
+    ref.invalidate(hodSummaryProvider(id));
+    ref.invalidate(hodStatsProvider);
+  }
+
+  Future<void> transferDepartment(String id, String targetDepartmentId) async {
+    await ref.read(academicRepositoryProvider).transferHodDepartment(id, targetDepartmentId);
+    ref.invalidateSelf();
+    ref.invalidate(hodByIdProvider(id));
+    ref.invalidate(hodSummaryProvider(id));
+    ref.invalidate(hodStatsProvider);
+  }
+}
+
+final hodsProvider = AsyncNotifierProvider.autoDispose<HodNotifier, List<UserModel>>(HodNotifier.new);
+
+// --- HOD Detail by ID ---
+final hodByIdProvider = FutureProvider.autoDispose.family<UserModel, String>((ref, id) async {
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getHodById(id);
+});
+
+// --- HOD Summary Metrics by ID ---
+final hodSummaryProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, id) async {
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getHodSummary(id);
+});
 
 // --- Faculty Notifier ---
 class FacultyNotifier extends PaginationNotifier<Faculty> {
@@ -230,18 +525,31 @@ class FacultyNotifier extends PaginationNotifier<Faculty> {
   Future<void> bulkAssignSubjects(String facultyId, List<String> subjectIds, List<String> sectionIds) async {
     await ref.read(academicRepositoryProvider).bulkAssignSubjectsToFaculty(facultyId, subjectIds, sectionIds);
     await refresh();
+    ref.invalidate(facultyAssignmentsProvider);
+    ref.invalidate(myFacultyAssignmentsProvider);
+    ref.invalidate(facultyByIdProvider(facultyId));
+    ref.invalidate(facultySummaryProvider(facultyId));
+    ref.invalidate(facultyStatsProvider);
   }
 
   Future<void> transferDepartment(String facultyId, String newDepartmentId) async {
     await ref.read(academicRepositoryProvider).transferFacultyDepartment(facultyId, newDepartmentId);
     await refresh();
     ref.invalidate(facultyAssignmentsProvider);
+    ref.invalidate(myFacultyAssignmentsProvider);
+    ref.invalidate(facultyByIdProvider(facultyId));
+    ref.invalidate(facultySummaryProvider(facultyId));
+    ref.invalidate(departmentFacultyCountsProvider);
+    ref.invalidate(facultyStatsProvider);
   }
 
   Future<ProvisionFacultyResult> provisionFaculty(ProvisionFacultyRequest request) async {
     final result = await ref.read(academicRepositoryProvider).provisionFaculty(request);
     await refresh();
     ref.invalidate(departmentFacultyCountsProvider);
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(superAdminStatsProvider);
     return result;
   }
 }
@@ -257,6 +565,7 @@ class FacultyProvisionNotifier extends StateNotifier<AsyncValue<ProvisionFaculty
   FacultyProvisionNotifier(this.ref) : super(const AsyncData(null));
 
   Future<ProvisionFacultyResult> provisionFaculty(ProvisionFacultyRequest request) async {
+    final link = ref.keepAlive();
     state = const AsyncLoading();
     try {
       final result = await ref.read(academicRepositoryProvider).provisionFaculty(request);
@@ -265,22 +574,46 @@ class FacultyProvisionNotifier extends StateNotifier<AsyncValue<ProvisionFaculty
         ref.invalidate(facultyProvider(request.departmentId));
       }
       ref.invalidate(departmentFacultyCountsProvider);
-      state = AsyncData(result);
+      ref.invalidate(collegeAdminStatsProvider);
+      ref.invalidate(hodStatsProvider);
+      ref.invalidate(superAdminStatsProvider);
+      if (mounted) {
+        state = AsyncData(result);
+      }
       return result;
     } catch (e, st) {
-      state = AsyncError(e, st);
+      if (mounted) {
+        state = AsyncError(e, st);
+      }
       rethrow;
+    } finally {
+      link.close();
     }
   }
 
   void reset() {
-    state = const AsyncData(null);
+    if (mounted) {
+      state = const AsyncData(null);
+    }
   }
 }
 
 final facultyProvisionProvider = StateNotifierProvider.autoDispose<FacultyProvisionNotifier, AsyncValue<ProvisionFacultyResult?>>((ref) {
   return FacultyProvisionNotifier(ref);
 });
+
+// --- Faculty Detail by ID ---
+final facultyByIdProvider = FutureProvider.autoDispose.family<Faculty?, String>((ref, id) async {
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getFacultyById(id);
+});
+
+// --- Faculty Summary Metrics by ID ---
+final facultySummaryProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, id) async {
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getFacultySummary(id);
+});
+
 
 // --- Student Notifier ---
 class StudentNotifier extends PaginationNotifier<Student> {
@@ -303,11 +636,17 @@ class StudentNotifier extends PaginationNotifier<Student> {
   Future<void> admitStudent(Student student) async {
     await ref.read(academicRepositoryProvider).admitStudent(student);
     await refresh();
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(superAdminStatsProvider);
   }
 
   Future<void> bulkAdmit(List<Student> students) async {
     await ref.read(academicRepositoryProvider).bulkAdmitStudents(students);
     await refresh();
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(superAdminStatsProvider);
   }
 
   Future<void> promoteStudents(
@@ -324,6 +663,12 @@ class StudentNotifier extends PaginationNotifier<Student> {
       targetSectionId: newSectionId,
     );
     await refresh();
+    for (final id in studentIds) {
+      ref.invalidate(studentAcademicProfileProvider(id));
+      ref.invalidate(studentByIdProvider(id));
+    }
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
 
   Future<void> transferStudents(List<String> studentIds, String newSectionId) async {
@@ -332,6 +677,12 @@ class StudentNotifier extends PaginationNotifier<Student> {
       targetSectionId: newSectionId,
     );
     await refresh();
+    for (final id in studentIds) {
+      ref.invalidate(studentAcademicProfileProvider(id));
+      ref.invalidate(studentByIdProvider(id));
+    }
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
 
   Future<void> transferDepartment({
@@ -349,6 +700,12 @@ class StudentNotifier extends PaginationNotifier<Student> {
       targetSectionId: targetSectionId,
     );
     await refresh();
+    for (final id in studentIds) {
+      ref.invalidate(studentAcademicProfileProvider(id));
+      ref.invalidate(studentByIdProvider(id));
+    }
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
 
   Future<void> updateLifecycleState({
@@ -390,6 +747,14 @@ final studentsProvider = StateNotifierProvider.autoDispose.family<StudentNotifie
   // Watch auth to force rebuild on logout
   ref.watch(auth.authProvider);
   return StudentNotifier(ref, sectionId: args.sectionId, departmentId: args.departmentId)..loadInitial();
+});
+
+final studentByIdProvider = FutureProvider.autoDispose.family<Student?, String>((ref, id) async {
+  return ref.watch(academicRepositoryProvider).getStudentById(id);
+});
+
+final studentSummaryProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, id) async {
+  return ref.watch(academicRepositoryProvider).getStudentSummary(id);
 });
 
 final studentAcademicProfileProvider = FutureProvider.autoDispose.family<StudentAcademicProfile, String>((ref, studentId) async {

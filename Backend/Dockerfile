@@ -1,20 +1,34 @@
-FROM python:3.11-slim
+# ── Stage 1: Build Stage ───────────────────────────────────
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+# Install dependencies first for efficient layer caching
+COPY package*.json tsconfig*.json ./
+RUN npm ci
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Copy TypeScript source code and build
+COPY src ./src
+RUN npm run build
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# ── Stage 2: Production Runtime ────────────────────────────
+FROM node:20-alpine AS runner
 
-COPY . .
+WORKDIR /app
 
-EXPOSE 8000
+ENV NODE_ENV=production
+ENV PORT=5050
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Copy package manifests and install production-only dependencies
+COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+# Copy compiled JavaScript output from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Use non-root node user for container security
+USER node
+
+EXPOSE 5050
+
+CMD ["node", "dist/server.js"]

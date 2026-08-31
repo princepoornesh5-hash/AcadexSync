@@ -22,6 +22,8 @@ import {
   enrollStudentSchema,
   updateEnrollmentSchema,
   enrollmentQuerySchema,
+  createFacultyAssignmentSchema,
+  facultyAssignmentQuerySchema,
 } from '../validations/academic.validation';
 import { AppRole } from '../constants/roles';
 
@@ -78,8 +80,8 @@ export class AcademicController {
     if (!collegeId) throw ApiError.badRequest('collegeId is required');
 
     const validatedData = createAcademicYearSchema.parse(req.body);
-    const year = await AcademicService.createAcademicYear(collegeId, validatedData, req.user);
-    return ApiResponse.created(res, year, 'Academic Year created successfully');
+    const academicYear = await AcademicService.createAcademicYear(collegeId, validatedData, req.user);
+    return ApiResponse.created(res, academicYear, 'Academic Year created successfully');
   });
 
   static listAcademicYears = asyncHandler(async (req: Request, res: Response) => {
@@ -91,15 +93,15 @@ export class AcademicController {
 
   static getAcademicYearById = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user) throw ApiError.unauthorized('User not authenticated');
-    const year = await AcademicService.getAcademicYearById(req.params.id, req.user);
-    return ApiResponse.success(res, year);
+    const academicYear = await AcademicService.getAcademicYearById(req.params.id, req.user);
+    return ApiResponse.success(res, academicYear);
   });
 
   static updateAcademicYear = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user) throw ApiError.unauthorized('User not authenticated');
     const validatedData = updateAcademicYearSchema.parse(req.body);
-    const year = await AcademicService.updateAcademicYear(req.params.id, validatedData, req.user);
-    return ApiResponse.success(res, year, 'Academic Year updated successfully');
+    const academicYear = await AcademicService.updateAcademicYear(req.params.id, validatedData, req.user);
+    return ApiResponse.success(res, academicYear, 'Academic Year updated successfully');
   });
 
   // =========================================================================
@@ -264,7 +266,64 @@ export class AcademicController {
     return ApiResponse.success(res, tree);
   });
 
-  static assignFaculty = asyncHandler(async (_req: Request, res: Response) => {
-    return ApiResponse.success(res, { message: 'Faculty assignment endpoint foundation ready' });
+  // =========================================================================
+  // 8. FACULTY ASSIGNMENTS & WORKLOAD (MODULE 5B)
+  // =========================================================================
+
+  static createFacultyAssignment = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+
+    const collegeId = req.user.role === AppRole.SUPER_ADMIN
+      ? (req.body.collegeId || req.collegeId)
+      : req.user.collegeId;
+
+    if (!collegeId) throw ApiError.badRequest('collegeId is required');
+
+    const validatedData = createFacultyAssignmentSchema.parse(req.body);
+    const assignment = await AcademicService.createFacultyAssignment(collegeId, validatedData, req.user);
+    return ApiResponse.created(res, assignment, 'Faculty assigned successfully');
+  });
+
+  static listFacultyAssignments = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const query = facultyAssignmentQuerySchema.parse(req.query);
+    const result = await AcademicService.listFacultyAssignments(req.user, query);
+    return ApiResponse.success(res, result);
+  });
+
+  static getFacultyAssignmentById = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const assignment = await AcademicService.getFacultyAssignmentById(req.params.id, req.user);
+    return ApiResponse.success(res, assignment);
+  });
+
+  static deleteFacultyAssignment = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    await AcademicService.deleteFacultyAssignment(req.params.id, req.user);
+    return ApiResponse.success(res, null, 'Faculty assignment deleted successfully');
+  });
+
+  static getFacultyWorkload = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const departmentId = req.query.departmentId as string | undefined;
+    const workloads = await AcademicService.getFacultyWorkload(req.user, departmentId);
+    return ApiResponse.success(res, workloads);
+  });
+
+  static getMyFacultyAssignments = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const result = await AcademicService.listFacultyAssignments(req.user, { page: 1, limit: 100 });
+    return ApiResponse.success(res, result.items);
+  });
+
+  static assignFaculty = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const collegeId = req.user.role === AppRole.SUPER_ADMIN
+      ? (req.body.collegeId || req.collegeId)
+      : req.user.collegeId;
+    if (!collegeId) throw ApiError.badRequest('collegeId is required');
+    const validatedData = createFacultyAssignmentSchema.parse(req.body);
+    const assignment = await AcademicService.createFacultyAssignment(collegeId, validatedData, req.user);
+    return ApiResponse.created(res, assignment, 'Faculty assigned successfully');
   });
 }

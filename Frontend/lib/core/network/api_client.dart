@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -8,17 +7,11 @@ class ApiClient {
 
   static String get defaultBaseUrl {
     if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://192.168.1.6:5050/api/v1';
-    }
     return 'http://localhost:5050/api/v1';
   }
 
   static String get defaultAiUrl {
     if (_envAiUrl.isNotEmpty) return _envAiUrl;
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://192.168.1.6:5001/api/v1/ai';
-    }
     return 'http://localhost:5001/api/v1/ai';
   }
 

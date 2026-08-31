@@ -9,10 +9,10 @@ dotenv.config();
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z
-    .string()
-    .transform((val) => parseInt(val, 10))
+    .union([z.string(), z.number()])
+    .transform((val) => (typeof val === 'number' ? val : parseInt(val, 10)))
     .pipe(z.number().positive())
-    .default('5000'),
+    .default('5050'),
   MONGODB_URI: z.string().optional(),
   MONGODB_DATABASE: z.string().default('acadex'),
   

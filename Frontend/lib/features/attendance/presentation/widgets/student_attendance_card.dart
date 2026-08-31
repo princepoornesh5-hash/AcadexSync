@@ -245,10 +245,11 @@ class StudentAttendanceCard extends StatelessWidget {
     final isSelected = record.status == status;
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => onStatusChanged(status),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
         decoration: BoxDecoration(
           color: isSelected ? activeBg : Colors.transparent,
           borderRadius: AcadexRadius.borderRadiusSm,
@@ -262,15 +263,15 @@ class StudentAttendanceCard extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: 12,
-              color: isSelected ? activeFg : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+              size: 13,
+              color: isSelected ? activeFg : AcadexColors.inkMuted,
             ),
             const SizedBox(width: 3),
             Flexible(
               child: Text(
                 label,
                 style: AcadexTypography.caption(
-                  color: isSelected ? activeFg : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  color: isSelected ? activeFg : AcadexColors.inkSecondary,
                 ).copyWith(fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500, fontSize: 11),
                 overflow: TextOverflow.ellipsis,
               ),

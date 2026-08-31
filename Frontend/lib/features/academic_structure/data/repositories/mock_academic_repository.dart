@@ -121,21 +121,224 @@ class MockAcademicRepository implements AcademicRepository {
   @override
   Future<List<College>> getColleges() async { await _delay(); return List.from(_colleges.where((e) => e.isActive)); }
   @override
-  Future<List<Department>> getDepartments() async { await _delay(); return List.from(_departments.where((e) => e.isActive)); }
+  Future<List<Department>> getDepartments({String? collegeId, String? search, String? status}) async {
+    await _delay();
+    return List.from(_departments.where((e) => e.isActive));
+  }
+
   @override
-  Future<List<Course>> getCourses() async { await _delay(); return List.from(_courses.where((e) => e.isActive)); }
+  Future<Department> getDepartmentById(String id) async {
+    await _delay();
+    return _departments.firstWhere((e) => e.id == id, orElse: () => throw Exception('Department not found'));
+  }
+
   @override
-  Future<List<AcademicYear>> getAcademicYears() async { await _delay(); return List.from(_academicYears.where((e) => e.isActive)); }
+  Future<Map<String, dynamic>> getDepartmentSummary(String id) async {
+    await _delay();
+    return {};
+  }
+
   @override
-  Future<List<Semester>> getSemesters() async { await _delay(); return List.from(_semesters.where((e) => e.isActive)); }
+  Future<Map<String, dynamic>?> getDepartmentHod(String departmentId) async {
+    await _delay();
+    return null;
+  }
+
   @override
-  Future<List<Section>> getSections() async { await _delay(); return List.from(_sections.where((e) => e.isActive)); }
+  Future<void> updateDepartmentStatus(String id, String status) async {
+    await _delay();
+    final idx = _departments.indexWhere((e) => e.id == id);
+    if (idx != -1) _departments[idx] = _departments[idx].copyWith(isActive: status == 'active');
+  }
   @override
-  Future<List<Subject>> getSubjects() async { await _delay(); return List.from(_subjects.where((e) => e.isActive)); }
+  Future<List<Course>> getCourses({String? collegeId, String? departmentId, String? search}) async {
+    await _delay();
+    return List.from(_courses.where((e) => e.isActive));
+  }
+
   @override
-  Future<List<Faculty>> getFaculty({String? departmentId}) async { 
+  Future<Course> getCourseById(String id) async {
+    await _delay();
+    return _courses.firstWhere((e) => e.id == id, orElse: () => throw Exception('Course not found'));
+  }
+
+  @override
+  Future<void> updateCourseStatus(String id, bool isActive) async {
+    await _delay();
+    final idx = _courses.indexWhere((e) => e.id == id);
+    if (idx != -1) _courses[idx] = _courses[idx].copyWith(isActive: isActive);
+  }
+  @override
+  Future<List<AcademicYear>> getAcademicYears({String? collegeId}) async {
+    await _delay();
+    return List.from(_academicYears.where((e) => e.isActive));
+  }
+
+  @override
+  Future<AcademicYear> getAcademicYearById(String id) async {
+    await _delay();
+    return _academicYears.firstWhere((e) => e.id == id, orElse: () => throw Exception('Academic Year not found'));
+  }
+
+  @override
+  Future<void> setCurrentAcademicYear(String id) async {
+    await _delay();
+    for (int i = 0; i < _academicYears.length; i++) {
+      if (_academicYears[i].id == id) {
+        _academicYears[i] = _academicYears[i].copyWith(isCurrent: true);
+      } else {
+        _academicYears[i] = _academicYears[i].copyWith(isCurrent: false);
+      }
+    }
+  }
+
+  @override
+  Future<void> updateAcademicYearStatus(String id, bool isActive) async {
+    await _delay();
+    final idx = _academicYears.indexWhere((e) => e.id == id);
+    if (idx != -1) _academicYears[idx] = _academicYears[idx].copyWith(isActive: isActive);
+  }
+  @override
+  Future<List<Semester>> getSemesters({String? courseId, String? academicYearId, String? collegeId}) async {
+    await _delay();
+    return List.from(_semesters.where((e) {
+      if (!e.isActive) return false;
+      if (courseId != null && e.courseId != courseId) return false;
+      if (academicYearId != null && e.academicYearId != academicYearId) return false;
+      return true;
+    }));
+  }
+
+  @override
+  Future<Semester> getSemesterById(String id) async {
+    await _delay();
+    return _semesters.firstWhere((e) => e.id == id, orElse: () => throw Exception('Semester not found'));
+  }
+
+  @override
+  Future<void> updateSemesterStatus(String id, bool isActive) async {
+    await _delay();
+    final idx = _semesters.indexWhere((e) => e.id == id);
+    if (idx != -1) _semesters[idx] = _semesters[idx].copyWith(isActive: isActive);
+  }
+
+  @override
+  Future<void> toggleSemesterCurrent(String id, bool isCurrent) async {
+    await _delay();
+    final idx = _semesters.indexWhere((e) => e.id == id);
+    if (idx != -1) _semesters[idx] = _semesters[idx].copyWith(isCurrent: isCurrent);
+  }
+  @override
+  Future<List<Section>> getSections({String? semesterId, String? courseId, String? collegeId}) async {
+    await _delay();
+    return List.from(_sections.where((e) {
+      if (!e.isActive) return false;
+      if (semesterId != null && e.semesterId != semesterId) return false;
+      if (courseId != null && e.courseId != courseId) return false;
+      return true;
+    }));
+  }
+
+  @override
+  Future<Section> getSectionById(String id) async {
+    await _delay();
+    return _sections.firstWhere((e) => e.id == id, orElse: () => throw Exception('Section not found'));
+  }
+
+  @override
+  Future<void> updateSectionStatus(String id, bool isActive) async {
+    await _delay();
+    final idx = _sections.indexWhere((e) => e.id == id);
+    if (idx != -1) _sections[idx] = _sections[idx].copyWith(isActive: isActive);
+  }
+
+  @override
+  Future<ProvisionHodResult> provisionHod({
+    required String departmentId,
+    required String name,
+    required String instituteId,
+    required String email,
+    String? phone,
+  }) async {
+    await _delay();
+    final user = UserModel(
+      id: 'hod-${DateTime.now().millisecondsSinceEpoch}',
+      name: name,
+      instituteId: instituteId,
+      email: email,
+      phone: phone,
+      role: AppRole.hod,
+      departmentId: departmentId,
+      accountStatus: AccountStatus.pendingActivation,
+    );
+    return ProvisionHodResult(
+      activationCode: 'MOCK-HOD-1234',
+      user: user,
+      invitationId: 'inv-mock-1',
+      expiresAt: DateTime.now().add(const Duration(hours: 48)),
+    );
+  }
+
+  @override
+  Future<List<UserModel>> getHods({String? departmentId, String? search, String? status}) async {
+    await _delay();
+    return [];
+  }
+
+  @override
+  Future<UserModel> getHodById(String id) async {
+    await _delay();
+    throw Exception('HOD not found');
+  }
+
+  @override
+  Future<void> updateHodProfile(String id, {String? name, String? email, String? phone}) async {
+    await _delay();
+  }
+
+  @override
+  Future<void> transferHodDepartment(String id, String targetDepartmentId) async {
+    await _delay();
+  }
+
+  @override
+  Future<Map<String, dynamic>> getHodSummary(String id) async {
+    await _delay();
+    return {};
+  }
+  @override
+  Future<List<Subject>> getSubjects({String? semesterId, String? courseId, String? collegeId}) async {
+    await _delay();
+    return List.from(_subjects.where((e) {
+      if (!e.isActive) return false;
+      if (semesterId != null && e.semesterId != semesterId) return false;
+      if (courseId != null && e.courseId != courseId) return false;
+      return true;
+    }));
+  }
+
+  @override
+  Future<Subject> getSubjectById(String id) async {
+    await _delay();
+    return _subjects.firstWhere((e) => e.id == id, orElse: () => throw Exception('Subject not found'));
+  }
+
+  @override
+  Future<void> updateSubjectStatus(String id, bool isActive) async {
+    await _delay();
+    final idx = _subjects.indexWhere((e) => e.id == id);
+    if (idx != -1) _subjects[idx] = _subjects[idx].copyWith(isActive: isActive);
+  }
+  @override
+  Future<List<Faculty>> getFaculty({String? departmentId, String? search, String? status}) async { 
     await _delay(); 
     return List.from(_faculty.where((e) => e.isActive && (departmentId == null || e.departmentId == departmentId))); 
+  }
+
+  @override
+  Future<Map<String, dynamic>> getFacultySummary(String id) async {
+    await _delay();
+    return {};
   }
   
   @override
@@ -198,6 +401,36 @@ class MockAcademicRepository implements AcademicRepository {
     }
     final idx = _colleges.indexWhere((e) => e.id == id);
     if (idx != -1) _colleges[idx] = _colleges[idx].copyWith(isActive: false);
+  }
+
+  @override
+  Future<College> getCollegeById(String id) async {
+    await _delay();
+    return _colleges.firstWhere((e) => e.id == id, orElse: () => throw Exception('College not found'));
+  }
+
+  @override
+  Future<Map<String, dynamic>> getCollegeSummary(String id) async {
+    await _delay();
+    return {};
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCollegeAdmins(String id) async {
+    await _delay();
+    return [];
+  }
+
+  @override
+  Future<void> updateCollegeStatus(String id, String status) async {
+    await _delay();
+    final idx = _colleges.indexWhere((e) => e.id == id);
+    if (idx != -1) _colleges[idx] = _colleges[idx].copyWith(isActive: status == 'active');
+  }
+
+  @override
+  Future<ProvisionAdminResult> provisionCollegeAdmin(String collegeId, Map<String, dynamic> data) async {
+    throw UnimplementedError('provisionCollegeAdmin not supported in mock repo');
   }
 
   // --- Department Mutations ---
@@ -741,6 +974,93 @@ class MockAcademicRepository implements AcademicRepository {
 
     _validateScope(student.collegeId, student.departmentId);
     _students.add(student);
+  }
+
+  @override
+  Future<ProvisionStudentResult> provisionStudent(ProvisionStudentRequest request) async {
+    await _delay();
+    final student = Student(
+      id: 'stu_${DateTime.now().millisecondsSinceEpoch}',
+      collegeId: 'c1',
+      departmentId: request.departmentId,
+      courseId: request.courseId ?? '',
+      academicYearId: request.academicYearId ?? '',
+      semesterId: request.semesterId ?? '',
+      sectionId: request.sectionId ?? '',
+      name: request.name,
+      rollNumber: request.rollNumber ?? '',
+      instituteId: request.instituteId,
+      admissionNumber: request.admissionNumber,
+      email: request.email ?? '',
+      phone: request.phone ?? '',
+      parentName: request.parentName,
+      parentPhone: request.parentPhone,
+      bloodGroup: request.bloodGroup,
+      address: request.address,
+      dateOfBirth: request.dateOfBirth != null ? DateTime.tryParse(request.dateOfBirth!) : null,
+      admissionDate: request.admissionDate != null ? DateTime.tryParse(request.admissionDate!) : null,
+      isActive: true,
+      accountStatus: AccountStatus.pendingActivation,
+    );
+    _students.add(student);
+    return ProvisionStudentResult(
+      user: UserModel(
+        id: student.id,
+        name: student.name,
+        email: student.email,
+        phone: student.phone,
+        role: AppRole.student,
+        collegeId: student.collegeId,
+        departmentId: student.departmentId,
+        instituteId: student.instituteId,
+        accountStatus: AccountStatus.pendingActivation,
+      ),
+      student: student,
+      invitation: InvitationInfo(
+        id: 'inv_${DateTime.now().millisecondsSinceEpoch}',
+        expiresAt: DateTime.now().add(const Duration(days: 7)),
+        status: 'pending',
+      ),
+      activationCode: 'MOCK-STU1-CODE',
+    );
+  }
+
+  @override
+  Future<void> transferStudentDepartment(String studentId, String newDepartmentId) async {
+    await _delay();
+    final index = _students.indexWhere((s) => s.id == studentId);
+    if (index != -1) {
+      _students[index] = _students[index].copyWith(departmentId: newDepartmentId);
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getStudentSummary(String studentId) async {
+    await _delay();
+    return {
+      'enrollmentCount': 1,
+    };
+  }
+
+  @override
+  Future<void> enrollStudent({
+    required String studentId,
+    required String courseId,
+    required String academicYearId,
+    required String semesterId,
+    required String sectionId,
+    String? enrollmentDate,
+  }) async {
+    await _delay();
+    final index = _students.indexWhere((s) => s.id == studentId);
+    if (index != -1) {
+      _students[index] = _students[index].copyWith(
+        courseId: courseId,
+        academicYearId: academicYearId,
+        semesterId: semesterId,
+        sectionId: sectionId,
+      );
+    }
   }
   @override
   Future<void> updateStudent(Student student) async {

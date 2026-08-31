@@ -1,0 +1,58 @@
+services:
+  - type: web
+    name: acadex-backend
+    env: node
+    plan: starter
+    region: oregon
+    rootDir: Backend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DATABASE
+        value: acadex
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_RESET_SECRET
+        generateValue: true
+      - key: ACTIVATION_CODE_SECRET
+        generateValue: true
+      - key: ACCESS_TOKEN_EXPIRES_IN
+        value: "900"
+      - key: REFRESH_TOKEN_EXPIRES_IN
+        value: "604800"
+      - key: PASSWORD_RESET_TOKEN_EXPIRES_IN
+        value: "600"
+      - key: INVITATION_EXPIRES_IN
+        value: "604800"
+      - key: OTP_EXPIRES_IN
+        value: "600"
+      - key: OTP_MAX_ATTEMPTS
+        value: "5"
+      - key: OTP_RESEND_COOLDOWN
+        value: "60"
+      - key: BCRYPT_SALT_ROUNDS
+        value: "10"
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: IMAGEKIT_PUBLIC_KEY
+        sync: false
+      - key: IMAGEKIT_PRIVATE_KEY
+        sync: false
+      - key: IMAGEKIT_URL_ENDPOINT
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        value: acadex-app
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false

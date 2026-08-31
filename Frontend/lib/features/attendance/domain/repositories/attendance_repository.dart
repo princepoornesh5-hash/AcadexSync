@@ -2,6 +2,7 @@ import '../models/assigned_class.dart';
 import '../models/attendance_history_record.dart';
 import '../models/attendance_record.dart';
 import '../models/attendance_session.dart';
+import '../models/attendance_status.dart';
 import '../models/college_attendance_comparison.dart';
 import '../models/college_attendance_summary.dart';
 import '../models/college_faculty_completion.dart';
@@ -36,6 +37,25 @@ abstract class AttendanceRepository {
   Future<List<AttendanceRecord>> getStudentsForSection(String sectionId, String subjectId, DateTime date, {String? timetableEntryId});
   Future<bool> saveSession(AttendanceSession session);
   Future<List<AttendanceSession>> getRecentSessions(String facultyId);
+  Future<List<AttendanceSession>> getFacultySessions();
+
+  // Session Lifecycle & Query Methods
+  Future<AttendanceSession> getSessionById(String sessionId);
+  Future<List<AttendanceSession>> listSessions({
+    String? departmentId,
+    String? sectionId,
+    String? subjectId,
+    String? facultyId,
+    String? status,
+    DateTime? from,
+    DateTime? to,
+    int? page,
+    int? limit,
+  });
+  Future<AttendanceSession> lockSession(String sessionId);
+  Future<AttendanceSession> closeSession(String sessionId);
+  Future<AttendanceSession> cancelSession(String sessionId);
+  Future<AttendanceRecord> correctRecord(String recordId, {required AttendanceStatus newStatus, required String reason});
 
   // HOD Methods
   Future<DepartmentAttendanceSummary> getDepartmentSummary(String departmentId);

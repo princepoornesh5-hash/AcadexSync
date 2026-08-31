@@ -6,13 +6,13 @@ import 'package:file_picker/file_picker.dart';
 import '../../../../core/presentation/design_system/acadex_colors.dart';
 import '../../../../core/presentation/design_system/acadex_spacing.dart';
 import '../../../../core/presentation/design_system/acadex_typography.dart';
-import '../../../../core/presentation/widgets/app_avatar.dart';
-import '../../../../core/presentation/widgets/app_button.dart';
-import '../../../../core/presentation/widgets/app_card.dart';
-import '../../../../core/presentation/widgets/app_error_state.dart';
-import '../../../../core/presentation/widgets/app_loading_state.dart';
-import '../../../../core/presentation/widgets/app_scaffold.dart';
-import '../../../../core/presentation/widgets/app_section_header.dart';
+import '../../../../core/presentation/widgets/acadex_avatar.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../core/presentation/widgets/acadex_card.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -99,9 +99,33 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
   }
 
   Future<void> _generateOrReissueActivationCode(UserProfileModel user) async {
+    // Confirm before reissuing, since the old code is invalidated
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reissue Activation Code?'),
+        content: const Text(
+          'This will INVALIDATE the existing pending activation code and generate a new one. '
+          'The previous code will no longer work. Proceed?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Reissue'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
     setState(() => _isActionInProgress = true);
     try {
-      final code = await ref.read(userManagementProvider.notifier).generateActivationCode(user);
+      final code = await ref.read(userManagementProvider.notifier).reissueActivationCode(user.id);
       if (mounted) {
         _showActivationCodeDialog(code, user.name);
       }
@@ -109,7 +133,7 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to generate activation code: $e'),
+            content: Text('Failed to reissue activation code: $e'),
             backgroundColor: AcadexColors.coral,
           ),
         );
@@ -237,32 +261,30 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final userAsync = ref.watch(userDetailProvider(widget.userId));
-    final departmentsAsync = ref.watch(departmentsProvider);
-    final collegesAsync = ref.watch(collegesProvider);
-
-    final currentUser = (authState is AuthAuthenticated) ? authState.user : null;
+    final currentUser = authState is AuthAuthenticated ? authState.user : null;
     final isSuperAdmin = currentUser?.role == AppRole.superAdmin;
     final isCollegeAdmin = currentUser?.role == AppRole.collegeAdmin;
     final isSelf = currentUser?.id == widget.userId;
     final canManage = isSuperAdmin || isCollegeAdmin;
 
+    final userAsync = ref.watch(userDetailProvider(widget.userId));
+    final departmentsAsync = ref.watch(departmentsProvider);
+    final collegesAsync = isSuperAdmin ? ref.watch(collegesProvider) : const AsyncValue.data([]);
+
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return AppScaffold(
-      title: 'User Profile',
-      subtitle: 'Institutional identity, contact records, and role permissions',
-      body: userAsync.when(
-        loading: () => const AppLoadingState(message: 'Loading user details...'),
-        error: (err, _) => AppErrorState(
+    return AcadexPageContainer(
+      child: userAsync.when(
+        loading: () => const AcadexLoadingState(message: 'Loading user details...'),
+        error: (err, _) => AcadexErrorState(
           title: 'Failed to load user profile',
           message: err.toString(),
           onRetry: () => ref.refresh(userDetailProvider(widget.userId)),
         ),
         data: (user) {
           if (user == null) {
-            return const AppErrorState(
+            return const AcadexErrorState(
               title: 'User not found',
               message: 'The requested user record could not be found or has been removed.',
             );
@@ -295,191 +317,191 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
           final isDeactivated = user.accountStatus.name.toLowerCase().contains('deactivat') ||
               user.accountStatus.name.toLowerCase().contains('inactive');
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AcadexSpacing.lg,
-              vertical: AcadexSpacing.md,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Card with Avatar, Name, Badges & Action Buttons
-                AppCard(
-                  padding: const EdgeInsets.all(AcadexSpacing.lg),
-                  child: Column(
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Stack(
-                            children: [
-                              AppAvatar(
-                                name: user.name,
-                                imageUrl: user.profilePictureUrl,
-                                size: 84,
-                              ),
-                              if (canManage || isSelf)
-                                Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: Material(
-                                    color: AcadexColors.navy,
-                                    shape: const CircleBorder(),
-                                    child: InkWell(
-                                      customBorder: const CircleBorder(),
-                                      onTap: _isActionInProgress
-                                          ? null
-                                          : () => _pickAndUploadProfileImage(user),
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(6.0),
-                                        child: Icon(
-                                          Icons.camera_alt_outlined,
-                                          size: 16,
-                                          color: Colors.white,
-                                        ),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AcadexPageHeader(
+                title: 'User Profile',
+                subtitle: 'Institutional identity, contact records, and role permissions',
+                onBack: () => context.safePop(fallbackRoute: '/users'),
+              ),
+
+              // Header Card with Avatar, Name, Badges & Action Buttons
+              AcadexCard(
+                padding: const EdgeInsets.all(AcadexSpacing.lg),
+                child: Column(
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Stack(
+                          children: [
+                            AcadexAvatar(
+                              name: user.name,
+                              imageUrl: user.profilePictureUrl,
+                              size: 84,
+                            ),
+                            if (canManage || isSelf)
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Material(
+                                  color: AcadexColors.navy,
+                                  shape: const CircleBorder(),
+                                  child: InkWell(
+                                    customBorder: const CircleBorder(),
+                                    onTap: _isActionInProgress
+                                        ? null
+                                        : () => _pickAndUploadProfileImage(user),
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(6.0),
+                                      child: Icon(
+                                        Icons.camera_alt_outlined,
+                                        size: 16,
+                                        color: Colors.white,
                                       ),
                                     ),
                                   ),
                                 ),
-                            ],
-                          ),
-                          const SizedBox(width: AcadexSpacing.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  user.name,
-                                  style: AcadexTypography.h2.copyWith(
-                                    color: isDark ? AcadexColors.darkTextPrimary : AcadexColors.textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: AcadexSpacing.xs),
-                                Wrap(
-                                  spacing: AcadexSpacing.xs,
-                                  runSpacing: AcadexSpacing.xxs,
-                                  children: [
-                                    UserRoleBadge(role: user.role),
-                                    UserStatusBadge(status: user.accountStatus),
-                                    if (deptName != '—')
-                                      Chip(
-                                        label: Text(deptName, style: const TextStyle(fontSize: 12)),
-                                        padding: EdgeInsets.zero,
-                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                  ],
-                                ),
-                                const SizedBox(height: AcadexSpacing.xs),
-                                Text(
-                                  'Institutional ID: ${user.employeeId ?? user.rollNumber ?? user.id}',
-                                  style: AcadexTypography.caption.copyWith(
-                                    color: isDark ? AcadexColors.darkTextSecondary : AcadexColors.textSecondary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (canManage) ...[
-                        const Divider(height: AcadexSpacing.xl),
-                        Wrap(
-                          spacing: AcadexSpacing.sm,
-                          runSpacing: AcadexSpacing.xs,
-                          alignment: WrapAlignment.end,
-                          children: [
-                            AppButton(
-                              label: 'Edit User',
-                              icon: Icons.edit_outlined,
-                              variant: AppButtonVariant.outline,
-                              onPressed: () => context.go('/users/edit/${user.id}'),
-                            ),
-                            if (isPending)
-                              AppButton(
-                                label: 'Reissue Code',
-                                icon: Icons.vpn_key_outlined,
-                                variant: AppButtonVariant.secondary,
-                                isLoading: _isActionInProgress,
-                                onPressed: () => _generateOrReissueActivationCode(user),
                               ),
-                            AppButton(
-                              label: isDeactivated ? 'Reactivate Account' : 'Deactivate Account',
-                              icon: isDeactivated ? Icons.check_circle_outline : Icons.block_outlined,
-                              variant: isDeactivated ? AppButtonVariant.primary : AppButtonVariant.destructive,
-                              isLoading: _isActionInProgress,
-                              onPressed: () => _handleDeactivateReactivate(user),
-                            ),
                           ],
                         ),
+                        const SizedBox(width: AcadexSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user.name,
+                                style: AcadexTypography.h2.copyWith(
+                                  color: isDark ? Colors.white : AcadexColors.textPrimaryLight,
+                                ),
+                              ),
+                              const SizedBox(height: AcadexSpacing.xs),
+                              Wrap(
+                                spacing: AcadexSpacing.xs,
+                                runSpacing: AcadexSpacing.xxs,
+                                children: [
+                                  UserRoleBadge(role: user.role),
+                                  UserStatusBadge(status: user.accountStatus),
+                                  if (deptName != '—')
+                                    Chip(
+                                      label: Text(deptName, style: const TextStyle(fontSize: 12)),
+                                      padding: EdgeInsets.zero,
+                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: AcadexSpacing.xs),
+                              Text(
+                                'Institutional ID: ${user.employeeId ?? user.rollNumber ?? user.id}',
+                                style: AcadexTypography.caption.copyWith(
+                                  color: isDark ? Colors.white70 : AcadexColors.textSecondaryLight,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
+                    ),
+                    if (canManage) ...[
+                      const Divider(height: AcadexSpacing.xl),
+                      Wrap(
+                        spacing: AcadexSpacing.sm,
+                        runSpacing: AcadexSpacing.xs,
+                        alignment: WrapAlignment.end,
+                        children: [
+                          AcadexButton(
+                            label: 'Edit User',
+                            icon: Icons.edit_outlined,
+                            variant: AcadexButtonVariant.secondary,
+                            onPressed: () => context.go('/users/edit/${user.id}'),
+                          ),
+                          if (isPending)
+                            AcadexButton(
+                              label: 'Reissue Code',
+                              icon: Icons.vpn_key_outlined,
+                              variant: AcadexButtonVariant.soft,
+                              isLoading: _isActionInProgress,
+                              onPressed: () => _generateOrReissueActivationCode(user),
+                            ),
+                          AcadexButton(
+                            label: isDeactivated ? 'Reactivate Account' : 'Deactivate Account',
+                            icon: isDeactivated ? Icons.check_circle_outline : Icons.block_outlined,
+                            variant: isDeactivated ? AcadexButtonVariant.primary : AcadexButtonVariant.danger,
+                            isLoading: _isActionInProgress,
+                            onPressed: () => _handleDeactivateReactivate(user),
+                          ),
+                        ],
+                      ),
                     ],
-                  ),
+                  ],
                 ),
-                const SizedBox(height: AcadexSpacing.lg),
+              ),
+              const SizedBox(height: AcadexSpacing.lg),
 
-                // Details Grid
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isNarrow = constraints.maxWidth < 650;
+              // Details Grid
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isNarrow = constraints.maxWidth < 650;
 
-                    final card1 = AppCard(
-                      padding: const EdgeInsets.all(AcadexSpacing.md),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const AppSectionHeader(title: 'Identity & Contact'),
-                          const SizedBox(height: AcadexSpacing.sm),
-                          _buildInfoRow('Full Name', user.name),
-                          _buildInfoRow('Email Address', user.email.isNotEmpty ? user.email : '—'),
-                          _buildInfoRow('Phone Number', user.phone.isNotEmpty ? user.phone : '—'),
-                          _buildInfoRow('Account Role', user.role.displayName),
-                          _buildInfoRow('Status', user.accountStatus.name.toUpperCase()),
-                        ],
-                      ),
-                    );
-
-                    final card2 = AppCard(
-                      padding: const EdgeInsets.all(AcadexSpacing.md),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const AppSectionHeader(title: 'Academic & System Record'),
-                          const SizedBox(height: AcadexSpacing.sm),
-                          if (isSuperAdmin) _buildInfoRow('College / Campus', collegeName),
-                          _buildInfoRow('Department', deptName),
-                          if (user.role == AppRole.student && user.rollNumber != null)
-                            _buildInfoRow('Roll Number', user.rollNumber!),
-                          if (user.createdAt != null)
-                            _buildInfoRow('Account Created', user.createdAt!.toLocal().toString().substring(0, 16)),
-                          if (user.lastLoginAt != null)
-                            _buildInfoRow('Last Login', user.lastLoginAt!.toLocal().toString().substring(0, 16)),
-                        ],
-                      ),
-                    );
-
-                    if (isNarrow) {
-                      return Column(
-                        children: [
-                          card1,
-                          const SizedBox(height: AcadexSpacing.md),
-                          card2,
-                        ],
-                      );
-                    }
-
-                    return Row(
+                  final card1 = AcadexCard(
+                    padding: const EdgeInsets.all(AcadexSpacing.md),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(child: card1),
-                        const SizedBox(width: AcadexSpacing.md),
-                        Expanded(child: card2),
+                        const AcadexSectionHeader(title: 'Identity & Contact'),
+                        const SizedBox(height: AcadexSpacing.sm),
+                        _buildInfoRow('Full Name', user.name),
+                        _buildInfoRow('Email Address', user.email.isNotEmpty ? user.email : '—'),
+                        _buildInfoRow('Phone Number', user.phone.isNotEmpty ? user.phone : '—'),
+                        _buildInfoRow('Account Role', user.role.displayName),
+                        _buildInfoRow('Status', user.accountStatus.name.toUpperCase()),
+                      ],
+                    ),
+                  );
+
+                  final card2 = AcadexCard(
+                    padding: const EdgeInsets.all(AcadexSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AcadexSectionHeader(title: 'Academic & System Record'),
+                        const SizedBox(height: AcadexSpacing.sm),
+                        if (isSuperAdmin) _buildInfoRow('College / Campus', collegeName),
+                        _buildInfoRow('Department', deptName),
+                        if (user.role == AppRole.student && user.rollNumber != null)
+                          _buildInfoRow('Roll Number', user.rollNumber!),
+                        if (user.createdAt != null)
+                          _buildInfoRow('Account Created', user.createdAt!.toLocal().toString().substring(0, 16)),
+                        if (user.lastLoginAt != null)
+                          _buildInfoRow('Last Login', user.lastLoginAt!.toLocal().toString().substring(0, 16)),
+                      ],
+                    ),
+                  );
+
+                  if (isNarrow) {
+                    return Column(
+                      children: [
+                        card1,
+                        const SizedBox(height: AcadexSpacing.md),
+                        card2,
                       ],
                     );
-                  },
-                ),
-              ],
-            ),
+                  }
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: card1),
+                      const SizedBox(width: AcadexSpacing.md),
+                      Expanded(child: card2),
+                    ],
+                  );
+                },
+              ),
+            ],
           );
         },
       ),

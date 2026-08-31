@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_data_table.dart';
 import '../../../../core/presentation/widgets/acadex_search_bar.dart';
 import '../../../../core/presentation/widgets/acadex_empty_state.dart';
@@ -12,12 +13,22 @@ import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../providers/academic_providers.dart';
 import '../../domain/models/academic_models.dart';
 
-class CollegeListScreen extends ConsumerWidget {
+class CollegeListScreen extends ConsumerStatefulWidget {
   const CollegeListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CollegeListScreen> createState() => _CollegeListScreenState();
+}
+
+class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
+  String _searchQuery = '';
+  String _statusFilter = 'all'; // 'all' | 'active' | 'inactive'
+
+  @override
+  Widget build(BuildContext context) {
     final collegesAsync = ref.watch(collegesProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isMobile = AcadexBreakpoints.isMobile(context);
 
     return AcadexPageContainer(
       scrollable: false,
@@ -26,56 +37,230 @@ class CollegeListScreen extends ConsumerWidget {
         children: [
           const AcadexPageHeader(
             title: "Colleges",
-            subtitle: "Manage registered colleges in the system.",
+            subtitle: "Manage registered institutions and campus details.",
           ),
           AcadexSearchFilterBar(
-            searchHint: "Search colleges...",
-            onSearchChanged: (v) {},
+            searchHint: "Search colleges by name or code...",
+            onSearchChanged: (v) => setState(() => _searchQuery = v),
             onActionTap: () => context.push('/academics/colleges/new'),
             actionLabel: "Add College",
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 10),
+          // Status filter chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.zero,
+            child: Row(
+              children: [
+                for (final f in [('all', 'All'), ('active', 'Active'), ('inactive', 'Inactive')])
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChip(
+                      label: Text(f.$2),
+                      selected: _statusFilter == f.$1,
+                      onSelected: (_) => setState(() => _statusFilter = f.$1),
+                      selectedColor: AcadexColors.primary.withValues(alpha: 0.15),
+                      checkmarkColor: AcadexColors.primary,
+                      labelStyle: TextStyle(
+                        color: _statusFilter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                        fontWeight: _statusFilter == f.$1 ? FontWeight.w600 : FontWeight.w400,
+                        fontSize: 12,
+                      ),
+                      side: BorderSide(
+                        color: _statusFilter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
           Expanded(
             child: collegesAsync.when(
-              loading: () => Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor)),
-              error: (err, stack) => Center(child: Text("Error: $err", style: const TextStyle(color: AcadexColors.warning))),
-              data: (colleges) => AcadexDataTable(
-                columns: const ["Code", "Name", "Principal", "Email", "Phone", "Status", "Actions"],
-                rows: colleges.map((c) => DataRow(cells: [
-                  DataCell(Text(c.code, style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.bold))),
-                  DataCell(Text(c.name)),
-                  DataCell(Text(c.principal)),
-                  DataCell(Text(c.email)),
-                  DataCell(Text(c.phone)),
-                  DataCell(
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: c.isActive ? Theme.of(context).primaryColor.withValues(alpha: 0.2) : Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.1) ?? AcadexColors.inkMuted.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(c.isActive ? "Active" : "Inactive", style: TextStyle(color: c.isActive ? Theme.of(context).primaryColor : Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted, fontSize: 12, fontWeight: FontWeight.bold)),
-                    )
-                  ),
-                  DataCell(
-                    Row(
-                      children: [
-                        IconButton(icon: Icon(LucideIcons.edit, size: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)), onPressed: () => context.push('/academics/colleges/edit/${c.id}')),
-                        IconButton(icon: const Icon(LucideIcons.trash2, size: 18, color: AcadexColors.warning), onPressed: () {}),
-                      ],
-                    )
-                  ),
-                ])).toList(),
-                emptyState: AcadexEmptyState(
-                  title: "No Colleges Found",
-                  subtitle: "Get started by adding the first college.",
-                  icon: LucideIcons.building,
-                  actionLabel: "Add College",
-                  onActionTap: () => context.push('/academics/colleges/new'),
-                ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(
+                child: Text("Error: $err", style: const TextStyle(color: AcadexColors.error)),
               ),
+              data: (colleges) {
+                final filtered = colleges.where((c) {
+                  // Status filter
+                  if (_statusFilter == 'active' && !c.isActive) return false;
+                  if (_statusFilter == 'inactive' && c.isActive) return false;
+                  // Search filter
+                  if (_searchQuery.isEmpty) return true;
+                  final q = _searchQuery.toLowerCase();
+                  return c.name.toLowerCase().contains(q) ||
+                      c.code.toLowerCase().contains(q) ||
+                      c.principal.toLowerCase().contains(q);
+                }).toList();
+
+                if (filtered.isEmpty) {
+                  return AcadexEmptyState(
+                    title: "No Colleges Found",
+                    subtitle: _searchQuery.isNotEmpty
+                        ? "No colleges match '$_searchQuery'."
+                        : "Get started by adding the first college.",
+                    icon: LucideIcons.building,
+                    actionLabel: "Add College",
+                    onActionTap: () => context.push('/academics/colleges/new'),
+                  );
+                }
+
+                if (isMobile) {
+                  return ListView.separated(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, i) {
+                      final c = filtered[i];
+                      return GestureDetector(
+                        onTap: () => context.push('/academics/colleges/${c.id}'),
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                            borderRadius: AcadexRadius.borderRadiusLg,
+                            border: Border.all(
+                              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      c.name,
+                                      style: AcadexTypography.body(
+                                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                      ).copyWith(fontWeight: FontWeight.w700),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: c.isActive
+                                          ? (isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight)
+                                          : (isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft),
+                                      borderRadius: AcadexRadius.borderRadiusFull,
+                                    ),
+                                    child: Text(
+                                      c.isActive ? "Active" : "Inactive",
+                                      style: TextStyle(
+                                        color: c.isActive ? AcadexColors.success : AcadexColors.inkMuted,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Code: ${c.code} • ${c.principal}",
+                                style: AcadexTypography.caption(
+                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                ),
+                              ),
+                              if (c.email.isNotEmpty || c.phone.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  "${c.email}${c.phone.isNotEmpty ? ' • ${c.phone}' : ''}",
+                                  style: AcadexTypography.caption(
+                                    color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(LucideIcons.arrowRight, size: 16, color: AcadexColors.primary),
+                                    tooltip: "View Details",
+                                    onPressed: () => context.push('/academics/colleges/${c.id}'),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  IconButton(
+                                    icon: Icon(
+                                      LucideIcons.edit,
+                                      size: 18,
+                                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                                    ),
+                                    tooltip: "Edit College",
+                                    onPressed: () => context.push('/academics/colleges/edit/${c.id}'),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }
+
+                return AcadexDataTable(
+                  columns: const ["Code", "Name", "Principal", "Email", "Phone", "Status", "Actions"],
+                  rows: filtered.map((c) => DataRow(
+                    onSelectChanged: (_) => context.push('/academics/colleges/${c.id}'),
+                    cells: [
+                      DataCell(Text(c.code, style: const TextStyle(fontWeight: FontWeight.bold))),
+                      DataCell(Text(c.name)),
+                      DataCell(Text(c.principal)),
+                      DataCell(Text(c.email)),
+                      DataCell(Text(c.phone)),
+                      DataCell(
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: c.isActive ? AcadexColors.successLight : AcadexColors.canvasSoft,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            c.isActive ? "Active" : "Inactive",
+                            style: TextStyle(
+                              color: c.isActive ? AcadexColors.success : AcadexColors.inkMuted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      DataCell(
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(LucideIcons.eye, size: 18),
+                              tooltip: "View Details",
+                              onPressed: () => context.push('/academics/colleges/${c.id}'),
+                            ),
+                            IconButton(
+                              icon: const Icon(LucideIcons.edit, size: 18),
+                              tooltip: "Edit College",
+                              onPressed: () => context.push('/academics/colleges/edit/${c.id}'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )).toList(),
+                );
+              },
             ),
-          )
+          ),
         ],
       ),
     );
@@ -119,16 +304,31 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
   Future<void> _loadExisting() async {
     setState(() => _isLoading = true);
     try {
-      final colleges = await ref.read(collegesProvider.future);
-      _existing = colleges.firstWhere((c) => c.id == widget.collegeId);
-      _nameCtrl.text = _existing!.name;
-      _codeCtrl.text = _existing!.code;
-      _principalCtrl.text = _existing!.principal;
-      _emailCtrl.text = _existing!.email;
-      _phoneCtrl.text = _existing!.phone;
-      _addressCtrl.text = _existing!.address;
+      College? college;
+      try {
+        college = await ref.read(collegeByIdProvider(widget.collegeId!).future);
+      } catch (_) {
+        college = await ref.read(academicRepositoryProvider).getCollegeById(widget.collegeId!);
+      }
+      
+      if (college != null && mounted) {
+        _existing = college;
+        _nameCtrl.text = college.name;
+        _codeCtrl.text = college.code;
+        _principalCtrl.text = college.principal;
+        _emailCtrl.text = college.email;
+        _phoneCtrl.text = college.phone;
+        _addressCtrl.text = college.address;
+      }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading college: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading college: $e'),
+            backgroundColor: AcadexColors.error,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -150,28 +350,47 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
     setState(() => _isLoading = true);
     try {
       final college = College(
-        id: _existing?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        // id is ignored on create (backend assigns _id), required for update
+        id: _existing?.id ?? widget.collegeId ?? '',
         name: _nameCtrl.text.trim(),
         code: _codeCtrl.text.trim().toUpperCase(),
         principal: _principalCtrl.text.trim(),
-        email: _emailCtrl.text.trim(),
+        email: _emailCtrl.text.trim().toLowerCase(),
         phone: _phoneCtrl.text.trim(),
         address: _addressCtrl.text.trim(),
         isActive: _existing?.isActive ?? true,
       );
 
-      if (_existing == null) {
+      if (_existing == null && widget.collegeId == null) {
         await ref.read(collegesProvider.notifier).addCollege(college);
       } else {
         await ref.read(collegesProvider.notifier).updateCollege(college);
+        if (widget.collegeId != null) {
+          ref.invalidate(collegeByIdProvider(widget.collegeId!));
+          ref.invalidate(collegeSummaryProvider(widget.collegeId!));
+        }
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('College saved successfully')));
-        context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text((_existing == null && widget.collegeId == null)
+                ? 'College created successfully'
+                : 'College updated successfully'),
+            backgroundColor: AcadexColors.success,
+          ),
+        );
+        context.safePop(fallbackRoute: '/academics/colleges');
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: AcadexColors.error,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -185,7 +404,7 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface),
-          onPressed: () => context.pop(),
+          onPressed: () => context.safePop(fallbackRoute: '/academics/colleges'),
         ),
         title: Text(isEdit ? "Edit College" : "Add College", style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface)),
       ),
@@ -197,7 +416,7 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
                 key: _formKey,
                 child: AcadexFormCard(
                   title: "College Details",
-                  onCancel: () => context.pop(),
+                  onCancel: () => context.safePop(fallbackRoute: '/academics/colleges'),
                   onSave: _save,
                   child: Column(
                     children: [

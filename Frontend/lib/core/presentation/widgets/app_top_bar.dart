@@ -25,7 +25,7 @@ class AppTopBar extends ConsumerWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(60.0);
+  Size get preferredSize => const Size.fromHeight(56.0);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,6 +34,9 @@ class AppTopBar extends ConsumerWidget implements PreferredSizeWidget {
 
     return AppBar(
       titleSpacing: 16,
+      backgroundColor: AcadexColors.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
       title: LayoutBuilder(
         builder: (context, constraints) {
           final showRoleBadge = currentUser != null && constraints.maxWidth > 340;
@@ -49,9 +52,9 @@ class AppTopBar extends ConsumerWidget implements PreferredSizeWidget {
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 17,
                         fontWeight: FontWeight.w700,
-                        color: AcadexColors.textPrimaryLight,
+                        color: AcadexColors.ink,
                       ),
                     ),
                     if (subtitle != null)
@@ -61,7 +64,7 @@ class AppTopBar extends ConsumerWidget implements PreferredSizeWidget {
                         maxLines: 1,
                         style: const TextStyle(
                           fontSize: 11.5,
-                          color: AcadexColors.textMutedLight,
+                          color: AcadexColors.inkMuted,
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -85,7 +88,7 @@ class AppTopBar extends ConsumerWidget implements PreferredSizeWidget {
         Stack(
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: AcadexColors.textSecondaryLight),
+              icon: const Icon(Icons.notifications_outlined, color: AcadexColors.inkSecondary),
               onPressed: onNotificationTap,
             ),
             if (unreadCount > 0)
@@ -95,7 +98,7 @@ class AppTopBar extends ConsumerWidget implements PreferredSizeWidget {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: const BoxDecoration(
-                    color: AcadexColors.coralError,
+                    color: AcadexColors.error,
                     shape: BoxShape.circle,
                   ),
                   constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
@@ -128,7 +131,7 @@ class AppTopBar extends ConsumerWidget implements PreferredSizeWidget {
       ],
       bottom: const PreferredSize(
         preferredSize: Size.fromHeight(1.0),
-        child: Divider(height: 1, color: AcadexColors.borderLight),
+        child: Divider(height: 1, color: AcadexColors.hairline),
       ),
     );
   }

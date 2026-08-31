@@ -69,6 +69,17 @@ class FirebaseUserRepository implements UserRepository {
   }
 
   @override
+  Future<dynamic> createUserWithInvitation(UserProfileModel user) async {
+    final createdUser = await createUser(user);
+    return createdUser;
+  }
+
+  @override
+  Future<String> reissueActivationCodeForUser(String userId) async {
+    return 'FB-ACTV-CODE';
+  }
+
+  @override
   Future<UserProfileModel> updateUser(UserProfileModel user) async {
     final uid = user.firebaseUid ?? user.id;
     await _firestoreService.setDocument('users', uid, user.toJson());

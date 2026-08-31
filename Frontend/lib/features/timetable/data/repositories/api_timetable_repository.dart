@@ -149,9 +149,9 @@ class ApiTimetableRepository implements TimetableRepository {
         'semesterId': container.semesterId,
         'sectionId': container.sectionId,
         'name': container.name,
-        'status': container.status.name.toUpperCase(),
+        'status': container.status.name.toLowerCase(),
         'timingMode': container.timingMode.name,
-        'activeDays': container.activeDays.map((d) => d.name.toUpperCase()).toList(),
+        'activeDays': container.activeDays.map((d) => d.name.toLowerCase()).toList(),
       });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to create timetable');
@@ -163,9 +163,9 @@ class ApiTimetableRepository implements TimetableRepository {
     try {
       await _client.dio.put('/timetables/${container.id}', data: {
         'name': container.name,
-        'status': container.status.name.toUpperCase(),
+        'status': container.status.name.toLowerCase(),
         'timingMode': container.timingMode.name,
-        'activeDays': container.activeDays.map((d) => d.name.toUpperCase()).toList(),
+        'activeDays': container.activeDays.map((d) => d.name.toLowerCase()).toList(),
         if (_periods.containsKey(container.id))
           'periods': _periods[container.id]!.map((p) => p.toJson()).toList(),
         if (_breaks.containsKey(container.id))
@@ -245,7 +245,7 @@ class ApiTimetableRepository implements TimetableRepository {
         if (academicYearId != null && academicYearId.isNotEmpty) 'academicYearId': academicYearId,
         if (semesterId != null && semesterId.isNotEmpty) 'semesterId': semesterId,
         if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
-        if (status != null) 'status': status.name.toUpperCase(),
+        if (status != null) 'status': status.name.toLowerCase(),
       };
 
       final response = await _client.dio.get('/timetables', queryParameters: queryParams);

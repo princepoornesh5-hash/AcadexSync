@@ -9,6 +9,7 @@ import '../widgets/hod/student_shortage_card.dart';
 import '../widgets/hod/section_attendance_card.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_page_header.dart';
 
 class HodAttendanceDashboardScreen extends ConsumerWidget {
   const HodAttendanceDashboardScreen({super.key});
@@ -19,35 +20,54 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
 
     return DefaultTabController(
       length: 4,
-      child: Scaffold(
-        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-        appBar: AppBar(
-          title: Text(
-            "Department Attendance",
-            style: AcadexTypography.title(
-              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-            ),
-          ),
-          bottom: TabBar(
-            isScrollable: true,
-            labelColor: AcadexColors.primary,
-            unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-            indicatorColor: AcadexColors.primary,
-            indicatorWeight: 2.5,
-            tabs: const [
-              Tab(text: "Overview"),
-              Tab(text: "Faculty Status"),
-              Tab(text: "Shortages"),
-              Tab(text: "Sections"),
-            ],
-          ),
-        ),
-        body: TabBarView(
+      child: AcadexPageContainer(
+        backgroundColor: Colors.transparent,
+        scrollable: true,
+        maxWidth: AcadexLayout.contentMaxWidth,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildOverviewTab(ref, isDark),
-            _buildFacultyTab(ref),
-            _buildShortageTab(ref),
-            _buildSectionTab(ref),
+            const AcadexPageHeader(
+              title: "Department Attendance",
+              subtitle: "Monitor departmental session completion, faculty compliance, and student shortage rosters.",
+            ),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                borderRadius: AcadexRadius.borderRadiusLg,
+                border: Border.all(
+                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                ),
+                boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+              ),
+              child: TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                labelColor: AcadexColors.primary,
+                unselectedLabelColor: AcadexColors.inkMuted,
+                indicatorColor: AcadexColors.primary,
+                indicatorWeight: 3,
+                tabs: const [
+                  Tab(text: "Overview"),
+                  Tab(text: "Faculty Status"),
+                  Tab(text: "Shortages"),
+                  Tab(text: "Sections"),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 700,
+              child: TabBarView(
+                children: [
+                  _buildOverviewTab(ref, isDark),
+                  _buildFacultyTab(ref),
+                  _buildShortageTab(ref),
+                  _buildSectionTab(ref),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -68,8 +88,7 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
         ),
       ),
       data: (summary) {
-        return AcadexPageContainer(
-          maxWidth: AcadexLayout.contentMaxWidth,
+        return SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -90,7 +109,7 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
                   _buildActionChip(LucideIcons.mail, "Notify Defaulters", isDark),
                   _buildActionChip(LucideIcons.lock, "Lock Completed Sessions", isDark),
                 ],
-              )
+              ),
             ],
           ),
         );
@@ -112,16 +131,11 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
         ),
       ),
       data: (faculties) {
-        return AcadexPageContainer(
-          maxWidth: AcadexLayout.contentMaxWidth,
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: faculties.length,
-            itemBuilder: (context, index) {
-              return FacultyCompletionCard(completion: faculties[index]);
-            },
-          ),
+        return ListView.builder(
+          itemCount: faculties.length,
+          itemBuilder: (context, index) {
+            return FacultyCompletionCard(completion: faculties[index]);
+          },
         );
       },
     );
@@ -141,16 +155,11 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
         ),
       ),
       data: (shortages) {
-        return AcadexPageContainer(
-          maxWidth: AcadexLayout.contentMaxWidth,
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: shortages.length,
-            itemBuilder: (context, index) {
-              return StudentShortageCard(shortage: shortages[index]);
-            },
-          ),
+        return ListView.builder(
+          itemCount: shortages.length,
+          itemBuilder: (context, index) {
+            return StudentShortageCard(shortage: shortages[index]);
+          },
         );
       },
     );
@@ -170,16 +179,11 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
         ),
       ),
       data: (sections) {
-        return AcadexPageContainer(
-          maxWidth: AcadexLayout.contentMaxWidth,
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: sections.length,
-            itemBuilder: (context, index) {
-              return SectionAttendanceCard(summary: sections[index]);
-            },
-          ),
+        return ListView.builder(
+          itemCount: sections.length,
+          itemBuilder: (context, index) {
+            return SectionAttendanceCard(summary: sections[index]);
+          },
         );
       },
     );
@@ -194,6 +198,7 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
         border: Border.all(
           color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
         ),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

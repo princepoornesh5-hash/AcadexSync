@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:campus_management/app/theme/app_theme.dart';
+import 'package:campus_management/core/presentation/utils/navigation_extensions.dart';
 import 'package:campus_management/core/presentation/widgets/acadex_feedback.dart';
 import 'package:campus_management/features/auth/domain/models/auth_state.dart';
 import 'package:campus_management/features/auth/presentation/providers/auth_provider.dart';
@@ -64,7 +64,7 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
             LucideIcons.arrowLeft,
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () => context.safePop(fallbackRoute: '/certificates/requests'),
         ),
       ),
       body: typesAsync.when(
@@ -86,7 +86,7 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
                 title: 'No Certificate Types Available',
                 subtitle: 'The administration has not configured any requestable certificate templates.',
                 actionLabel: 'Return',
-                onActionTap: () => context.pop(),
+                onActionTap: () => context.safePop(fallbackRoute: '/certificates/requests'),
               ),
             );
           }
@@ -228,7 +228,7 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
                                 side: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
                               ),
-                              onPressed: _isSubmitting ? null : () => context.pop(),
+                              onPressed: _isSubmitting ? null : () => context.safePop(fallbackRoute: '/certificates/requests'),
                               child: Text(
                                 'Cancel',
                                 style: GoogleFonts.inter(
@@ -308,7 +308,7 @@ class _SubmitCertificateRequestScreenState extends ConsumerState<SubmitCertifica
             backgroundColor: AcadexColors.success,
           ),
         );
-        context.pop();
+        context.safePop(fallbackRoute: '/certificates/requests');
       }
     } catch (e) {
       if (mounted) {

@@ -29,101 +29,168 @@ class AcadexNavRail extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    AppRole? role;
+    AppRole role = AppRole.student;
     if (authState is AuthAuthenticated) {
       role = authState.user.role;
     }
-    
-    final dashboardRoute = role != null ? _dashboardRouteForRole(role) : '/login';
 
-    int selectedIndex = 0;
-    if (activeRoute.startsWith('/attendance')) {
-      selectedIndex = 1;
-    } else if (activeRoute.startsWith('/ai-assistant')) {
-      selectedIndex = 2;
-    } else if (activeRoute.startsWith('/users') && (role == AppRole.superAdmin || role == AppRole.collegeAdmin)) {
-      selectedIndex = 3;
-    } else if (activeRoute.startsWith('/profile')) {
-      selectedIndex = (role == AppRole.superAdmin || role == AppRole.collegeAdmin) ? 4 : 3;
-    } else if (activeRoute.startsWith('/settings')) {
-      selectedIndex = (role == AppRole.superAdmin || role == AppRole.collegeAdmin) ? 5 : 4;
+    final dashboardRoute = _dashboardRouteForRole(role);
+
+    List<({IconData icon, String label, String route})> navItems;
+    switch (role) {
+      case AppRole.superAdmin:
+        navItems = [
+          (icon: LucideIcons.layoutDashboard, label: 'Dashboard', route: dashboardRoute),
+          (icon: LucideIcons.building, label: 'Colleges', route: '/academics/colleges'),
+          (icon: LucideIcons.users, label: 'Users', route: '/users'),
+          (icon: LucideIcons.barChart3, label: 'Analytics', route: '/analytics'),
+          (icon: LucideIcons.bell, label: 'Notifications', route: '/notifications'),
+          (icon: LucideIcons.bot, label: 'AI Assistant', route: '/ai-assistant'),
+          (icon: LucideIcons.settings, label: 'Settings', route: '/settings'),
+          (icon: LucideIcons.user, label: 'Profile', route: '/profile'),
+        ];
+        break;
+      case AppRole.collegeAdmin:
+        navItems = [
+          (icon: LucideIcons.layoutDashboard, label: 'Dashboard', route: dashboardRoute),
+          (icon: LucideIcons.layers, label: 'Academics', route: '/academics'),
+          (icon: LucideIcons.userCheck, label: 'Faculty', route: '/academics/faculty'),
+          (icon: LucideIcons.graduationCap, label: 'Students', route: '/academics/students'),
+          (icon: LucideIcons.calendarDays, label: 'Timetable', route: '/timetable/manage'),
+          (icon: LucideIcons.clipboardCheck, label: 'Attendance', route: '/attendance'),
+          (icon: LucideIcons.fileText, label: 'Notes', route: '/notes'),
+          (icon: LucideIcons.barChart3, label: 'Analytics', route: '/analytics'),
+          (icon: LucideIcons.settings, label: 'Settings', route: '/settings'),
+        ];
+        break;
+      case AppRole.hod:
+        navItems = [
+          (icon: LucideIcons.layoutDashboard, label: 'Dashboard', route: dashboardRoute),
+          (icon: LucideIcons.building2, label: 'Department', route: '/academics/departments'),
+          (icon: LucideIcons.userCheck, label: 'Faculty', route: '/academics/faculty'),
+          (icon: LucideIcons.graduationCap, label: 'Students', route: '/academics/students'),
+          (icon: LucideIcons.calendarDays, label: 'Timetable', route: '/timetable/manage'),
+          (icon: LucideIcons.clipboardCheck, label: 'Attendance', route: '/attendance'),
+          (icon: LucideIcons.fileText, label: 'Notes', route: '/notes'),
+          (icon: LucideIcons.settings, label: 'Settings', route: '/settings'),
+        ];
+        break;
+      case AppRole.faculty:
+        navItems = [
+          (icon: LucideIcons.layoutDashboard, label: 'Dashboard', route: dashboardRoute),
+          (icon: LucideIcons.bookOpen, label: 'Classes', route: '/my-assignments'),
+          (icon: LucideIcons.clipboardCheck, label: 'Attendance', route: '/attendance'),
+          (icon: LucideIcons.calendarDays, label: 'Timetable', route: '/timetable'),
+          (icon: LucideIcons.fileText, label: 'Notes', route: '/notes'),
+          (icon: LucideIcons.user, label: 'Profile', route: '/profile'),
+          (icon: LucideIcons.settings, label: 'Settings', route: '/settings'),
+        ];
+        break;
+      case AppRole.student:
+        navItems = [
+          (icon: LucideIcons.layoutDashboard, label: 'Dashboard', route: dashboardRoute),
+          (icon: LucideIcons.calendarDays, label: 'Timetable', route: '/timetable'),
+          (icon: LucideIcons.clipboardCheck, label: 'Attendance', route: '/attendance'),
+          (icon: LucideIcons.bookOpen, label: 'Subjects', route: '/academics/subjects'),
+          (icon: LucideIcons.fileText, label: 'Notes', route: '/notes'),
+          (icon: LucideIcons.user, label: 'Profile', route: '/profile'),
+          (icon: LucideIcons.settings, label: 'Settings', route: '/settings'),
+        ];
+        break;
     }
 
-    final hasUsersTab = role == AppRole.superAdmin || role == AppRole.collegeAdmin;
+    int selectedIndex = 0;
+    for (int i = 0; i < navItems.length; i++) {
+      if (activeRoute == navItems[i].route ||
+          (navItems[i].route != dashboardRoute && activeRoute.startsWith(navItems[i].route))) {
+        selectedIndex = i;
+        break;
+      }
+    }
 
-    final destinations = <NavigationRailDestination>[
-      NavigationRailDestination(
-        icon: Icon(LucideIcons.layoutDashboard),
-        selectedIcon: Icon(LucideIcons.layoutDashboard, color: Theme.of(context).primaryColor),
-        label: const Text('Dashboard'),
-      ),
-      NavigationRailDestination(
-        icon: const Icon(LucideIcons.calendarCheck),
-        selectedIcon: Icon(LucideIcons.calendarCheck, color: Theme.of(context).primaryColor),
-        label: const Text('Attendance'),
-      ),
-      NavigationRailDestination(
-        icon: const Icon(LucideIcons.bot),
-        selectedIcon: Icon(LucideIcons.bot, color: Theme.of(context).primaryColor),
-        label: const Text('AI'),
-      ),
-      if (hasUsersTab)
-        NavigationRailDestination(
-          icon: const Icon(LucideIcons.users),
-          selectedIcon: Icon(LucideIcons.users, color: Theme.of(context).primaryColor),
-          label: const Text('Users'),
-        ),
-      NavigationRailDestination(
-        icon: const Icon(LucideIcons.user),
-        selectedIcon: Icon(LucideIcons.user, color: Theme.of(context).primaryColor),
-        label: const Text('Profile'),
-      ),
-      NavigationRailDestination(
-        icon: const Icon(LucideIcons.settings),
-        selectedIcon: Icon(LucideIcons.settings, color: Theme.of(context).primaryColor),
-        label: const Text('Settings'),
-      ),
-    ];
+    final isGradientRole = role == AppRole.superAdmin ||
+        role == AppRole.collegeAdmin ||
+        role == AppRole.hod ||
+        role == AppRole.faculty ||
+        role == AppRole.student;
+    final selectedColor = isGradientRole ? const Color(0xFF003366) : Theme.of(context).primaryColor;
+    final unselectedColor = isGradientRole ? const Color(0xFF07111F) : (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted);
+    final logoBg = isGradientRole ? const Color(0xFF003366) : Theme.of(context).primaryColor.withValues(alpha: 0.1);
+    final logoColor = isGradientRole ? Colors.white : Theme.of(context).primaryColor;
 
-    return NavigationRail(
+    final destinations = navItems.map((item) {
+      return NavigationRailDestination(
+        icon: Icon(item.icon),
+        selectedIcon: Icon(item.icon, color: selectedColor),
+        label: Text(item.label),
+      );
+    }).toList();
+
+    final rail = NavigationRail(
       selectedIndex: selectedIndex,
       onDestinationSelected: (index) {
-        if (index == 0) {
-          onDestinationSelected(dashboardRoute);
-        } else if (index == 1) {
-          onDestinationSelected('/attendance');
-        } else if (index == 2) {
-          onDestinationSelected('/ai-assistant');
-        } else if (index == 3 && hasUsersTab) {
-          onDestinationSelected('/users');
-        } else if ((index == 3 && !hasUsersTab) || (index == 4 && hasUsersTab)) {
-          onDestinationSelected('/profile');
-        } else if ((index == 4 && !hasUsersTab) || (index == 5 && hasUsersTab)) {
-          onDestinationSelected('/settings');
+        if (index >= 0 && index < navItems.length) {
+          onDestinationSelected(navItems[index].route);
         }
       },
       labelType: NavigationRailLabelType.all,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      selectedIconTheme: IconThemeData(color: Theme.of(context).primaryColor),
-      unselectedIconTheme: IconThemeData(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
-      selectedLabelTextStyle: AcadexTypography.eyebrow(color: Theme.of(context).primaryColor),
-      unselectedLabelTextStyle: AcadexTypography.eyebrow(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted).copyWith(fontWeight: FontWeight.w500),
+      backgroundColor: Colors.transparent,
+      indicatorColor: isGradientRole ? Colors.transparent : null,
+      selectedIconTheme: IconThemeData(color: selectedColor),
+      unselectedIconTheme: IconThemeData(color: unselectedColor),
+      selectedLabelTextStyle: AcadexTypography.eyebrow(
+        color: selectedColor,
+      ).copyWith(fontWeight: FontWeight.w700),
+      unselectedLabelTextStyle: AcadexTypography.eyebrow(
+        color: unselectedColor,
+      ).copyWith(fontWeight: FontWeight.w500),
       leading: Column(
         children: [
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+              color: logoBg,
               borderRadius: AcadexRadius.borderRadiusSm,
             ),
-            child: Icon(LucideIcons.graduationCap, color: Theme.of(context).primaryColor, size: 24),
+            child: Icon(LucideIcons.graduationCap, color: logoColor, size: 24),
           ),
           const SizedBox(height: 24),
         ],
       ),
       destinations: destinations,
+    );
+
+    final scrollableRail = LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(child: rail),
+          ),
+        );
+      },
+    );
+
+    if (isGradientRole) {
+      return Container(
+        decoration: const BoxDecoration(
+          color: Color(0xC7FFFFFF), // Subtle translucent white contrast overlay
+          border: Border(
+            right: BorderSide(
+              color: Color(0x14000000), // rgba(0,0,0,0.08)
+              width: 1,
+            ),
+          ),
+        ),
+        child: scrollableRail,
+      );
+    }
+
+    return Container(
+      color: Theme.of(context).colorScheme.surface,
+      child: scrollableRail,
     );
   }
 }

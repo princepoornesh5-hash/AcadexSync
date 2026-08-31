@@ -47,8 +47,6 @@ class _AcadexTextFieldState extends State<AcadexTextField> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -57,7 +55,7 @@ class _AcadexTextFieldState extends State<AcadexTextField> {
           Text(
             widget.label!,
             style: AcadexTypography.caption(
-              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+              color: AcadexColors.inkSecondary,
             ).copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
@@ -73,7 +71,7 @@ class _AcadexTextFieldState extends State<AcadexTextField> {
           onFieldSubmitted: widget.onSubmitted,
           validator: widget.validator,
           style: AcadexTypography.body(
-            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            color: AcadexColors.ink,
           ),
           decoration: InputDecoration(
             hintText: widget.hint,
@@ -83,7 +81,7 @@ class _AcadexTextFieldState extends State<AcadexTextField> {
                 ? Icon(
                     widget.prefixIcon,
                     size: 18,
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: AcadexColors.inkMuted,
                   )
                 : null,
             suffixIcon: widget.isPassword
@@ -91,7 +89,7 @@ class _AcadexTextFieldState extends State<AcadexTextField> {
                     icon: Icon(
                       _obscureText ? LucideIcons.eye : LucideIcons.eyeOff,
                       size: 18,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      color: AcadexColors.inkMuted,
                     ),
                     onPressed: () {
                       setState(() {
@@ -129,8 +127,6 @@ class AcadexDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -139,7 +135,7 @@ class AcadexDropdown<T> extends StatelessWidget {
           Text(
             label!,
             style: AcadexTypography.caption(
-              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+              color: AcadexColors.inkSecondary,
             ).copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
@@ -148,15 +144,15 @@ class AcadexDropdown<T> extends StatelessWidget {
           initialValue: value,
           items: items,
           onChanged: onChanged,
-          icon: Icon(
+          icon: const Icon(
             LucideIcons.chevronDown,
             size: 16,
-            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            color: AcadexColors.inkMuted,
           ),
           style: AcadexTypography.body(
-            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            color: AcadexColors.ink,
           ),
-          dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+          dropdownColor: AcadexColors.surface,
           decoration: InputDecoration(
             hintText: hint,
             errorText: errorText,
@@ -164,7 +160,7 @@ class AcadexDropdown<T> extends StatelessWidget {
                 ? Icon(
                     prefixIcon,
                     size: 18,
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    color: AcadexColors.inkMuted,
                   )
                 : null,
           ),
@@ -194,26 +190,24 @@ class AcadexSearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return TextField(
       controller: controller,
       autofocus: autofocus,
       onChanged: onChanged,
       onSubmitted: onSubmitted,
       style: AcadexTypography.body(
-        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+        color: AcadexColors.ink,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(
+        prefixIcon: const Icon(
           LucideIcons.search,
           size: 18,
-          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          color: AcadexColors.inkMuted,
         ),
         suffixIcon: controller != null && controller!.text.isNotEmpty
             ? IconButton(
-                icon: const Icon(LucideIcons.x, size: 16),
+                icon: const Icon(LucideIcons.x, size: 16, color: AcadexColors.inkMuted),
                 onPressed: () {
                   controller?.clear();
                   onClear?.call();

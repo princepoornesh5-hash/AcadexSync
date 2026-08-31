@@ -17,6 +17,9 @@ class AcadexBadge extends StatelessWidget {
   final IconData? icon;
   final AcadexBadgeVariant variant;
   final VoidCallback? onTap;
+  final Color? backgroundColor;
+  final Color? textColor;
+  final EdgeInsetsGeometry? padding;
 
   const AcadexBadge({
     super.key,
@@ -24,61 +27,68 @@ class AcadexBadge extends StatelessWidget {
     this.icon,
     this.variant = AcadexBadgeVariant.neutral,
     this.onTap,
+    this.backgroundColor,
+    this.textColor,
+    this.padding,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     Color bg;
     Color fg;
     Color border;
 
-    switch (variant) {
-      case AcadexBadgeVariant.neutral:
-        bg = isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft;
-        fg = isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary;
-        border = isDark ? AcadexColors.darkHairline : AcadexColors.hairline;
-        break;
-      case AcadexBadgeVariant.primary:
-        bg = isDark ? AcadexColors.primaryHover.withValues(alpha: 0.3) : AcadexColors.primaryLight;
-        fg = isDark ? AcadexColors.primaryMuted : AcadexColors.primary;
-        border = isDark ? AcadexColors.primaryHover.withValues(alpha: 0.5) : AcadexColors.primaryLight;
-        break;
-      case AcadexBadgeVariant.success:
-        bg = isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight;
-        fg = isDark ? AcadexColors.success : AcadexColors.successDark;
-        border = isDark ? AcadexColors.successDark : AcadexColors.successLight;
-        break;
-      case AcadexBadgeVariant.warning:
-        bg = isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight;
-        fg = isDark ? AcadexColors.warning : AcadexColors.warningDark;
-        border = isDark ? AcadexColors.warningDark : AcadexColors.warningLight;
-        break;
-      case AcadexBadgeVariant.danger:
-        bg = isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight;
-        fg = isDark ? AcadexColors.error : AcadexColors.errorDark;
-        border = isDark ? AcadexColors.errorDark : AcadexColors.errorLight;
-        break;
-      case AcadexBadgeVariant.info:
-        bg = isDark ? AcadexColors.infoDark.withValues(alpha: 0.3) : AcadexColors.infoLight;
-        fg = isDark ? AcadexColors.info : AcadexColors.infoDark;
-        border = isDark ? AcadexColors.infoDark.withValues(alpha: 0.5) : AcadexColors.infoLight;
-        break;
-      case AcadexBadgeVariant.purple:
-        bg = isDark ? AcadexColors.accentDeepPurple.withValues(alpha: 0.4) : AcadexColors.accentPurpleLight;
-        fg = isDark ? AcadexColors.accentPurple : AcadexColors.accentDeepPurple;
-        border = isDark ? AcadexColors.accentDeepPurple : AcadexColors.accentPurpleLight;
-        break;
-      case AcadexBadgeVariant.teal:
-        bg = isDark ? const Color(0xFF134E4A) : AcadexColors.accentTealLight;
-        fg = isDark ? AcadexColors.accentTeal : const Color(0xFF115E59);
-        border = isDark ? const Color(0xFF134E4A) : AcadexColors.accentTealLight;
-        break;
+    if (backgroundColor != null && textColor != null) {
+      bg = backgroundColor!;
+      fg = textColor!;
+      border = backgroundColor!.withValues(alpha: 0.5);
+    } else {
+      switch (variant) {
+        case AcadexBadgeVariant.neutral:
+          bg = AcadexColors.canvasSoft;
+          fg = AcadexColors.inkSecondary;
+          border = AcadexColors.hairline;
+          break;
+        case AcadexBadgeVariant.primary:
+          bg = AcadexColors.primaryLight;
+          fg = AcadexColors.primary;
+          border = AcadexColors.primaryLight;
+          break;
+        case AcadexBadgeVariant.success:
+          bg = AcadexColors.successLight;
+          fg = AcadexColors.success;
+          border = AcadexColors.successLight;
+          break;
+        case AcadexBadgeVariant.warning:
+          bg = AcadexColors.warningLight;
+          fg = AcadexColors.warning;
+          border = AcadexColors.warningLight;
+          break;
+        case AcadexBadgeVariant.danger:
+          bg = AcadexColors.errorLight;
+          fg = AcadexColors.error;
+          border = AcadexColors.errorLight;
+          break;
+        case AcadexBadgeVariant.info:
+          bg = AcadexColors.primaryTint;
+          fg = AcadexColors.primary;
+          border = AcadexColors.primaryLight;
+          break;
+        case AcadexBadgeVariant.purple:
+          bg = AcadexColors.accentPurpleLight;
+          fg = AcadexColors.accentPurple;
+          border = AcadexColors.accentPurpleLight;
+          break;
+        case AcadexBadgeVariant.teal:
+          bg = AcadexColors.accentTealLight;
+          fg = AcadexColors.accentTeal;
+          border = AcadexColors.accentTealLight;
+          break;
+      }
     }
 
     final child = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: AcadexRadius.borderRadiusFull,
@@ -134,15 +144,13 @@ class AcadexChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const selectedBg = AcadexColors.primaryLight;
+    const selectedFg = AcadexColors.primary;
+    const selectedBorder = AcadexColors.primary;
 
-    final selectedBg = isDark ? AcadexColors.primaryHover : AcadexColors.primaryLight;
-    final selectedFg = isDark ? Colors.white : AcadexColors.primary;
-    final selectedBorder = isDark ? AcadexColors.primaryMuted : AcadexColors.primary;
-
-    final unselectedBg = isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface;
-    final unselectedFg = isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary;
-    final unselectedBorder = isDark ? AcadexColors.darkHairline : AcadexColors.hairline;
+    const unselectedBg = AcadexColors.surface;
+    const unselectedFg = AcadexColors.inkSecondary;
+    const unselectedBorder = AcadexColors.hairline;
 
     return FilterChip(
       label: Text(label),
@@ -163,6 +171,67 @@ class AcadexChip extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    );
+  }
+}
+
+class AcadexFilterOption<T> {
+  final String label;
+  final T value;
+  final int? count;
+
+  const AcadexFilterOption({
+    required this.label,
+    required this.value,
+    this.count,
+  });
+}
+
+class AcadexFilterBar<T> extends StatelessWidget {
+  final List<AcadexFilterOption<T>> options;
+  final T selectedValue;
+  final ValueChanged<T> onSelected;
+
+  const AcadexFilterBar({
+    super.key,
+    required this.options,
+    required this.selectedValue,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: options.map((option) {
+          final isSelected = option.value == selectedValue;
+          return Padding(
+            padding: const EdgeInsets.only(right: AcadexSpacing.space8),
+            child: ChoiceChip(
+              label: Text(
+                option.count != null ? '${option.label} (${option.count})' : option.label,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected ? Colors.white : AcadexColors.inkSecondary,
+                ),
+              ),
+              selected: isSelected,
+              selectedColor: AcadexColors.primary,
+              backgroundColor: AcadexColors.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: AcadexRadius.borderRadiusSm,
+                side: BorderSide(
+                  color: isSelected ? AcadexColors.primary : AcadexColors.hairline,
+                ),
+              ),
+              onSelected: (_) => onSelected(option.value),
+              showCheckmark: false,
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 }

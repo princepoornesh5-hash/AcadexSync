@@ -185,7 +185,7 @@ class _TimetableDesignerScreenState extends ConsumerState<TimetableDesignerScree
           focusNode: _gridFocusNode,
           autofocus: true,
           child: Scaffold(
-            backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+            backgroundColor: Colors.transparent,
             body: SafeArea(
               child: Column(
                 children: [

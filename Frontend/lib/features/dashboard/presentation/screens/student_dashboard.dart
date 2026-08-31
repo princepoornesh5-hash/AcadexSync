@@ -6,10 +6,12 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../../core/presentation/widgets/acadex_adaptive_gradient_text.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/dashboard_providers.dart';
+import '../widgets/acadex_hero_card.dart';
 import '../widgets/activity_feed.dart';
 import '../widgets/quick_action_card.dart';
 import '../widgets/section_header.dart';
@@ -35,95 +37,114 @@ class StudentDashboard extends ConsumerWidget {
     final profileAsync = ref.watch(currentStudentAcademicProfileProvider);
     final scheduleAsync = ref.watch(todayScheduleProvider);
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final firstName = user?.name.split(' ').first ?? 'Student';
     final classesToday = scheduleAsync.value?.length ?? 0;
     final profile = profileAsync.value;
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      body: LayoutBuilder(
+    return LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
           final statCols = AcadexLayout.statGridColumns(context);
 
+          final isMobile = AcadexBreakpoints.isMobile(context);
+
           return AcadexPageContainer(
-            particleSphereVariant: ParticleSphereVariant.dashboard,
+            backgroundColor: Colors.transparent,
+            topPadding: isMobile ? 16 : 24,
+            onRefresh: () async {
+              ref.invalidate(studentStatsProvider);
+              ref.invalidate(studentActivityProvider);
+              ref.invalidate(currentStudentAcademicProfileProvider);
+              ref.invalidate(todayScheduleProvider);
+            },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Top Greeting & Role Badge
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Hey, $firstName! 🎓',
-                            style: AcadexTypography.heading1(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            classesToday > 0
-                                ? 'You have $classesToday classes scheduled today. Stay on track!'
-                                : 'No classes scheduled for today. Have a great day!',
-                            style: AcadexTypography.body(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                            ),
-                          ),
-                        ],
+                if (isMobile) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: AcadexAdaptiveGradientText(
+                          'Hey, $firstName! 🎓',
+                          style: AcadexTypography.heading2(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    const AcadexBadge(
-                      label: 'STUDENT',
-                      variant: AcadexBadgeVariant.primary,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Academic Placement & Enrolled Section Card
-                if (profile != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: AcadexColors.primary.withValues(alpha: 0.08),
-                      borderRadius: AcadexRadius.borderRadiusMd,
-                      border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.2)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(LucideIcons.graduationCap, color: AcadexColors.primary, size: 20),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            "${profile.course?.name ?? 'Course'} • ${profile.semester?.name ?? 'Semester'} • Section ${profile.section?.name ?? 'A'} (${profile.academicYear?.name ?? 'Current Year'})",
-                            style: AcadexTypography.body(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                            ).copyWith(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AcadexColors.primary.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(AcadexRadius.xs),
-                          ),
-                          child: Text(
-                            'Roll: ${profile.student.rollNumber}',
-                            style: const TextStyle(
-                              color: AcadexColors.primary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                      const SizedBox(width: 8),
+                      const AcadexBadge(
+                        label: 'STUDENT',
+                        variant: AcadexBadgeVariant.primary,
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 4),
+                  AcadexAdaptiveGradientText(
+                    classesToday > 0
+                        ? 'You have $classesToday classes scheduled today.'
+                        : 'No classes scheduled for today.',
+                    style: AcadexTypography.caption(),
+                    isSecondary: true,
+                  ),
+                ] else ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AcadexAdaptiveGradientText(
+                              'Hey, $firstName! 🎓',
+                              style: AcadexTypography.heading1(),
+                            ),
+                            const SizedBox(height: 4),
+                            AcadexAdaptiveGradientText(
+                              classesToday > 0
+                                  ? 'You have $classesToday classes scheduled today. Stay on track!'
+                                  : 'No classes scheduled for today. Have a great day!',
+                              style: AcadexTypography.body(),
+                              isSecondary: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const AcadexBadge(
+                        label: 'STUDENT',
+                        variant: AcadexBadgeVariant.primary,
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 20),
+
+                // Student Academic Portal Hero Card
+                AcadexHeroCard(
+                  eyebrow: 'Student Academic Portal',
+                  badge: profile != null
+                      ? AcadexBadge(
+                          label: 'ROLL: ${profile.student.rollNumber}',
+                          variant: AcadexBadgeVariant.primary,
+                        )
+                      : const AcadexBadge(
+                          label: 'STUDENT ENROLLED',
+                          variant: AcadexBadgeVariant.success,
+                        ),
+                  icon: LucideIcons.graduationCap,
+                  title: profile != null
+                      ? '${profile.course?.name ?? "Enrolled Program"} • ${profile.semester?.name ?? "Semester"}'
+                      : 'My Academic Program',
+                  subtitle: profile != null
+                      ? 'Section ${profile.section?.name ?? "A"} • Academic Year ${profile.academicYear?.name ?? "2025-2026"}'
+                      : 'View your course syllabus, lecture schedule, and attendance standing.',
+                  primaryActionLabel: 'My Attendance',
+                  primaryActionIcon: LucideIcons.clipboardCheck,
+                  onPrimaryAction: () => context.go('/attendance'),
+                  secondaryActionLabel: 'Full Timetable',
+                  onSecondaryAction: () => context.go('/timetable'),
+                ),
                 AcadexLayout.sectionSpacer,
 
                 // Overview Stat Cards (Attendance, Classes Missed, etc.)
@@ -151,7 +172,7 @@ class StudentDashboard extends ConsumerWidget {
                       crossAxisCount: statCols,
                       crossAxisSpacing: AcadexLayout.gridSpacing,
                       mainAxisSpacing: AcadexLayout.gridSpacing,
-                      childAspectRatio: width > 600 ? 1.25 : 1.15,
+                      childAspectRatio: isMobile ? (width >= 375 ? 1.05 : 0.95) : (width > 600 ? 1.25 : 1.15),
                     ),
                     itemBuilder: (_, i) => StatCard(stat: data[i]),
                   ),
@@ -176,18 +197,7 @@ class StudentDashboard extends ConsumerWidget {
                 // Quick Navigation Actions
                 const SectionHeader(title: 'Quick Operations'),
                 AcadexLayout.headerGap,
-                GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: quickActions.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: width > 900 ? 6 : (width > 600 ? 3 : 2),
-                    crossAxisSpacing: AcadexLayout.gridSpacing,
-                    mainAxisSpacing: AcadexLayout.gridSpacing,
-                    childAspectRatio: 1.15,
-                  ),
-                  itemBuilder: (_, i) => QuickActionCard(action: quickActions[i]),
-                ),
+                QuickActionsRow(actions: quickActions),
                 AcadexLayout.sectionSpacer,
 
                 // Notifications Preview Section
@@ -221,7 +231,6 @@ class StudentDashboard extends ConsumerWidget {
             ),
           );
         },
-      ),
-    );
+      );
   }
 }

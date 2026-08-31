@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../settings/domain/models/settings_models.dart';
 import '../../../settings/presentation/providers/settings_providers.dart';
@@ -31,6 +32,10 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          onPressed: () => context.safePop(fallbackRoute: '/notifications'),
+        ),
         title: Text(
           'Notification Settings',
           style: AcadexTypography.title(

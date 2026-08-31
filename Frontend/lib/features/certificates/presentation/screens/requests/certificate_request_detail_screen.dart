@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:intl/intl.dart';
 import 'package:campus_management/app/theme/app_theme.dart';
+import 'package:campus_management/core/presentation/utils/navigation_extensions.dart';
 import 'package:campus_management/core/presentation/widgets/acadex_feedback.dart';
 import 'package:campus_management/features/auth/domain/models/auth_state.dart';
 import 'package:campus_management/features/auth/domain/models/role_enum.dart';
@@ -75,7 +75,7 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
             title: 'Request Not Found',
             subtitle: 'The requested certificate request could not be located.',
             actionLabel: 'Return to Requests',
-            onActionTap: () => context.pop(),
+            onActionTap: () => context.safePop(fallbackRoute: '/certificates/requests'),
           ),
         ),
       );
@@ -101,7 +101,7 @@ class _CertificateRequestDetailScreenState extends ConsumerState<CertificateRequ
             LucideIcons.arrowLeft,
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () => context.safePop(fallbackRoute: '/certificates/requests'),
         ),
       ),
       body: Center(

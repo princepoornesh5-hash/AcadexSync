@@ -12,7 +12,7 @@ export class AuthController {
     const { identifier, password } = req.body;
 
     if (!identifier || !password) {
-      throw ApiError.badRequest('Identifier (email or phone) and password are required');
+      throw ApiError.badRequest('Identifier (PIN Number, email, or phone) and password are required');
     }
 
     const metadata = {

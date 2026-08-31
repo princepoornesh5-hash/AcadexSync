@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
 
@@ -41,13 +42,7 @@ class ComingSoonScreen extends StatelessWidget {
             LucideIcons.arrowLeft,
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/login');
-            }
-          },
+          onPressed: () => context.safePop(fallbackRoute: '/dashboard'),
         ),
         title: Text(
           moduleName,

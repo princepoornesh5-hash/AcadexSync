@@ -42,7 +42,7 @@ class AttendanceAnalyticsScreen extends ConsumerWidget {
     final isMobile = width < 900;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(

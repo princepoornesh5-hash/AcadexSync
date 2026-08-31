@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../domain/models/attendance_status.dart';
 import '../providers/attendance_providers.dart';
 import '../widgets/attendance_summary_card.dart';
@@ -195,7 +195,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
         appBar: AppBar(
           leading: IconButton(
             icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-            onPressed: () => context.pop(),
+            onPressed: () => context.safePop(fallbackRoute: '/attendance'),
           ),
         ),
         body: const Center(
@@ -223,6 +223,120 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
       return true;
     }).toList();
 
+    final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
+
+    final bodyContent = sessionAsync.when(
+      loading: () => const Center(
+        child: AcadexLoadingState(message: "Loading student roster..."),
+      ),
+      error: (err, stack) => Center(
+        child: AcadexErrorState(
+          message: "Unable to load student roster: $err",
+          onRetry: () => ref.refresh(activeStudentListProvider),
+        ),
+      ),
+      data: (_) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= 1024;
+
+            if (isDesktop) {
+              return _buildDesktopLayout(
+                context,
+                notifier,
+                records,
+                filteredRecords,
+                isDark,
+                activeClass.isAttendanceMarked,
+              );
+            }
+
+            return _buildMobileTabletLayout(
+              context,
+              notifier,
+              records,
+              filteredRecords,
+              isDark,
+              activeClass.isAttendanceMarked,
+            );
+          },
+        );
+      },
+    );
+
+    if (hasEnclosingScaffold) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                borderRadius: AcadexRadius.borderRadiusLg,
+                border: Border.all(
+                  color: isDark ? AcadexColors.darkHairline : const Color(0xFFDBEAFE),
+                  width: 1.2,
+                ),
+                boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AcadexColors.primaryLight,
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                    ),
+                    child: const Icon(LucideIcons.clipboardCheck, color: AcadexColors.primary, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          activeClass.subjectName,
+                          style: AcadexTypography.heading3(
+                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          "${activeClass.sectionName} • ${activeClass.timeSlot}${activeClass.roomNumber != null && activeClass.roomNumber!.isNotEmpty ? ' • Room ${activeClass.roomNumber}' : ''}",
+                          style: AcadexTypography.caption(
+                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      LucideIcons.refreshCw,
+                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      size: 18,
+                    ),
+                    tooltip: "Refresh Roster",
+                    onPressed: () {
+                      ref.invalidate(activeStudentListProvider);
+                    },
+                  ),
+                ],
+              ),
+            ),
+            Expanded(child: bodyContent),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
@@ -231,7 +345,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
             LucideIcons.arrowLeft,
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () => context.safePop(fallbackRoute: '/attendance'),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,44 +380,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: sessionAsync.when(
-        loading: () => const Center(
-          child: AcadexLoadingState(message: "Loading student roster..."),
-        ),
-        error: (err, stack) => Center(
-          child: AcadexErrorState(
-            message: "Unable to load student roster: $err",
-            onRetry: () => ref.refresh(activeStudentListProvider),
-          ),
-        ),
-        data: (_) {
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final isDesktop = constraints.maxWidth >= 1024;
-
-              if (isDesktop) {
-                return _buildDesktopLayout(
-                  context,
-                  notifier,
-                  records,
-                  filteredRecords,
-                  isDark,
-                  activeClass.isAttendanceMarked,
-                );
-              }
-
-              return _buildMobileTabletLayout(
-                context,
-                notifier,
-                records,
-                filteredRecords,
-                isDark,
-                activeClass.isAttendanceMarked,
-              );
-            },
-          );
-        },
-      ),
+      body: bodyContent,
     );
   }
 

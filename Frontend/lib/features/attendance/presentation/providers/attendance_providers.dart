@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/notifications/presentation/providers/notification_providers.dart';
+import '../../../../features/dashboard/presentation/providers/dashboard_providers.dart';
+import '../../../../features/reports/presentation/providers/reports_providers.dart';
 import '../../../../core/firebase/firebase_services.dart';
 import '../../domain/models/attendance_record.dart';
 import '../../domain/models/attendance_session.dart';
@@ -178,8 +180,79 @@ final saveSessionProvider = FutureProvider.family<bool, String>((ref, activeClas
   
   final success = await repo.saveSession(session);
   if (success) {
-    // Invalidate assigned classes so that the "Marked" badge updates in real time
+    // Invalidate assigned classes, sessions, dashboard stats, and reports in real time
     ref.invalidate(assignedClassesProvider);
+    ref.invalidate(facultySessionsProvider);
+    ref.invalidate(studentStatsProvider);
+    ref.invalidate(facultyStatsProvider);
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(superAdminStatsProvider);
+    ref.invalidate(roleDashboardReportProvider);
+    ref.invalidate(myAttendanceReportProvider);
   }
   return success;
+});
+
+// ---------------------------------------------------------
+// Faculty Sessions (History)
+// ---------------------------------------------------------
+final facultySessionsProvider = FutureProvider<List<AttendanceSession>>((ref) async {
+  final repo = ref.watch(attendanceRepoProvider);
+  final currentUser = ref.watch(currentUserProvider);
+  if (currentUser == null || currentUser.id.isEmpty) return [];
+  return repo.getFacultySessions();
+});
+
+// ---------------------------------------------------------
+// Single Session Detail
+// ---------------------------------------------------------
+final sessionDetailProvider = FutureProvider.family<AttendanceSession, String>((ref, sessionId) async {
+  final repo = ref.watch(attendanceRepoProvider);
+  return repo.getSessionById(sessionId);
+});
+
+// ---------------------------------------------------------
+// Session Lifecycle Actions
+// ---------------------------------------------------------
+final lockSessionProvider = FutureProvider.family<AttendanceSession, String>((ref, sessionId) async {
+  final repo = ref.read(attendanceRepoProvider);
+  final session = await repo.lockSession(sessionId);
+  ref.invalidate(sessionDetailProvider(sessionId));
+  ref.invalidate(facultySessionsProvider);
+  ref.invalidate(assignedClassesProvider);
+  return session;
+});
+
+final closeSessionProvider = FutureProvider.family<AttendanceSession, String>((ref, sessionId) async {
+  final repo = ref.read(attendanceRepoProvider);
+  final session = await repo.closeSession(sessionId);
+  ref.invalidate(sessionDetailProvider(sessionId));
+  ref.invalidate(facultySessionsProvider);
+  return session;
+});
+
+final cancelSessionProvider = FutureProvider.family<AttendanceSession, String>((ref, sessionId) async {
+  final repo = ref.read(attendanceRepoProvider);
+  final session = await repo.cancelSession(sessionId);
+  ref.invalidate(sessionDetailProvider(sessionId));
+  ref.invalidate(facultySessionsProvider);
+  return session;
+});
+
+// ---------------------------------------------------------
+// HOD & Admin Record Correction Action
+// ---------------------------------------------------------
+final correctRecordProvider = FutureProvider.family<AttendanceRecord, ({String recordId, AttendanceStatus newStatus, String reason, String? sessionId})>((ref, args) async {
+  final repo = ref.read(attendanceRepoProvider);
+  final record = await repo.correctRecord(
+    args.recordId,
+    newStatus: args.newStatus,
+    reason: args.reason,
+  );
+  if (args.sessionId != null) {
+    ref.invalidate(sessionDetailProvider(args.sessionId!));
+  }
+  ref.invalidate(facultySessionsProvider);
+  return record;
 });

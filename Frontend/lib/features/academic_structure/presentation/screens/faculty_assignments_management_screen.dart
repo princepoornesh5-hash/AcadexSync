@@ -95,9 +95,12 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
       return true;
     }).toList();
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      body: AcadexPageContainer(
+    final isGradientRole = currentUser?.role == AppRole.superAdmin ||
+        currentUser?.role == AppRole.collegeAdmin ||
+        currentUser?.role == AppRole.hod;
+
+    return AcadexPageContainer(
+        backgroundColor: Colors.transparent,
         maxWidth: 1600,
         scrollable: false,
         child: Column(
@@ -119,160 +122,285 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
 
             // Search and Filter Controls
             AcadexCard(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               child: Column(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: "Search by faculty name or employee ID...",
-                            prefixIcon: const Icon(LucideIcons.search, size: 18),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
-                          ),
-                          onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      if (!isHod) ...[
-                        Expanded(
-                          flex: 2,
-                          child: DropdownButtonFormField<String?>(
-                            key: ValueKey('filter_dept_$_filterDepartmentId'),
-                            decoration: const InputDecoration(labelText: "Department", hintText: "All Depts"),
-                            initialValue: _filterDepartmentId,
-                            items: [
-                              const DropdownMenuItem(value: null, child: Text("All Departments")),
-                              ...departments.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name))),
-                            ],
-                            onChanged: (val) {
-                              setState(() {
-                                _filterDepartmentId = val;
-                                _filterCourseId = null;
-                                _filterSemesterId = null;
-                                _filterSectionId = null;
-                                _filterSubjectId = null;
-                                _filterFacultyId = null;
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                      ],
-                      Expanded(
-                        flex: 2,
-                        child: DropdownButtonFormField<String?>(
-                          key: ValueKey('filter_course_${_filterDepartmentId}_$_filterCourseId'),
-                          decoration: const InputDecoration(labelText: "Course", hintText: "All Courses"),
-                          initialValue: _filterCourseId,
-                          items: [
-                            const DropdownMenuItem(value: null, child: Text("All Courses")),
-                            ...filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.code))),
-                          ],
-                          onChanged: (val) {
-                            setState(() {
-                              _filterCourseId = val;
-                              _filterSemesterId = null;
-                              _filterSectionId = null;
-                              _filterSubjectId = null;
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
-                        child: DropdownButtonFormField<String?>(
-                          key: ValueKey('filter_sem_${_filterCourseId}_$_filterSemesterId'),
-                          decoration: const InputDecoration(labelText: "Semester", hintText: "All Semesters"),
-                          initialValue: _filterSemesterId,
-                          items: [
-                            const DropdownMenuItem(value: null, child: Text("All Semesters")),
-                            ...filteredSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
-                          ],
-                          onChanged: (val) {
-                            setState(() {
-                              _filterSemesterId = val;
-                              _filterSectionId = null;
-                              _filterSubjectId = null;
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
-                        child: DropdownButtonFormField<String?>(
-                          key: ValueKey('filter_sec_${_filterSemesterId}_$_filterSectionId'),
-                          decoration: const InputDecoration(labelText: "Section", hintText: "All Sections"),
-                          initialValue: _filterSectionId,
-                          items: [
-                            const DropdownMenuItem(value: null, child: Text("All Sections")),
-                            ...filteredSections.map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name))),
-                          ],
-                          onChanged: (val) => setState(() => _filterSectionId = val),
-                        ),
-                      ),
-                    ],
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: "Search by faculty name, subject, or code...",
+                      prefixIcon: const Icon(LucideIcons.search, size: 18),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                    ),
+                    onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: DropdownButtonFormField<String?>(
-                          key: ValueKey('filter_fac_${_filterDepartmentId}_$_filterFacultyId'),
-                          decoration: const InputDecoration(labelText: "Faculty", hintText: "All Faculty"),
-                          initialValue: _filterFacultyId,
-                          items: [
-                            const DropdownMenuItem(value: null, child: Text("All Faculty")),
-                            ...filteredFaculty.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name))),
+                  const SizedBox(height: 10),
+                  LayoutBuilder(
+                    builder: (context, filterConstraints) {
+                      final isNarrow = filterConstraints.maxWidth < 700;
+                      if (isNarrow) {
+                        return Column(
+                          children: [
+                            Row(
+                              children: [
+                                if (!isHod) ...[
+                                  Expanded(
+                                    child: DropdownButtonFormField<String?>(
+                                      key: ValueKey('filter_dept_$_filterDepartmentId'),
+                                      decoration: const InputDecoration(labelText: "Department", isDense: true),
+                                      initialValue: _filterDepartmentId,
+                                      items: [
+                                        const DropdownMenuItem(value: null, child: Text("All Depts")),
+                                        ...departments.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name, overflow: TextOverflow.ellipsis))),
+                                      ],
+                                      onChanged: (val) {
+                                        setState(() {
+                                          _filterDepartmentId = val;
+                                          _filterCourseId = null;
+                                          _filterSemesterId = null;
+                                          _filterSectionId = null;
+                                          _filterSubjectId = null;
+                                          _filterFacultyId = null;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                                Expanded(
+                                  child: DropdownButtonFormField<String?>(
+                                    key: ValueKey('filter_course_${_filterDepartmentId}_$_filterCourseId'),
+                                    decoration: const InputDecoration(labelText: "Course", isDense: true),
+                                    initialValue: _filterCourseId,
+                                    items: [
+                                      const DropdownMenuItem(value: null, child: Text("All Courses")),
+                                      ...filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.code))),
+                                    ],
+                                    onChanged: (val) {
+                                      setState(() {
+                                        _filterCourseId = val;
+                                        _filterSemesterId = null;
+                                        _filterSectionId = null;
+                                        _filterSubjectId = null;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: DropdownButtonFormField<String?>(
+                                    key: ValueKey('filter_sem_${_filterCourseId}_$_filterSemesterId'),
+                                    decoration: const InputDecoration(labelText: "Semester", isDense: true),
+                                    initialValue: _filterSemesterId,
+                                    items: [
+                                      const DropdownMenuItem(value: null, child: Text("All Sems")),
+                                      ...filteredSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
+                                    ],
+                                    onChanged: (val) {
+                                      setState(() {
+                                        _filterSemesterId = val;
+                                        _filterSectionId = null;
+                                        _filterSubjectId = null;
+                                      });
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: DropdownButtonFormField<String?>(
+                                    key: ValueKey('filter_sec_${_filterSemesterId}_$_filterSectionId'),
+                                    decoration: const InputDecoration(labelText: "Section", isDense: true),
+                                    initialValue: _filterSectionId,
+                                    items: [
+                                      const DropdownMenuItem(value: null, child: Text("All Secs")),
+                                      ...filteredSections.map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name))),
+                                    ],
+                                    onChanged: (val) => setState(() => _filterSectionId = val),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: DropdownButtonFormField<String?>(
+                                    key: ValueKey('filter_fac_${_filterDepartmentId}_$_filterFacultyId'),
+                                    decoration: const InputDecoration(labelText: "Faculty", isDense: true),
+                                    initialValue: _filterFacultyId,
+                                    items: [
+                                      const DropdownMenuItem(value: null, child: Text("All Faculty")),
+                                      ...filteredFaculty.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name, overflow: TextOverflow.ellipsis))),
+                                    ],
+                                    onChanged: (val) => setState(() => _filterFacultyId = val),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Checkbox(
+                                        value: _filterActiveOnly,
+                                        onChanged: (v) => setState(() => _filterActiveOnly = v ?? true),
+                                      ),
+                                      const Flexible(child: Text("Active only", overflow: TextOverflow.ellipsis)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
-                          onChanged: (val) => setState(() => _filterFacultyId = val),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
-                        child: DropdownButtonFormField<String?>(
-                          key: ValueKey('filter_sub_${_filterSemesterId}_$_filterSubjectId'),
-                          decoration: const InputDecoration(labelText: "Subject", hintText: "All Subjects"),
-                          initialValue: _filterSubjectId,
-                          items: [
-                            const DropdownMenuItem(value: null, child: Text("All Subjects")),
-                            ...filteredSubjects.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.code} - ${s.name}'))),
-                          ],
-                          onChanged: (val) => setState(() => _filterSubjectId = val),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
-                        child: DropdownButtonFormField<String?>(
-                          key: ValueKey('filter_ay_$_filterAcademicYearId'),
-                          decoration: const InputDecoration(labelText: "Academic Year", hintText: "All Years"),
-                          initialValue: _filterAcademicYearId,
-                          items: [
-                            const DropdownMenuItem(value: null, child: Text("All Academic Years")),
-                            ...academicYears.map((y) => DropdownMenuItem(value: y.id, child: Text(y.name))),
-                          ],
-                          onChanged: (val) => setState(() => _filterAcademicYearId = val),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Row(
+                        );
+                      }
+
+                      return Column(
                         children: [
-                          Checkbox(
-                            value: _filterActiveOnly,
-                            onChanged: (v) => setState(() => _filterActiveOnly = v ?? true),
+                          Row(
+                            children: [
+                              if (!isHod) ...[
+                                Expanded(
+                                  flex: 2,
+                                  child: DropdownButtonFormField<String?>(
+                                    key: ValueKey('filter_dept_$_filterDepartmentId'),
+                                    decoration: const InputDecoration(labelText: "Department", hintText: "All Depts"),
+                                    initialValue: _filterDepartmentId,
+                                    items: [
+                                      const DropdownMenuItem(value: null, child: Text("All Departments")),
+                                      ...departments.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name))),
+                                    ],
+                                    onChanged: (val) {
+                                      setState(() {
+                                        _filterDepartmentId = val;
+                                        _filterCourseId = null;
+                                        _filterSemesterId = null;
+                                        _filterSectionId = null;
+                                        _filterSubjectId = null;
+                                        _filterFacultyId = null;
+                                      });
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                              ],
+                              Expanded(
+                                flex: 2,
+                                child: DropdownButtonFormField<String?>(
+                                  key: ValueKey('filter_course_${_filterDepartmentId}_$_filterCourseId'),
+                                  decoration: const InputDecoration(labelText: "Course", hintText: "All Courses"),
+                                  initialValue: _filterCourseId,
+                                  items: [
+                                    const DropdownMenuItem(value: null, child: Text("All Courses")),
+                                    ...filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.code))),
+                                  ],
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _filterCourseId = val;
+                                      _filterSemesterId = null;
+                                      _filterSectionId = null;
+                                      _filterSubjectId = null;
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                flex: 2,
+                                child: DropdownButtonFormField<String?>(
+                                  key: ValueKey('filter_sem_${_filterCourseId}_$_filterSemesterId'),
+                                  decoration: const InputDecoration(labelText: "Semester", hintText: "All Semesters"),
+                                  initialValue: _filterSemesterId,
+                                  items: [
+                                    const DropdownMenuItem(value: null, child: Text("All Semesters")),
+                                    ...filteredSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
+                                  ],
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _filterSemesterId = val;
+                                      _filterSectionId = null;
+                                      _filterSubjectId = null;
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                flex: 2,
+                                child: DropdownButtonFormField<String?>(
+                                  key: ValueKey('filter_sec_${_filterSemesterId}_$_filterSectionId'),
+                                  decoration: const InputDecoration(labelText: "Section", hintText: "All Sections"),
+                                  initialValue: _filterSectionId,
+                                  items: [
+                                    const DropdownMenuItem(value: null, child: Text("All Sections")),
+                                    ...filteredSections.map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name))),
+                                  ],
+                                  onChanged: (val) => setState(() => _filterSectionId = val),
+                                ),
+                              ),
+                            ],
                           ),
-                          const Text("Active only"),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: DropdownButtonFormField<String?>(
+                                  key: ValueKey('filter_fac_${_filterDepartmentId}_$_filterFacultyId'),
+                                  decoration: const InputDecoration(labelText: "Faculty", hintText: "All Faculty"),
+                                  initialValue: _filterFacultyId,
+                                  items: [
+                                    const DropdownMenuItem(value: null, child: Text("All Faculty")),
+                                    ...filteredFaculty.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name))),
+                                  ],
+                                  onChanged: (val) => setState(() => _filterFacultyId = val),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                flex: 2,
+                                child: DropdownButtonFormField<String?>(
+                                  key: ValueKey('filter_sub_${_filterSemesterId}_$_filterSubjectId'),
+                                  decoration: const InputDecoration(labelText: "Subject", hintText: "All Subjects"),
+                                  initialValue: _filterSubjectId,
+                                  items: [
+                                    const DropdownMenuItem(value: null, child: Text("All Subjects")),
+                                    ...filteredSubjects.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.code} - ${s.name}'))),
+                                  ],
+                                  onChanged: (val) => setState(() => _filterSubjectId = val),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                flex: 2,
+                                child: DropdownButtonFormField<String?>(
+                                  key: ValueKey('filter_ay_$_filterAcademicYearId'),
+                                  decoration: const InputDecoration(labelText: "Academic Year", hintText: "All Years"),
+                                  initialValue: _filterAcademicYearId,
+                                  items: [
+                                    const DropdownMenuItem(value: null, child: Text("All Academic Years")),
+                                    ...academicYears.map((y) => DropdownMenuItem(value: y.id, child: Text(y.name))),
+                                  ],
+                                  onChanged: (val) => setState(() => _filterAcademicYearId = val),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Row(
+                                children: [
+                                  Checkbox(
+                                    value: _filterActiveOnly,
+                                    onChanged: (v) => setState(() => _filterActiveOnly = v ?? true),
+                                  ),
+                                  const Text("Active only"),
+                                ],
+                              ),
+                            ],
+                          ),
                         ],
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -495,8 +623,7 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Future<void> _toggleAssignmentActive(FacultyAssignment assignment) async {

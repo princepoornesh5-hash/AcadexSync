@@ -6,12 +6,14 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../../core/presentation/widgets/acadex_adaptive_gradient_text.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../academic_structure/domain/models/academic_models.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
 import '../providers/dashboard_providers.dart';
+import '../widgets/acadex_hero_card.dart';
 import '../widgets/activity_feed.dart';
 import '../widgets/quick_action_card.dart';
 import '../widgets/section_header.dart';
@@ -35,46 +37,94 @@ class FacultyDashboard extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final firstName = user?.name.split(' ').first ?? 'Faculty';
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      body: LayoutBuilder(
+    return LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
           final statCols = AcadexLayout.statGridColumns(context);
+          final isMobile = AcadexBreakpoints.isMobile(context);
 
           return AcadexPageContainer(
-            particleSphereVariant: ParticleSphereVariant.dashboard,
+            backgroundColor: Colors.transparent,
+            topPadding: isMobile ? 16 : 24,
+            onRefresh: () async {
+              ref.invalidate(facultyStatsProvider);
+              ref.invalidate(facultyActivityProvider);
+              ref.invalidate(myFacultyAssignmentsProvider);
+            },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Top Greeting & Role Badge
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Good morning, Prof. $firstName 👋',
-                            style: AcadexTypography.heading1(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Manage your allocated classes, student attendance, lesson notes, and teaching schedule.',
-                            style: AcadexTypography.body(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                            ),
-                          ),
-                        ],
+                if (isMobile) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: AcadexAdaptiveGradientText(
+                          'Welcome, Prof. $firstName 👋',
+                          style: AcadexTypography.heading2(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    const AcadexBadge(
-                      label: 'FACULTY',
-                      variant: AcadexBadgeVariant.primary,
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      const AcadexBadge(
+                        label: 'FACULTY',
+                        variant: AcadexBadgeVariant.primary,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  AcadexAdaptiveGradientText(
+                    'Manage your classes, student attendance, and schedule.',
+                    style: AcadexTypography.caption(),
+                    isSecondary: true,
+                  ),
+                ] else ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AcadexAdaptiveGradientText(
+                              'Good morning, Prof. $firstName 👋',
+                              style: AcadexTypography.heading1(),
+                            ),
+                            const SizedBox(height: 4),
+                            AcadexAdaptiveGradientText(
+                              'Manage your allocated classes, student attendance, lesson notes, and teaching schedule.',
+                              style: AcadexTypography.body(),
+                              isSecondary: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const AcadexBadge(
+                        label: 'FACULTY',
+                        variant: AcadexBadgeVariant.primary,
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 20),
+
+                // Teaching Operations Hero Card
+                AcadexHeroCard(
+                  eyebrow: 'Teaching Operations Workspace',
+                  badge: const AcadexBadge(
+                    label: 'FACULTY ON DUTY',
+                    variant: AcadexBadgeVariant.primary,
+                  ),
+                  icon: LucideIcons.calendarCheck,
+                  title: 'Daily Teaching & Attendance Portal',
+                  subtitle: 'Quickly mark student attendance, review allocated sections, and manage study notes.',
+                  primaryActionLabel: 'Mark Attendance',
+                  primaryActionIcon: LucideIcons.clipboardCheck,
+                  onPrimaryAction: () => context.go('/attendance'),
+                  secondaryActionLabel: 'View Timetable',
+                  onSecondaryAction: () => context.go('/timetable'),
                 ),
                 AcadexLayout.sectionSpacer,
 
@@ -103,7 +153,7 @@ class FacultyDashboard extends ConsumerWidget {
                       crossAxisCount: statCols,
                       crossAxisSpacing: AcadexLayout.gridSpacing,
                       mainAxisSpacing: AcadexLayout.gridSpacing,
-                      childAspectRatio: width > 600 ? 1.25 : 1.15,
+                      childAspectRatio: isMobile ? (width >= 375 ? 0.95 : 0.88) : (width > 600 ? 1.25 : 1.15),
                     ),
                     itemBuilder: (_, i) => StatCard(stat: data[i]),
                   ),
@@ -129,7 +179,7 @@ class FacultyDashboard extends ConsumerWidget {
                 SectionHeader(
                   title: 'My Assigned Subjects & Sections',
                   actionLabel: 'View All Assignments',
-                  onAction: () => context.push('/my-assignments'),
+                  onAction: () => context.go('/my-assignments'),
                 ),
                 AcadexLayout.headerGap,
                 Consumer(
@@ -159,6 +209,113 @@ class FacultyDashboard extends ConsumerWidget {
                     }
 
                     final subjectEntries = subjectSections.entries.toList();
+
+                    if (isMobile) {
+                      return ListView.separated(
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemCount: subjectEntries.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, idx) {
+                          final entry = subjectEntries[idx];
+                          final sub = subMap[entry.key];
+                          final sectionNames = entry.value
+                              .map((secId) => secMap[secId]?.name ?? secId)
+                              .join(', ');
+
+                          return AcadexCard(
+                            onTap: () => _showAssignmentDetailsModal(
+                              context: context,
+                              subject: sub,
+                              subjectId: entry.key,
+                              sectionIds: entry.value,
+                              secMap: secMap,
+                              courseMap: courseMap,
+                              semMap: semMap,
+                              deptMap: ref.read(departmentMapProvider),
+                              assignments: myAssignments.where((a) => a.subjectId == entry.key).toList(),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: AcadexColors.primary.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                      ),
+                                      child: Text(
+                                        sub?.code ?? 'SUBJECT',
+                                        style: const TextStyle(
+                                          color: AcadexColors.primary,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      '${entry.value.length} Section${entry.value.length > 1 ? 's' : ''}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  sub?.name ?? 'Assigned Course',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AcadexTypography.title(
+                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Sections: $sectionNames',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AcadexTypography.caption(
+                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Divider(
+                                  height: 1,
+                                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    IconButton(
+                                      tooltip: 'Mark Attendance',
+                                      icon: const Icon(LucideIcons.clipboardCheck, size: 16, color: AcadexColors.primary),
+                                      onPressed: () => context.go('/attendance'),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Upload Notes',
+                                      icon: const Icon(LucideIcons.filePlus, size: 16, color: AcadexColors.accentTeal),
+                                      onPressed: () => context.push('/notes/new'),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'View Timetable',
+                                      icon: const Icon(LucideIcons.calendarDays, size: 16, color: AcadexColors.accentPurple),
+                                      onPressed: () => context.go('/timetable'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    }
 
                     return GridView.builder(
                       physics: const NeverScrollableScrollPhysics(),
@@ -254,7 +411,7 @@ class FacultyDashboard extends ConsumerWidget {
                                   IconButton(
                                     tooltip: 'Mark Attendance',
                                     icon: const Icon(LucideIcons.clipboardCheck, size: 16, color: AcadexColors.primary),
-                                    onPressed: () => context.push('/attendance'),
+                                    onPressed: () => context.go('/attendance'),
                                   ),
                                   IconButton(
                                     tooltip: 'Upload Notes',
@@ -264,7 +421,7 @@ class FacultyDashboard extends ConsumerWidget {
                                   IconButton(
                                     tooltip: 'View Timetable',
                                     icon: const Icon(LucideIcons.calendarDays, size: 16, color: AcadexColors.accentPurple),
-                                    onPressed: () => context.push('/timetable'),
+                                    onPressed: () => context.go('/timetable'),
                                   ),
                                 ],
                               ),
@@ -280,18 +437,7 @@ class FacultyDashboard extends ConsumerWidget {
                 // Quick Navigation Actions
                 const SectionHeader(title: 'Quick Operations'),
                 AcadexLayout.headerGap,
-                GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: quickActions.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: width > 900 ? 5 : (width > 600 ? 3 : 2),
-                    crossAxisSpacing: AcadexLayout.gridSpacing,
-                    mainAxisSpacing: AcadexLayout.gridSpacing,
-                    childAspectRatio: 1.15,
-                  ),
-                  itemBuilder: (_, i) => QuickActionCard(action: quickActions[i]),
-                ),
+                QuickActionsRow(actions: quickActions),
                 AcadexLayout.sectionSpacer,
 
                 // Recent Activity / Announcements Feed
@@ -321,8 +467,7 @@ class FacultyDashboard extends ConsumerWidget {
             ),
           );
         },
-      ),
-    );
+      );
   }
 
   void _showAssignmentDetailsModal({
@@ -337,6 +482,7 @@ class FacultyDashboard extends ConsumerWidget {
     required List<FacultyAssignment> assignments,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isMobile = AcadexBreakpoints.isMobile(context);
 
     final firstAssign = assignments.isNotEmpty ? assignments.first : null;
     final dept = firstAssign != null ? deptMap[firstAssign.departmentId] : null;
@@ -345,6 +491,7 @@ class FacultyDashboard extends ConsumerWidget {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AcadexRadius.lg)),
@@ -358,24 +505,27 @@ class FacultyDashboard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      subject?.name ?? subjectId,
-                      style: AcadexTypography.heading3(
-                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        subject?.name ?? subjectId,
+                        style: AcadexTypography.heading3(
+                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Code: ${subject?.code ?? "N/A"} • Type: ${subject?.type ?? "Theory"} • Credits: ${subject?.credits ?? 3}',
-                      style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      const SizedBox(height: 4),
+                      Text(
+                        'Code: ${subject?.code ?? "N/A"} • Type: ${subject?.type ?? "Theory"} • Credits: ${subject?.credits ?? 3}',
+                        style: AcadexTypography.caption(
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
@@ -421,10 +571,11 @@ class FacultyDashboard extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // Action buttons
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
+            if (isMobile)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AcadexColors.primary,
                       foregroundColor: Colors.white,
@@ -435,44 +586,100 @@ class FacultyDashboard extends ConsumerWidget {
                     label: const Text('Take Attendance'),
                     onPressed: () {
                       Navigator.pop(ctx);
-                      context.push('/attendance');
+                      context.go('/attendance');
                     },
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AcadexColors.accentTeal,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AcadexColors.accentTeal,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                          ),
+                          icon: const Icon(LucideIcons.filePlus, size: 18),
+                          label: const Text('Upload Notes'),
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            context.push('/notes/new');
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                          ),
+                          icon: const Icon(LucideIcons.calendarDays, size: 18),
+                          label: const Text('Timetable'),
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            context.go('/timetable');
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AcadexColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                      ),
+                      icon: const Icon(LucideIcons.clipboardCheck, size: 18),
+                      label: const Text('Take Attendance'),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        context.go('/attendance');
+                      },
                     ),
-                    icon: const Icon(LucideIcons.filePlus, size: 18),
-                    label: const Text('Upload Notes'),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      context.push('/notes/new');
-                    },
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AcadexColors.accentTeal,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                      ),
+                      icon: const Icon(LucideIcons.filePlus, size: 18),
+                      label: const Text('Upload Notes'),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        context.push('/notes/new');
+                      },
                     ),
-                    icon: const Icon(LucideIcons.calendarDays, size: 18),
-                    label: const Text('Timetable'),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      context.push('/timetable');
-                    },
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
+                      ),
+                      icon: const Icon(LucideIcons.calendarDays, size: 18),
+                      label: const Text('Timetable'),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        context.go('/timetable');
+                      },
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
       ),

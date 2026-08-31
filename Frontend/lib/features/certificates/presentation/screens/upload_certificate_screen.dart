@@ -2,12 +2,12 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../features/auth/domain/models/auth_state.dart';
 import '../../../../features/auth/domain/models/user_model.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
@@ -225,7 +225,7 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
             backgroundColor: AcadexColors.success,
           ),
         );
-        context.pop();
+        context.safePop(fallbackRoute: '/certificates');
       }
     } catch (e) {
       // Rollback newly uploaded storage file if Firestore write failed
@@ -296,7 +296,7 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
             LucideIcons.arrowLeft,
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () => context.safePop(fallbackRoute: '/certificates'),
         ),
       ),
       body: Center(
@@ -449,7 +449,7 @@ class _UploadCertificateScreenState extends ConsumerState<UploadCertificateScree
                             side: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
                           ),
-                          onPressed: _isLoading ? null : () => context.pop(),
+                          onPressed: _isLoading ? null : () => context.safePop(fallbackRoute: '/certificates'),
                           child: Text(
                             'Cancel',
                             style: GoogleFonts.inter(

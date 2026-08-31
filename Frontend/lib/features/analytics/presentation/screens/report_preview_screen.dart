@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
+import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../domain/models/analytics_models.dart';
 
 class ReportPreviewScreen extends ConsumerWidget {
@@ -13,36 +15,20 @@ class ReportPreviewScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      backgroundColor: DashboardColors.background,
-      appBar: AppBar(
-        title: Text('Report Preview', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: DashboardColors.textPrimary)),
-        backgroundColor: DashboardColors.surface,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: DashboardColors.textPrimary),
-        actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.share2),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sharing is not implemented yet')));
-            },
-            tooltip: 'Share',
-          ),
-          IconButton(
-            icon: const Icon(LucideIcons.printer),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Printing is not implemented yet')));
-            },
-            tooltip: 'Print',
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
+
+    final content = SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hasEnclosingScaffold)
+            AcadexPageHeader(
+              title: 'Report Preview',
+              subtitle: 'Generated ${DateFormat('MMM d, yyyy • h:mm a').format(report.generatedAt)}',
+              onBack: () => context.safePop(fallbackRoute: '/analytics'),
+            ),
+          const SizedBox(height: 16),
             // Report Header
             Container(
               padding: const EdgeInsets.all(24),
@@ -143,35 +129,65 @@ class ReportPreviewScreen extends ConsumerWidget {
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: DashboardColors.surface,
-          border: Border(top: BorderSide(color: DashboardColors.border)),
+    );
+
+    if (hasEnclosingScaffold) {
+      // Inside shell — return content directly, no Scaffold
+      return Column(
+        children: [
+          Expanded(child: content),
+          _buildBottomActions(context),
+        ],
+      );
+    }
+
+    // Standalone — wrap in Scaffold with AppBar
+    return Scaffold(
+      backgroundColor: DashboardColors.background,
+      appBar: AppBar(
+        title: Text('Report Preview', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: DashboardColors.textPrimary)),
+        backgroundColor: DashboardColors.surface,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: DashboardColors.textPrimary),
+        leading: IconButton(
+          icon: const Icon(LucideIcons.arrowLeft),
+          onPressed: () => context.safePop(fallbackRoute: '/analytics'),
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Excel export is not implemented yet')));
-                },
-                icon: const Icon(LucideIcons.fileSpreadsheet),
-                label: const Text('Export Excel'),
-              ),
+      ),
+      body: content,
+      bottomNavigationBar: _buildBottomActions(context),
+    );
+  }
+
+  Widget _buildBottomActions(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: DashboardColors.surface,
+        border: Border(top: BorderSide(color: DashboardColors.border)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Excel export is not implemented yet')));
+              },
+              icon: const Icon(LucideIcons.fileSpreadsheet),
+              label: const Text('Export Excel'),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('PDF generation is not implemented yet')));
-                },
-                icon: const Icon(LucideIcons.fileText),
-                label: const Text('Export PDF'),
-              ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('PDF generation is not implemented yet')));
+              },
+              icon: const Icon(LucideIcons.fileText),
+              label: const Text('Export PDF'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

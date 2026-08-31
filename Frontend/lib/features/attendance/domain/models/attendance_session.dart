@@ -13,6 +13,7 @@ class AttendanceSession {
   final String timeSlot;
   final DateTime date;
   final List<AttendanceRecord> records;
+  final String status; // 'open', 'locked', 'closed', 'cancelled'
   final bool isSubmitted;
   final bool isLocked;
   final DateTime? createdAt;
@@ -37,6 +38,7 @@ class AttendanceSession {
     required this.timeSlot,
     required this.date,
     required this.records,
+    this.status = 'open',
     this.timetableEntryId,
     this.roomNumber,
     this.building,
@@ -48,6 +50,11 @@ class AttendanceSession {
     this.lastModifiedBy,
     this.version = 1,
   });
+
+  bool get isOpen => status == 'open' && !isLocked;
+  bool get isLockedState => status == 'locked' || isLocked;
+  bool get isClosed => status == 'closed';
+  bool get isCancelled => status == 'cancelled';
 
   int get totalStudents => records.length;
   int get presentCount => records.where((r) => r.status == AttendanceStatus.present).length;
@@ -73,6 +80,7 @@ class AttendanceSession {
     String? timeSlot,
     DateTime? date,
     List<AttendanceRecord>? records,
+    String? status,
     String? timetableEntryId,
     String? roomNumber,
     String? building,
@@ -96,6 +104,7 @@ class AttendanceSession {
       timeSlot: timeSlot ?? this.timeSlot,
       date: date ?? this.date,
       records: records ?? this.records,
+      status: status ?? this.status,
       timetableEntryId: timetableEntryId ?? this.timetableEntryId,
       roomNumber: roomNumber ?? this.roomNumber,
       building: building ?? this.building,
@@ -110,29 +119,32 @@ class AttendanceSession {
   }
 
   factory AttendanceSession.fromJson(Map<String, dynamic> json) {
+    final statusStr = (json['status'] as String?)?.toLowerCase() ?? 'open';
+    final locked = (json['isLocked'] as bool?) ?? (statusStr == 'locked');
     return AttendanceSession(
-      id: json['id'] as String? ?? '',
-      collegeId: json['collegeId'] as String? ?? '',
-      departmentId: json['departmentId'] as String? ?? '',
-      facultyId: json['facultyId'] as String? ?? '',
-      subjectId: json['subjectId'] as String? ?? '',
-      subjectName: json['subjectName'] as String? ?? '',
-      sectionId: json['sectionId'] as String? ?? '',
-      sectionName: json['sectionName'] as String? ?? '',
-      timeSlot: json['timeSlot'] as String? ?? '',
-      date: json['date'] != null ? DateTime.parse(json['date'] as String) : DateTime.now(),
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      collegeId: (json['collegeId'] ?? '').toString(),
+      departmentId: (json['departmentId'] ?? '').toString(),
+      facultyId: (json['facultyId'] ?? '').toString(),
+      subjectId: (json['subjectId'] ?? '').toString(),
+      subjectName: (json['subjectName'] ?? '').toString(),
+      sectionId: (json['sectionId'] ?? '').toString(),
+      sectionName: (json['sectionName'] ?? '').toString(),
+      timeSlot: (json['timeSlot'] ?? '').toString(),
+      date: json['date'] != null ? DateTime.tryParse(json['date'].toString()) ?? DateTime.now() : DateTime.now(),
       records: (json['records'] as List<dynamic>?)
               ?.map((e) => AttendanceRecord.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      status: statusStr,
       timetableEntryId: json['timetableEntryId'] as String?,
       roomNumber: json['roomNumber'] as String?,
       building: json['building'] as String?,
       isSubmitted: json['isSubmitted'] as bool? ?? false,
-      isLocked: json['isLocked'] as bool? ?? false,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'] as String) : null,
+      isLocked: locked,
+      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
       createdBy: json['createdBy'] as String?,
-      lastModifiedAt: json['lastModifiedAt'] != null ? DateTime.parse(json['lastModifiedAt'] as String) : null,
+      lastModifiedAt: json['lastModifiedAt'] != null ? DateTime.tryParse(json['lastModifiedAt'].toString()) : null,
       lastModifiedBy: json['lastModifiedBy'] as String?,
       version: json['version'] as int? ?? 1,
     );
@@ -151,6 +163,7 @@ class AttendanceSession {
       'timeSlot': timeSlot,
       'date': date.toIso8601String(),
       'records': records.map((r) => r.toJson()).toList(),
+      'status': status,
       if (timetableEntryId != null) 'timetableEntryId': timetableEntryId,
       if (roomNumber != null) 'roomNumber': roomNumber,
       if (building != null) 'building': building,

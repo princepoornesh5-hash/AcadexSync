@@ -10,11 +10,15 @@ class CreateUserResult {
   final UserProfileModel user;
   final String activationCode;
   final String? invitationId;
+  final String? collegeCode;
+  final DateTime? expiresAt;
 
   const CreateUserResult({
     required this.user,
     required this.activationCode,
     this.invitationId,
+    this.collegeCode,
+    this.expiresAt,
   });
 }
 
@@ -115,6 +119,7 @@ class ApiUserRepository implements UserRepository {
 
   /// Provision User via backend invitation service: creates user in PENDING_ACTIVATION
   /// and returns authoritative single-use activation code.
+  @override
   Future<CreateUserResult> createUserWithInvitation(UserProfileModel user) async {
     try {
       final instituteId = user.employeeId ?? user.rollNumber ?? user.instituteId ?? user.id;
@@ -140,11 +145,17 @@ class ApiUserRepository implements UserRepository {
       final activationCode = data['activationCode']?.toString() ?? '';
       final invitationData = data['invitation'] as Map<String, dynamic>?;
       final invitationId = (invitationData?['id'] ?? invitationData?['_id'])?.toString();
+      final expiresAtRaw = invitationData?['expiresAt']?.toString();
+      final expiresAt = expiresAtRaw != null ? DateTime.tryParse(expiresAtRaw) : null;
+      final collegeCode = data['collegeCode']?.toString() ??
+          userData['collegeCode']?.toString();
 
       return CreateUserResult(
         user: createdUser,
         activationCode: activationCode,
         invitationId: invitationId,
+        collegeCode: collegeCode,
+        expiresAt: expiresAt,
       );
     } on DioException catch (e) {
       final message = e.response?.data?['error']?['message'] ??
@@ -155,36 +166,14 @@ class ApiUserRepository implements UserRepository {
   }
 
   Future<String> generateActivationCode(UserProfileModel user) async {
-    final result = await createUserWithInvitation(user);
-    return result.activationCode;
+    return reissueActivationCodeForUser(user.id);
   }
 
   @override
   Future<UserProfileModel> createUser(UserProfileModel user) async {
-    try {
-      // Primary authoritative pathway: invite and provision user
-      final result = await createUserWithInvitation(user);
-      return result.user;
-    } catch (_) {
-      // Direct user creation fallback if direct endpoint permitted
-      final instituteId = user.employeeId ?? user.rollNumber ?? user.instituteId ?? user.id;
-      final response = await _client.dio.post('/users', data: {
-        'name': user.name.trim(),
-        'instituteId': instituteId.trim().toUpperCase(),
-        'role': user.role.value,
-        if (user.email.isNotEmpty) 'email': user.email.trim().toLowerCase(),
-        if (user.phone.isNotEmpty) 'phone': user.phone.trim(),
-        if (user.collegeId != null) 'collegeId': user.collegeId,
-        if (user.departmentId != null) 'departmentId': user.departmentId,
-        if (user.courseId != null) 'courseId': user.courseId,
-        if (user.sectionId != null) 'sectionId': user.sectionId,
-        if (user.semesterId != null) 'semesterId': user.semesterId,
-      });
-
-      final body = response.data as Map<String, dynamic>;
-      final data = body['data'] as Map<String, dynamic>? ?? body;
-      return UserProfileModel.fromJson(data);
-    }
+    // Primary authoritative pathway: invite and provision user
+    final result = await createUserWithInvitation(user);
+    return result.user;
   }
 
   @override
@@ -245,6 +234,7 @@ class ApiUserRepository implements UserRepository {
   }
 
   /// Reissue activation code via backend invitation management
+  @override
   Future<String> reissueActivationCodeForUser(String userId) async {
     try {
       // 1. Fetch pending invitations to find the active invitation record for this user

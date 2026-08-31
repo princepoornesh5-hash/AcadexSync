@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
@@ -91,6 +92,70 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     }
   }
 
+  void _showDepartmentTransferDialog(Student student) async {
+    final deptsAsync = await ref.read(departmentsProvider.future);
+    final activeDepts = deptsAsync.where((d) => d.id != student.departmentId && d.isActive).toList();
+    if (!mounted) return;
+    if (activeDepts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No other active departments available for transfer")),
+      );
+      return;
+    }
+
+    String? selectedDeptId = activeDepts.first.id;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text("Transfer Department"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Select the destination department for ${student.name}:"),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: selectedDeptId,
+                items: activeDepts.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name))).toList(),
+                onChanged: (val) => setDialogState(() => selectedDeptId = val),
+                decoration: const InputDecoration(labelText: "Destination Department"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text("Cancel")),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary, foregroundColor: Colors.white),
+              child: const Text("Transfer"),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result == true && selectedDeptId != null && mounted) {
+      try {
+        await ref.read(academicRepositoryProvider).transferStudentDepartment(student.id, selectedDeptId!);
+        ref.invalidate(studentAcademicProfileProvider(widget.studentId));
+        ref.invalidate(studentsProvider);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Student transferred to new department successfully")),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Transfer failed: $e")),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -101,46 +166,36 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     final isStaff = currentUser?.role == AppRole.superAdmin ||
         currentUser?.role == AppRole.collegeAdmin ||
         currentUser?.role == AppRole.hod;
+    final isCollegeAdmin = currentUser?.role == AppRole.superAdmin ||
+        currentUser?.role == AppRole.collegeAdmin;
 
     final profileAsync = ref.watch(studentAcademicProfileProvider(widget.studentId));
+    final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
-        leading: IconButton(
-          icon: const Icon(LucideIcons.arrowLeft),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          "Student Academic Profile",
-          style: AcadexTypography.title(color: theme.colorScheme.onSurface),
+    final bodyContent = profileAsync.when(
+      loading: () => const Center(child: AcadexLoadingState(message: "Loading academic profile...")),
+      error: (err, _) => Center(
+        child: AcadexErrorState(
+          title: "Profile Not Found",
+          message: err.toString(),
+          onRetry: () => ref.invalidate(studentAcademicProfileProvider(widget.studentId)),
         ),
       ),
-      body: profileAsync.when(
-        loading: () => const Center(child: AcadexLoadingState(message: "Loading academic profile...")),
-        error: (err, _) => Center(
-          child: AcadexErrorState(
-            title: "Profile Not Found",
-            message: err.toString(),
-            onRetry: () => ref.invalidate(studentAcademicProfileProvider(widget.studentId)),
-          ),
-        ),
-        data: (profile) {
-          final student = profile.student;
-          final dept = profile.department;
-          final crs = profile.course;
-          final sem = profile.semester;
-          final sec = profile.section;
-          final yr = profile.academicYear;
+      data: (profile) {
+        final student = profile.student;
+        final dept = profile.department;
+        final crs = profile.course;
+        final sem = profile.semester;
+        final sec = profile.section;
+        final yr = profile.academicYear;
 
-          return AcadexPageContainer(
-            maxWidth: 1400,
-            scrollable: true,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+        return AcadexPageContainer(
+          backgroundColor: Colors.transparent,
+          maxWidth: 1400,
+          scrollable: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
                 // Header Card
                 AcadexCard(
                   child: Column(
@@ -232,6 +287,17 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                               icon: const Icon(LucideIcons.arrowRightLeft, size: 15),
                               label: const Text("Transfer Section"),
                             ),
+                            if (isCollegeAdmin)
+                              OutlinedButton.icon(
+                                onPressed: () => _showDepartmentTransferDialog(student),
+                                icon: const Icon(LucideIcons.building, size: 15),
+                                label: const Text("Transfer Department"),
+                              ),
+                            OutlinedButton.icon(
+                              onPressed: () => context.push('/academics/students/edit/${student.id}'),
+                              icon: const Icon(LucideIcons.edit, size: 15),
+                              label: const Text("Edit Profile"),
+                            ),
                           ],
                         ),
                       ],
@@ -244,6 +310,10 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                 TabBar(
                   controller: _tabController,
                   isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  indicatorColor: AcadexColors.primary,
+                  labelColor: AcadexColors.primary,
+                  unselectedLabelColor: AcadexColors.inkMuted,
                   tabs: const [
                     Tab(icon: Icon(LucideIcons.graduationCap, size: 16), text: "Academic Enrollment"),
                     Tab(icon: Icon(LucideIcons.history, size: 16), text: "Timeline & History"),
@@ -260,7 +330,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                     controller: _tabController,
                     children: [
                       // Tab 1: Academic Enrollment Overview
-                      _buildAcademicOverviewTab(profile, isDark, theme),
+                      _buildAcademicOverviewTab(context, profile, isDark, theme),
 
                       // Tab 2: Timeline & History
                       _buildTimelineTab(student, isDark, theme),
@@ -277,49 +347,80 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
             ),
           );
         },
+      );
+
+    if (hasEnclosingScaffold) {
+      return bodyContent;
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
+          onPressed: () => context.safePop(fallbackRoute: '/academics/students'),
+        ),
+        title: Text(
+          "Student Academic Profile",
+          style: AcadexTypography.title(color: Colors.white),
+        ),
       ),
+      body: bodyContent,
     );
   }
 
-  Widget _buildAcademicOverviewTab(StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+  Widget _buildAcademicOverviewTab(BuildContext context, StudentAcademicProfile profile, bool isDark, ThemeData theme) {
     final student = profile.student;
+    final isMobile = AcadexBreakpoints.isMobile(context);
+
+    final termCard = AcadexStatCard(
+      title: "Current Term",
+      value: profile.semester?.name ?? "Semester",
+      subtitle: "Section ${profile.section?.name ?? '—'}",
+      icon: LucideIcons.calendar,
+      iconColor: AcadexColors.primary,
+    );
+    final subjectCard = AcadexStatCard(
+      title: "Enrolled Subjects",
+      value: "${profile.enrolledSubjects.length}",
+      subtitle: "Active courses",
+      icon: LucideIcons.bookOpen,
+      iconColor: AcadexColors.accentTeal,
+    );
+    final attCard = AcadexStatCard(
+      title: "Attendance Average",
+      value: "${profile.overallAttendancePercentage.toStringAsFixed(1)}%",
+      subtitle: profile.overallAttendancePercentage >= 75.0 ? "Good standing" : "Low attendance",
+      icon: LucideIcons.clipboardCheck,
+      iconColor: profile.overallAttendancePercentage >= 75.0 ? AcadexColors.success : AcadexColors.warning,
+    );
 
     return SingleChildScrollView(
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: AcadexStatCard(
-                  title: "Current Term",
-                  value: profile.semester?.name ?? "Semester",
-                  subtitle: "Section ${profile.section?.name ?? '—'}",
-                  icon: LucideIcons.calendar,
-                  iconColor: AcadexColors.primary,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: AcadexStatCard(
-                  title: "Enrolled Subjects",
-                  value: "${profile.enrolledSubjects.length}",
-                  subtitle: "Active courses",
-                  icon: LucideIcons.bookOpen,
-                  iconColor: AcadexColors.accentTeal,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: AcadexStatCard(
-                  title: "Attendance Average",
-                  value: "${profile.overallAttendancePercentage.toStringAsFixed(1)}%",
-                  subtitle: profile.overallAttendancePercentage >= 75.0 ? "Good standing" : "Low attendance",
-                  icon: LucideIcons.clipboardCheck,
-                  iconColor: profile.overallAttendancePercentage >= 75.0 ? AcadexColors.success : AcadexColors.warning,
-                ),
-              ),
-            ],
-          ),
+          if (isMobile) ...[
+            termCard,
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: subjectCard),
+                const SizedBox(width: 10),
+                Expanded(child: attCard),
+              ],
+            ),
+          ] else ...[
+            Row(
+              children: [
+                Expanded(child: termCard),
+                const SizedBox(width: 16),
+                Expanded(child: subjectCard),
+                const SizedBox(width: 16),
+                Expanded(child: attCard),
+              ],
+            ),
+          ],
           const SizedBox(height: 20),
           AcadexCard(
             child: Column(

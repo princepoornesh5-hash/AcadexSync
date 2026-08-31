@@ -45,17 +45,17 @@ class FastMockAcademicRepository implements AcademicRepository {
   ];
 
   @override
-  Future<List<College>> getColleges() async => [];
+  Future<List<College>> getColleges({String? search, String? status}) async => [];
   @override
-  Future<List<Department>> getDepartments() async => List.from(departments);
+  Future<List<Department>> getDepartments({String? collegeId, String? search, String? status}) async => List.from(departments);
   @override
-  Future<List<Course>> getCourses() async => List.from(courses);
+  Future<List<Course>> getCourses({String? collegeId, String? departmentId, String? search}) async => List.from(courses);
   @override
-  Future<List<AcademicYear>> getAcademicYears() async => List.from(academicYears);
+  Future<List<AcademicYear>> getAcademicYears({String? collegeId}) async => List.from(academicYears);
   @override
-  Future<List<Semester>> getSemesters() async => List.from(semesters);
+  Future<List<Semester>> getSemesters({String? academicYearId, String? collegeId, String? courseId}) async => List.from(semesters);
   @override
-  Future<List<Section>> getSections() async => List.from(sections);
+  Future<List<Section>> getSections({String? collegeId, String? courseId, String? semesterId}) async => List.from(sections);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

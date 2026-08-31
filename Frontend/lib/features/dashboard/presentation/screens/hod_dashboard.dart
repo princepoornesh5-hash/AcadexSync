@@ -6,11 +6,13 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../../core/presentation/widgets/acadex_adaptive_gradient_text.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
 import '../providers/dashboard_providers.dart';
+import '../widgets/acadex_hero_card.dart';
 import '../widgets/activity_feed.dart';
 import '../widgets/quick_action_card.dart';
 import '../widgets/section_header.dart';
@@ -35,9 +37,7 @@ class HodDashboard extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final departmentId = user?.departmentId ?? '';
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      body: LayoutBuilder(
+    return LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
           final statCols = AcadexLayout.statGridColumns(context);
@@ -45,133 +45,92 @@ class HodDashboard extends ConsumerWidget {
 
           final deptMap = ref.watch(departmentMapProvider);
           final dept = departmentId.isNotEmpty ? deptMap[departmentId] : null;
-          final deptName = dept?.name ?? (departmentId.isNotEmpty ? 'Department Administration' : 'No Department Assigned');
+          final deptName = dept?.name ?? (departmentId.isNotEmpty ? 'Department Administration' : 'Department Administration');
           final deptCode = dept?.code ?? '';
 
+          final isMobile = AcadexBreakpoints.isMobile(context);
+
           return AcadexPageContainer(
-            particleSphereVariant: ParticleSphereVariant.dashboard,
+            backgroundColor: Colors.transparent,
+            topPadding: isMobile ? 16 : 24,
+            onRefresh: () async {
+              ref.invalidate(hodStatsProvider);
+              ref.invalidate(hodActivityProvider);
+            },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Top Greeting & Role Badge
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Welcome, Dr. $firstName 👋',
-                            style: AcadexTypography.heading1(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Departmental operations, faculty teaching workload, and student attendance overview.',
-                            style: AcadexTypography.body(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                            ),
-                          ),
-                        ],
+                if (isMobile) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: AcadexAdaptiveGradientText(
+                          'Welcome, Dr. $firstName 👋',
+                          style: AcadexTypography.heading2(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    const AcadexBadge(
-                      label: 'HOD',
-                      variant: AcadexBadgeVariant.primary,
-                    ),
-                  ],
-                ),
-                AcadexLayout.sectionSpacer,
-
-                // Department Identification Banner
-                if (departmentId.isNotEmpty) ...[
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [AcadexColors.primary, const Color(0xFF6366F1)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                      const AcadexBadge(
+                        label: 'HOD',
+                        variant: AcadexBadgeVariant.primary,
                       ),
-                      borderRadius: AcadexRadius.borderRadiusLg,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AcadexColors.primary.withValues(alpha: 0.25),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            borderRadius: AcadexRadius.borderRadiusMd,
-                          ),
-                          child: const Icon(LucideIcons.building, color: Colors.white, size: 28),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                deptName,
-                                style: AcadexTypography.heading2(color: Colors.white),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                deptCode.isNotEmpty
-                                    ? 'Department Code: $deptCode • Department Operational Overview'
-                                    : 'Department Operational Overview',
-                                style: AcadexTypography.caption(
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  AcadexAdaptiveGradientText(
+                    'Departmental operations, faculty workload, and attendance overview.',
+                    style: AcadexTypography.caption(),
+                    isSecondary: true,
                   ),
                 ] else ...[
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
-                      borderRadius: AcadexRadius.borderRadiusMd,
-                      border: Border.all(color: AcadexColors.warning),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(LucideIcons.alertTriangle, color: AcadexColors.warning, size: 22),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Department Not Assigned',
-                                style: AcadexTypography.body(
-                                  color: isDark ? Colors.white : AcadexColors.warningDark,
-                                ).copyWith(fontWeight: FontWeight.w700),
-                              ),
-                              Text(
-                                'Your account has not been linked to a specific department yet. Please contact your college administrator.',
-                                style: AcadexTypography.caption(
-                                  color: isDark ? Colors.white70 : AcadexColors.warningDark,
-                                ),
-                              ),
-                            ],
-                          ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AcadexAdaptiveGradientText(
+                              'Welcome, Dr. $firstName 👋',
+                              style: AcadexTypography.heading1(),
+                            ),
+                            const SizedBox(height: 4),
+                            AcadexAdaptiveGradientText(
+                              'Departmental operations, faculty teaching workload, and student attendance overview.',
+                              style: AcadexTypography.body(),
+                              isSecondary: true,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      const AcadexBadge(
+                        label: 'HOD',
+                        variant: AcadexBadgeVariant.primary,
+                      ),
+                    ],
                   ),
                 ],
+                const SizedBox(height: 20),
+
+                // Department Identification Hero Card
+                AcadexHeroCard(
+                  eyebrow: 'Department Health & Operations',
+                  badge: AcadexBadge(
+                    label: deptCode.isNotEmpty ? 'DEPT: $deptCode' : 'OPERATIONAL',
+                    variant: AcadexBadgeVariant.primary,
+                  ),
+                  icon: LucideIcons.building,
+                  title: deptName,
+                  subtitle: 'Oversee academic performance, faculty teaching allocations, and student attendance.',
+                  primaryActionLabel: 'Department Attendance',
+                  primaryActionIcon: LucideIcons.clipboardCheck,
+                  onPrimaryAction: () => context.go('/attendance'),
+                  secondaryActionLabel: 'Faculty Workload',
+                  onSecondaryAction: () => context.go('/academics/faculty'),
+                ),
                 AcadexLayout.sectionSpacer,
 
                 // Department Key Metrics
@@ -353,18 +312,7 @@ class HodDashboard extends ConsumerWidget {
                 // Quick Navigation Actions
                 const SectionHeader(title: 'Quick Operations'),
                 AcadexLayout.headerGap,
-                GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: quickActions.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: width > 900 ? 5 : (width > 600 ? 3 : 2),
-                    crossAxisSpacing: AcadexLayout.gridSpacing,
-                    mainAxisSpacing: AcadexLayout.gridSpacing,
-                    childAspectRatio: 1.15,
-                  ),
-                  itemBuilder: (_, i) => QuickActionCard(action: quickActions[i]),
-                ),
+                QuickActionsRow(actions: quickActions),
                 AcadexLayout.sectionSpacer,
 
                 // Recent Notifications
@@ -394,7 +342,6 @@ class HodDashboard extends ConsumerWidget {
             ),
           );
         },
-      ),
-    );
+      );
   }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../auth/domain/models/auth_state.dart';
@@ -202,7 +202,7 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
             duration: const Duration(seconds: 2),
           ),
         );
-        context.pop();
+        context.safePop(fallbackRoute: '/timetable/manage');
       }
     } on TimetableConflictException catch (conflict) {
       if (mounted) {
@@ -310,7 +310,7 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -732,7 +732,7 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         OutlinedButton(
-                          onPressed: isLoading ? null : () => context.pop(),
+                          onPressed: isLoading ? null : () => context.safePop(fallbackRoute: '/timetable/manage'),
                           child: const Text('Cancel'),
                         ),
                         const SizedBox(width: 14),

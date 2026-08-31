@@ -109,8 +109,15 @@ router.get('/subjects/:subjectId/notes', NoteController.getSubjectNotes);
 router.get('/students/me/notes', NoteController.getStudentNotes);
 router.use('/notes', noteRouter);
 
+// Faculty Assignments & Workload (Module 5B)
+router.post('/faculty-assignments', requireHodOrAbove, AcademicController.createFacultyAssignment);
+router.get('/faculty-assignments', AcademicController.listFacultyAssignments);
+router.get('/faculty-assignments/workload', AcademicController.getFacultyWorkload);
+router.get('/faculty-assignments/my', requireFacultyOrAbove, AcademicController.getMyFacultyAssignments);
+router.get('/faculty-assignments/:id', AcademicController.getFacultyAssignmentById);
+router.delete('/faculty-assignments/:id', requireHodOrAbove, AcademicController.deleteFacultyAssignment);
+
 // Backwards-Compatible Legacy Routes
 router.post('/student-enrollments', requireCollegeAdmin, AcademicController.enrollStudent);
-router.post('/faculty-assignments', requireHodOrAbove, AcademicController.assignFaculty);
 
 export const academicRouter = router;

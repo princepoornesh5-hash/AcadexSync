@@ -54,9 +54,8 @@ class _FacultyWorkloadScreenState extends ConsumerState<FacultyWorkloadScreen> {
     final totalWeeklyPeriods = workloadList.fold<int>(0, (sum, w) => sum + w.totalWeeklyPeriods);
     final avgPeriods = totalFaculty > 0 ? (totalWeeklyPeriods / totalFaculty).toStringAsFixed(1) : '0';
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      body: AcadexPageContainer(
+    return AcadexPageContainer(
+        backgroundColor: Colors.transparent,
         maxWidth: 1600,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,8 +307,7 @@ class _FacultyWorkloadScreenState extends ConsumerState<FacultyWorkloadScreen> {
               ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 

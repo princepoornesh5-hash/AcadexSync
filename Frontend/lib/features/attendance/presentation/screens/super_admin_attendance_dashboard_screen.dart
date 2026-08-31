@@ -31,8 +31,9 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
           ),
           bottom: TabBar(
             isScrollable: true,
+            tabAlignment: TabAlignment.start,
             labelColor: AcadexColors.primary,
-            unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            unselectedLabelColor: AcadexColors.inkMuted,
             indicatorColor: AcadexColors.primary,
             indicatorWeight: 2.5,
             tabs: const [

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
@@ -139,14 +140,20 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
     final semestersAsync = ref.watch(semestersProvider);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
+          tooltip: 'Back to Notes',
+          onPressed: () => context.safePop(fallbackRoute: '/notes'),
+        ),
         title: Text(
           widget.existingNote == null ? 'Create Note' : 'Edit Note',
-          style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
+          style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
         ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: (facultyAsync.isLoading ||
               subjectsAsync.isLoading ||
@@ -601,7 +608,7 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
         }
       }
 
-      if (mounted) context.pop();
+      if (mounted) context.safePop(fallbackRoute: '/notes');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save note: $e')));

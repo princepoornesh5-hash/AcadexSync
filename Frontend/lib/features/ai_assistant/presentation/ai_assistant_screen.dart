@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_adaptive_gradient_text.dart';
 import 'package:campus_management/features/auth/domain/models/auth_state.dart';
 import 'package:campus_management/features/auth/domain/models/role_enum.dart';
 import 'package:campus_management/features/auth/presentation/providers/auth_provider.dart';
@@ -86,6 +87,13 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
       userRole = authState.user.role;
     }
 
+    final isGradientRole = userRole == AppRole.superAdmin ||
+        userRole == AppRole.collegeAdmin ||
+        userRole == AppRole.hod ||
+        userRole == AppRole.faculty ||
+        userRole == AppRole.student;
+    final primaryActionColor = isGradientRole ? AcadexColors.superAdminDeepAction : Theme.of(context).primaryColor;
+
     // Auto-scroll when new messages arrive
     ref.listen(aiChatProvider, (previous, next) {
       if (previous?.messages.length != next.messages.length) {
@@ -93,35 +101,36 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
       }
     });
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text('Acadex AI', style: AcadexTypography.heading3(color: Theme.of(context).colorScheme.onSurface)),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
-        actions: [
-          IconButton(
-            tooltip: 'Clear Conversation',
-            icon: Icon(LucideIcons.trash2),
-            onPressed: () {
-              ref.read(aiChatProvider.notifier).clearChat();
-            },
-          ),
-          SizedBox(width: 8),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: Theme.of(context).dividerColor, height: 1),
-        ),
-      ),
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: Column(
-            children: [
-              // Chat History
-              Expanded(
+    final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
+
+    final bodyContent = Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 800),
+        child: Column(
+          children: [
+            if (hasEnclosingScaffold)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => ref.read(aiChatProvider.notifier).clearChat(),
+                      icon: Icon(LucideIcons.trash2, size: 15, color: isGradientRole ? const Color(0xFFCCE6FF) : null),
+                      label: Text(
+                        'Clear Chat',
+                        style: TextStyle(
+                          color: isGradientRole ? Colors.white : null,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            // Chat History
+            Expanded(
                 child: ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.all(24),
@@ -133,23 +142,23 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                     return Align(
                       alignment: isAi ? Alignment.centerLeft : Alignment.centerRight,
                       child: Container(
-                        margin: EdgeInsets.only(bottom: 16),
+                        margin: const EdgeInsets.only(bottom: 16),
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                         constraints: const BoxConstraints(maxWidth: 600),
                         decoration: BoxDecoration(
-                          color: isAi ? Colors.white : Theme.of(context).primaryColor,
+                          color: isAi ? Colors.white : primaryActionColor,
                           borderRadius: BorderRadius.circular(16).copyWith(
                             bottomLeft: isAi ? const Radius.circular(4) : const Radius.circular(16),
                             bottomRight: isAi ? const Radius.circular(16) : const Radius.circular(4),
                           ),
-                          border: isAi ? Border.all(color: Theme.of(context).dividerColor) : null,
+                          border: isAi ? Border.all(color: const Color(0xFFE2E8F0)) : null,
                           boxShadow: [
-                            if (isAi) BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))
+                            if (isAi) BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2))
                           ],
                         ),
                         child: Text(
                           msg.text,
-                          style: AcadexTypography.body(color: isAi ? Theme.of(context).colorScheme.onSurface : Colors.white).copyWith(height: 1.5, fontSize: 15),
+                          style: AcadexTypography.body(color: isAi ? const Color(0xFF0F172A) : Colors.white).copyWith(height: 1.5, fontSize: 15),
                         ),
                       ),
                     );
@@ -160,37 +169,55 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
               // Loading / Error States
               if (chatState.isLoading)
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 16, 
-                        height: 16, 
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).primaryColor)
-                      ),
-                      SizedBox(width: 12),
-                      Text("Acadex AI is thinking...", style: AcadexTypography.caption(color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)).copyWith(fontWeight: FontWeight.w500)),
-                    ],
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: primaryActionColor),
+                        ),
+                        const SizedBox(width: 10),
+                        if (isGradientRole)
+                          const AcadexAdaptiveGradientText(
+                            "Acadex AI is thinking...",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          )
+                        else
+                          Text(
+                            "Acadex AI is thinking...",
+                            style: AcadexTypography.caption(
+                              color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                            ).copyWith(fontWeight: FontWeight.w500),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
 
               if (chatState.error != null)
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AcadexColors.error.withValues(alpha: 0.1),
+                    color: const Color(0xFFFEE2E2),
                     borderRadius: AcadexRadius.borderRadiusMd,
-                    border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
+                    border: Border.all(color: const Color(0xFFFECACA)),
                   ),
                   child: Row(
                     children: [
-                      Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 20),
-                      SizedBox(width: 12),
+                      const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 20),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           chatState.error!,
-                          style: AcadexTypography.caption(color: AcadexColors.error).copyWith(fontWeight: FontWeight.w500),
+                          style: AcadexTypography.caption(color: const Color(0xFF991B1B)).copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
                       TextButton(
@@ -217,9 +244,11 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                     children: _getSuggestedPrompts(userRole).map((prompt) {
                       return ActionChip(
                         label: Text(prompt),
-                        labelStyle: AcadexTypography.caption(color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)),
-                        backgroundColor: Theme.of(context).colorScheme.surface,
-                        side: BorderSide(color: Theme.of(context).dividerColor),
+                        labelStyle: AcadexTypography.caption(
+                          color: isGradientRole ? const Color(0xFF003366) : (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                        ).copyWith(fontWeight: FontWeight.w600),
+                        backgroundColor: isGradientRole ? const Color(0xFFE6F2FF) : Theme.of(context).colorScheme.surface,
+                        side: BorderSide(color: isGradientRole ? const Color(0xFF0066CC).withValues(alpha: 0.3) : Theme.of(context).dividerColor),
                         onPressed: chatState.isLoading ? null : () => _submitQuery(prompt),
                       );
                     }).toList(),
@@ -228,32 +257,32 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
 
               // Input Bar
               Container(
-                padding: EdgeInsets.all(24).copyWith(top: 16),
+                padding: const EdgeInsets.all(24).copyWith(top: 16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
+                  color: isGradientRole ? Colors.transparent : Theme.of(context).scaffoldBackgroundColor,
                 ),
                 child: Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: _queryController,
-                        style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface),
+                        style: AcadexTypography.body(color: const Color(0xFF0F172A)),
                         decoration: InputDecoration(
                           hintText: "Ask about your campus...",
-                          hintStyle: AcadexTypography.body(color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted).withValues(alpha: 0.5)),
+                          hintStyle: AcadexTypography.body(color: const Color(0xFF64748B).withValues(alpha: 0.7)),
                           filled: true,
                           fillColor: Colors.white,
                           border: OutlineInputBorder(
                             borderRadius: AcadexRadius.borderRadiusLg,
-                            borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: AcadexRadius.borderRadiusLg,
-                            borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: AcadexRadius.borderRadiusLg,
-                            borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+                            borderSide: BorderSide(color: primaryActionColor, width: 2),
                           ),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                         ),
@@ -261,10 +290,10 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                         enabled: !chatState.isLoading,
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor,
+                        backgroundColor: primaryActionColor,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.all(16),
                         shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusLg),
@@ -273,7 +302,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                       onPressed: chatState.isLoading
                           ? null
                           : () => _submitQuery(_queryController.text),
-                      child: Icon(LucideIcons.send, size: 20),
+                      child: const Icon(LucideIcons.send, size: 20),
                     ),
                   ],
                 ),
@@ -281,7 +310,38 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
             ],
           ),
         ),
+      );
+
+    if (hasEnclosingScaffold) {
+      return bodyContent;
+    }
+
+    return Scaffold(
+      backgroundColor: isGradientRole ? Colors.transparent : Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          'Acadex AI',
+          style: AcadexTypography.heading3(
+            color: isGradientRole ? Colors.white : Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        backgroundColor: isGradientRole ? Colors.transparent : Theme.of(context).colorScheme.surface,
+        elevation: 0,
+        iconTheme: IconThemeData(
+          color: isGradientRole ? Colors.white : Theme.of(context).colorScheme.onSurface,
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Clear Conversation',
+            icon: Icon(LucideIcons.trash2, color: isGradientRole ? Colors.white : null),
+            onPressed: () {
+              ref.read(aiChatProvider.notifier).clearChat();
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
+      body: bodyContent,
     );
   }
 }

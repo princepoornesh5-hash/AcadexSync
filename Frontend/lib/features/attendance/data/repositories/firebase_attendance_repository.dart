@@ -302,6 +302,84 @@ class FirebaseAttendanceRepository implements AttendanceRepository {
   }
 
   @override
+  Future<List<AttendanceSession>> getFacultySessions() async {
+    return getRecentSessions(_currentUser?.id ?? '');
+  }
+
+  @override
+  Future<AttendanceSession> getSessionById(String sessionId) async {
+    final doc = await _firestoreService.getDocument('attendanceSessions', sessionId);
+    if (doc != null) return AttendanceSession.fromJson(doc);
+    throw StateError('Session not found');
+  }
+
+  @override
+  Future<List<AttendanceSession>> listSessions({
+    String? departmentId,
+    String? sectionId,
+    String? subjectId,
+    String? facultyId,
+    String? status,
+    DateTime? from,
+    DateTime? to,
+    int? page,
+    int? limit,
+  }) async {
+    final filters = <String, dynamic>{
+      if (departmentId != null) 'departmentId': departmentId,
+      if (sectionId != null) 'sectionId': sectionId,
+      if (subjectId != null) 'subjectId': subjectId,
+      if (facultyId != null) 'facultyId': facultyId,
+      if (status != null) 'status': status,
+    };
+    final docs = await _firestoreService.queryCollection('attendanceSessions', filters);
+    return docs.map((doc) => AttendanceSession.fromJson(doc)).toList();
+  }
+
+  @override
+  Future<AttendanceSession> lockSession(String sessionId) async {
+    await _firestoreService.setDocument('attendanceSessions', sessionId, {
+      'status': 'locked',
+      'isLocked': true,
+    });
+    return getSessionById(sessionId);
+  }
+
+  @override
+  Future<AttendanceSession> closeSession(String sessionId) async {
+    await _firestoreService.setDocument('attendanceSessions', sessionId, {
+      'status': 'closed',
+      'isLocked': true,
+    });
+    return getSessionById(sessionId);
+  }
+
+  @override
+  Future<AttendanceSession> cancelSession(String sessionId) async {
+    await _firestoreService.setDocument('attendanceSessions', sessionId, {
+      'status': 'cancelled',
+    });
+    return getSessionById(sessionId);
+  }
+
+  @override
+  Future<AttendanceRecord> correctRecord(
+    String recordId, {
+    required AttendanceStatus newStatus,
+    required String reason,
+  }) async {
+    return AttendanceRecord(
+      id: recordId,
+      studentId: '',
+      studentName: '',
+      rollNumber: '',
+      sectionId: '',
+      status: newStatus,
+      remarks: reason,
+    );
+  }
+
+  @override
   Future<List<SubjectAttendance>> getStudentSubjectAttendance(String studentId) async {
     final userCollegeId = _currentUser?.collegeId;
     _debugLog('getStudentSubjectAttendance', {

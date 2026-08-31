@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../features/auth/domain/models/auth_state.dart';
+import '../../../features/auth/domain/models/role_enum.dart';
+import '../../../features/auth/presentation/providers/auth_provider.dart';
 import 'acadex_ambient_background.dart';
 import 'animated_particle_sphere.dart';
 export 'acadex_ambient_background.dart';
@@ -7,21 +11,7 @@ export 'animated_particle_sphere.dart';
 
 /// A responsive page container that enforces consistent layout geometry
 /// across all Acadex screens.
-///
-/// Provides:
-/// - Responsive horizontal gutter (24px desktop, 20px tablet, 16px mobile)
-/// - Optional max-width constraint (default: 1400px for full-width, 800px for forms)
-/// - Canvas background color (respects dark mode)
-/// - Optional scrollability
-/// - Optional 3D particle sphere / ambient background motion
-///
-/// Usage:
-/// ```dart
-/// AcadexPageContainer(
-///   child: Column(children: [...]),
-/// )
-/// ```
-class AcadexPageContainer extends StatelessWidget {
+class AcadexPageContainer extends ConsumerWidget {
   final Widget child;
 
   /// Maximum content width. Defaults to [AcadexLayout.contentMaxWidth] (1400px).
@@ -32,7 +22,7 @@ class AcadexPageContainer extends StatelessWidget {
   /// Whether the content should be scrollable. Defaults to true.
   final bool scrollable;
 
-  /// Override the background color. Defaults to canvas/darkCanvas.
+  /// Override the background color. Defaults to canvas/darkCanvas (or transparent for Super Admin).
   final Color? backgroundColor;
 
   /// Override horizontal padding. If null, uses responsive defaults.
@@ -56,6 +46,9 @@ class AcadexPageContainer extends StatelessWidget {
   /// Optional 3D particle sphere variant. If set, renders the 3D particle sphere.
   final ParticleSphereVariant? particleSphereVariant;
 
+  /// Optional pull-to-refresh callback.
+  final Future<void> Function()? onRefresh;
+
   const AcadexPageContainer({
     super.key,
     required this.child,
@@ -69,17 +62,25 @@ class AcadexPageContainer extends StatelessWidget {
     this.physics,
     this.ambientDensity = AcadexAmbientDensity.none,
     this.particleSphereVariant,
+    this.onRefresh,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = backgroundColor ??
-        (isDark ? AcadexColors.darkCanvas : AcadexColors.canvas);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final isGradientRole = authState is AuthAuthenticated &&
+        (authState.user.role == AppRole.superAdmin ||
+            authState.user.role == AppRole.collegeAdmin ||
+            authState.user.role == AppRole.hod ||
+            authState.user.role == AppRole.faculty ||
+            authState.user.role == AppRole.student);
+    final defaultBg = isGradientRole ? Colors.transparent : AcadexColors.canvas;
+    final bgColor = backgroundColor ?? defaultBg;
 
+    final isMobile = AcadexBreakpoints.isMobile(context);
     final hPad = horizontalPadding ?? _responsiveHorizontalPadding(context);
-    final tPad = topPadding ?? AcadexSpacing.space24;
-    final bPad = bottomPadding ?? AcadexSpacing.space32;
+    final tPad = topPadding ?? (isMobile ? AcadexSpacing.space16 : AcadexSpacing.space24);
+    final bPad = bottomPadding ?? (isMobile ? AcadexSpacing.space24 : AcadexSpacing.space32);
 
     final content = Center(
       child: ConstrainedBox(
@@ -90,12 +91,20 @@ class AcadexPageContainer extends StatelessWidget {
 
     Widget containerBody;
     if (scrollable) {
-      containerBody = SingleChildScrollView(
+      final scrollContent = SingleChildScrollView(
         controller: scrollController,
-        physics: physics,
+        physics: physics ?? (onRefresh != null ? const AlwaysScrollableScrollPhysics() : null),
         padding: EdgeInsets.fromLTRB(hPad, tPad, hPad, bPad),
         child: content,
       );
+      if (onRefresh != null) {
+        containerBody = RefreshIndicator(
+          onRefresh: onRefresh!,
+          child: scrollContent,
+        );
+      } else {
+        containerBody = scrollContent;
+      }
     } else {
       containerBody = Padding(
         padding: EdgeInsets.fromLTRB(hPad, tPad, hPad, bPad),
@@ -103,31 +112,46 @@ class AcadexPageContainer extends StatelessWidget {
       );
     }
 
+    Widget result;
     if (particleSphereVariant != null) {
-      return ColoredBox(
+      result = ColoredBox(
         color: bgColor,
         child: AnimatedParticleSphereBackground(
           variant: particleSphereVariant!,
           drawBackground: false,
-          child: containerBody,
+          child: Material(
+            color: Colors.transparent,
+            child: containerBody,
+          ),
         ),
       );
-    }
-
-    if (ambientDensity != AcadexAmbientDensity.none) {
-      return ColoredBox(
+    } else if (ambientDensity != AcadexAmbientDensity.none) {
+      result = ColoredBox(
         color: bgColor,
         child: AcadexAmbientBackground(
           density: ambientDensity,
-          child: containerBody,
+          child: Material(
+            color: Colors.transparent,
+            child: containerBody,
+          ),
         ),
+      );
+    } else {
+      result = Material(
+        color: bgColor,
+        child: containerBody,
       );
     }
 
-    return ColoredBox(
-      color: bgColor,
-      child: containerBody,
-    );
+    final hasScaffold = Scaffold.maybeOf(context) != null;
+    if (!hasScaffold) {
+      return Scaffold(
+        backgroundColor: bgColor,
+        body: result,
+      );
+    }
+
+    return result;
   }
 
   double _responsiveHorizontalPadding(BuildContext context) {
@@ -181,9 +205,10 @@ class AcadexLayout {
   /// Helper to get responsive stat grid column count.
   static int statGridColumns(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    if (width > 1024) return 4;
-    if (width > 600) return 3;
-    return 2;
+    if (width >= 1024) return 4;
+    if (width >= 600) return 3;
+    if (width >= 375) return 3;   // Modern phones (Moto Edge 60 etc.)
+    return 2;                      // Small phones <375px
   }
 
   /// Standard section spacing widget (SizedBox with height 28).

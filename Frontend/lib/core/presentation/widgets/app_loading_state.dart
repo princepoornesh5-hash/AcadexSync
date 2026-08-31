@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../design_system/acadex_colors.dart';
-import '../design_system/acadex_spacing.dart';
+import 'acadex_feedback.dart';
 
+/// Legacy bridge widget delegating to [AcadexLoadingState].
+/// Maintained for test compatibility. Prefer using [AcadexLoadingState] directly.
 class AppLoadingState extends StatelessWidget {
   final String? message;
 
@@ -9,31 +10,7 @@ class AppLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(
-            width: 28,
-            height: 28,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.5,
-              color: AcadexColors.primaryNavy,
-            ),
-          ),
-          if (message != null) ...[
-            const SizedBox(height: AcadexSpacing.md),
-            Text(
-              message!,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AcadexColors.textSecondaryLight,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
+    return AcadexLoadingState(message: message ?? 'Loading...');
   }
 }
 
@@ -51,13 +28,10 @@ class AppSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AcadexSkeleton(
       width: width,
       height: height,
-      decoration: BoxDecoration(
-        color: AcadexColors.borderLight,
-        borderRadius: borderRadius ?? AcadexRadius.smBorder,
-      ),
+      borderRadius: borderRadius,
     );
   }
 }

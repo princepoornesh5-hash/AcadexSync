@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../notifications/presentation/widgets/notification_badge.dart';
-import '../../../settings/presentation/providers/settings_providers.dart';
 import '../../../../core/presentation/widgets/acadex_avatar.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
 
@@ -17,6 +17,8 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String? subtitle;
   final List<Widget>? extraActions;
   final bool showDrawerButton;
+  final bool showBackButton;
+  final VoidCallback? onBack;
 
   const AcadexAppBar({
     super.key,
@@ -24,16 +26,16 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
     this.subtitle,
     this.extraActions,
     this.showDrawerButton = true,
+    this.showBackButton = false,
+    this.onBack,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(64);
+  Size get preferredSize => const Size.fromHeight(64.0);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final authState = ref.watch(authProvider);
-    final settingsAsync = ref.watch(appSettingsProvider);
 
     UserModel? user;
     if (authState is AuthAuthenticated) {
@@ -42,136 +44,236 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
     final isMobile = AcadexBreakpoints.isMobile(context);
     final isDesktop = AcadexBreakpoints.isDesktop(context);
+    final topPadding = MediaQuery.paddingOf(context).top;
+    final isGradientRole = user?.role == AppRole.superAdmin ||
+        user?.role == AppRole.collegeAdmin ||
+        user?.role == AppRole.hod ||
+        user?.role == AppRole.faculty ||
+        user?.role == AppRole.student;
+
+    final headerTextColor = isGradientRole ? Colors.white : AcadexColors.ink;
+    final headerMutedColor = isGradientRole ? const Color(0xFFCCE6FF) : AcadexColors.inkMuted;
+    final headerIconColor = isGradientRole ? Colors.white : AcadexColors.ink;
+
+    final toolbarHeight = isMobile ? 64.0 : 60.0;
 
     return Container(
-      height: 64,
+      height: toolbarHeight + topPadding,
+      padding: EdgeInsets.only(
+        top: topPadding,
+        left: isMobile ? 8 : 16,
+        right: isMobile ? 8 : 16,
+      ),
       decoration: BoxDecoration(
-        color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        color: isGradientRole ? Colors.transparent : AcadexColors.surface,
         border: Border(
           bottom: BorderSide(
-            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+            color: isGradientRole
+                ? Colors.white.withValues(alpha: 0.12)
+                : AcadexColors.hairline,
             width: 1,
           ),
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SafeArea(
+      child: SizedBox(
+        height: toolbarHeight,
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            if (showDrawerButton)
+            // Back Button (High priority for secondary screens)
+            if (showBackButton) ...[
+              IconButton(
+                icon: Icon(
+                  LucideIcons.arrowLeft,
+                  color: headerIconColor,
+                  size: isMobile ? 24 : 20,
+                ),
+                tooltip: 'Back',
+                padding: const EdgeInsets.all(8),
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                splashRadius: 24,
+                onPressed: onBack ?? () {
+                  context.safePop(fallbackRoute: '/dashboard');
+                },
+              ),
+              const SizedBox(width: 4),
+            ] else if (showDrawerButton) ...[
               Builder(
                 builder: (ctx) => IconButton(
                   icon: Icon(
                     LucideIcons.menu,
-                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                    size: 20,
+                    color: headerIconColor,
+                    size: isMobile ? 24 : 22,
                   ),
                   tooltip: 'Open Navigation Menu',
-                  onPressed: () => Scaffold.of(ctx).openDrawer(),
-                  splashRadius: 20,
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                  splashRadius: 24,
+                  onPressed: () {
+                    final scaffold = Scaffold.maybeOf(ctx);
+                    if (scaffold != null && scaffold.hasDrawer) {
+                      scaffold.openDrawer();
+                    }
+                  },
                 ),
               ),
-            if (showDrawerButton) const SizedBox(width: 8),
+              const SizedBox(width: 4),
+            ],
 
-            // Logo & Brand (for Mobile/Top) or Page Title with breadcrumb
+            // Logo & Brand (when at root dashboard) or Page Title (when in secondary screen)
             if (isMobile) ...[
-              GestureDetector(
-                onTap: () => context.go('/dashboard'),
+              if (title == 'Acadex') ...[
+                Expanded(
+                  child: InkWell(
+                    onTap: () => context.go('/dashboard'),
+                    borderRadius: AcadexRadius.borderRadiusSm,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: isGradientRole ? const Color(0xFF0080FF) : AcadexColors.primary,
+                              borderRadius: BorderRadius.circular(9),
+                            ),
+                            child: const Center(
+                              child: Icon(LucideIcons.graduationCap, color: Colors.white, size: 20),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Acadex',
+                                  style: TextStyle(
+                                    color: headerTextColor,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 18,
+                                    letterSpacing: -0.3,
+                                    height: 1.15,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  'Campus Management',
+                                  style: TextStyle(
+                                    color: headerMutedColor,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 11,
+                                    height: 1.15,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: headerTextColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 17,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (subtitle != null && subtitle!.isNotEmpty)
+                        Text(
+                          subtitle!,
+                          style: TextStyle(
+                            color: headerMutedColor,
+                            fontWeight: FontWeight.w400,
+                            fontSize: 11.5,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ] else ...[
+              Expanded(
                 child: Row(
                   children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AcadexColors.primary, Color(0xFF6366F1)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          title,
+                          style: AcadexTypography.title(color: headerTextColor).copyWith(fontWeight: FontWeight.w700),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        borderRadius: AcadexRadius.borderRadiusMd,
+                        if (subtitle != null && subtitle!.isNotEmpty)
+                          Text(
+                            subtitle!,
+                            style: AcadexTypography.caption(color: headerMutedColor),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
+                    if (user != null && isDesktop) ...[
+                      const SizedBox(width: 14),
+                      AcadexBadge(
+                        label: user.role.displayName.toUpperCase(),
+                        variant: isGradientRole ? AcadexBadgeVariant.primary : AcadexBadgeVariant.primary,
                       ),
-                      child: const Icon(LucideIcons.graduationCap, color: Colors.white, size: 18),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Acadex',
-                      style: AcadexTypography.title(
-                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                      ).copyWith(fontWeight: FontWeight.w700),
-                    ),
+                    ],
                   ],
                 ),
               ),
-            ] else ...[
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    style: AcadexTypography.title(
-                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                    ).copyWith(fontWeight: FontWeight.w700),
-                  ),
-                  if (subtitle != null && subtitle!.isNotEmpty)
-                    Text(
-                      subtitle!,
-                      style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                      ),
-                    ),
-                ],
-              ),
-              if (user != null && isDesktop) ...[
-                const SizedBox(width: 16),
-                AcadexBadge(
-                  label: user.role.displayName.toUpperCase(),
-                  variant: AcadexBadgeVariant.primary,
-                ),
-              ],
             ],
 
-            const Spacer(),
+            // Extra actions if provided (desktop/tablet)
+            if (extraActions != null && !isMobile) ...extraActions!,
 
-            // Extra actions if provided
-            if (extraActions != null) ...extraActions!,
-
-            // Search Icon
-            IconButton(
-              icon: Icon(
-                LucideIcons.search,
-                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                size: 19,
+            // Search Icon (desktop/tablet only to keep mobile header lean)
+            if (!isMobile) ...[
+              IconButton(
+                icon: Icon(
+                  LucideIcons.search,
+                  color: isGradientRole ? Colors.white70 : AcadexColors.inkSecondary,
+                  size: 19,
+                ),
+                tooltip: 'Search',
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                onPressed: () => context.push('/search'),
+                splashRadius: 22,
               ),
-              tooltip: 'Search (Cmd+K)',
-              onPressed: () => context.push('/search'),
-              splashRadius: 20,
-            ),
-            const SizedBox(width: 2),
+              const SizedBox(width: 2),
+            ],
 
-            // Live Notifications Badge
-            const NotificationBadge(),
-            const SizedBox(width: 2),
-
-            // Theme Mode Toggle Button
-            IconButton(
-              icon: Icon(
-                isDark ? LucideIcons.sun : LucideIcons.moon,
-                color: isDark ? const Color(0xFFFBBF24) : AcadexColors.primary,
-                size: 19,
-              ),
-              tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
-              onPressed: () {
-                final newMode = isDark ? ThemeMode.light : ThemeMode.dark;
-                settingsAsync.whenData((settings) {
-                  ref.read(appSettingsProvider.notifier).updateSettings(
-                        settings.copyWith(themeMode: newMode),
-                      );
-                });
-              },
-              splashRadius: 20,
+            // Live Notifications Badge (min 48x48 touch target)
+            NotificationBadge(
+              size: isMobile ? 24 : 20,
+              iconColor: isGradientRole ? Colors.white : AcadexColors.inkSecondary,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
 
             // Authenticated User Profile Menu
             PopupMenuButton<String>(
@@ -179,12 +281,12 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
               offset: const Offset(0, 52),
               shape: RoundedRectangleBorder(
                 borderRadius: AcadexRadius.borderRadiusLg,
-                side: BorderSide(
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                side: const BorderSide(
+                  color: AcadexColors.hairline,
                 ),
               ),
-              color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
-              elevation: 6,
+              color: AcadexColors.surface,
+              elevation: 4,
               onSelected: (value) async {
                 switch (value) {
                   case 'profile':
@@ -225,7 +327,7 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
                               Text(
                                 user?.name ?? 'Authenticated User',
                                 style: AcadexTypography.body(
-                                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  color: AcadexColors.ink,
                                 ).copyWith(fontWeight: FontWeight.w600),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -233,7 +335,7 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
                               Text(
                                 user?.email ?? user?.role.displayName ?? '',
                                 style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  color: AcadexColors.inkMuted,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -250,9 +352,9 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
                   value: 'profile',
                   child: Row(
                     children: [
-                      Icon(LucideIcons.user, size: 16, color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                      const Icon(LucideIcons.user, size: 16, color: AcadexColors.inkSecondary),
                       const SizedBox(width: 12),
-                      Text('My Profile', style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink)),
+                      Text('My Profile', style: AcadexTypography.body(color: AcadexColors.ink)),
                     ],
                   ),
                 ),
@@ -260,9 +362,9 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
                   value: 'settings',
                   child: Row(
                     children: [
-                      Icon(LucideIcons.settings, size: 16, color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                      const Icon(LucideIcons.settings, size: 16, color: AcadexColors.inkSecondary),
                       const SizedBox(width: 12),
-                      Text('Settings', style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink)),
+                      Text('Settings', style: AcadexTypography.body(color: AcadexColors.ink)),
                     ],
                   ),
                 ),
@@ -270,9 +372,9 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
                   value: 'change_password',
                   child: Row(
                     children: [
-                      Icon(LucideIcons.keyRound, size: 16, color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                      const Icon(LucideIcons.keyRound, size: 16, color: AcadexColors.inkSecondary),
                       const SizedBox(width: 12),
-                      Text('Change Password', style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink)),
+                      Text('Change Password', style: AcadexTypography.body(color: AcadexColors.ink)),
                     ],
                   ),
                 ),
@@ -288,10 +390,16 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
                   ),
                 ),
               ],
-              child: AcadexAvatar(
-                name: user?.name ?? 'User',
-                size: 34,
-                isOnline: true,
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: Center(
+                  child: AcadexAvatar(
+                    name: user?.name ?? 'User',
+                    size: isMobile ? 36 : 34,
+                    isOnline: true,
+                  ),
+                ),
               ),
             ),
           ],

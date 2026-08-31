@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../dashboard/presentation/providers/dashboard_providers.dart';
 import '../../domain/models/note_model.dart';
 import '../../data/repositories/notes_repository.dart';
 import '../../data/repositories/mock_notes_repository.dart';
@@ -193,6 +194,8 @@ class NoteManagementNotifier extends AsyncNotifier<void> {
         result = note;
       }
       ref.invalidate(userNotesProvider);
+      ref.invalidate(studentStatsProvider);
+      ref.invalidate(superAdminStatsProvider);
     });
     return result;
   }
@@ -203,6 +206,8 @@ class NoteManagementNotifier extends AsyncNotifier<void> {
       final repository = ref.read(notesRepositoryProvider);
       await repository.createNote(note);
       ref.invalidate(userNotesProvider);
+      ref.invalidate(studentStatsProvider);
+      ref.invalidate(superAdminStatsProvider);
     });
   }
 
@@ -212,6 +217,8 @@ class NoteManagementNotifier extends AsyncNotifier<void> {
       final repository = ref.read(notesRepositoryProvider);
       await repository.updateNote(note);
       ref.invalidate(userNotesProvider);
+      ref.invalidate(studentStatsProvider);
+      ref.invalidate(superAdminStatsProvider);
     });
   }
 
@@ -221,6 +228,8 @@ class NoteManagementNotifier extends AsyncNotifier<void> {
       final repository = ref.read(notesRepositoryProvider);
       await repository.deleteNote(id);
       ref.invalidate(userNotesProvider);
+      ref.invalidate(studentStatsProvider);
+      ref.invalidate(superAdminStatsProvider);
     });
   }
 }

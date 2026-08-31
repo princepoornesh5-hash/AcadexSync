@@ -37,6 +37,11 @@ export function createRateLimiter(options: RateLimiterOptions = {}) {
   }, 5 * 60 * 1000).unref();
 
   return (req: Request, res: Response, next: NextFunction): void => {
+    // Always skip rate limiting for CORS preflight OPTIONS requests
+    if (req.method === 'OPTIONS') {
+      return next();
+    }
+
     // In test environment, skip throttling unless explicitly configured or requested via header
     const forceEnable = req.headers['x-test-enable-ratelimit'] === 'true';
     if (process.env.NODE_ENV === 'test' && skipInTest && !forceEnable) {
@@ -47,7 +52,7 @@ export function createRateLimiter(options: RateLimiterOptions = {}) {
       ? options.keyGenerator(req)
       : (req as any).user?.id
       ? `user:${(req as any).user.id}`
-      : req.ip || req.socket.remoteAddress || 'unknown-client';
+      : (req.headers['x-forwarded-for'] as string) || req.ip || req.socket.remoteAddress || 'unknown-client';
 
     const now = Date.now();
     let record = store.get(key);

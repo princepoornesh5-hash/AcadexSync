@@ -94,7 +94,7 @@ class _AttendanceAlertsScreenState extends ConsumerState<AttendanceAlertsScreen>
     final summaryAsync = ref.watch(attendanceAlertSummaryProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(

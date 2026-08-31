@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import '../design_system/acadex_colors.dart';
-import '../design_system/acadex_spacing.dart';
+import 'acadex_chip.dart';
 
 enum AppBadgeVariant { success, warning, error, info, neutral, primary }
 
+/// Legacy bridge widget delegating to [AcadexBadge].
+/// Maintained for test compatibility. Prefer using [AcadexBadge] directly.
 class AppBadge extends StatelessWidget {
   final String label;
   final AppBadgeVariant variant;
@@ -22,68 +23,34 @@ class AppBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color bg;
-    Color fg;
-
-    if (backgroundColor != null && textColor != null) {
-      bg = backgroundColor!;
-      fg = textColor!;
-    } else {
-      switch (variant) {
-        case AppBadgeVariant.success:
-          bg = AcadexColors.emeraldTealSurface;
-          fg = AcadexColors.emeraldTeal;
-          break;
-        case AppBadgeVariant.warning:
-          bg = AcadexColors.amberSurface;
-          fg = AcadexColors.amberAccent;
-          break;
-        case AppBadgeVariant.error:
-          bg = AcadexColors.coralErrorSurface;
-          fg = AcadexColors.coralError;
-          break;
-        case AppBadgeVariant.info:
-          bg = AcadexColors.skyInfoSurface;
-          fg = AcadexColors.skyInfo;
-          break;
-        case AppBadgeVariant.primary:
-          bg = AcadexColors.primaryNavy;
-          fg = Colors.white;
-          break;
-        case AppBadgeVariant.neutral:
-          bg = AcadexColors.surfaceLightMuted;
-          fg = AcadexColors.textSecondaryLight;
-          break;
-      }
+    AcadexBadgeVariant canonicalVariant;
+    switch (variant) {
+      case AppBadgeVariant.success:
+        canonicalVariant = AcadexBadgeVariant.success;
+        break;
+      case AppBadgeVariant.warning:
+        canonicalVariant = AcadexBadgeVariant.warning;
+        break;
+      case AppBadgeVariant.error:
+        canonicalVariant = AcadexBadgeVariant.danger;
+        break;
+      case AppBadgeVariant.info:
+        canonicalVariant = AcadexBadgeVariant.info;
+        break;
+      case AppBadgeVariant.primary:
+        canonicalVariant = AcadexBadgeVariant.primary;
+        break;
+      case AppBadgeVariant.neutral:
+        canonicalVariant = AcadexBadgeVariant.neutral;
+        break;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: AcadexRadius.smBorder,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 12, color: fg),
-            const SizedBox(width: 4),
-          ],
-          Flexible(
-            child: Text(
-              label,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: fg,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return AcadexBadge(
+      label: label,
+      variant: canonicalVariant,
+      icon: icon,
+      backgroundColor: backgroundColor,
+      textColor: textColor,
     );
   }
 }

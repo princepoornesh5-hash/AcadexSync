@@ -9,6 +9,7 @@ import '../widgets/college/college_shortage_card.dart';
 import '../widgets/college/college_insight_card.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_page_header.dart';
 
 class CollegeAttendanceDashboardScreen extends ConsumerWidget {
   const CollegeAttendanceDashboardScreen({super.key});
@@ -19,37 +20,56 @@ class CollegeAttendanceDashboardScreen extends ConsumerWidget {
 
     return DefaultTabController(
       length: 5,
-      child: Scaffold(
-        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-        appBar: AppBar(
-          title: Text(
-            "College Attendance Overview",
-            style: AcadexTypography.title(
-              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-            ),
-          ),
-          bottom: TabBar(
-            isScrollable: true,
-            labelColor: AcadexColors.primary,
-            unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-            indicatorColor: AcadexColors.primary,
-            indicatorWeight: 2.5,
-            tabs: const [
-              Tab(text: "Overview"),
-              Tab(text: "Departments"),
-              Tab(text: "Faculty"),
-              Tab(text: "Shortages"),
-              Tab(text: "Insights"),
-            ],
-          ),
-        ),
-        body: TabBarView(
+      child: AcadexPageContainer(
+        backgroundColor: Colors.transparent,
+        scrollable: true,
+        maxWidth: AcadexLayout.contentMaxWidth,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildOverviewTab(ref),
-            _buildDepartmentsTab(ref),
-            _buildFacultyTab(ref),
-            _buildShortageTab(ref),
-            _buildInsightsTab(ref),
+            const AcadexPageHeader(
+              title: "College Attendance Overview",
+              subtitle: "Institutional attendance monitoring, departmental metrics, and shortage tracking.",
+            ),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                borderRadius: AcadexRadius.borderRadiusLg,
+                border: Border.all(
+                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                ),
+                boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+              ),
+              child: TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                labelColor: AcadexColors.primary,
+                unselectedLabelColor: AcadexColors.inkMuted,
+                indicatorColor: AcadexColors.primary,
+                indicatorWeight: 3,
+                tabs: const [
+                  Tab(text: "Overview"),
+                  Tab(text: "Departments"),
+                  Tab(text: "Faculty"),
+                  Tab(text: "Shortages"),
+                  Tab(text: "Insights"),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 700,
+              child: TabBarView(
+                children: [
+                  _buildOverviewTab(ref),
+                  _buildDepartmentsTab(ref),
+                  _buildFacultyTab(ref),
+                  _buildShortageTab(ref),
+                  _buildInsightsTab(ref),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -70,14 +90,8 @@ class CollegeAttendanceDashboardScreen extends ConsumerWidget {
         ),
       ),
       data: (summary) {
-        return AcadexPageContainer(
-          maxWidth: AcadexLayout.contentMaxWidth,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CollegeSummaryCard(summary: summary),
-            ],
-          ),
+        return SingleChildScrollView(
+          child: CollegeSummaryCard(summary: summary),
         );
       },
     );
@@ -97,19 +111,14 @@ class CollegeAttendanceDashboardScreen extends ConsumerWidget {
         ),
       ),
       data: (depts) {
-        return AcadexPageContainer(
-          maxWidth: AcadexLayout.contentMaxWidth,
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: depts.length,
-            itemBuilder: (context, index) {
-              return DepartmentComparisonCard(
-                comparison: depts[index],
-                rank: index + 1,
-              );
-            },
-          ),
+        return ListView.builder(
+          itemCount: depts.length,
+          itemBuilder: (context, index) {
+            return DepartmentComparisonCard(
+              comparison: depts[index],
+              rank: index + 1,
+            );
+          },
         );
       },
     );
@@ -129,16 +138,11 @@ class CollegeAttendanceDashboardScreen extends ConsumerWidget {
         ),
       ),
       data: (faculties) {
-        return AcadexPageContainer(
-          maxWidth: AcadexLayout.contentMaxWidth,
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: faculties.length,
-            itemBuilder: (context, index) {
-              return CollegeFacultyCard(completion: faculties[index]);
-            },
-          ),
+        return ListView.builder(
+          itemCount: faculties.length,
+          itemBuilder: (context, index) {
+            return CollegeFacultyCard(completion: faculties[index]);
+          },
         );
       },
     );
@@ -158,16 +162,11 @@ class CollegeAttendanceDashboardScreen extends ConsumerWidget {
         ),
       ),
       data: (shortages) {
-        return AcadexPageContainer(
-          maxWidth: AcadexLayout.contentMaxWidth,
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: shortages.length,
-            itemBuilder: (context, index) {
-              return CollegeShortageCard(shortage: shortages[index]);
-            },
-          ),
+        return ListView.builder(
+          itemCount: shortages.length,
+          itemBuilder: (context, index) {
+            return CollegeShortageCard(shortage: shortages[index]);
+          },
         );
       },
     );
@@ -187,16 +186,11 @@ class CollegeAttendanceDashboardScreen extends ConsumerWidget {
         ),
       ),
       data: (insights) {
-        return AcadexPageContainer(
-          maxWidth: AcadexLayout.contentMaxWidth,
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: insights.length,
-            itemBuilder: (context, index) {
-              return CollegeInsightCard(insight: insights[index]);
-            },
-          ),
+        return ListView.builder(
+          itemCount: insights.length,
+          itemBuilder: (context, index) {
+            return CollegeInsightCard(insight: insights[index]);
+          },
         );
       },
     );

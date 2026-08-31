@@ -38,7 +38,6 @@ class _StatCardState extends State<StatCard> with SingleTickerProviderStateMixin
     _controller.forward();
   }
 
-
   @override
   void dispose() {
     _controller.dispose();
@@ -47,79 +46,110 @@ class _StatCardState extends State<StatCard> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isMobile = AcadexBreakpoints.isMobile(context);
+    final isSmallMobile = AcadexBreakpoints.isSmallMobile(context);
+    final isPrimaryMetric = widget.stat.iconColor == DashboardColors.primary ||
+        widget.stat.iconColor == AcadexColors.primary;
 
     return FadeTransition(
       opacity: _fadeAnim,
       child: SlideTransition(
         position: _slideAnim,
         child: Container(
-          padding: AcadexSpacing.cardPaddingCompact,
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 8 : 12,
+            vertical: isMobile ? 10 : 12,
+          ),
           decoration: BoxDecoration(
-            color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+            color: isPrimaryMetric
+                ? AcadexColors.primaryTint
+                : AcadexColors.surface,
             borderRadius: AcadexRadius.borderRadiusLg,
             border: Border.all(
-              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              color: isPrimaryMetric
+                  ? const Color(0xFFDBEAFE)
+                  : AcadexColors.hairline,
               width: 1,
             ),
-            boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+            boxShadow: AcadexShadows.lightSm,
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: widget.stat.iconBackground,
-                      borderRadius: AcadexRadius.borderRadiusMd,
-                    ),
-                    child: Icon(
-                      widget.stat.icon,
-                      color: widget.stat.iconColor,
-                      size: 19,
-                    ),
+              // 1. Centered Icon
+              Container(
+                width: isMobile ? 36 : 40,
+                height: isMobile ? 36 : 40,
+                decoration: BoxDecoration(
+                  color: widget.stat.iconBackground,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Icon(
+                    widget.stat.icon,
+                    color: widget.stat.iconColor,
+                    size: isMobile ? 18 : 20,
                   ),
-                  if (widget.stat.changePercent != null)
-                    _buildChangePill(widget.stat.changePercent!, isDark),
-                ],
+                ),
               ),
-              const SizedBox(height: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.stat.value,
-                    style: AcadexTypography.heading1(
-                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                    ),
+              const SizedBox(height: 8),
+
+              // 2. Large Centered Number
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.center,
+                child: Text(
+                  widget.stat.value,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: isSmallMobile ? 20 : (isMobile ? 22 : 26),
+                    fontWeight: FontWeight.w800,
+                    color: isPrimaryMetric
+                        ? const Color(0xFF003366)
+                        : const Color(0xFF0F172A),
+                    letterSpacing: -0.5,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    widget.stat.title,
-                    style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                    ).copyWith(fontWeight: FontWeight.w500),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (widget.stat.subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.stat.subtitle!,
-                      style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
+                  maxLines: 1,
+                ),
               ),
+              const SizedBox(height: 4),
+
+              // 3. Centered Label
+              Text(
+                widget.stat.title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: isMobile ? 11.5 : 13,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF475569),
+                  height: 1.2,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+
+              // 4. Centered Supporting Description
+              if (widget.stat.subtitle != null && widget.stat.subtitle!.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  widget.stat.subtitle!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: isMobile ? 9.5 : 11,
+                    fontWeight: FontWeight.w400,
+                    color: const Color(0xFF64748B),
+                    height: 1.2,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+
+              if (widget.stat.changePercent != null) ...[
+                const SizedBox(height: 4),
+                _buildChangePill(widget.stat.changePercent!, false),
+              ],
             ],
           ),
         ),
@@ -135,7 +165,7 @@ class _StatCardState extends State<StatCard> with SingleTickerProviderStateMixin
     final fg = isPositive ? AcadexColors.success : AcadexColors.error;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: AcadexRadius.borderRadiusFull,
@@ -145,13 +175,13 @@ class _StatCardState extends State<StatCard> with SingleTickerProviderStateMixin
         children: [
           Icon(
             isPositive ? LucideIcons.trendingUp : LucideIcons.trendingDown,
-            size: 12,
+            size: 11,
             color: fg,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 3),
           Text(
             '${change.abs().toStringAsFixed(1)}%',
-            style: AcadexTypography.eyebrow(color: fg),
+            style: AcadexTypography.eyebrow(color: fg).copyWith(fontSize: 9.5),
           ),
         ],
       ),

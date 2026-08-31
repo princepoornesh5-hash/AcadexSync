@@ -271,14 +271,14 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Institute ID Input
+          // PIN Number Input
           AcadexTextField(
             controller: _instituteIdController,
-            label: "Student or Employee ID",
-            hint: "e.g. CS2026001 or EMP102",
+            label: "PIN Number",
+            hint: "e.g. 26CSE042, FAC-CSE-014, or ADMIN-001",
             prefixIcon: LucideIcons.idCard,
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return "Please enter your ID";
+              if (v == null || v.trim().isEmpty) return "Please enter your PIN Number";
               return null;
             },
           ),
@@ -568,7 +568,7 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          "Your institutional account is now fully active. You can now sign in using your credentials.",
+          "Account activated successfully. You can now sign in using your PIN Number or Email and your password.",
           textAlign: TextAlign.center,
           style: AcadexTypography.bodySmall(
             color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
@@ -619,7 +619,7 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
                   const Icon(LucideIcons.idCard, size: 14, color: AcadexColors.primary),
                   const SizedBox(width: 6),
                   Text(
-                    'ID: ${state.instituteId ?? "—"}',
+                    'PIN: ${state.instituteId ?? "—"}',
                     style: AcadexTypography.caption(
                       color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
                     ).copyWith(fontWeight: FontWeight.w600),

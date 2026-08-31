@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../features/auth/domain/models/auth_state.dart';
 import '../../../../features/auth/domain/models/role_enum.dart';
@@ -62,7 +63,7 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
             LucideIcons.arrowLeft,
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () => context.safePop(fallbackRoute: '/certificates'),
         ),
       ),
       body: certAsync.when(
@@ -84,7 +85,7 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
                 title: 'Certificate Not Found',
                 subtitle: 'The requested certificate record could not be located or has been deleted.',
                 actionLabel: 'Return',
-                onActionTap: () => context.pop(),
+                onActionTap: () => context.safePop(fallbackRoute: '/certificates'),
               ),
             );
           }
@@ -469,7 +470,7 @@ class _CertificateDetailScreenState extends ConsumerState<CertificateDetailScree
 
     if (confirmed == true) {
       await ref.read(certificateRepositoryProvider).deleteCertificate(cert.id, user.firebaseUid ?? user.id);
-      if (mounted) context.pop();
+      if (mounted) context.safePop(fallbackRoute: '/certificates');
     }
   }
 }

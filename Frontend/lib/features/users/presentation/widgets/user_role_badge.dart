@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/presentation/design_system/acadex_colors.dart';
-import '../../../../core/presentation/widgets/app_badge.dart';
+import '../../../../core/presentation/widgets/acadex_chip.dart';
 import '../../../auth/domain/models/role_enum.dart';
 
 class UserRoleBadge extends StatelessWidget {
@@ -41,7 +41,7 @@ class UserRoleBadge extends StatelessWidget {
         break;
     }
 
-    return AppBadge(
+    return AcadexBadge(
       label: role.displayName,
       backgroundColor: badgeColor,
       textColor: textColor,

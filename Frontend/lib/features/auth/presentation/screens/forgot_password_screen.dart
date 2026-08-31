@@ -383,7 +383,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            "Enter your registered email or phone to receive a verification code.",
+            "Enter your registered PIN Number, email, or phone to receive a verification code.",
             textAlign: TextAlign.center,
             style: AcadexTypography.bodySmall(
               color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
@@ -398,13 +398,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
           AcadexTextField(
             controller: _identifierController,
-            label: "Email or Phone Number",
-            hint: "name@acadex.edu or +1234567890",
+            label: "PIN Number, Email, or Phone",
+            hint: "e.g. 26CSE042 or name@acadex.edu",
             prefixIcon: LucideIcons.user,
             keyboardType: TextInputType.emailAddress,
             enabled: !_isLoading,
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return "Please enter your email or phone number";
+              if (v == null || v.trim().isEmpty) return "Please enter your PIN Number, email, or phone";
               return null;
             },
           ),

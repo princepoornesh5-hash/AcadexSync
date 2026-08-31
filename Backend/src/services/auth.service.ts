@@ -52,8 +52,15 @@ export class AuthService {
   ): Promise<LoginResult> {
     const { type, normalized } = normalizeIdentifier(rawIdentifier);
 
-    // Look up user by email or phone
-    const query = type === 'email' ? { email: normalized } : { phone: normalized };
+    // Look up user by email, phone, or PIN Number (instituteId)
+    let query: Record<string, unknown>;
+    if (type === 'email') {
+      query = { email: normalized };
+    } else if (type === 'phone') {
+      query = { $or: [{ phone: normalized }, { instituteId: rawIdentifier.trim().toUpperCase() }] };
+    } else {
+      query = { instituteId: normalized };
+    }
     const user = await User.findOne(query);
 
     if (!user) {
@@ -265,7 +272,14 @@ export class AuthService {
 
     try {
       const { type, normalized } = normalizeIdentifier(rawIdentifier);
-      const query = type === 'email' ? { email: normalized } : { phone: normalized };
+      let query: Record<string, unknown>;
+      if (type === 'email') {
+        query = { email: normalized };
+      } else if (type === 'phone') {
+        query = { $or: [{ phone: normalized }, { instituteId: rawIdentifier.trim().toUpperCase() }] };
+      } else {
+        query = { instituteId: normalized };
+      }
       const user = await User.findOne(query);
 
       if (!user || user.accountStatus !== AccountStatus.ACTIVE) {
@@ -299,7 +313,14 @@ export class AuthService {
     otpCode: string
   ): Promise<{ resetToken: string; message: string }> {
     const { type, normalized } = normalizeIdentifier(rawIdentifier);
-    const query = type === 'email' ? { email: normalized } : { phone: normalized };
+    let query: Record<string, unknown>;
+    if (type === 'email') {
+      query = { email: normalized };
+    } else if (type === 'phone') {
+      query = { $or: [{ phone: normalized }, { instituteId: rawIdentifier.trim().toUpperCase() }] };
+    } else {
+      query = { instituteId: normalized };
+    }
     const user = await User.findOne(query);
 
     if (!user || user.accountStatus !== AccountStatus.ACTIVE) {

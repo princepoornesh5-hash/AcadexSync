@@ -3,28 +3,43 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// Centralized Acadex Color Tokens (Modern Academic & Productivity System)
 class AcadexColors {
-  // Primary Brand Identity - Deep Indigo
-  static const Color primary = Color(0xFF4338CA); // Deep Indigo 700
-  static const Color primaryHover = Color(0xFF3730A3); // Deep Indigo 800
-  static const Color primaryPressed = Color(0xFF312E81); // Deep Indigo 900
-  static const Color primaryLight = Color(0xFFEEF2FF); // Indigo 50
-  static const Color primaryMuted = Color(0xFF818CF8); // Indigo 400
+  // Primary Brand Identity - Vibrant ACADEX Blue
+  static const Color primary = Color(0xFF2563EB); // Blue 600 (Primary Action)
+  static const Color primaryHover = Color(0xFF1D4ED8); // Blue 700 (Hover/Focus)
+  static const Color primaryDark = Color(0xFF1D4ED8); // Blue 700
+  static const Color primaryPressed = Color(0xFF1E40AF); // Blue 800 (Pressed)
+  static const Color primaryLight = Color(0xFFDBEAFE); // Blue 100 (Soft Highlight)
+  static const Color primarySoft = Color(0xFFDBEAFE); // Blue 100
+  static const Color primaryTint = Color(0xFFEFF6FF); // Blue 50 (Subtle Surface)
+  static const Color primaryMuted = Color(0xFF60A5FA); // Blue 400
 
-  static const Color secondary = Color(0xFF0F172A); // Slate 900
+  static const Color secondary = Color(0xFF0F172A); // Deep Slate 900
   static const Color secondaryLight = Color(0xFFF1F5F9); // Slate 100
 
-  // Light Canvas & Surface Layers
-  static const Color canvas = Color(0xFFF8FAFC); // Slate 50 warm neutral canvas
+  // Super Admin Action Blue Hierarchy (Prototype)
+  static const Color superAdminDeepAction = Color(0xFF003366); // Deep Action Blue (Primary CTA)
+  static const Color superAdminDeepPressed = Color(0xFF00264D); // Deep Pressed Blue
+  static const Color superAdminPrimaryAction = Color(0xFF0066CC); // Primary Action Blue (Border/Icon/Text CTA)
+  static const Color superAdminSoftAction = Color(0xFFE6F2FF); // Soft Blue (Soft Actions / Badges)
+  static const Color superAdminVerySoft = Color(0xFFEFF6FF); // Very Soft Blue (Card Tint)
+
+  // Light Canvas & Surface Layers (Calm & Clean)
+  static const Color canvas = Color(0xFFF8FAFC); // Slate 50 neutral canvas
+  static const Color canvasLight = Color(0xFFF8FAFC);
   static const Color canvasSoft = Color(0xFFF1F5F9); // Slate 100 soft background
   static const Color surface = Color(0xFFFFFFFF); // Pure White cards
   static const Color surfaceHover = Color(0xFFF8FAFC); // Slate 50
   static const Color hairline = Color(0xFFE2E8F0); // Slate 200 crisp border
+  static const Color border = Color(0xFFE2E8F0);
   static const Color hairlineHover = Color(0xFFCBD5E1); // Slate 300
 
-  // Light Typography & Ink
+  // Light Typography & Ink (High Contrast WCAG AA / AAA)
   static const Color ink = Color(0xFF0F172A); // Slate 900 primary text
-  static const Color inkSecondary = Color(0xFF334155); // Slate 700 secondary text
-  static const Color inkMuted = Color(0xFF64748B); // Slate 500 tertiary/muted
+  static const Color textPrimary = Color(0xFF0F172A);
+  static const Color inkSecondary = Color(0xFF475569); // Slate 600 secondary text
+  static const Color textSecondary = Color(0xFF475569);
+  static const Color inkMuted = Color(0xFF64748B); // Slate 500 muted text/captions
+  static const Color textMuted = Color(0xFF64748B);
   static const Color inkFaint = Color(0xFF94A3B8); // Slate 400 placeholder/disabled
 
   // Dark Canvas & Surface Layers (Deep Slate Architecture)
@@ -34,6 +49,7 @@ class AcadexColors {
   static const Color darkSurfaceCard = Color(0xFF1E293B); // Slate 800 Card
   static const Color darkSurfaceHover = Color(0xFF243248); // Slate 750
   static const Color darkHairline = Color(0xFF283548); // Slate 700 Border
+  static const Color darkBorder = Color(0xFF283548);
   static const Color darkHairlineHover = Color(0xFF334155); // Slate 600
 
   // Dark Typography & Ink
@@ -43,35 +59,35 @@ class AcadexColors {
   static const Color darkInkFaint = Color(0xFF64748B); // Slate 500
 
   // Semantic Status Colors (Calm & Accessible)
-  static const Color success = Color(0xFF10B981); // Emerald 500
-  static const Color successLight = Color(0xFFECFDF5); // Emerald 50
-  static const Color successDark = Color(0xFF065F46); // Emerald 800
-  static const Color successDarkContainer = Color(0xFF064E3B);
+  static const Color success = Color(0xFF16A34A); // Green 600
+  static const Color successLight = Color(0xFFDCFCE7); // Green 100
+  static const Color successDark = Color(0xFF15803D); // Green 700
+  static const Color successDarkContainer = Color(0xFF052E16);
 
-  static const Color warning = Color(0xFFF59E0B); // Amber 500
-  static const Color warningLight = Color(0xFFFFFBEB); // Amber 50
-  static const Color warningDark = Color(0xFF92400E); // Amber 800
-  static const Color warningDarkContainer = Color(0xFF78350F);
+  static const Color warning = Color(0xFFD97706); // Amber 600
+  static const Color warningLight = Color(0xFFFEF3C7); // Amber 100
+  static const Color warningDark = Color(0xFFB45309); // Amber 700
+  static const Color warningDarkContainer = Color(0xFF451A03);
 
-  static const Color error = Color(0xFFEF4444); // Rose/Red 500
-  static const Color errorLight = Color(0xFFFEF2F2); // Red 50
-  static const Color errorDark = Color(0xFF991B1B); // Red 800
-  static const Color errorDarkContainer = Color(0xFF7F1D1D);
+  static const Color error = Color(0xFFDC2626); // Red 600
+  static const Color errorLight = Color(0xFFFEE2E2); // Red 100
+  static const Color errorDark = Color(0xFFB91C1C); // Red 700
+  static const Color errorDarkContainer = Color(0xFF450A0A);
 
-  static const Color info = Color(0xFF3B82F6); // Blue 500
-  static const Color infoLight = Color(0xFFEFF6FF); // Blue 50
-  static const Color infoDark = Color(0xFF1E40AF); // Blue 800
+  static const Color info = Color(0xFF2563EB); // Blue 600
+  static const Color infoLight = Color(0xFFDBEAFE); // Blue 100
+  static const Color infoDark = Color(0xFF1D4ED8); // Blue 700
 
   // Decorative Accent Highlights
   static const Color accentPurple = Color(0xFF8B5CF6);
   static const Color accentPurpleLight = Color(0xFFF5F3FF);
-  static const Color accentTeal = Color(0xFF14B8A6);
+  static const Color accentTeal = Color(0xFF0D9488);
   static const Color accentTealLight = Color(0xFFF0FDFA);
-  static const Color accentOrange = Color(0xFFF97316);
+  static const Color accentOrange = Color(0xFFEA580C);
   static const Color accentOrangeLight = Color(0xFFFFF7ED);
-  static const Color accentSky = Color(0xFF0EA5E9);
-  static const Color accentPink = Color(0xFFEC4899);
-  static const Color accentGreen = Color(0xFF22C55E);
+  static const Color accentSky = Color(0xFF0284C7);
+  static const Color accentPink = Color(0xFFDB2777);
+  static const Color accentGreen = Color(0xFF16A34A);
   static const Color accentBrown = Color(0xFF78350F);
   static const Color accentDeepPurple = Color(0xFF4C1D95);
   static const Color accentDeepOrange = Color(0xFF9A3412);
@@ -123,14 +139,19 @@ class AcadexSpacing {
 
 /// Responsive Layout Breakpoints
 class AcadexBreakpoints {
-  static const double mobileMax = 640.0;
-  static const double tabletMax = 1024.0;
+  static const double mobileSmallMax = 374.0;
+  static const double mobileMax = 599.0;
+  static const double tabletMax = 1023.0;
+  static const double desktopMin = 1024.0;
   static const double desktopMax = 1440.0;
 
+  static bool isSmallMobile(BuildContext context) => MediaQuery.of(context).size.width <= mobileSmallMax;
   static bool isMobile(BuildContext context) => MediaQuery.of(context).size.width <= mobileMax;
-  static bool isTablet(BuildContext context) =>
-      MediaQuery.of(context).size.width > mobileMax && MediaQuery.of(context).size.width <= tabletMax;
-  static bool isDesktop(BuildContext context) => MediaQuery.of(context).size.width > tabletMax;
+  static bool isTablet(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    return width > mobileMax && width <= tabletMax;
+  }
+  static bool isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= desktopMin;
 }
 
 /// Centralized Subtle Shadows
@@ -277,6 +298,13 @@ class AcadexTypography {
         fontWeight: FontWeight.w500,
         color: color,
       );
+
+  // Convenience getters
+  static TextStyle get h1 => heading1();
+  static TextStyle get h2 => heading2();
+  static TextStyle get h3 => heading3();
+  static TextStyle get bodyText => body();
+  static TextStyle get captionText => caption();
 }
 
 /// Backwards Compatibility Mapping for AppColors

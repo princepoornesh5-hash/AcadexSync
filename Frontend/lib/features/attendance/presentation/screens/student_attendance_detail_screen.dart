@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
@@ -67,40 +68,37 @@ class _StudentAttendanceDetailScreenState
       ),
     );
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1400),
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 16 : 24,
-                vertical: 16,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Page Header with back button & range selector
-                  AcadexPageHeader(
-                    title: 'Student Attendance Profile',
-                    subtitle: 'Detailed attendance record, subject breakdowns, and recovery projections.',
-                    onBack: () => Navigator.of(context).canPop() ? Navigator.of(context).pop() : context.go('/attendance/analytics'),
-                    actions: [
-                      AnalyticsDateRangeSelector(
-                        selectedRange: _selectedRange,
-                        onRangeChanged: (newRange) {
-                          setState(() {
-                            _selectedRange = newRange;
-                          });
-                        },
-                      ),
-                    ],
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1400),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 16 : 24,
+            vertical: 16,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Page Header with back button & range selector
+              AcadexPageHeader(
+                title: 'Student Attendance Profile',
+                subtitle: 'Detailed attendance record, subject breakdowns, and recovery projections.',
+                onBack: () => context.safePop(fallbackRoute: '/attendance/analytics'),
+                actions: [
+                  AnalyticsDateRangeSelector(
+                    selectedRange: _selectedRange,
+                    onRangeChanged: (newRange) {
+                      setState(() {
+                        _selectedRange = newRange;
+                      });
+                    },
                   ),
+                ],
+              ),
 
-                  const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-                  analyticsAsync.when(
+              analyticsAsync.when(
                     loading: () => const Center(
                       child: Padding(
                         padding: EdgeInsets.all(40.0),
@@ -313,8 +311,6 @@ class _StudentAttendanceDetailScreenState
               ),
             ),
           ),
-        ),
-      ),
-    );
+        );
   }
 }

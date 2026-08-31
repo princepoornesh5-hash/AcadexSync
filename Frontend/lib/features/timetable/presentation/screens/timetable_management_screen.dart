@@ -6,7 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
-import '../../../../core/presentation/widgets/acadex_empty_state.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -192,19 +192,19 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
 
     final canCreate = user.role == AppRole.collegeAdmin || user.role == AppRole.hod;
     final filters = ref.watch(timetableFilterProvider);
+    final isGradientRole = user.role == AppRole.superAdmin ||
+        user.role == AppRole.collegeAdmin ||
+        user.role == AppRole.hod;
     final width = MediaQuery.of(context).size.width;
     final isMobile = width < 768;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1600),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1600),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
                 // Header with Create Timetable Action
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 16),
@@ -243,7 +243,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                   padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                      color: isDark ? AcadexColors.darkCanvasSoft : (isGradientRole ? AcadexColors.surface : AcadexColors.canvasSoft),
                       borderRadius: AcadexRadius.borderRadiusSm,
                       border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
                     ),
@@ -253,11 +253,11 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                       tabAlignment: TabAlignment.start,
                       indicatorSize: TabBarIndicatorSize.tab,
                       indicator: BoxDecoration(
-                        color: AcadexColors.primary,
+                        color: isGradientRole ? const Color(0xFF003366) : AcadexColors.primary,
                         borderRadius: AcadexRadius.borderRadiusSm,
                       ),
                       labelColor: Colors.white,
-                      unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : (isGradientRole ? const Color(0xFF475569) : AcadexColors.inkMuted),
                       tabs: const [
                         Tab(
                           child: Row(
@@ -305,9 +305,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
               ],
             ),
           ),
-        ),
-      ),
-    );
+        );
   }
 
   // =========================================================================
@@ -326,25 +324,10 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     final sectionMap = ref.watch(timetableSectionMapProvider);
 
     return containersAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, st) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(LucideIcons.alertCircle, size: 48, color: AcadexColors.error),
-              const SizedBox(height: 16),
-              Text('Failed to load timetables: $e', style: AcadexTypography.bodyMedium(color: AcadexColors.error)),
-              const SizedBox(height: 12),
-              TextButton.icon(
-                onPressed: () => ref.refresh(managementContainersProvider),
-                icon: const Icon(LucideIcons.refreshCw, size: 16),
-                label: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
+      loading: () => const AcadexLoadingState(message: 'Loading timetables...'),
+      error: (e, st) => AcadexErrorState(
+        message: 'Failed to load timetables: $e',
+        onRetry: () => ref.refresh(managementContainersProvider),
       ),
       data: (containers) {
         if (containers.isEmpty) {
@@ -505,110 +488,114 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     bool isDark,
   ) {
     if (container.status == TimetableStatus.draft) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          TextButton.icon(
-            onPressed: () => _confirmDeleteContainer(context, ref, container),
-            icon: const Icon(LucideIcons.trash2, size: 16, color: AcadexColors.error),
-            label: const Text('Delete', style: TextStyle(color: AcadexColors.error)),
-          ),
-          const SizedBox(width: 8),
-          OutlinedButton.icon(
-            onPressed: () async {
-              try {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: Wrap(
+          alignment: WrapAlignment.end,
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            TextButton.icon(
+              onPressed: () => _confirmDeleteContainer(context, ref, container),
+              icon: const Icon(LucideIcons.trash2, size: 16, color: AcadexColors.error),
+              label: const Text('Delete', style: TextStyle(color: AcadexColors.error)),
+            ),
+            OutlinedButton.icon(
+              onPressed: () async {
+                try {
+                  final repo = ref.read(timetableRepositoryProvider);
+                  await repo.publishTimetable(container.id, publishedBy: 'user');
+                  ref.invalidate(managementContainersProvider);
+                  ref.invalidate(managementTimetableProvider);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Timetable published to live schedule!'), backgroundColor: AcadexColors.success),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Cannot publish: $e'), backgroundColor: AcadexColors.error),
+                    );
+                  }
+                }
+              },
+              icon: const Icon(LucideIcons.send, size: 16),
+              label: const Text('Publish'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => TimetableDesignerScreen(timetableId: container.id),
+                  ),
+                );
+              },
+              icon: const Icon(LucideIcons.edit3, size: 16, color: Colors.white),
+              label: const Text('Continue Editing', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+            ),
+          ],
+        ),
+      );
+    } else if (container.status == TimetableStatus.published) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: Wrap(
+          alignment: WrapAlignment.end,
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            TextButton.icon(
+              onPressed: () async {
                 final repo = ref.read(timetableRepositoryProvider);
-                await repo.publishTimetable(container.id, publishedBy: 'user');
+                await repo.unpublishTimetable(container.id);
                 ref.invalidate(managementContainersProvider);
                 ref.invalidate(managementTimetableProvider);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Timetable published to live schedule!'), backgroundColor: AcadexColors.success),
+                    const SnackBar(content: Text('Timetable unpublished.'), backgroundColor: AcadexColors.warning),
                   );
                 }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Cannot publish: $e'), backgroundColor: AcadexColors.error),
-                  );
-                }
-              }
-            },
-            icon: const Icon(LucideIcons.send, size: 16),
-            label: const Text('Publish'),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => TimetableDesignerScreen(timetableId: container.id),
-                ),
-              );
-            },
-            icon: const Icon(LucideIcons.edit3, size: 16, color: Colors.white),
-            label: const Text('Continue Editing', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
-          ),
-        ],
-      );
-    } else if (container.status == TimetableStatus.published) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          TextButton.icon(
-            onPressed: () async {
-              final repo = ref.read(timetableRepositoryProvider);
-              await repo.unpublishTimetable(container.id);
-              ref.invalidate(managementContainersProvider);
-              ref.invalidate(managementTimetableProvider);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Timetable unpublished.'), backgroundColor: AcadexColors.warning),
+              },
+              icon: const Icon(LucideIcons.archive, size: 16),
+              label: const Text('Unpublish'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () => _handleCreateDraftOrEditVersion(context, ref, container),
+              icon: const Icon(LucideIcons.copy, size: 16),
+              label: const Text('Edit Draft / New Version'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => TimetableDesignerScreen(timetableId: container.id),
+                  ),
                 );
-              }
-            },
-            icon: const Icon(LucideIcons.archive, size: 16),
-            label: const Text('Unpublish'),
-          ),
-          const SizedBox(width: 8),
-          OutlinedButton.icon(
-            onPressed: () => _handleCreateDraftOrEditVersion(context, ref, container),
-            icon: const Icon(LucideIcons.copy, size: 16),
-            label: const Text('Edit Draft / New Version'),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => TimetableDesignerScreen(timetableId: container.id),
-                ),
-              );
-            },
-            icon: const Icon(LucideIcons.eye, size: 16, color: Colors.white),
-            label: const Text('View Designer', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
-          ),
-        ],
+              },
+              icon: const Icon(LucideIcons.eye, size: 16, color: Colors.white),
+              label: const Text('View Designer', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+            ),
+          ],
+        ),
       );
     } else {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => TimetableDesignerScreen(timetableId: container.id),
-                ),
-              );
-            },
-            icon: const Icon(LucideIcons.eye, size: 16, color: Colors.white),
-            label: const Text('View Archived', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
-          ),
-        ],
+      return Align(
+        alignment: Alignment.centerRight,
+        child: ElevatedButton.icon(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => TimetableDesignerScreen(timetableId: container.id),
+              ),
+            );
+          },
+          icon: const Icon(LucideIcons.eye, size: 16, color: Colors.white),
+          label: const Text('View Archived', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+          style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
+        ),
       );
     }
   }
@@ -730,26 +717,11 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
       switchOutCurve: AcadexMotion.curveStandard,
       transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
       child: timetableAsync.when(
-        loading: () => const Center(key: ValueKey('mgt_loading'), child: CircularProgressIndicator()),
-        error: (e, st) => Center(
+        loading: () => const AcadexLoadingState(key: ValueKey('mgt_loading'), message: 'Loading schedule entries...'),
+        error: (e, st) => AcadexErrorState(
           key: const ValueKey('mgt_error'),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(LucideIcons.alertCircle, size: 48, color: AcadexColors.error),
-                const SizedBox(height: 16),
-                Text('Failed to load schedule entries', style: AcadexTypography.heading3(color: Theme.of(context).colorScheme.onSurface)),
-                const SizedBox(height: 8),
-                TextButton.icon(
-                  onPressed: () => ref.refresh(managementTimetableProvider),
-                  icon: const Icon(LucideIcons.refreshCw, size: 16),
-                  label: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
+          message: 'Failed to load schedule entries: $e',
+          onRetry: () => ref.refresh(managementTimetableProvider),
         ),
         data: (entries) {
           if (entries.isEmpty) {

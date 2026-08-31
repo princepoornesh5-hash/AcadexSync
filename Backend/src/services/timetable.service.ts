@@ -725,29 +725,38 @@ export class TimetableService {
     day?: string,
     requester?: AuthenticatedUser
   ): Promise<ITimetableGridEntry[]> {
-    if (!mongoose.Types.ObjectId.isValid(facultyId)) throw ApiError.badRequest('Invalid facultyId');
+    let facultyDoc: InstanceType<typeof Faculty> | null = null;
+    const targetId = (facultyId === 'me' && requester) ? requester.id : facultyId;
+    if (mongoose.Types.ObjectId.isValid(targetId)) {
+      facultyDoc = await Faculty.findById(targetId);
+      if (!facultyDoc) {
+        facultyDoc = await Faculty.findOne({ userId: targetId });
+      }
+    } else {
+      facultyDoc = await Faculty.findOne({ userId: targetId });
+    }
 
-    const faculty = await Faculty.findById(facultyId);
-    if (!faculty) throw ApiError.notFound('Faculty not found');
+    if (!facultyDoc) throw ApiError.notFound('Faculty not found');
 
     if (requester && requester.role === AppRole.STUDENT) {
       throw ApiError.forbidden('Students are not permitted to query arbitrary faculty schedules');
     }
-    if (requester && requester.role === AppRole.COLLEGE_ADMIN && faculty.collegeId.toString() !== requester.collegeId) {
+    if (requester && requester.role === AppRole.COLLEGE_ADMIN && facultyDoc.collegeId.toString() !== requester.collegeId) {
       throw ApiError.forbidden('Cross-college access is strictly prohibited');
     }
 
+    const actualFacultyId = facultyDoc._id;
     const timetables = await Timetable.find({
-      collegeId: faculty.collegeId,
+      collegeId: facultyDoc.collegeId,
       status: TimetableStatus.PUBLISHED,
-      'entries.facultyId': new mongoose.Types.ObjectId(facultyId),
+      'entries.facultyId': actualFacultyId,
     });
 
     const targetDay = normalizeDay(day);
     const entries: ITimetableGridEntry[] = [];
     for (const t of timetables) {
       for (const e of t.entries) {
-        if (e.facultyId.toString() === facultyId) {
+        if (e.facultyId.toString() === actualFacultyId.toString()) {
           if (!targetDay || e.dayOfWeek === targetDay) {
             entries.push(e);
           }

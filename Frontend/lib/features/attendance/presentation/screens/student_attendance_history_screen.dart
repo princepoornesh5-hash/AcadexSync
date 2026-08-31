@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../providers/student_attendance_providers.dart';
 import '../widgets/student/attendance_history_tile.dart';
@@ -26,19 +26,21 @@ class _StudentAttendanceHistoryScreenState extends ConsumerState<StudentAttendan
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
-          icon: Icon(
+          icon: const Icon(
             LucideIcons.arrowLeft,
-            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            color: Colors.white,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () => context.safePop(fallbackRoute: '/attendance'),
         ),
         title: Text(
           "Attendance History",
           style: AcadexTypography.title(
-            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            color: Colors.white,
           ),
         ),
       ),
@@ -46,7 +48,15 @@ class _StudentAttendanceHistoryScreenState extends ConsumerState<StudentAttendan
         children: [
           // Filter Bar Container
           Container(
-            color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+              borderRadius: AcadexRadius.borderRadiusLg,
+              border: Border.all(
+                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              ),
+              boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+            ),
             padding: const EdgeInsets.symmetric(vertical: 14),
             child: subjectsAsync.when(
               loading: () => const SizedBox.shrink(),

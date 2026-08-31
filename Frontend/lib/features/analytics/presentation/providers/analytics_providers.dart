@@ -1,10 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/firebase/firebase_initializer.dart';
-import '../../../../core/firebase/firebase_services.dart';
 import '../../domain/models/analytics_models.dart';
 import '../../domain/repositories/analytics_repository.dart';
-import '../../data/repositories/firebase_analytics_repository.dart';
 import '../../data/repositories/mock_analytics_repository.dart';
+import '../../data/repositories/api_analytics_repository.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
@@ -14,13 +13,15 @@ import '../../../attendance/data/repositories/mock_attendance_repository.dart';
 
 final analyticsThresholdProvider = Provider<double>((ref) => 75.0);
 
+final apiAnalyticsRepositoryProvider = Provider<ApiAnalyticsRepository>((ref) {
+  return ApiAnalyticsRepository();
+});
+
 final analyticsRepositoryProvider = Provider<AnalyticsRepository>((ref) {
   if (FirebaseInitializer.shouldUseMock) {
     return MockAnalyticsRepository(MockAttendanceRepository());
   }
-  // Production: NEVER fall back to mock on error
-  final firestoreService = ref.watch(firestoreServiceProvider);
-  return FirebaseAnalyticsRepository(firestoreService);
+  return ref.watch(apiAnalyticsRepositoryProvider);
 });
 
 // --- Dashboard Data Providers ---

@@ -16,6 +16,8 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
+  bool _hasNavigated = false;
+
   @override
   void initState() {
     super.initState();
@@ -26,10 +28,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   void _checkAuthState(AuthState state) {
-    if (!mounted) return;
+    if (!mounted || _hasNavigated) return;
     if (state is AuthAuthenticated) {
+      _hasNavigated = true;
       _navigateBasedOnRole(state.user.role);
     } else if (state is AuthUnauthenticated || state is AuthError || state is AuthProfileError) {
+      _hasNavigated = true;
       context.go('/login');
     }
   }

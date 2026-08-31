@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
@@ -31,13 +32,12 @@ class StudentSubjectAttendanceScreen extends ConsumerWidget {
     final historyAsync = ref.watch(studentSubjectHistoryProvider(subjectId!));
     final subjectsAsync = ref.watch(studentDetailedSubjectsProvider);
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      body: AcadexPageContainer(
-        maxWidth: AcadexLayout.contentMaxWidth,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return AcadexPageContainer(
+      backgroundColor: Colors.transparent,
+      maxWidth: AcadexLayout.contentMaxWidth,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
             AcadexPageHeader(
               title: 'Subject Attendance History',
               subtitle: 'Chronological verified attendance sessions for $subjectId',
@@ -46,7 +46,7 @@ class StudentSubjectAttendanceScreen extends ConsumerWidget {
                   label: 'Back to Subjects',
                   icon: LucideIcons.arrowLeft,
                   variant: AcadexButtonVariant.secondary,
-                  onPressed: () => context.pop(),
+                  onPressed: () => context.safePop(fallbackRoute: '/attendance'),
                 ),
               ],
             ),
@@ -152,8 +152,7 @@ class StudentSubjectAttendanceScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildStatBadge(String label, String value, IconData icon, bool isDark, {Color? color}) {

@@ -59,53 +59,220 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<List<Department>> getDepartments() async {
+  Future<List<Department>> getDepartments({String? collegeId, String? search, String? status}) async {
     final filters = _getScopeFilters(hasCollegeId: true);
     final docs = await _firestoreService.queryCollection('departments', filters);
     return docs.map((d) => Department.fromJson(d)).where((c) => c.isActive).toList();
   }
 
   @override
-  Future<List<Course>> getCourses() async {
+  Future<Department> getDepartmentById(String id) async {
+    final doc = await _firestoreService.getDocument('departments', id);
+    if (doc == null) throw Exception('Department not found');
+    return Department.fromJson(doc);
+  }
+
+  @override
+  Future<Map<String, dynamic>> getDepartmentSummary(String id) async {
+    return {};
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getDepartmentHod(String departmentId) async {
+    return null;
+  }
+
+  @override
+  Future<void> updateDepartmentStatus(String id, String status) async {
+    final doc = await _firestoreService.getDocument('departments', id);
+    if (doc != null) {
+      final updated = Department.fromJson(doc).copyWith(isActive: status == 'active');
+      await _firestoreService.setDocument('departments', id, updated.toJson());
+    }
+  }
+
+  @override
+  Future<List<Course>> getCourses({String? collegeId, String? departmentId, String? search}) async {
     final filters = _getScopeFilters(hasCollegeId: true);
     final docs = await _firestoreService.queryCollection('courses', filters);
     return docs.map((d) => Course.fromJson(d)).where((c) => c.isActive).toList();
   }
 
   @override
-  Future<List<AcademicYear>> getAcademicYears() async {
+  Future<Course> getCourseById(String id) async {
+    final doc = await _firestoreService.getDocument('courses', id);
+    if (doc == null) throw Exception('Course not found');
+    return Course.fromJson(doc);
+  }
+
+  @override
+  Future<void> updateCourseStatus(String id, bool isActive) async {
+    final doc = await _firestoreService.getDocument('courses', id);
+    if (doc != null) {
+      final updated = Course.fromJson(doc).copyWith(isActive: isActive);
+      await _firestoreService.setDocument('courses', id, updated.toJson());
+    }
+  }
+
+  @override
+  Future<List<AcademicYear>> getAcademicYears({String? collegeId}) async {
     final filters = _getScopeFilters(hasCollegeId: true);
     final docs = await _firestoreService.queryCollection('academicYears', filters);
     return docs.map((d) => AcademicYear.fromJson(d)).where((c) => c.isActive).toList();
   }
 
   @override
-  Future<List<Semester>> getSemesters() async {
+  Future<AcademicYear> getAcademicYearById(String id) async {
+    final doc = await _firestoreService.getDocument('academicYears', id);
+    if (doc == null) throw Exception('Academic Year not found');
+    return AcademicYear.fromJson(doc);
+  }
+
+  @override
+  Future<void> setCurrentAcademicYear(String id) async {
+    final doc = await _firestoreService.getDocument('academicYears', id);
+    if (doc != null) {
+      final updated = AcademicYear.fromJson(doc).copyWith(isCurrent: true);
+      await _firestoreService.setDocument('academicYears', id, updated.toJson());
+    }
+  }
+
+  @override
+  Future<void> updateAcademicYearStatus(String id, bool isActive) async {
+    final doc = await _firestoreService.getDocument('academicYears', id);
+    if (doc != null) {
+      final updated = AcademicYear.fromJson(doc).copyWith(isActive: isActive);
+      await _firestoreService.setDocument('academicYears', id, updated.toJson());
+    }
+  }
+
+  @override
+  Future<List<Semester>> getSemesters({String? courseId, String? academicYearId, String? collegeId}) async {
     final filters = _getScopeFilters(hasCollegeId: true);
+    if (courseId != null) filters['courseId'] = courseId;
+    if (academicYearId != null) filters['academicYearId'] = academicYearId;
     final docs = await _firestoreService.queryCollection('semesters', filters);
     return docs.map((d) => Semester.fromJson(d)).where((c) => c.isActive).toList();
   }
 
   @override
-  Future<List<Section>> getSections() async {
+  Future<Semester> getSemesterById(String id) async {
+    final doc = await _firestoreService.getDocument('semesters', id);
+    if (doc == null) throw Exception('Semester not found');
+    return Semester.fromJson(doc);
+  }
+
+  @override
+  Future<void> updateSemesterStatus(String id, bool isActive) async {
+    final doc = await _firestoreService.getDocument('semesters', id);
+    if (doc != null) {
+      final updated = Semester.fromJson(doc).copyWith(isActive: isActive);
+      await _firestoreService.setDocument('semesters', id, updated.toJson());
+    }
+  }
+
+  @override
+  Future<void> toggleSemesterCurrent(String id, bool isCurrent) async {
+    final doc = await _firestoreService.getDocument('semesters', id);
+    if (doc != null) {
+      final updated = Semester.fromJson(doc).copyWith(isCurrent: isCurrent);
+      await _firestoreService.setDocument('semesters', id, updated.toJson());
+    }
+  }
+
+  @override
+  Future<List<Section>> getSections({String? semesterId, String? courseId, String? collegeId}) async {
     final filters = _getScopeFilters(hasCollegeId: true);
+    if (semesterId != null) filters['semesterId'] = semesterId;
+    if (courseId != null) filters['courseId'] = courseId;
     final docs = await _firestoreService.queryCollection('sections', filters);
     return docs.map((d) => Section.fromJson(d)).where((c) => c.isActive).toList();
   }
 
   @override
-  Future<List<Subject>> getSubjects() async {
+  Future<Section> getSectionById(String id) async {
+    final doc = await _firestoreService.getDocument('sections', id);
+    if (doc == null) throw Exception('Section not found');
+    return Section.fromJson(doc);
+  }
+
+  @override
+  Future<void> updateSectionStatus(String id, bool isActive) async {
+    final doc = await _firestoreService.getDocument('sections', id);
+    if (doc != null) {
+      final updated = Section.fromJson(doc).copyWith(isActive: isActive);
+      await _firestoreService.setDocument('sections', id, updated.toJson());
+    }
+  }
+
+  @override
+  Future<ProvisionHodResult> provisionHod({
+    required String departmentId,
+    required String name,
+    required String instituteId,
+    required String email,
+    String? phone,
+  }) async {
+    throw UnimplementedError('HOD provisioning via Firebase not supported');
+  }
+
+  @override
+  Future<List<UserModel>> getHods({String? departmentId, String? search, String? status}) async {
+    return [];
+  }
+
+  @override
+  Future<UserModel> getHodById(String id) async {
+    throw UnimplementedError('getHodById not implemented');
+  }
+
+  @override
+  Future<void> updateHodProfile(String id, {String? name, String? email, String? phone}) async {}
+
+  @override
+  Future<void> transferHodDepartment(String id, String targetDepartmentId) async {}
+
+  @override
+  Future<Map<String, dynamic>> getHodSummary(String id) async {
+    return {};
+  }
+
+  @override
+  Future<List<Subject>> getSubjects({String? semesterId, String? courseId, String? collegeId}) async {
     final filters = _getScopeFilters(hasCollegeId: true);
+    if (semesterId != null) filters['semesterId'] = semesterId;
+    if (courseId != null) filters['courseId'] = courseId;
     final docs = await _firestoreService.queryCollection('subjects', filters);
     return docs.map((d) => Subject.fromJson(d)).where((c) => c.isActive).toList();
   }
 
   @override
-  Future<List<Faculty>> getFaculty({String? departmentId}) async {
+  Future<Subject> getSubjectById(String id) async {
+    final doc = await _firestoreService.getDocument('subjects', id);
+    if (doc == null) throw Exception('Subject not found');
+    return Subject.fromJson(doc);
+  }
+
+  @override
+  Future<void> updateSubjectStatus(String id, bool isActive) async {
+    final doc = await _firestoreService.getDocument('subjects', id);
+    if (doc != null) {
+      final updated = Subject.fromJson(doc).copyWith(isActive: isActive);
+      await _firestoreService.setDocument('subjects', id, updated.toJson());
+    }
+  }
+
+  @override
+  Future<List<Faculty>> getFaculty({String? departmentId, String? search, String? status}) async {
     final filters = _getScopeFilters(hasCollegeId: true);
     if (departmentId != null) filters['departmentId'] = departmentId;
     final docs = await _firestoreService.queryCollection('faculty', filters);
     return docs.map((d) => Faculty.fromJson(d)).where((c) => c.isActive).toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>> getFacultySummary(String id) async {
+    return {};
   }
 
   @override
@@ -218,7 +385,38 @@ class FirebaseAcademicRepository implements AcademicRepository {
     }
   }
 
-  // --- Department Mutations ---
+  @override
+  Future<College> getCollegeById(String id) async {
+    final doc = await _firestoreService.getDocument('colleges', id);
+    if (doc == null) throw Exception('College not found');
+    return College.fromJson(doc);
+  }
+
+  @override
+  Future<Map<String, dynamic>> getCollegeSummary(String id) async {
+    return {};
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCollegeAdmins(String id) async {
+    // Firebase repo delegates to API for college admin listing
+    return [];
+  }
+
+  @override
+  Future<void> updateCollegeStatus(String id, String status) async {
+    final doc = await _firestoreService.getDocument('colleges', id);
+    if (doc != null) {
+      final updated = College.fromJson(doc).copyWith(isActive: status == 'active');
+      await _firestoreService.setDocument('colleges', id, updated.toJson());
+    }
+  }
+
+  @override
+  Future<ProvisionAdminResult> provisionCollegeAdmin(String collegeId, Map<String, dynamic> data) async {
+    throw UnimplementedError('provisionCollegeAdmin not supported in Firebase repo. Use API repo.');
+  }
+
 
   @override
   Future<void> addDepartment(Department department) async {
@@ -847,6 +1045,89 @@ class FirebaseAcademicRepository implements AcademicRepository {
   @override
   Future<void> addStudent(Student student) async {
     await admitStudent(student);
+  }
+
+  @override
+  Future<ProvisionStudentResult> provisionStudent(ProvisionStudentRequest request) async {
+    final student = Student(
+      id: 'stu_${DateTime.now().millisecondsSinceEpoch}',
+      collegeId: 'c1',
+      departmentId: request.departmentId,
+      courseId: request.courseId ?? '',
+      academicYearId: request.academicYearId ?? '',
+      semesterId: request.semesterId ?? '',
+      sectionId: request.sectionId ?? '',
+      name: request.name,
+      rollNumber: request.rollNumber ?? '',
+      instituteId: request.instituteId,
+      admissionNumber: request.admissionNumber,
+      email: request.email ?? '',
+      phone: request.phone ?? '',
+      parentName: request.parentName,
+      parentPhone: request.parentPhone,
+      bloodGroup: request.bloodGroup,
+      address: request.address,
+      dateOfBirth: request.dateOfBirth != null ? DateTime.tryParse(request.dateOfBirth!) : null,
+      admissionDate: request.admissionDate != null ? DateTime.tryParse(request.admissionDate!) : null,
+      isActive: true,
+      accountStatus: AccountStatus.pendingActivation,
+    );
+    await addStudent(student);
+    return ProvisionStudentResult(
+      user: UserModel(
+        id: student.id,
+        name: student.name,
+        email: student.email,
+        phone: student.phone,
+        role: AppRole.student,
+        collegeId: student.collegeId,
+        departmentId: student.departmentId,
+        instituteId: student.instituteId,
+        accountStatus: AccountStatus.pendingActivation,
+      ),
+      student: student,
+      invitation: InvitationInfo(
+        id: 'inv_${DateTime.now().millisecondsSinceEpoch}',
+        expiresAt: DateTime.now().add(const Duration(days: 7)),
+        status: 'pending',
+      ),
+      activationCode: 'FB-STU1-CODE',
+    );
+  }
+
+  @override
+  Future<void> transferStudentDepartment(String studentId, String newDepartmentId) async {
+    final doc = await _firestoreService.getDocument('students', studentId);
+    if (doc != null) {
+      final updated = Student.fromJson(doc).copyWith(departmentId: newDepartmentId);
+      await _firestoreService.setDocument('students', studentId, updated.toJson());
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getStudentSummary(String studentId) async {
+    return {'enrollmentCount': 1};
+  }
+
+  @override
+  Future<void> enrollStudent({
+    required String studentId,
+    required String courseId,
+    required String academicYearId,
+    required String semesterId,
+    required String sectionId,
+    String? enrollmentDate,
+  }) async {
+    final doc = await _firestoreService.getDocument('students', studentId);
+    if (doc != null) {
+      final updated = Student.fromJson(doc).copyWith(
+        courseId: courseId,
+        academicYearId: academicYearId,
+        semesterId: semesterId,
+        sectionId: sectionId,
+      );
+      await _firestoreService.setDocument('students', studentId, updated.toJson());
+    }
   }
 
   @override

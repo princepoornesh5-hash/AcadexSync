@@ -45,17 +45,17 @@ export function isPhone(input: string): boolean {
 }
 
 export interface NormalizedIdentifier {
-  type: 'email' | 'phone';
+  type: 'email' | 'phone' | 'instituteId';
   normalized: string;
 }
 
 /**
- * Automatically detects whether identifier is an email or phone, and applies
- * centralized normalization.
+ * Automatically detects whether identifier is an email, phone, or PIN Number (instituteId),
+ * and applies centralized normalization.
  */
 export function normalizeIdentifier(rawIdentifier: string): NormalizedIdentifier {
   if (!rawIdentifier || typeof rawIdentifier !== 'string' || rawIdentifier.trim() === '') {
-    throw ApiError.badRequest('Identifier (email or phone) is required');
+    throw ApiError.badRequest('Identifier (PIN Number, email, or phone) is required');
   }
 
   const trimmed = rawIdentifier.trim();
@@ -74,5 +74,9 @@ export function normalizeIdentifier(rawIdentifier: string): NormalizedIdentifier
     };
   }
 
-  throw ApiError.badRequest('Identifier must be a valid email address or phone number');
+  // Fallback for PIN Number (instituteId e.g. 26CSE042, ADMIN-001, HOD-CSE-001, FAC-CSE-014)
+  return {
+    type: 'instituteId',
+    normalized: trimmed.toUpperCase(),
+  };
 }

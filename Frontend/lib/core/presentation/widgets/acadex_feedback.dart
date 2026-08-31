@@ -1,91 +1,118 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../features/auth/domain/models/auth_state.dart';
+import '../../../features/auth/domain/models/role_enum.dart';
+import '../../../features/auth/presentation/providers/auth_provider.dart';
 import 'acadex_button.dart';
+import 'acadex_readable_surface.dart';
 
-class AcadexEmptyState extends StatelessWidget {
+class AcadexEmptyState extends ConsumerWidget {
   final String title;
-  final String subtitle;
+  final String? subtitle;
+  final String? description;
   final IconData icon;
   final VoidCallback? onActionTap;
+  final VoidCallback? onAction;
   final String? actionLabel;
   final IconData? actionIcon;
 
   const AcadexEmptyState({
     super.key,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
+    this.description,
     this.icon = LucideIcons.inbox,
     this.onActionTap,
+    this.onAction,
     this.actionLabel,
     this.actionIcon,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final effectiveSubtitle = subtitle ?? description ?? '';
+    final effectiveOnAction = onActionTap ?? onAction;
+    final authState = ref.watch(authProvider);
+    final isSuperAdmin = authState is AuthAuthenticated && authState.user.role == AppRole.superAdmin;
+
+    final content = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 440),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: isSuperAdmin ? const Color(0xFFE6F2FF) : AcadexColors.canvasSoft,
+              borderRadius: AcadexRadius.borderRadiusLg,
+              border: Border.all(
+                color: isSuperAdmin ? const Color(0xFFCCE6FF) : AcadexColors.hairline,
+                width: 1,
+              ),
+            ),
+            child: Icon(
+              icon,
+              size: 28,
+              color: isSuperAdmin ? const Color(0xFF003366) : AcadexColors.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: AcadexTypography.heading3(
+              color: isSuperAdmin ? const Color(0xFF07111F) : AcadexColors.ink,
+            ),
+          ),
+          if (effectiveSubtitle.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              effectiveSubtitle,
+              textAlign: TextAlign.center,
+              style: AcadexTypography.body(
+                color: isSuperAdmin ? const Color(0xFF334155) : AcadexColors.inkSecondary,
+              ),
+            ),
+          ],
+          if (effectiveOnAction != null && actionLabel != null) ...[
+            const SizedBox(height: 24),
+            AcadexButton(
+              label: actionLabel!,
+              icon: actionIcon,
+              onPressed: effectiveOnAction,
+            ),
+          ],
+        ],
+      ),
+    );
+
+    if (isSuperAdmin) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+        child: Center(
+          child: AcadexReadableSurface(
+            padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 28),
+            child: content,
+          ),
+        ),
+      );
+    }
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
-                  borderRadius: AcadexRadius.borderRadiusLg,
-                  border: Border.all(
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-                    width: 1,
-                  ),
-                ),
-                child: Icon(
-                  icon,
-                  size: 28,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: AcadexTypography.heading3(
-                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: AcadexTypography.body(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                ),
-              ),
-              if (onActionTap != null && actionLabel != null) ...[
-                const SizedBox(height: 24),
-                AcadexButton(
-                  label: actionLabel!,
-                  icon: actionIcon,
-                  onPressed: onActionTap,
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
+      child: Center(child: content),
     );
   }
 }
 
-class AcadexErrorState extends StatelessWidget {
+class AcadexErrorState extends ConsumerWidget {
   final String title;
   final String message;
   final VoidCallback? onRetry;
@@ -100,107 +127,167 @@ class AcadexErrorState extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final isSuperAdmin = authState is AuthAuthenticated && authState.user.role == AppRole.superAdmin;
+
+    final content = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 440),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEE2E2),
+              borderRadius: AcadexRadius.borderRadiusLg,
+              border: Border.all(
+                color: const Color(0xFFFECACA),
+                width: 1,
+              ),
+            ),
+            child: const Icon(
+              LucideIcons.alertTriangle,
+              size: 28,
+              color: AcadexColors.error,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: AcadexTypography.heading3(
+              color: isSuperAdmin ? const Color(0xFF07111F) : AcadexColors.ink,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: AcadexTypography.body(
+              color: isSuperAdmin ? const Color(0xFF334155) : AcadexColors.inkSecondary,
+            ),
+          ),
+          if (onRetry != null) ...[
+            const SizedBox(height: 24),
+            AcadexButton(
+              label: retryLabel,
+              icon: LucideIcons.refreshCw,
+              variant: AcadexButtonVariant.secondary,
+              onPressed: onRetry,
+            ),
+          ],
+        ],
+      ),
+    );
+
+    if (isSuperAdmin) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+        child: Center(
+          child: AcadexReadableSurface(
+            padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 28),
+            child: content,
+          ),
+        ),
+      );
+    }
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight,
-                  borderRadius: AcadexRadius.borderRadiusLg,
-                  border: Border.all(
-                    color: isDark ? AcadexColors.errorDark : AcadexColors.errorLight,
-                    width: 1,
-                  ),
-                ),
-                child: const Icon(
-                  LucideIcons.alertTriangle,
-                  size: 28,
-                  color: AcadexColors.error,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: AcadexTypography.heading3(
-                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: AcadexTypography.body(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                ),
-              ),
-              if (onRetry != null) ...[
-                const SizedBox(height: 24),
-                AcadexButton(
-                  label: retryLabel,
-                  icon: LucideIcons.refreshCw,
-                  variant: AcadexButtonVariant.secondary,
-                  onPressed: onRetry,
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
+      child: Center(child: content),
     );
   }
 }
 
-class AcadexLoadingState extends StatelessWidget {
+class AcadexLoadingState extends ConsumerWidget {
   final String? message;
 
   const AcadexLoadingState({super.key, this.message});
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final isSuperAdmin = authState is AuthAuthenticated && authState.user.role == AppRole.superAdmin;
+
+    final content = Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 32,
+          height: 32,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              isSuperAdmin ? const Color(0xFF003366) : AcadexColors.primary,
+            ),
+          ),
+        ),
+        if (message != null) ...[
+          const SizedBox(height: 16),
+          Text(
+            message!,
+            textAlign: TextAlign.center,
+            style: AcadexTypography.bodySmall(
+              color: isSuperAdmin ? const Color(0xFF334155) : AcadexColors.inkSecondary,
+            ).copyWith(fontWeight: isSuperAdmin ? FontWeight.w500 : FontWeight.w400),
+          ),
+        ],
+      ],
+    );
+
+    if (isSuperAdmin) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: AcadexReadableSurface(
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 32),
+            child: content,
+          ),
+        ),
+      );
+    }
 
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(
-              width: 32,
-              height: 32,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                valueColor: AlwaysStoppedAnimation<Color>(AcadexColors.primary),
-              ),
-            ),
-            if (message != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                message!,
-                style: AcadexTypography.bodySmall(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                ),
-              ),
-            ],
-          ],
-        ),
+        child: content,
       ),
     );
   }
 }
+
+/// Canonical AcadexSkeleton widget
+class AcadexSkeleton extends StatelessWidget {
+  final double width;
+  final double height;
+  final BorderRadius? borderRadius;
+
+  const AcadexSkeleton({
+    super.key,
+    required this.width,
+    required this.height,
+    this.borderRadius,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+        borderRadius: borderRadius ?? AcadexRadius.borderRadiusSm,
+      ),
+    );
+  }
+}
+

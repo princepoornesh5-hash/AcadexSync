@@ -1,382 +1,4 @@
-ACADEX — FACULTY DASHBOARD SMALL-SCREEN OVERFLOW FIX
-
-IMPORTANT:
-
-The Faculty Dashboard is STILL NOT PASS.
-
-The current problem is now clearly identified:
-
-On the smallest mobile configuration:
-
-- 360 × 640 dp
-- font scale 1.0
-
-the Faculty Dashboard visibly overflows / clips.
-
-The jitter issue appears fixed, but the SMALL-SCREEN LAYOUT IS STILL BROKEN.
-
-DO NOT mark Faculty Dashboard PASS until this is completely resolved.
-
-============================================================
-DO NOT TOUCH
-============================================================
-
-Do NOT modify:
-
-- Super Admin Dashboard
-- College Admin Dashboard
-- HOD Dashboard
-- Student Dashboard
-- Backend
-- API
-- MongoDB
-- Authentication
-- Shared Prompt 1 foundation
-- Global navigation
-- Global theme
-
-Only modify the Faculty Dashboard and, if absolutely necessary,
-the specific child widget causing the overflow.
-
-============================================================
-STEP 1 — REPRODUCE EXACTLY
-============================================================
-
-Use the physical Motorola Edge 60 Fusion.
-
-Set:
-
-wm size 720x1280
-wm density 320
-font_scale 1.0
-
-This corresponds to approximately:
-
-360 × 640 dp
-
-Open:
-
-FACULTY → DASHBOARD
-
-Visually inspect the entire screen.
-
-Do NOT rely only on logs.
-
-Find the exact overflowing widget.
-
-============================================================
-STEP 2 — IDENTIFY THE EXACT OFFENDING AREA
-============================================================
-
-Inspect:
-
-faculty_dashboard.dart
-
-Especially:
-
-- assigned subjects grid
-- assigned sections cards
-- quick operations
-- teaching overview
-- stat cards
-- action buttons
-- badges
-- title/subtitle rows
-- icon button rows
-
-Determine exactly which widget exceeds the available width.
-
-Do not guess.
-
-============================================================
-STEP 3 — MEASURE AVAILABLE WIDTH
-============================================================
-
-For the 360dp viewport, calculate the REAL content width after:
-
-- page horizontal padding
-- SafeArea
-- any card padding
-- grid spacing
-- card internal padding
-
-Do not use the entire screen width as available card width.
-
-Explicitly calculate:
-
-availableWidth
-
-Then calculate:
-
-grid column width
-
-Then inspect whether the child content can fit.
-
-============================================================
-STEP 4 — CHECK GRID STRATEGY
-============================================================
-
-Do NOT assume a 2-column grid is appropriate for every section.
-
-For 360dp width:
-
-If the content cannot safely fit in 2 columns,
-
-switch the affected Faculty Dashboard section to:
-
-ONE COLUMN
-
-rather than squeezing the cards.
-
-Preferred rule:
-
-Very small mobile:
-≤ 374dp
-→ 1 column
-
-Normal mobile:
-375–599dp
-→ 2 columns only when content safely fits
-
-Tablet/Desktop:
-→ existing multi-column layout
-
-Do NOT hardcode device models.
-
-Use available width / breakpoint.
-
-============================================================
-STEP 5 — CHECK CARD INTERNAL CONTENT
-============================================================
-
-Inspect every child inside the overflowing card.
-
-Potential offenders:
-
-- long subject title
-- long section name
-- badge
-- subject code
-- section count
-- trailing menu
-- 3 action icons
-- fixed icon widths
-- horizontal Rows
-- `MainAxisAlignment.spaceBetween`
-
-Replace unsafe horizontal Rows with:
-
-Flexible
-Expanded
-Wrap
-Overflow-safe layout
-
-Long text should:
-
-- wrap where appropriate
-- use maxLines
-- ellipsis where appropriate
-
-============================================================
-STEP 6 — ACTION BUTTONS
-============================================================
-
-If the card currently contains three or more action buttons on one row:
-
-DO NOT force them to remain on one row on a 360dp phone.
-
-Use one of:
-
-- compact icon buttons
-- Wrap
-- overflow menu
-- stacked actions
-- secondary action menu
-
-Preserve the same functionality.
-
-Do NOT remove functionality.
-
-============================================================
-STEP 7 — CHECK CARD PADDING
-============================================================
-
-Audit:
-
-horizontal padding
-internal spacing
-icon spacing
-badge spacing
-
-Do not use excessive internal padding.
-
-But do not shrink touch targets below 44–48dp.
-
-Touch target safety is more important than fitting everything into
-one row.
-
-============================================================
-STEP 8 — CHECK QUICK ACTIONS
-============================================================
-
-Inspect Quick Operations.
-
-If the current implementation is horizontally packed on 360dp:
-
-Use a responsive layout.
-
-Preferred:
-
-360dp:
-2-column compact grid OR vertical list
-
-375dp+:
-2-column grid if it fits
-
-Do not force five buttons into a single row.
-
-============================================================
-STEP 9 — DO NOT USE FittedBox AS A BLIND FIX
-============================================================
-
-Do NOT solve the overflow by wrapping the entire dashboard in:
-
-FittedBox
-
-Do NOT globally reduce the font size.
-
-Do NOT globally scale the entire dashboard.
-
-Do NOT use arbitrary negative padding.
-
-The solution must be structurally responsive.
-
-============================================================
-STEP 10 — TEST ALL THREE CONFIGURATIONS
-============================================================
-
-After fixing the small-device overflow, verify:
-
-A:
-360 × 640 dp
-font scale 1.0
-
-B:
-390 × 844 dp
-font scale 1.25
-
-C:
-412 × 915 dp
-font scale 1.15
-
-Requirements:
-
-A must have ZERO overflow.
-
-B must have ZERO overflow.
-
-C must have ZERO overflow.
-
-============================================================
-STEP 11 — PHYSICAL DEVICE TEST
-============================================================
-
-On the physical Motorola:
-
-Faculty login
-→ Faculty Dashboard
-
-Then inspect:
-
-- header
-- stats
-- assigned subjects
-- quick actions
-- teaching sections
-- every card
-- bottom navigation
-
-Do not touch the screen for 10 seconds.
-
-Then scroll slowly from top to bottom.
-
-There must be:
-
-- no horizontal overflow
-- no clipped card
-- no text outside card
-- no button outside card
-- no visible RenderFlex overflow
-- no horizontal scrollbar
-- no layout jumping
-
-============================================================
-STEP 12 — REGRESSION
-============================================================
-
-Verify quickly:
-
-Super Admin Dashboard      PASS
-College Admin Dashboard    PASS
-HOD Dashboard              PASS
-Student Dashboard          PASS
-
-Do NOT modify these dashboards.
-
-============================================================
-STEP 13 — BUILD
-============================================================
-
-Run:
-
-flutter analyze lib/
-
-flutter build web
-
-flutter build apk --debug
-
-============================================================
-SUCCESS CRITERIA
-============================================================
-
-Faculty Dashboard can ONLY be marked PASS when:
-
-360dp      → NO OVERFLOW
-390dp      → NO OVERFLOW
-412dp      → NO OVERFLOW
-
-and:
-
-- all controls remain usable
-- all text readable
-- all actions still available
-- no clipping
-- no horizontal overflow
-- no jitter
-- no layout jumping
-
-============================================================
-FINAL REPORT
-============================================================
-
-Report:
-
-1. Exact widget causing the 360dp overflow
-2. Why it overflowed
-3. Exact width/constraint problem
-4. Exact fix
-5. Files changed
-6. 360dp result
-7. 390dp result
-8. 412dp result
-9. Other-role regression result
-10. flutter analyze
-11. web build
-12. Android build
-
-Do NOT say PASS if 360dp still has visible overflow.
-
-STOP AFTER THIS FIX.import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/models/activity_item_model.dart';
@@ -393,7 +15,7 @@ import '../../../notifications/presentation/providers/notification_providers.dar
 
 // ── Super Admin (Platform Owner) ──────────────────────────────────────────────
 
-final superAdminStatsProvider = FutureProvider<List<DashboardStatModel>>((ref) async {
+final superAdminStatsProvider = FutureProvider.autoDispose<List<DashboardStatModel>>((ref) async {
   final repo = ref.watch(attendanceRepoProvider);
   final summary = await repo.getSuperAdminSummary();
 
@@ -487,7 +109,7 @@ final superAdminQuickActionsProvider = Provider<List<QuickActionModel>>((ref) =>
       ),
     ]);
 
-final superAdminActivityProvider = FutureProvider<List<ActivityItemModel>>((ref) async {
+final superAdminActivityProvider = FutureProvider.autoDispose<List<ActivityItemModel>>((ref) async {
   final notifsAsync = ref.watch(notificationsProvider);
   final notifs = notifsAsync.value ?? [];
   if (notifs.isEmpty) return [];
@@ -506,7 +128,7 @@ final superAdminActivityProvider = FutureProvider<List<ActivityItemModel>>((ref)
 
 // ── College Admin (College Operational Authority) ─────────────────────────────
 
-final collegeAdminStatsProvider = FutureProvider<List<DashboardStatModel>>((ref) async {
+final collegeAdminStatsProvider = FutureProvider.autoDispose<List<DashboardStatModel>>((ref) async {
   final repo = ref.watch(attendanceRepoProvider);
   final summary = await repo.getCollegeSummary();
   final subjects = ref.watch(subjectsProvider).valueOrNull ?? [];
@@ -610,7 +232,7 @@ final collegeAdminQuickActionsProvider = Provider<List<QuickActionModel>>((ref) 
       ),
     ]);
 
-final collegeAdminActivityProvider = FutureProvider<List<ActivityItemModel>>((ref) async {
+final collegeAdminActivityProvider = FutureProvider.autoDispose<List<ActivityItemModel>>((ref) async {
   final notifsAsync = ref.watch(notificationsProvider);
   final notifs = notifsAsync.value ?? [];
   if (notifs.isEmpty) return [];
@@ -629,7 +251,7 @@ final collegeAdminActivityProvider = FutureProvider<List<ActivityItemModel>>((re
 
 // ── HOD (Department Operational Authority) ────────────────────────────────────
 
-final hodStatsProvider = FutureProvider<List<DashboardStatModel>>((ref) async {
+final hodStatsProvider = FutureProvider.autoDispose<List<DashboardStatModel>>((ref) async {
   final authState = ref.watch(authProvider);
   final departmentId = authState is AuthAuthenticated ? (authState.user.departmentId ?? '') : '';
 
@@ -715,7 +337,7 @@ final hodQuickActionsProvider = Provider<List<QuickActionModel>>((ref) => [
       ),
     ]);
 
-final hodActivityProvider = FutureProvider<List<ActivityItemModel>>((ref) async {
+final hodActivityProvider = FutureProvider.autoDispose<List<ActivityItemModel>>((ref) async {
   final notifsAsync = ref.watch(notificationsProvider);
   final notifs = notifsAsync.value ?? [];
   if (notifs.isEmpty) return [];
@@ -734,7 +356,7 @@ final hodActivityProvider = FutureProvider<List<ActivityItemModel>>((ref) async 
 
 // ── Faculty (Teaching Operations Workspace) ───────────────────────────────────
 
-final facultyStatsProvider = FutureProvider<List<DashboardStatModel>>((ref) async {
+final facultyStatsProvider = FutureProvider.autoDispose<List<DashboardStatModel>>((ref) async {
   final assignments = ref.watch(myFacultyAssignmentsProvider);
   final repo = ref.watch(attendanceRepoProvider);
   final authState = ref.watch(authProvider);
@@ -819,7 +441,7 @@ final facultyQuickActionsProvider = Provider<List<QuickActionModel>>((ref) => [
       ),
     ]);
 
-final facultyActivityProvider = FutureProvider<List<ActivityItemModel>>((ref) async {
+final facultyActivityProvider = FutureProvider.autoDispose<List<ActivityItemModel>>((ref) async {
   final notifsAsync = ref.watch(notificationsProvider);
   final notifs = notifsAsync.value ?? [];
   if (notifs.isEmpty) return [];
@@ -838,7 +460,7 @@ final facultyActivityProvider = FutureProvider<List<ActivityItemModel>>((ref) as
 
 // ── Student (Academic Hub) ───────────────────────────────────────────────────
 
-final studentStatsProvider = FutureProvider<List<DashboardStatModel>>((ref) async {
+final studentStatsProvider = FutureProvider.autoDispose<List<DashboardStatModel>>((ref) async {
   final profile = await ref.watch(currentStudentAcademicProfileProvider.future).catchError((_) => null);
   final schedule = ref.watch(todayScheduleProvider).value ?? [];
   final notes = ref.watch(userNotesProvider).value ?? [];
@@ -915,7 +537,7 @@ final studentQuickActionsProvider = Provider<List<QuickActionModel>>((ref) => [
       ),
     ]);
 
-final studentActivityProvider = FutureProvider<List<ActivityItemModel>>((ref) async {
+final studentActivityProvider = FutureProvider.autoDispose<List<ActivityItemModel>>((ref) async {
   final notifsAsync = ref.watch(notificationsProvider);
   final notifs = notifsAsync.value ?? [];
   if (notifs.isEmpty) return [];

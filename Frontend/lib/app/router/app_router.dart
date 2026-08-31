@@ -1,5 +1,5 @@
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -7,6 +7,7 @@ import '../../features/auth/domain/models/auth_state.dart';
 import '../../features/auth/domain/models/role_enum.dart';
 import '../../features/auth/domain/models/user_model.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
+import '../../core/presentation/utils/navigation_extensions.dart';
 import '../../core/presentation/providers/navigation_provider.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
@@ -21,13 +22,24 @@ import '../../features/dashboard/presentation/screens/student_dashboard.dart';
 import '../../features/dashboard/presentation/screens/coming_soon_screen.dart';
 
 import '../../features/academic_structure/presentation/screens/college_screens.dart';
+import '../../features/academic_structure/presentation/screens/college_detail_screen.dart';
+import '../../features/academic_structure/presentation/screens/provision_admin_screen.dart';
 import '../../features/academic_structure/presentation/screens/department_screens.dart';
+import '../../features/academic_structure/presentation/screens/department_detail_screen.dart';
 import '../../features/academic_structure/presentation/screens/course_screens.dart';
+import '../../features/academic_structure/presentation/screens/course_detail_screen.dart';
 import '../../features/academic_structure/presentation/screens/academic_year_screens.dart';
+import '../../features/academic_structure/presentation/screens/academic_year_detail_screen.dart';
 import '../../features/academic_structure/presentation/screens/semester_screens.dart';
+import '../../features/academic_structure/presentation/screens/semester_detail_screen.dart';
 import '../../features/academic_structure/presentation/screens/section_screens.dart';
+import '../../features/academic_structure/presentation/screens/section_detail_screen.dart';
 import '../../features/academic_structure/presentation/screens/subject_screens.dart';
+import '../../features/academic_structure/presentation/screens/subject_detail_screen.dart';
+import '../../features/academic_structure/presentation/screens/hod_screens.dart';
+import '../../features/academic_structure/presentation/screens/hod_detail_screen.dart';
 import '../../features/academic_structure/presentation/screens/faculty_screens.dart';
+import '../../features/academic_structure/presentation/screens/faculty_detail_screen.dart';
 import '../../features/academic_structure/presentation/screens/student_screens.dart';
 import '../../features/academic_structure/presentation/screens/faculty_assignments_management_screen.dart';
 import '../../features/academic_structure/presentation/screens/faculty_workload_screen.dart';
@@ -94,18 +106,72 @@ import '../../features/dashboard/presentation/widgets/acadex_drawer.dart';
 import '../../features/dashboard/presentation/widgets/acadex_bottom_nav.dart';
 import '../../features/dashboard/presentation/widgets/acadex_nav_rail.dart';
 import '../../features/dashboard/presentation/widgets/acadex_app_bar.dart';
+import '../../core/presentation/widgets/super_admin_gradient_background.dart';
 import '../theme/app_theme.dart';
+
+String _getRouteTitle(String route) {
+  if (route.startsWith('/dashboard')) return 'Acadex';
+  if (route == '/academics') return 'Academic Structure';
+  if (route.startsWith('/academics/colleges')) return 'Colleges';
+  if (route.startsWith('/academics/departments')) return 'Departments';
+  if (route.startsWith('/academics/courses')) return 'Courses';
+  if (route.startsWith('/academics/academic_years')) return 'Academic Years';
+  if (route.startsWith('/academics/semesters')) return 'Semesters';
+  if (route.startsWith('/academics/sections')) return 'Sections';
+  if (route.startsWith('/academics/subjects')) return 'Subjects';
+  if (route.startsWith('/academics/hods')) return 'Department Heads (HODs)';
+  if (route.startsWith('/academics/faculty')) return 'Faculty & Staff';
+  if (route.startsWith('/faculty-assignments')) return 'Faculty Assignments';
+  if (route.startsWith('/faculty-workload')) return 'Faculty Workload';
+  if (route.startsWith('/my-assignments')) return 'My Assignments';
+  if (route.startsWith('/academics/students')) return 'Students';
+  if (route.startsWith('/attendance')) return 'Attendance';
+  if (route.startsWith('/timetable')) return 'Timetable';
+  if (route.startsWith('/notes')) return 'Academic Notes';
+  if (route.startsWith('/ai-assistant')) return 'AI Assistant';
+  if (route.startsWith('/users')) return 'User Management';
+  if (route.startsWith('/profile')) return 'My Profile';
+  if (route.startsWith('/settings')) return 'Settings';
+  if (route.startsWith('/notifications')) return 'Notifications';
+  if (route.startsWith('/analytics')) return 'Analytics & Reports';
+  if (route.startsWith('/reports')) return 'Reports';
+  return 'Acadex';
+}
 
 class ShellWrapper extends ConsumerWidget {
   final Widget child;
   final String activeRoute;
   const ShellWrapper({super.key, required this.child, required this.activeRoute});
 
+  static String getHomeRouteForRole(AppRole role) {
+    switch (role) {
+      case AppRole.superAdmin:
+        return '/dashboard/super_admin';
+      case AppRole.collegeAdmin:
+        return '/dashboard/college_admin';
+      case AppRole.hod:
+        return '/dashboard/hod';
+      case AppRole.faculty:
+        return '/dashboard/faculty';
+      case AppRole.student:
+        return '/dashboard/student';
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final width = MediaQuery.of(context).size.width;
     final isMobile = width <= AcadexBreakpoints.mobileMax;
     final isTablet = width > AcadexBreakpoints.mobileMax && width <= AcadexBreakpoints.tabletMax;
+    final authState = ref.watch(authProvider);
+
+    AppRole? userRole;
+    if (authState is AuthAuthenticated) {
+      userRole = authState.user.role;
+    }
+
+    final homeRoute = userRole != null ? getHomeRouteForRole(userRole) : '/login';
+    final isAtRootDashboard = activeRoute == homeRoute || (activeRoute.startsWith('/dashboard') && !activeRoute.contains('/edit') && !activeRoute.contains('/new'));
 
     if (ref.read(navigationProvider).currentRoute != activeRoute) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -113,8 +179,21 @@ class ShellWrapper extends ConsumerWidget {
       });
     }
 
-    return Scaffold(
-      appBar: isMobile ? const AcadexAppBar(showDrawerButton: true) : null,
+    final isGradientRole = userRole == AppRole.superAdmin ||
+        userRole == AppRole.collegeAdmin ||
+        userRole == AppRole.hod ||
+        userRole == AppRole.faculty ||
+        userRole == AppRole.student;
+    final pageTitle = _getRouteTitle(activeRoute);
+
+    final scaffold = Scaffold(
+      backgroundColor: isGradientRole ? Colors.transparent : null,
+      appBar: AcadexAppBar(
+        title: pageTitle,
+        showDrawerButton: isMobile && isAtRootDashboard,
+        showBackButton: isMobile && !isAtRootDashboard,
+        onBack: () => context.safePop(fallbackRoute: homeRoute),
+      ),
       drawer: isMobile ? AcadexDrawer(activeRoute: activeRoute, isModal: true) : null,
       bottomNavigationBar: isMobile
           ? AcadexBottomNav(
@@ -135,10 +214,34 @@ class ShellWrapper extends ConsumerWidget {
         ],
       ),
     );
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+          return;
+        }
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+          return;
+        }
+        if (!isAtRootDashboard) {
+          context.go(homeRoute);
+          return;
+        }
+        // At root dashboard: allow system pop to cleanly exit
+        SystemNavigator.pop();
+      },
+      child: isGradientRole
+          ? SuperAdminGradientBackground(child: scaffold)
+          : scaffold,
+    );
   }
 }
 
-// Fade + subtle slide transition helper (Acadex Motion standard: 200ms ease-out)
+// Fade + subtle slide transition helper (for detail, edit, and drill-down screens)
 CustomTransitionPage<T> fadeTransitionPage<T>({
   required BuildContext context,
   required GoRouterState state,
@@ -167,12 +270,27 @@ CustomTransitionPage<T> fadeTransitionPage<T>({
   );
 }
 
+// Instant transition helper for primary navigation (0ms duration, no slide/push animation)
+CustomTransitionPage<T> noTransitionPage<T>({
+  required BuildContext context,
+  required GoRouterState state,
+  required Widget child,
+}) {
+  return NoTransitionPage<T>(
+    key: state.pageKey,
+    name: state.name,
+    child: child,
+  );
+}
+
 class RouterNotifier extends ChangeNotifier {
   RouterNotifier(Ref ref) {
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (previous != next) {
         // Prevent synchronous dispatch stack overflows by deferring notifyListeners
-        Future.microtask(() => notifyListeners());
+        Future.microtask(() {
+          notifyListeners();
+        });
       }
     });
   }
@@ -184,6 +302,7 @@ final routerNotifierProvider = Provider<RouterNotifier>((ref) {
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refreshListenable = ref.read(routerNotifierProvider);
+  debugPrint('[ROUTER_INIT]');
 
   String getHomeRouteForRole(AppRole role) {
     switch (role) {
@@ -212,11 +331,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           loc == '/reset-password' ||
           loc == '/activate';
       final isSplash = loc == '/';
-
-      developer.log(
-        'Router redirect decision: path=$loc, authState=${currentAuthState.runtimeType}',
-        name: 'Acadex.Router',
-      );
 
       if (currentAuthState is AuthProfileLoading || currentAuthState is AuthInitial) {
         // Stay on splash or loading screen if trying to access auth screens or splash,
@@ -325,6 +439,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         }
       }
 
+      // Global Analytics route protection
+      if (loc.startsWith('/analytics')) {
+        if (role == AppRole.student) {
+          return getHomeRouteForRole(role);
+        }
+      }
+
       return null;
     },
     routes: [
@@ -376,10 +497,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       
-      // Dashboards
+      // Dashboards (Primary Navigation: Instant Replacement)
       GoRoute(
         path: '/dashboard/super_admin',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/dashboard/super_admin', child: SuperAdminDashboard()),
@@ -387,7 +508,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/dashboard/college_admin',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/dashboard/college_admin', child: CollegeAdminDashboard()),
@@ -395,7 +516,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/dashboard/hod',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/dashboard/hod', child: HodDashboard()),
@@ -403,7 +524,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/dashboard/faculty',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/dashboard/faculty', child: FacultyDashboard()),
@@ -411,17 +532,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/dashboard/student',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/dashboard/student', child: StudentDashboard()),
         ),
       ),
       
-      // Academic Structure Routes
+      // Academic Structure Routes (Primary Navigation List Screens: Instant Replacement)
       GoRoute(
         path: '/academics',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/academics', child: AcademicStructureHomeScreen()),
@@ -429,48 +550,125 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/academic-structure',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/academics', child: AcademicStructureHomeScreen()),
         ),
       ),
-      GoRoute(path: '/academics/colleges', builder: (context, state) => const ShellWrapper(activeRoute: '/academics/colleges', child: CollegeListScreen())),
+      GoRoute(
+        path: '/academics/colleges',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/academics/colleges', child: CollegeListScreen()),
+        ),
+      ),
       GoRoute(path: '/academics/colleges/new', builder: (context, state) => const CollegeFormScreen()),
       GoRoute(path: '/academics/colleges/edit/:id', builder: (context, state) => CollegeFormScreen(collegeId: state.pathParameters['id'])),
+      GoRoute(path: '/academics/colleges/:id', builder: (context, state) => CollegeDetailScreen(collegeId: state.pathParameters['id']!)),
+      GoRoute(path: '/academics/colleges/:id/provision-admin', builder: (context, state) => ProvisionAdminScreen(collegeId: state.pathParameters['id']!)),
 
-      GoRoute(path: '/academics/departments', builder: (context, state) => const ShellWrapper(activeRoute: '/academics/departments', child: DepartmentListScreen())),
+      GoRoute(
+        path: '/academics/departments',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/academics/departments', child: DepartmentListScreen()),
+        ),
+      ),
       GoRoute(path: '/academics/departments/new', builder: (context, state) => const DepartmentFormScreen()),
       GoRoute(path: '/academics/departments/edit/:id', builder: (context, state) => DepartmentFormScreen(id: state.pathParameters['id'])),
+      GoRoute(path: '/academics/departments/:id', builder: (context, state) => DepartmentDetailScreen(departmentId: state.pathParameters['id']!)),
 
-      GoRoute(path: '/academics/courses', builder: (context, state) => const ShellWrapper(activeRoute: '/academics/courses', child: CourseListScreen())),
+      GoRoute(
+        path: '/academics/courses',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/academics/courses', child: CourseListScreen()),
+        ),
+      ),
       GoRoute(path: '/academics/courses/new', builder: (context, state) => const CourseFormScreen()),
       GoRoute(path: '/academics/courses/edit/:id', builder: (context, state) => CourseFormScreen(id: state.pathParameters['id'])),
+      GoRoute(path: '/academics/courses/:id', builder: (context, state) => CourseDetailScreen(courseId: state.pathParameters['id']!)),
 
-      GoRoute(path: '/academics/academic_years', builder: (context, state) => const ShellWrapper(activeRoute: '/academics/academic_years', child: AcademicYearListScreen())),
+      GoRoute(
+        path: '/academics/academic_years',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/academics/academic_years', child: AcademicYearListScreen()),
+        ),
+      ),
       GoRoute(path: '/academics/academic_years/new', builder: (context, state) => const AcademicYearFormScreen()),
       GoRoute(path: '/academics/academic_years/edit/:id', builder: (context, state) => AcademicYearFormScreen(id: state.pathParameters['id'])),
+      GoRoute(path: '/academics/academic_years/:id', builder: (context, state) => AcademicYearDetailScreen(academicYearId: state.pathParameters['id']!)),
 
-      GoRoute(path: '/academics/semesters', builder: (context, state) => const ShellWrapper(activeRoute: '/academics/semesters', child: SemesterListScreen())),
+      GoRoute(
+        path: '/academics/semesters',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/academics/semesters', child: SemesterListScreen()),
+        ),
+      ),
       GoRoute(path: '/academics/semesters/new', builder: (context, state) => const SemesterFormScreen()),
       GoRoute(path: '/academics/semesters/edit/:id', builder: (context, state) => SemesterFormScreen(id: state.pathParameters['id'])),
+      GoRoute(path: '/academics/semesters/:id', builder: (context, state) => SemesterDetailScreen(semesterId: state.pathParameters['id']!)),
 
-      GoRoute(path: '/academics/sections', builder: (context, state) => const ShellWrapper(activeRoute: '/academics/sections', child: SectionListScreen())),
+      GoRoute(
+        path: '/academics/sections',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/academics/sections', child: SectionListScreen()),
+        ),
+      ),
       GoRoute(path: '/academics/sections/new', builder: (context, state) => const SectionFormScreen()),
       GoRoute(path: '/academics/sections/edit/:id', builder: (context, state) => SectionFormScreen(id: state.pathParameters['id'])),
+      GoRoute(path: '/academics/sections/:id', builder: (context, state) => SectionDetailScreen(sectionId: state.pathParameters['id']!)),
 
-      GoRoute(path: '/academics/subjects', builder: (context, state) => const ShellWrapper(activeRoute: '/academics/subjects', child: SubjectListScreen())),
+      GoRoute(
+        path: '/academics/subjects',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/academics/subjects', child: SubjectListScreen()),
+        ),
+      ),
       GoRoute(path: '/academics/subjects/new', builder: (context, state) => const SubjectFormScreen()),
       GoRoute(path: '/academics/subjects/edit/:id', builder: (context, state) => SubjectFormScreen(id: state.pathParameters['id'])),
+      GoRoute(path: '/academics/subjects/:id', builder: (context, state) => SubjectDetailScreen(subjectId: state.pathParameters['id']!)),
 
-      GoRoute(path: '/academics/faculty', builder: (context, state) => const ShellWrapper(activeRoute: '/academics/faculty', child: FacultyListScreen())),
+      GoRoute(
+        path: '/academics/hods',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/academics/hods', child: HodListScreen()),
+        ),
+      ),
+      GoRoute(path: '/academics/hods/provision', builder: (context, state) => ProvisionHodScreen(initialDepartmentId: state.uri.queryParameters['departmentId'])),
+      GoRoute(path: '/academics/hods/edit/:id', builder: (context, state) => HodEditScreen(id: state.pathParameters['id']!)),
+      GoRoute(path: '/academics/hods/:id', builder: (context, state) => HodDetailScreen(hodId: state.pathParameters['id']!)),
+
+      GoRoute(
+        path: '/academics/faculty',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/academics/faculty', child: FacultyListScreen()),
+        ),
+      ),
       GoRoute(path: '/academics/faculty/new', builder: (context, state) => const FacultyFormScreen()),
       GoRoute(path: '/academics/faculty/edit/:id', builder: (context, state) => FacultyFormScreen(id: state.pathParameters['id'])),
+      GoRoute(path: '/academics/faculty/:id', builder: (context, state) => FacultyDetailScreen(facultyId: state.pathParameters['id']!)),
 
-      // Faculty Assignments & Workload Routes
+      // Faculty Assignments & Workload Routes (Primary Navigation: Instant Replacement)
       GoRoute(
         path: '/faculty-assignments',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/faculty-assignments', child: FacultyAssignmentsManagementScreen()),
@@ -478,7 +676,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/academics/faculty/assignments',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/faculty-assignments', child: FacultyAssignmentsManagementScreen()),
@@ -486,7 +684,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/faculty-workload',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/faculty-workload', child: FacultyWorkloadScreen()),
@@ -494,7 +692,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/academics/faculty/workload',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/faculty-workload', child: FacultyWorkloadScreen()),
@@ -502,23 +700,58 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/my-assignments',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/my-assignments', child: MyAssignmentsScreen()),
         ),
       ),
 
-      GoRoute(path: '/academics/students', builder: (context, state) => const ShellWrapper(activeRoute: '/academics/students', child: StudentListScreen())),
+      GoRoute(
+        path: '/academics/students',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/academics/students', child: StudentListScreen()),
+        ),
+      ),
       GoRoute(path: '/academics/students/new', builder: (context, state) => const StudentFormScreen()),
       GoRoute(path: '/academics/students/edit/:id', builder: (context, state) => StudentFormScreen(id: state.pathParameters['id'])),
       GoRoute(path: '/academics/students/:id', builder: (context, state) => StudentProfileScreen(studentId: state.pathParameters['id']!)),
 
-      // Attendance Routes
-      GoRoute(path: '/attendance', builder: (context, state) => const ShellWrapper(activeRoute: '/attendance', child: AttendanceDashboardRouter())),
-      GoRoute(path: '/attendance/student', builder: (context, state) => const ShellWrapper(activeRoute: '/attendance', child: StudentAttendancePortalScreen())),
-      GoRoute(path: '/attendance/student/dashboard', builder: (context, state) => const ShellWrapper(activeRoute: '/attendance', child: StudentAttendanceDashboardScreen())),
-      GoRoute(path: '/attendance/student/subjects', builder: (context, state) => const ShellWrapper(activeRoute: '/attendance', child: StudentAttendancePortalScreen(initialTab: 1))),
+      // Attendance Routes (Primary Portals & Dashboards: Instant Replacement)
+      GoRoute(
+        path: '/attendance',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/attendance', child: AttendanceDashboardRouter()),
+        ),
+      ),
+      GoRoute(
+        path: '/attendance/student',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/attendance', child: StudentAttendancePortalScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/attendance/student/dashboard',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/attendance', child: StudentAttendanceDashboardScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/attendance/student/subjects',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/attendance', child: StudentAttendancePortalScreen(initialTab: 1)),
+        ),
+      ),
       GoRoute(
         path: '/attendance/student/subject/:id',
         builder: (context, state) => ShellWrapper(
@@ -526,8 +759,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: StudentSubjectAttendanceScreen(subjectId: state.pathParameters['id']),
         ),
       ),
-      GoRoute(path: '/attendance/student/calendar', builder: (context, state) => const ShellWrapper(activeRoute: '/attendance', child: StudentAttendanceCalendarScreen())),
-      GoRoute(path: '/attendance/student/insights', builder: (context, state) => const ShellWrapper(activeRoute: '/attendance', child: StudentAttendancePortalScreen(initialTab: 3))),
+      GoRoute(
+        path: '/attendance/student/calendar',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/attendance', child: StudentAttendanceCalendarScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/attendance/student/insights',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/attendance', child: StudentAttendancePortalScreen(initialTab: 3)),
+        ),
+      ),
       GoRoute(
         path: '/attendance/student/sessions/:id',
         builder: (context, state) => ShellWrapper(
@@ -539,7 +786,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/attendance/student/history', builder: (context, state) => const StudentAttendanceHistoryScreen()),
       GoRoute(path: '/attendance/faculty/history', builder: (context, state) => const FacultyAttendanceHistoryScreen()),
       GoRoute(path: '/attendance/faculty/detail', builder: (context, state) => const FacultyAttendanceDetailScreen()),
-      GoRoute(path: '/attendance/analytics', builder: (context, state) => const ShellWrapper(activeRoute: '/attendance/analytics', child: AttendanceAnalyticsScreen())),
+      GoRoute(
+        path: '/attendance/analytics',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/attendance/analytics', child: AttendanceAnalyticsScreen()),
+        ),
+      ),
       GoRoute(
         path: '/attendance/analytics/student/:id',
         builder: (context, state) => ShellWrapper(
@@ -563,9 +817,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/attendance/alerts',
-        builder: (context, state) => const ShellWrapper(
-          activeRoute: '/attendance/alerts',
-          child: AttendanceAlertsScreen(),
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(
+            activeRoute: '/attendance/alerts',
+            child: AttendanceAlertsScreen(),
+          ),
         ),
       ),
       GoRoute(
@@ -598,30 +856,42 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/attendance/reports',
-        builder: (context, state) => const ShellWrapper(
-          activeRoute: '/attendance/reports',
-          child: AttendanceReportCenterScreen(),
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(
+            activeRoute: '/attendance/reports',
+            child: AttendanceReportCenterScreen(),
+          ),
         ),
       ),
       GoRoute(
         path: '/attendance/admin',
-        builder: (context, state) => const ShellWrapper(
-          activeRoute: '/attendance/admin',
-          child: AttendanceAdminDashboardScreen(),
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(
+            activeRoute: '/attendance/admin',
+            child: AttendanceAdminDashboardScreen(),
+          ),
         ),
       ),
       GoRoute(
         path: '/attendance/sessions/admin',
-        builder: (context, state) => const ShellWrapper(
-          activeRoute: '/attendance/sessions/admin',
-          child: AttendanceSessionAdminScreen(),
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(
+            activeRoute: '/attendance/sessions/admin',
+            child: AttendanceSessionAdminScreen(),
+          ),
         ),
       ),
 
-      // Notification Center Route
+      // Notification Center Route (Primary Navigation: Instant Replacement)
       GoRoute(
         path: '/notifications',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(
@@ -637,24 +907,33 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // User Management Routes
-      GoRoute(path: '/users', builder: (context, state) => const ShellWrapper(activeRoute: '/users', child: UserDirectoryScreen())),
+      // User Management Routes (Primary Navigation List Screen: Instant Replacement)
+      GoRoute(
+        path: '/users',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/users', child: UserDirectoryScreen()),
+        ),
+      ),
       GoRoute(path: '/users/new', builder: (context, state) => const UserFormScreen()),
       GoRoute(path: '/users/edit/:id', builder: (context, state) => UserFormScreen(userId: state.pathParameters['id'])),
       GoRoute(path: '/users/:id', builder: (context, state) => UserDetailScreen(userId: state.pathParameters['id']!)),
 
-      // Profile & Settings Placeholders
+      // Profile (Primary Navigation: Instant Replacement)
       GoRoute(
         path: '/profile',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/profile', child: ProfileScreen()),
         ),
       ),
+
+      // Settings (Primary Navigation: Instant Replacement)
       GoRoute(
         path: '/settings',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/settings', child: SettingsHomeScreen()),
@@ -684,11 +963,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: 'analytics',
-            pageBuilder: (context, state) => fadeTransitionPage(context: context, state: state, child: const ShellWrapper(activeRoute: '/analytics', child: AnalyticsDashboardScreen())),
+            pageBuilder: (context, state) => noTransitionPage(context: context, state: state, child: const ShellWrapper(activeRoute: '/analytics', child: AnalyticsDashboardScreen())),
             routes: [
               GoRoute(
                 path: 'reports',
-                pageBuilder: (context, state) => fadeTransitionPage(context: context, state: state, child: const ShellWrapper(activeRoute: '/analytics', child: ReportsListScreen())),
+                pageBuilder: (context, state) => noTransitionPage(context: context, state: state, child: const ShellWrapper(activeRoute: '/analytics', child: ReportsListScreen())),
               ),
               GoRoute(
                 path: 'report_preview',
@@ -714,20 +993,51 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // AI Assistant module
+      // Global Analytics Top-Level Route (Primary Navigation: Instant Replacement)
+      GoRoute(
+        path: '/analytics',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/analytics', child: AnalyticsDashboardScreen()),
+        ),
+        routes: [
+          GoRoute(
+            path: 'reports',
+            pageBuilder: (context, state) => noTransitionPage(
+              context: context,
+              state: state,
+              child: const ShellWrapper(activeRoute: '/analytics', child: ReportsListScreen()),
+            ),
+          ),
+          GoRoute(
+            path: 'report_preview',
+            pageBuilder: (context, state) {
+              final report = state.extra as AttendanceReport;
+              return fadeTransitionPage(
+                context: context,
+                state: state,
+                child: ShellWrapper(activeRoute: '/analytics', child: ReportPreviewScreen(report: report)),
+              );
+            },
+          ),
+        ],
+      ),
+
+      // AI Assistant module (Primary Navigation: Instant Replacement)
       GoRoute(
         path: '/ai-assistant',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/ai-assistant', child: AiAssistantScreen()),
         ),
       ),
 
-      // Timetable module
+      // Timetable module (Primary Navigation: Instant Replacement)
       GoRoute(
         path: '/timetable',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/timetable', child: TimetableDashboardScreen()),
@@ -735,7 +1045,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: 'manage',
-            pageBuilder: (context, state) => fadeTransitionPage(
+            pageBuilder: (context, state) => noTransitionPage(
               context: context,
               state: state,
               child: const ShellWrapper(activeRoute: '/timetable/manage', child: TimetableManagementScreen()),
@@ -782,10 +1092,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // Notes module
+      // Notes module (Primary Navigation: Instant Replacement)
       GoRoute(
         path: '/notes',
-        pageBuilder: (context, state) => fadeTransitionPage(
+        pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
           child: const ShellWrapper(activeRoute: '/notes', child: NotesDashboardScreen()),

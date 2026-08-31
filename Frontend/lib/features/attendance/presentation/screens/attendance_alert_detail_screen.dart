@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:campus_management/app/theme/app_theme.dart';
+import 'package:campus_management/core/presentation/utils/navigation_extensions.dart';
 import 'package:campus_management/core/presentation/widgets/acadex_badge.dart';
 import 'package:campus_management/core/presentation/widgets/acadex_button.dart';
 import 'package:campus_management/core/presentation/widgets/acadex_card.dart';
@@ -61,26 +62,21 @@ class AttendanceAlertDetailScreen extends ConsumerWidget {
     final updatedAlertAsync = ref.watch(attendanceAlertDetailProvider(alert.id));
     final effectiveAlert = updatedAlertAsync.value ?? alert;
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 16 : 24,
-              vertical: 16,
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 16 : 24,
+          vertical: 16,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header Bar
+            AcadexPageHeader(
+              title: 'Attendance Alert Details',
+              subtitle: 'Early-warning diagnosis, severity classification, and remediation.',
+              onBack: () => context.safePop(fallbackRoute: '/attendance/alerts'),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header Bar
-                AcadexPageHeader(
-                  title: 'Attendance Alert Details',
-                  subtitle: 'Early-warning diagnosis, severity classification, and remediation.',
-                  onBack: () => Navigator.of(context).canPop()
-                      ? Navigator.of(context).pop()
-                      : context.go('/attendance/alerts'),
-                ),
 
                 const SizedBox(height: 16),
 
@@ -370,9 +366,7 @@ class AttendanceAlertDetailScreen extends ConsumerWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
+        );
   }
 
   Widget _buildMetricTile({

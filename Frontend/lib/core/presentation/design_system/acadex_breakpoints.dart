@@ -6,8 +6,10 @@ enum DeviceType { mobile, tablet, desktop }
 class AcadexBreakpoints {
   AcadexBreakpoints._();
 
+  static const double mobileSmallMax = 374.0;
   static const double mobileMax = 599.0;
   static const double tabletMax = 1023.0;
+  static const double desktopMin = 1024.0;
 
   static DeviceType getDeviceType(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
@@ -16,12 +18,13 @@ class AcadexBreakpoints {
     return DeviceType.desktop;
   }
 
+  static bool isSmallMobile(BuildContext context) => MediaQuery.of(context).size.width <= mobileSmallMax;
   static bool isMobile(BuildContext context) => MediaQuery.of(context).size.width <= mobileMax;
   static bool isTablet(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     return width > mobileMax && width <= tabletMax;
   }
-  static bool isDesktop(BuildContext context) => MediaQuery.of(context).size.width > tabletMax;
+  static bool isDesktop(BuildContext context) => MediaQuery.of(context).size.width >= desktopMin;
 
   static int getGridColumnCount(BuildContext context, {int mobile = 1, int tablet = 2, int desktop = 4}) {
     if (isDesktop(context)) return desktop;

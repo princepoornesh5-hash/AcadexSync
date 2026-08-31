@@ -125,6 +125,17 @@ class MockUserRepository implements UserRepository {
   }
 
   @override
+  Future<dynamic> createUserWithInvitation(UserProfileModel user) async {
+    final createdUser = await createUser(user);
+    return createdUser;
+  }
+
+  @override
+  Future<String> reissueActivationCodeForUser(String userId) async {
+    return 'MOCK-ACTV-CODE';
+  }
+
+  @override
   Future<UserProfileModel> updateUser(UserProfileModel user) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final index = _users.indexWhere((u) => u.id == user.id);

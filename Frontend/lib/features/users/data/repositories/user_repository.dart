@@ -16,6 +16,10 @@ abstract class UserRepository {
 
   Future<UserProfileModel> createUser(UserProfileModel user);
 
+  Future<dynamic> createUserWithInvitation(UserProfileModel user);
+
+  Future<String> reissueActivationCodeForUser(String userId);
+
   Future<UserProfileModel> updateUser(UserProfileModel user);
 
   Future<void> deleteUser(String id); // Deactivate/Suspend

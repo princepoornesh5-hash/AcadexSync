@@ -48,6 +48,8 @@ export class InvitationController {
         invitation: result.invitation,
         activationCode: result.activationCode, // returned once to creator for delivery
         user: result.user.toJSON(),
+        collegeCode: result.collegeCode,
+        collegeName: result.collegeName,
       },
       'Invitation created successfully'
     );
@@ -119,6 +121,8 @@ export class InvitationController {
       {
         invitation: result.invitation,
         activationCode: result.activationCode,
+        collegeCode: result.collegeCode,
+        collegeName: result.collegeName,
       },
       'Invitation reissued successfully'
     );

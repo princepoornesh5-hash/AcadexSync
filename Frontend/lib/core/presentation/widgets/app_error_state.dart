@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../design_system/acadex_colors.dart';
-import '../design_system/acadex_spacing.dart';
-import 'app_button.dart';
+import 'acadex_feedback.dart';
 
+/// Legacy bridge widget delegating to [AcadexErrorState].
+/// Maintained for test compatibility. Prefer using [AcadexErrorState] directly.
 class AppErrorState extends StatelessWidget {
   final String title;
   final String message;
@@ -19,52 +19,10 @@ class AppErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: AcadexSpacing.cardPadding,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: AcadexColors.coralErrorSurface,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.error_outline, size: 36, color: AcadexColors.coralError),
-            ),
-            const SizedBox(height: AcadexSpacing.md),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AcadexColors.textPrimaryLight,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AcadexSpacing.xs),
-            Text(
-              message,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AcadexColors.textSecondaryLight,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (onRetry != null) ...[
-              const SizedBox(height: AcadexSpacing.lg),
-              AppButton(
-                label: retryLabel,
-                onPressed: onRetry,
-                variant: AppButtonVariant.primary,
-                icon: Icons.refresh,
-              ),
-            ],
-          ],
-        ),
-      ),
+    return AcadexErrorState(
+      title: title,
+      message: message,
+      onRetry: onRetry,
     );
   }
 }

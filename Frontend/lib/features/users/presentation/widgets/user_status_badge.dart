@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/presentation/design_system/acadex_colors.dart';
-import '../../../../core/presentation/widgets/app_badge.dart';
+import '../../../../core/presentation/widgets/acadex_chip.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../domain/models/user_status_enum.dart';
 
@@ -42,7 +42,7 @@ class UserStatusBadge extends StatelessWidget {
       textColor = AcadexColors.emerald;
     }
 
-    return AppBadge(
+    return AcadexBadge(
       label: label,
       backgroundColor: bgColor,
       textColor: textColor,

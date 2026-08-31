@@ -23,7 +23,7 @@ export function generateActivationCode(): string {
  */
 export function normalizeActivationCode(rawCode: string): string {
   if (!rawCode || typeof rawCode !== 'string') return '';
-  return rawCode.replace(/[\s\-]/g, '').toUpperCase();
+  return rawCode.replace(/[\s\-\u2010-\u2015\u2212\u00A0\u200B-\u200D\uFEFF]/g, '').toUpperCase();
 }
 
 /**

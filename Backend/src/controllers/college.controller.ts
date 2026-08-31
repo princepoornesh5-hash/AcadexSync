@@ -139,6 +139,8 @@ export class CollegeController {
         invitation: result.invitation,
         activationCode: result.activationCode,
         user: result.user.toJSON(),
+        collegeCode: result.collegeCode,
+        collegeName: result.collegeName,
       },
       'College Admin invitation provisioned successfully'
     );

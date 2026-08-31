@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../users/presentation/providers/user_profile_providers.dart';
 import '../widgets/settings_widgets.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_form_controls.dart';
 
@@ -16,40 +17,44 @@ class LanguageScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        leading: IconButton(icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface), onPressed: () => context.pop()),
-        title: Text("Language", style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface)),
-      ),
-      body: AcadexPageContainer(
-        maxWidth: AcadexLayout.formMaxWidth,
-        child: SettingsSection(
-          title: "Available Languages",
-          children: [
-            SettingsTile(
-              icon: LucideIcons.checkCircle2,
-              title: "English",
-              iconColor: AcadexColors.success,
-              trailing: const Icon(LucideIcons.check, color: AcadexColors.success),
-              onTap: () {},
-            ),
-            SettingsTile(
-              icon: LucideIcons.globe,
-              title: "Telugu",
-              subtitle: "Coming Soon",
-              iconColor: AcadexColors.inkMuted,
-              onTap: () {},
-            ),
-            SettingsTile(
-              icon: LucideIcons.globe,
-              title: "Hindi",
-              subtitle: "Coming Soon",
-              iconColor: AcadexColors.inkMuted,
-              onTap: () {},
-            ),
-          ],
-        ),
+    return AcadexPageContainer(
+      maxWidth: AcadexLayout.formMaxWidth,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AcadexPageHeader(
+            title: 'Language',
+            subtitle: 'Choose your preferred interface language',
+            onBack: () => context.safePop(fallbackRoute: '/settings'),
+          ),
+          const SizedBox(height: 16),
+          SettingsSection(
+            title: "Available Languages",
+            children: [
+              SettingsTile(
+                icon: LucideIcons.checkCircle2,
+                title: "English",
+                iconColor: AcadexColors.success,
+                trailing: const Icon(LucideIcons.check, color: AcadexColors.success),
+                onTap: () {},
+              ),
+              SettingsTile(
+                icon: LucideIcons.globe,
+                title: "Telugu",
+                subtitle: "Coming Soon",
+                iconColor: AcadexColors.inkMuted,
+                onTap: () {},
+              ),
+              SettingsTile(
+                icon: LucideIcons.globe,
+                title: "Hindi",
+                subtitle: "Coming Soon",
+                iconColor: AcadexColors.inkMuted,
+                onTap: () {},
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -112,153 +117,152 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
     final email = authState is AuthAuthenticated ? authState.user.email : '—';
     final isSaving = profileEditState.status == ProfileEditStatus.saving;
 
-    return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        leading: IconButton(icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface), onPressed: () => context.pop()),
-        title: Text("Security & Sessions", style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface)),
-      ),
-      body: AcadexPageContainer(
-        maxWidth: AcadexLayout.formMaxWidth,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Account Identity (read-only)
-            SettingsSection(
-              title: "Account Identity",
-              children: [
-                SettingsTile(
-                  icon: LucideIcons.mail,
-                  title: "Email Address",
-                  subtitle: email,
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AcadexColors.inkMuted.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text('Read-only', style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)),
+    return AcadexPageContainer(
+      maxWidth: AcadexLayout.formMaxWidth,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AcadexPageHeader(
+            title: 'Security & Sessions',
+            subtitle: 'Manage password, identity, and active device sessions',
+            onBack: () => context.safePop(fallbackRoute: '/settings'),
+          ),
+          const SizedBox(height: 16),
+          // Account Identity (read-only)
+          SettingsSection(
+            title: "Account Identity",
+            children: [
+              SettingsTile(
+                icon: LucideIcons.mail,
+                title: "Email Address",
+                subtitle: email,
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AcadexColors.inkMuted.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text('Read-only', style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Change Password Form
+          SettingsSection(
+            title: "Change Password",
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AcadexTextField(
+                        controller: _currentPasswordController,
+                        label: 'Current Password',
+                        prefixIcon: LucideIcons.lock,
+                        isPassword: true,
+                        enabled: !isSaving,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Current password is required';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      AcadexTextField(
+                        controller: _newPasswordController,
+                        label: 'New Password',
+                        prefixIcon: LucideIcons.keyRound,
+                        isPassword: true,
+                        enabled: !isSaving,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'New password is required';
+                          if (v.length < 8) return 'Password must be at least 8 characters';
+                          if (v == _currentPasswordController.text) return 'New password must differ from current password';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      AcadexTextField(
+                        controller: _confirmPasswordController,
+                        label: 'Confirm New Password',
+                        prefixIcon: LucideIcons.keyRound,
+                        isPassword: true,
+                        enabled: !isSaving,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Please confirm your new password';
+                          if (v != _newPasswordController.text) return 'Passwords do not match';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      AcadexButton(
+                        label: 'Update Password',
+                        icon: LucideIcons.checkCircle,
+                        isLoading: isSaving,
+                        isFullWidth: true,
+                        size: AcadexButtonSize.lg,
+                        onPressed: isSaving ? null : _changePassword,
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
 
-            // Change Password Form
-            SettingsSection(
-              title: "Change Password",
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AcadexTextField(
-                          controller: _currentPasswordController,
-                          label: 'Current Password',
-                          prefixIcon: LucideIcons.lock,
-                          isPassword: true,
-                          enabled: !isSaving,
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'Current password is required';
-                            return null;
-                          },
+          // Logout sessions
+          SettingsSection(
+            title: "Session",
+            children: [
+              SettingsTile(
+                icon: LucideIcons.logOut,
+                iconColor: AcadexColors.warning,
+                title: "Sign Out",
+                subtitle: "Ends your current session on this device",
+                onTap: () => ref.read(authProvider.notifier).logout(),
+              ),
+              SettingsTile(
+                icon: LucideIcons.shieldAlert,
+                iconColor: AcadexColors.error,
+                title: "Sign Out All Devices",
+                subtitle: "Revokes all active sessions on other phones and computers",
+                onTap: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text("Revoke All Sessions?"),
+                      content: const Text(
+                        "This will immediately sign you out from all browsers, mobile devices, and sessions.",
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text("Cancel"),
                         ),
-                        const SizedBox(height: 16),
-                        AcadexTextField(
-                          controller: _newPasswordController,
-                          label: 'New Password',
-                          prefixIcon: LucideIcons.keyRound,
-                          isPassword: true,
-                          enabled: !isSaving,
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'New password is required';
-                            if (v.length < 8) return 'Password must be at least 8 characters';
-                            if (v == _currentPasswordController.text) return 'New password must differ from current password';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        AcadexTextField(
-                          controller: _confirmPasswordController,
-                          label: 'Confirm New Password',
-                          prefixIcon: LucideIcons.keyRound,
-                          isPassword: true,
-                          enabled: !isSaving,
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'Please confirm your new password';
-                            if (v != _newPasswordController.text) return 'Passwords do not match';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                        AcadexButton(
-                          label: 'Update Password',
-                          icon: LucideIcons.checkCircle,
-                          isLoading: isSaving,
-                          isFullWidth: true,
-                          size: AcadexButtonSize.lg,
-                          onPressed: isSaving ? null : _changePassword,
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AcadexColors.error,
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text("Sign Out All"),
                         ),
                       ],
                     ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Logout sessions
-            SettingsSection(
-              title: "Session",
-              children: [
-                SettingsTile(
-                  icon: LucideIcons.logOut,
-                  iconColor: AcadexColors.warning,
-                  title: "Sign Out",
-                  subtitle: "Ends your current session on this device",
-                  onTap: () => ref.read(authProvider.notifier).logout(),
-                ),
-                SettingsTile(
-                  icon: LucideIcons.shieldAlert,
-                  iconColor: AcadexColors.error,
-                  title: "Sign Out All Devices",
-                  subtitle: "Revokes all active sessions on other phones and computers",
-                  onTap: () async {
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text("Revoke All Sessions?"),
-                        content: const Text(
-                          "This will immediately sign you out from all browsers, mobile devices, and sessions.",
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text("Cancel"),
-                          ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AcadexColors.error,
-                              foregroundColor: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text("Sign Out All"),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirmed == true && mounted) {
-                      await ref.read(authProvider.notifier).logoutAll();
-                    }
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
+                  );
+                  if (confirmed == true && mounted) {
+                    await ref.read(authProvider.notifier).logoutAll();
+                  }
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -269,40 +273,38 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        leading: IconButton(icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface), onPressed: () => context.pop()),
-        title: Text("About", style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface)),
-      ),
-      body: AcadexPageContainer(
-        maxWidth: AcadexLayout.formMaxWidth,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 32),
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(LucideIcons.graduationCap, size: 64, color: Theme.of(context).primaryColor),
+    return AcadexPageContainer(
+      maxWidth: AcadexLayout.formMaxWidth,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          AcadexPageHeader(
+            title: 'About Acadex',
+            subtitle: 'Version, build specifications, and legal notices',
+            onBack: () => context.safePop(fallbackRoute: '/settings'),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(height: 16),
-            Text("Acadex", style: AcadexTypography.heading2(color: Theme.of(context).colorScheme.onSurface)),
-            Text("Version 1.0.0 (Build 42)", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
-            const SizedBox(height: 32),
-            SettingsSection(
-              title: "Legal",
-              children: [
-                SettingsTile(icon: LucideIcons.fileText, title: "Terms & Conditions", onTap: () {}),
-                SettingsTile(icon: LucideIcons.shield, title: "Privacy Policy", onTap: () {}),
-                SettingsTile(icon: LucideIcons.book, title: "Open Source Licenses", onTap: () {}),
-              ],
-            )
-          ],
-        ),
+            child: Icon(LucideIcons.graduationCap, size: 64, color: Theme.of(context).primaryColor),
+          ),
+          const SizedBox(height: 16),
+          Text("Acadex", style: AcadexTypography.heading2(color: Theme.of(context).colorScheme.onSurface)),
+          Text("Version 1.0.0 (Build 42)", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+          const SizedBox(height: 32),
+          SettingsSection(
+            title: "Legal",
+            children: [
+              SettingsTile(icon: LucideIcons.fileText, title: "Terms & Conditions", onTap: () {}),
+              SettingsTile(icon: LucideIcons.shield, title: "Privacy Policy", onTap: () {}),
+              SettingsTile(icon: LucideIcons.book, title: "Open Source Licenses", onTap: () {}),
+            ],
+          )
+        ],
       ),
     );
   }
@@ -313,24 +315,28 @@ class SupportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        leading: IconButton(icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface), onPressed: () => context.pop()),
-        title: Text("Help & Support", style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface)),
-      ),
-      body: AcadexPageContainer(
-        maxWidth: AcadexLayout.formMaxWidth,
-        child: SettingsSection(
-          title: "Contact & Resources",
-          children: [
-            SettingsTile(icon: LucideIcons.helpCircle, title: "FAQs", subtitle: "Frequently asked questions", onTap: () {}),
-            SettingsTile(icon: LucideIcons.mail, title: "Contact Support", subtitle: "Email our support team", onTap: () {}),
-            SettingsTile(icon: LucideIcons.bug, title: "Report a Bug", subtitle: "Help us improve the app", onTap: () {}),
-            SettingsTile(icon: LucideIcons.messageSquare, title: "Feedback", subtitle: "Share your thoughts", onTap: () {}),
-            SettingsTile(icon: LucideIcons.messageCircle, title: "Live Chat", subtitle: "Coming Soon", onTap: () {}),
-          ],
-        ),
+    return AcadexPageContainer(
+      maxWidth: AcadexLayout.formMaxWidth,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AcadexPageHeader(
+            title: 'Help & Support',
+            subtitle: 'Contact resources, FAQs, and incident reporting',
+            onBack: () => context.safePop(fallbackRoute: '/settings'),
+          ),
+          const SizedBox(height: 16),
+          SettingsSection(
+            title: "Contact & Resources",
+            children: [
+              SettingsTile(icon: LucideIcons.helpCircle, title: "FAQs", subtitle: "Frequently asked questions", onTap: () {}),
+              SettingsTile(icon: LucideIcons.mail, title: "Contact Support", subtitle: "Email our support team", onTap: () {}),
+              SettingsTile(icon: LucideIcons.bug, title: "Report a Bug", subtitle: "Help us improve the app", onTap: () {}),
+              SettingsTile(icon: LucideIcons.messageSquare, title: "Feedback", subtitle: "Share your thoughts", onTap: () {}),
+              SettingsTile(icon: LucideIcons.messageCircle, title: "Live Chat", subtitle: "Coming Soon", onTap: () {}),
+            ],
+          ),
+        ],
       ),
     );
   }

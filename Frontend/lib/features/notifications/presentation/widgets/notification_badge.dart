@@ -11,8 +11,8 @@ class NotificationBadge extends ConsumerWidget {
 
   const NotificationBadge({
     super.key,
-    this.iconColor = AcadexColors.inkMuted,
-    this.size = 22,
+    this.iconColor = AcadexColors.inkSecondary,
+    this.size = 20,
   });
 
   @override
@@ -20,6 +20,8 @@ class NotificationBadge extends ConsumerWidget {
     final unreadCount = ref.watch(unreadNotificationCountProvider);
 
     return IconButton(
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      padding: const EdgeInsets.all(8),
       icon: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -53,7 +55,7 @@ class NotificationBadge extends ConsumerWidget {
       ),
       tooltip: 'Notifications',
       onPressed: () => context.go('/notifications'),
-      splashRadius: size,
+      splashRadius: 24,
     );
   }
 }

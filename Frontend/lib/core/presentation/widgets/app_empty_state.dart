@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../design_system/acadex_colors.dart';
-import '../design_system/acadex_spacing.dart';
-import 'app_button.dart';
+import 'acadex_feedback.dart';
 
+/// Legacy bridge widget delegating to [AcadexEmptyState].
+/// Maintained for test compatibility. Prefer using [AcadexEmptyState] directly.
 class AppEmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -21,51 +21,12 @@ class AppEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: AcadexSpacing.cardPadding,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: AcadexColors.surfaceLightMuted,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 36, color: AcadexColors.textMutedLight),
-            ),
-            const SizedBox(height: AcadexSpacing.md),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AcadexColors.textPrimaryLight,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AcadexSpacing.xs),
-            Text(
-              description,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AcadexColors.textSecondaryLight,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: AcadexSpacing.lg),
-              AppButton(
-                label: actionLabel!,
-                onPressed: onAction,
-                variant: AppButtonVariant.outline,
-              ),
-            ],
-          ],
-        ),
-      ),
+    return AcadexEmptyState(
+      title: title,
+      description: description,
+      icon: icon,
+      actionLabel: actionLabel,
+      onActionTap: onAction,
     );
   }
 }

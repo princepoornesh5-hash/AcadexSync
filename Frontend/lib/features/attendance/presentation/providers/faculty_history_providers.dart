@@ -14,26 +14,25 @@ final currentFacultyIdProvider = Provider<String>((ref) {
 // History List & Filtering
 // ---------------------------------------------------------
 final historySearchQueryProvider = StateProvider<String>((ref) => '');
-final historyStatusFilterProvider = StateProvider<String?>((ref) => null); // 'Draft' or 'Locked'
+final historyStatusFilterProvider = StateProvider<String?>((ref) => null); // null, 'open', 'locked', 'closed', 'cancelled'
 
 final facultyHistoryListProvider = FutureProvider<List<AttendanceSession>>((ref) async {
-  final facultyId = ref.watch(currentFacultyIdProvider);
-  if (facultyId.isEmpty) return [];
-
   final repo = ref.watch(attendanceRepoProvider);
-  return repo.getRecentSessions(facultyId);
+  return repo.getFacultySessions();
 });
 
 final filteredFacultyHistoryProvider = Provider<AsyncValue<List<AttendanceSession>>>((ref) {
   final asyncList = ref.watch(facultyHistoryListProvider);
   final searchQuery = ref.watch(historySearchQueryProvider).toLowerCase();
-  final statusFilter = ref.watch(historyStatusFilterProvider);
+  final statusFilter = ref.watch(historyStatusFilterProvider)?.toLowerCase();
 
   return asyncList.whenData((list) {
     return list.where((session) {
-      if (statusFilter != null) {
-        if (statusFilter == 'Locked' && !session.isLocked) return false;
-        if (statusFilter == 'Draft' && session.isLocked) return false;
+      if (statusFilter != null && statusFilter.isNotEmpty) {
+        if (statusFilter == 'open' && !session.isOpen) return false;
+        if (statusFilter == 'locked' && !session.isLockedState) return false;
+        if (statusFilter == 'closed' && !session.isClosed) return false;
+        if (statusFilter == 'cancelled' && !session.isCancelled) return false;
       }
       
       if (searchQuery.isNotEmpty) {
@@ -57,7 +56,11 @@ final activeSessionProvider = Provider<AttendanceSession?>((ref) {
   final activeId = ref.watch(activeSessionIdProvider);
   
   if (activeId == null) return null;
-  return listAsync.valueOrNull?.firstWhere((s) => s.id == activeId);
+  final sessionFromList = listAsync.valueOrNull?.where((s) => s.id == activeId).firstOrNull;
+  if (sessionFromList != null) return sessionFromList;
+
+  final detailAsync = ref.watch(sessionDetailProvider(activeId));
+  return detailAsync.valueOrNull;
 });
 
 final isEditModeProvider = StateProvider<bool>((ref) => false);

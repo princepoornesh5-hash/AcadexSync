@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
@@ -96,7 +97,7 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
             backgroundColor: AcadexColors.success,
           ),
         );
-        context.pop();
+        context.safePop(fallbackRoute: '/achievements');
       }
     } catch (e) {
       if (mounted) {
@@ -139,7 +140,7 @@ class _AchievementDetailScreenState extends ConsumerState<AchievementDetailScree
             title: 'Achievement Not Found',
             subtitle: 'The requested achievement record could not be loaded.',
             actionLabel: 'Back to Achievements',
-            onActionTap: () => context.pop(),
+            onActionTap: () => context.safePop(fallbackRoute: '/achievements'),
           ),
         ),
       );

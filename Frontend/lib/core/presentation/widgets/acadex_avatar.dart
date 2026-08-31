@@ -8,6 +8,7 @@ class AcadexAvatar extends StatelessWidget {
   final bool isOnline;
   final Color? backgroundColor;
   final Color? textColor;
+  final VoidCallback? onEdit;
 
   const AcadexAvatar({
     super.key,
@@ -17,6 +18,7 @@ class AcadexAvatar extends StatelessWidget {
     this.isOnline = false,
     this.backgroundColor,
     this.textColor,
+    this.onEdit,
   });
 
   String get _initials {
@@ -69,41 +71,43 @@ class AcadexAvatar extends StatelessWidget {
     final bg = backgroundColor ?? _generateColor(name);
     final fg = textColor ?? Colors.white;
 
-    return Stack(
-      children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-          ),
-          child: ClipOval(
-            child: imageUrl != null && imageUrl!.isNotEmpty
-                ? Image.network(
-                    imageUrl!,
+    final avatarWidget = Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+      ),
+      child: ClipOval(
+        child: imageUrl != null && imageUrl!.isNotEmpty
+            ? Image.network(
+                imageUrl!,
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => _buildInitialsFallback(bg, fg),
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
                     width: size,
                     height: size,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => _buildInitialsFallback(bg, fg),
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        width: size,
-                        height: size,
-                        color: bg.withValues(alpha: 0.2),
-                        child: Center(
-                          child: SizedBox(
-                            width: size * 0.4,
-                            height: size * 0.4,
-                            child: const CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                      );
-                    },
-                  )
-                : _buildInitialsFallback(bg, fg),
-          ),
-        ),
+                    color: bg.withValues(alpha: 0.2),
+                    child: Center(
+                      child: SizedBox(
+                        width: size * 0.4,
+                        height: size * 0.4,
+                        child: const CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  );
+                },
+              )
+            : _buildInitialsFallback(bg, fg),
+      ),
+    );
+
+    return Stack(
+      children: [
+        avatarWidget,
         if (isOnline)
           Positioned(
             right: 0,
@@ -118,6 +122,22 @@ class AcadexAvatar extends StatelessWidget {
                   color: Theme.of(context).colorScheme.surface,
                   width: 2,
                 ),
+              ),
+            ),
+          ),
+        if (onEdit != null)
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: GestureDetector(
+              onTap: onEdit,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: AcadexColors.success,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
               ),
             ),
           ),

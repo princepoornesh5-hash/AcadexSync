@@ -12,6 +12,8 @@ import '../providers/notes_lookup_providers.dart';
 import '../widgets/note_card.dart';
 import '../../domain/models/note_model.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../core/presentation/widgets/acadex_page_header.dart';
 
 class NotesDashboardScreen extends ConsumerWidget {
   const NotesDashboardScreen({super.key});
@@ -23,39 +25,33 @@ class NotesDashboardScreen extends ConsumerWidget {
 
     final user = authState.user;
     final isFaculty = user.role == AppRole.faculty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          isFaculty ? 'My Notes' : 'Academic Resources',
-          style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
-        actions: [
-          if (isFaculty)
-            Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: ElevatedButton.icon(
-                onPressed: () => context.go('/notes/new'),
-                icon: const Icon(LucideIcons.plus, size: 18),
-                label: const Text('Create Note'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
-                ),
-              ),
-            ),
-        ],
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1600),
+    final bodyContent = Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1600),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildFilters(context, ref, user.role),
+              AcadexPageHeader(
+                title: isFaculty ? 'My Notes' : 'Academic Resources',
+                subtitle: 'Browse, manage, and share subject notes and reference materials.',
+                actions: [
+                  if (isFaculty)
+                    AcadexButton(
+                      label: 'Create Note',
+                      icon: LucideIcons.plus,
+                      variant: AcadexButtonVariant.primary,
+                      onPressed: () => context.go('/notes/new'),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildFilters(context, ref, user.role, isDark),
+              const SizedBox(height: 12),
               Expanded(
                 child: _NotesList(role: user.role),
               ),
@@ -64,15 +60,31 @@ class NotesDashboardScreen extends ConsumerWidget {
         ),
       ),
     );
+
+    if (hasEnclosingScaffold) {
+      return bodyContent;
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: SafeArea(child: bodyContent),
+    );
   }
 
-  Widget _buildFilters(BuildContext context, WidgetRef ref, AppRole role) {
+  Widget _buildFilters(BuildContext context, WidgetRef ref, AppRole role, bool isDark) {
     final filters = ref.watch(notesFilterProvider);
     final isStudent = role == AppRole.student;
 
     return Container(
       padding: const EdgeInsets.all(16),
-      color: Theme.of(context).colorScheme.surface,
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+      ),
       child: Column(
         children: [
           TextField(

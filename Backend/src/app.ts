@@ -49,18 +49,25 @@ export function createApp(): Express {
   );
 
   // 2. Production-Hardened CORS Configuration
+  const isLocalhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/;
+
   const allowedOrigins = env.CORS_ORIGIN === '*'
     ? ['*']
     : env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter((o) => o.length > 0);
 
   const corsOptions: CorsOptions = {
     origin: (origin, callback) => {
-      // Allow non-browser clients (Flutter mobile app, cURL, server-to-server health checks)
+      // 1. Allow non-browser clients (Flutter mobile app, cURL, server-to-server health checks)
       if (!origin) {
         return callback(null, true);
       }
 
-      // In development/test, allow wildcard if configured
+      // 2. In development and test environments, allow any localhost / 127.0.0.1 port (dynamic Flutter Web dev port)
+      if (env.NODE_ENV !== 'production' && isLocalhostPattern.test(origin)) {
+        return callback(null, true);
+      }
+
+      // 3. Allow wildcard origin if explicitly configured
       if (allowedOrigins.includes('*')) {
         if (env.NODE_ENV === 'production') {
           Logger.warn('CORS wildcard origin (*) is not recommended in production.');
@@ -68,7 +75,12 @@ export function createApp(): Express {
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin)) {
+      // 4. Match against configured allowlist (exact match or localhost pattern if localhost in list)
+      if (
+        allowedOrigins.includes(origin) ||
+        (allowedOrigins.some((ao) => ao.startsWith('http://localhost') || ao.startsWith('http://127.0.0.1')) &&
+          isLocalhostPattern.test(origin))
+      ) {
         return callback(null, true);
       }
 
@@ -76,11 +88,20 @@ export function createApp(): Express {
       return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
     allowedHeaders: [
       'Content-Type',
       'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
       'x-college-id',
+      'x-client-id',
+      'x-platform',
+      'x-app-version',
+      'x-device-id',
+      'x-correlation-id',
+      'x-request-id',
       'x-mock-role',
       'x-mock-user-id',
       'x-mock-college-id',
@@ -88,10 +109,23 @@ export function createApp(): Express {
       'x-mock-email',
       'x-mock-name',
       'x-test-enable-ratelimit',
+      'sentry-trace',
+      'baggage',
     ],
+    exposedHeaders: [
+      'Content-Range',
+      'X-Content-Range',
+      'X-RateLimit-Limit',
+      'X-RateLimit-Remaining',
+      'X-RateLimit-Reset',
+      'Retry-After',
+    ],
+    maxAge: 86400,
+    optionsSuccessStatus: 204,
   };
 
   app.use(cors(corsOptions));
+  app.options('*', cors(corsOptions));
 
   // 3. Request Body Parsing
   app.use(express.json({ limit: '10mb' }));

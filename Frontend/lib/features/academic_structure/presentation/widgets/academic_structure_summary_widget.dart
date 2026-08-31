@@ -70,39 +70,74 @@ class AcademicStructureSummaryWidget extends ConsumerWidget {
                 const AcadexBadge(label: "ACTIVE SESSION", variant: AcadexBadgeVariant.success),
             ],
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _buildMetricTile(
-                  theme,
-                  "Active Terms",
-                  "${activeSemesters.length} Semesters",
-                  LucideIcons.calendarClock,
-                  AcadexColors.secondary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildMetricTile(
-                  theme,
-                  "Active Sections",
-                  "${activeSections.length} Batches",
-                  LucideIcons.users,
-                  AcadexColors.primary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildMetricTile(
-                  theme,
-                  "Seating Capacity",
-                  "$totalCapacity Seats",
-                  LucideIcons.layers,
-                  AcadexColors.info,
-                ),
-              ),
-            ],
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 550;
+              if (isMobile) {
+                return Column(
+                  children: [
+                    _buildMetricTile(
+                      theme,
+                      "Active Terms",
+                      "${activeSemesters.length} Semesters",
+                      LucideIcons.calendarClock,
+                      AcadexColors.secondary,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildMetricTile(
+                      theme,
+                      "Active Sections",
+                      "${activeSections.length} Batches",
+                      LucideIcons.users,
+                      AcadexColors.primary,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildMetricTile(
+                      theme,
+                      "Seating Capacity",
+                      "$totalCapacity Seats",
+                      LucideIcons.layers,
+                      AcadexColors.info,
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(
+                    child: _buildMetricTile(
+                      theme,
+                      "Active Terms",
+                      "${activeSemesters.length} Semesters",
+                      LucideIcons.calendarClock,
+                      AcadexColors.secondary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildMetricTile(
+                      theme,
+                      "Active Sections",
+                      "${activeSections.length} Batches",
+                      LucideIcons.users,
+                      AcadexColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildMetricTile(
+                      theme,
+                      "Seating Capacity",
+                      "$totalCapacity Seats",
+                      LucideIcons.layers,
+                      AcadexColors.info,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

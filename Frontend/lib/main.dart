@@ -7,8 +7,8 @@ import 'app/router/app_router.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'app/theme/app_theme.dart';
-import 'features/settings/presentation/providers/settings_providers.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'core/observability/logger.dart';
 
 @pragma('vm:entry-point')
@@ -23,7 +23,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 
 
+final bootStopwatch = Stopwatch()..start();
+
 void main() async {
+  debugPrint('[BOOT_START]');
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
@@ -44,6 +47,7 @@ void main() async {
     };
 
     ErrorWidget.builder = (FlutterErrorDetails details) {
+      AcadexLogger.error('Flutter Framework Error', error: details.exception, stackTrace: details.stack);
       return Directionality(
         textDirection: TextDirection.ltr,
         child: Material(
@@ -77,12 +81,19 @@ void main() async {
 
     // 2. Initialize Firebase predictably before building UI or Riverpod providers
     // PRODUCTION BOUNDARY: Force production initialization by default
+    debugPrint('[FIREBASE_INIT_START]');
+    final fbSw = Stopwatch()..start();
     await FirebaseInitializer.initialize(FirebaseEnv.production);
+    debugPrint('[FIREBASE_INIT_END] (${fbSw.elapsedMilliseconds}ms)');
+
+    // Pre-initialize icon font definitions to prevent DDC call stack recursion during initial widget build
+    final _ = LucideIcons.user;
 
     if (!FirebaseInitializer.shouldUseMock && !kIsWeb) {
       FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     }
 
+    debugPrint('[FIRST_UI] (${bootStopwatch.elapsedMilliseconds}ms)');
     runApp(
       const ProviderScope(
         child: AcadexAppWrapper(),
@@ -146,20 +157,12 @@ class _CampusManagementAppState extends ConsumerState<CampusManagementApp> {
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
-    final settingsAsync = ref.watch(appSettingsProvider);
-
-    // Default to dark theme while loading or error
-    final themeMode = settingsAsync.maybeWhen(
-      data: (settings) => settings.themeMode,
-      orElse: () => ThemeMode.dark,
-    );
 
     return MaterialApp.router(
       title: 'Campus Management System',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
+      themeMode: ThemeMode.light,
       routerConfig: router,
     );
   }

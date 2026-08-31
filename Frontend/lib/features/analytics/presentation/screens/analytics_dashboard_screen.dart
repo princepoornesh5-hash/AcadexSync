@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../auth/domain/models/auth_state.dart';
+import '../../../auth/domain/models/role_enum.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/analytics_providers.dart';
 import '../widgets/analytics_cards.dart';
 import '../widgets/charts/trend_line_chart.dart';
@@ -15,6 +17,13 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final isGradientRole = authState is AuthAuthenticated &&
+        (authState.user.role == AppRole.superAdmin ||
+            authState.user.role == AppRole.collegeAdmin ||
+            authState.user.role == AppRole.hod ||
+            authState.user.role == AppRole.faculty ||
+            authState.user.role == AppRole.student);
     final summaryAsync = ref.watch(analyticsSummaryProvider);
     final trendAsync = ref.watch(trendChartProvider);
     final comparisonAsync = ref.watch(comparisonChartProvider);
@@ -22,9 +31,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
     final projection = ref.watch(studentProjectionProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      body: SingleChildScrollView(
+    return SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
         child: Center(
           child: ConstrainedBox(
@@ -83,98 +90,92 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 32),
 
-                // Charts Section
-                const AcadexSectionHeader(title: 'Trends & Comparisons'),
+                // Trend Line Chart
+                const AcadexSectionHeader(title: 'Performance & Attendance Trends'),
                 const SizedBox(height: 12),
-                
-                // Trend Chart
-                AcadexCard(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                trendAsync.when(
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (err, _) => AcadexErrorState(
+                    message: 'Could not load trend data: $err',
+                    onRetry: () => ref.refresh(trendChartProvider),
+                  ),
+                  data: (trend) {
+                    return AcadexCard(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '6-Month Trend Overview',
-                            style: AcadexTypography.title(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                            ),
+                            'Institutional Attendance Trend',
+                            style: AcadexTypography.heading3(color: AcadexColors.ink),
                           ),
-                          Icon(
-                            LucideIcons.trendingUp,
-                            size: 18,
-                            color: AcadexColors.primary,
+                          const SizedBox(height: 4),
+                          Text(
+                            'Historical data tracked over current academic cycle',
+                            style: AcadexTypography.caption(color: AcadexColors.inkMuted),
+                          ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            height: 260,
+                            child: TrendLineChart(data: trend),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        height: 220,
-                        child: trendAsync.when(
-                          loading: () => const Center(child: CircularProgressIndicator()),
-                          error: (err, stack) => const Center(child: Text('Error loading trend chart')),
-                          data: (data) => TrendLineChart(data: data),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Comparison Chart
-                AcadexCard(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Distribution / Department Comparison',
-                            style: AcadexTypography.title(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                            ),
-                          ),
-                          Icon(
-                            LucideIcons.barChart2,
-                            size: 18,
-                            color: AcadexColors.accentPurple,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        height: 220,
-                        child: comparisonAsync.when(
-                          loading: () => const Center(child: CircularProgressIndicator()),
-                          error: (err, stack) => const Center(child: Text('Error loading comparison chart')),
-                          data: (data) => ComparisonBarChart(data: data),
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 32),
 
-                // Insights
-                const AcadexSectionHeader(title: 'Key Operational Insights'),
+                // Comparison Bar Chart
+                const AcadexSectionHeader(title: 'Cohort Comparison'),
+                const SizedBox(height: 12),
+                comparisonAsync.when(
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (err, _) => AcadexErrorState(
+                    message: 'Could not load comparison data: $err',
+                    onRetry: () => ref.refresh(comparisonChartProvider),
+                  ),
+                  data: (comparison) {
+                    return AcadexCard(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Department Attendance Comparison',
+                            style: AcadexTypography.heading3(color: AcadexColors.ink),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Department / Class benchmarking against institutional average',
+                            style: AcadexTypography.caption(color: AcadexColors.inkMuted),
+                          ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            height: 260,
+                            child: ComparisonBarChart(data: comparison),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 32),
+
+                // AI Generated Analytics Insights
+                const AcadexSectionHeader(title: 'AI Insights & Observations'),
                 const SizedBox(height: 12),
                 insightsAsync.when(
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (err, stack) => Text('Error loading insights: $err'),
+                  error: (err, _) => const SizedBox.shrink(),
                   data: (insights) {
-                    if (insights.isEmpty) {
-                      return const AcadexEmptyState(
-                        icon: LucideIcons.lightbulb,
-                        title: 'No insights generated',
-                        subtitle: 'Insights will automatically generate as more data is recorded.',
-                      );
-                    }
                     return Column(
-                      children: insights.map((insight) => InsightCard(insight: insight)).toList(),
+                      children: insights.map((insight) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: InsightCard(insight: insight),
+                        );
+                      }).toList(),
                     );
                   },
                 ),
@@ -182,7 +183,6 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 }

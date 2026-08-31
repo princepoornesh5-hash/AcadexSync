@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
@@ -55,7 +55,7 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
     await ref.read(announcementCreationProvider.notifier).createAnnouncement(notification);
     
     if (mounted) {
-      context.pop();
+      context.safePop(fallbackRoute: '/notifications');
     }
   }
 

@@ -63,7 +63,7 @@ class College {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'name': name,
       'code': code,
       'address': address,
@@ -71,8 +71,140 @@ class College {
       'phone': phone,
       'principal': principal,
       'isActive': isActive,
-      if (logoUrl != null) 'logoUrl': logoUrl,
+      if (logoUrl != null && logoUrl!.trim().isNotEmpty) 'logoUrl': logoUrl!.trim(),
     };
+  }
+}
+
+/// Result of provisioning a College Admin via POST /api/v1/colleges/:id/admins
+class ProvisionAdminResult {
+  final String activationCode;
+  final String adminName;
+  final String adminInstituteId;
+  final String? adminEmail;
+  final String? adminPhone;
+  final String collegeName;
+  final String collegeCode;
+  final String invitationId;
+  final DateTime expiresAt;
+
+  const ProvisionAdminResult({
+    required this.activationCode,
+    required this.adminName,
+    required this.adminInstituteId,
+    this.adminEmail,
+    this.adminPhone,
+    required this.collegeName,
+    required this.collegeCode,
+    required this.invitationId,
+    required this.expiresAt,
+  });
+
+  factory ProvisionAdminResult.fromJson(Map<String, dynamic> json) {
+    final invitation = json['invitation'] as Map<String, dynamic>? ?? {};
+    final user = json['user'] as Map<String, dynamic>? ?? {};
+
+    // Parse expiry date with fallback
+    DateTime expiresAt;
+    try {
+      final expiresAtRaw = invitation['expiresAt']?.toString() ?? json['expiresAt']?.toString();
+      expiresAt = expiresAtRaw != null
+          ? DateTime.parse(expiresAtRaw)
+          : DateTime.now().add(const Duration(hours: 48));
+    } catch (_) {
+      expiresAt = DateTime.now().add(const Duration(hours: 48));
+    }
+
+    return ProvisionAdminResult(
+      activationCode: json['activationCode'] as String? ?? '',
+      adminName: (user['name'] as String?) ?? (json['adminName'] as String?) ?? (json['name'] as String?) ?? '',
+      adminInstituteId: (user['instituteId'] as String?) ?? (json['adminInstituteId'] as String?) ?? (json['instituteId'] as String?) ?? '',
+      adminEmail: (user['email'] as String?) ?? (json['adminEmail'] as String?) ?? (json['email'] as String?),
+      adminPhone: (user['phone'] as String?) ?? (json['adminPhone'] as String?) ?? (json['phone'] as String?),
+      collegeName: (json['collegeName'] as String?) ?? (invitation['collegeName'] as String?) ?? '',
+      collegeCode: (json['collegeCode'] as String?) ?? (invitation['collegeCode'] as String?) ?? '',
+      invitationId: invitation['_id'] as String? ?? invitation['id'] as String? ?? json['invitationId'] as String? ?? '',
+      expiresAt: expiresAt,
+    );
+  }
+
+  ProvisionAdminResult copyWith({
+    String? activationCode,
+    String? adminName,
+    String? adminInstituteId,
+    String? adminEmail,
+    String? adminPhone,
+    String? collegeName,
+    String? collegeCode,
+    String? invitationId,
+    DateTime? expiresAt,
+  }) {
+    return ProvisionAdminResult(
+      activationCode: activationCode ?? this.activationCode,
+      adminName: adminName ?? this.adminName,
+      adminInstituteId: adminInstituteId ?? this.adminInstituteId,
+      adminEmail: adminEmail ?? this.adminEmail,
+      adminPhone: adminPhone ?? this.adminPhone,
+      collegeName: collegeName ?? this.collegeName,
+      collegeCode: collegeCode ?? this.collegeCode,
+      invitationId: invitationId ?? this.invitationId,
+      expiresAt: expiresAt ?? this.expiresAt,
+    );
+  }
+}
+
+/// Result of provisioning an HOD via POST /api/v1/academics/hods
+class ProvisionHodResult {
+  final String activationCode;
+  final UserModel user;
+  final String invitationId;
+  final DateTime expiresAt;
+  final String collegeCode;
+  final String departmentName;
+
+  const ProvisionHodResult({
+    required this.activationCode,
+    required this.user,
+    required this.invitationId,
+    required this.expiresAt,
+    this.collegeCode = '',
+    this.departmentName = '',
+  });
+
+  factory ProvisionHodResult.fromJson(Map<String, dynamic> json) {
+    final invitation = json['invitation'] as Map<String, dynamic>? ?? {};
+    final userRaw = json['user'] as Map<String, dynamic>? ?? {};
+
+    DateTime expiresAt;
+    try {
+      final expiresAtRaw = invitation['expiresAt']?.toString();
+      expiresAt = expiresAtRaw != null
+          ? DateTime.parse(expiresAtRaw)
+          : DateTime.now().add(const Duration(hours: 48));
+    } catch (_) {
+      expiresAt = DateTime.now().add(const Duration(hours: 48));
+    }
+
+    return ProvisionHodResult(
+      activationCode: json['activationCode'] as String? ?? '',
+      user: UserModel.fromJson(userRaw),
+      invitationId: invitation['_id'] as String? ?? invitation['id'] as String? ?? '',
+      expiresAt: expiresAt,
+    );
+  }
+
+  ProvisionHodResult copyWith({
+    String? collegeCode,
+    String? departmentName,
+  }) {
+    return ProvisionHodResult(
+      activationCode: activationCode,
+      user: user,
+      invitationId: invitationId,
+      expiresAt: expiresAt,
+      collegeCode: collegeCode ?? this.collegeCode,
+      departmentName: departmentName ?? this.departmentName,
+    );
   }
 }
 
@@ -146,6 +278,7 @@ class Course {
   final String departmentId;
   final String name;
   final String code;
+  final int duration;
   final bool isActive;
 
   Course({
@@ -154,6 +287,7 @@ class Course {
     required this.departmentId,
     required this.name,
     required this.code,
+    this.duration = 3,
     this.isActive = true,
   });
 
@@ -163,6 +297,7 @@ class Course {
     String? departmentId,
     String? name,
     String? code,
+    int? duration,
     bool? isActive,
   }) {
     return Course(
@@ -171,17 +306,19 @@ class Course {
       departmentId: departmentId ?? this.departmentId,
       name: name ?? this.name,
       code: code ?? this.code,
+      duration: duration ?? this.duration,
       isActive: isActive ?? this.isActive,
     );
   }
 
   factory Course.fromJson(Map<String, dynamic> json) {
     return Course(
-      id: json['id'] as String? ?? '',
-      collegeId: json['collegeId'] as String? ?? '',
-      departmentId: json['departmentId'] as String? ?? '',
+      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      collegeId: json['collegeId']?.toString() ?? '',
+      departmentId: json['departmentId']?.toString() ?? '',
       name: json['name'] as String? ?? '',
       code: json['code'] as String? ?? '',
+      duration: (json['duration'] as num?)?.toInt() ?? 3,
       isActive: json['isActive'] as bool? ?? true,
     );
   }
@@ -193,6 +330,7 @@ class Course {
       'departmentId': departmentId,
       'name': name,
       'code': code,
+      'duration': duration,
       'isActive': isActive,
     };
   }
@@ -251,8 +389,8 @@ class AcademicYear {
 
   factory AcademicYear.fromJson(Map<String, dynamic> json) {
     return AcademicYear(
-      id: json['id'] as String? ?? '',
-      collegeId: json['collegeId'] as String? ?? '',
+      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      collegeId: json['collegeId']?.toString() ?? '',
       name: json['name'] as String? ?? '',
       startDate: json['startDate'] != null ? DateTime.parse(json['startDate'] as String) : DateTime.now(),
       endDate: json['endDate'] != null ? DateTime.parse(json['endDate'] as String) : DateTime.now(),
@@ -351,11 +489,11 @@ class Semester {
 
   factory Semester.fromJson(Map<String, dynamic> json) {
     return Semester(
-      id: json['id'] as String? ?? '',
-      collegeId: json['collegeId'] as String? ?? '',
-      departmentId: json['departmentId'] as String? ?? '',
-      courseId: json['courseId'] as String? ?? '',
-      academicYearId: json['academicYearId'] as String? ?? '',
+      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      collegeId: json['collegeId']?.toString() ?? '',
+      departmentId: json['departmentId']?.toString() ?? '',
+      courseId: json['courseId']?.toString() ?? '',
+      academicYearId: json['academicYearId']?.toString() ?? '',
       name: json['name'] as String? ?? '',
       number: json['number'] as int? ?? 1,
       startDate: json['startDate'] != null ? DateTime.tryParse(json['startDate'] as String) : null,
@@ -449,12 +587,12 @@ class Section {
 
   factory Section.fromJson(Map<String, dynamic> json) {
     return Section(
-      id: json['id'] as String? ?? '',
-      collegeId: json['collegeId'] as String? ?? '',
-      departmentId: json['departmentId'] as String? ?? '',
-      courseId: json['courseId'] as String? ?? '',
-      academicYearId: json['academicYearId'] as String? ?? '',
-      semesterId: json['semesterId'] as String? ?? '',
+      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      collegeId: json['collegeId']?.toString() ?? '',
+      departmentId: json['departmentId']?.toString() ?? '',
+      courseId: json['courseId']?.toString() ?? '',
+      academicYearId: json['academicYearId']?.toString() ?? '',
+      semesterId: json['semesterId']?.toString() ?? '',
       name: json['name'] as String? ?? '',
       capacity: json['capacity'] as int? ?? 60,
       status: json['status'] as String? ?? (json['isActive'] == false ? 'inactive' : 'active'),
@@ -520,22 +658,28 @@ class Subject {
   final String id;
   final String collegeId;
   final String departmentId;
+  final String courseId;
   final String semesterId;
   final String name;
   final String code;
   final int credits;
   final String type;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final bool isActive;
 
   Subject({
     required this.id,
     required this.collegeId,
     required this.departmentId,
+    this.courseId = '',
     required this.semesterId,
     required this.name,
     required this.code,
-    required this.credits,
-    required this.type,
+    this.credits = 3,
+    this.type = 'Theory',
+    this.createdAt,
+    this.updatedAt,
     this.isActive = true,
   });
 
@@ -543,36 +687,45 @@ class Subject {
     String? id,
     String? collegeId,
     String? departmentId,
+    String? courseId,
     String? semesterId,
     String? name,
     String? code,
     int? credits,
     String? type,
+    DateTime? createdAt,
+    DateTime? updatedAt,
     bool? isActive,
   }) {
     return Subject(
       id: id ?? this.id,
       collegeId: collegeId ?? this.collegeId,
       departmentId: departmentId ?? this.departmentId,
+      courseId: courseId ?? this.courseId,
       semesterId: semesterId ?? this.semesterId,
       name: name ?? this.name,
       code: code ?? this.code,
       credits: credits ?? this.credits,
       type: type ?? this.type,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       isActive: isActive ?? this.isActive,
     );
   }
 
   factory Subject.fromJson(Map<String, dynamic> json) {
     return Subject(
-      id: json['id'] as String? ?? '',
-      collegeId: json['collegeId'] as String? ?? '',
-      departmentId: json['departmentId'] as String? ?? '',
-      semesterId: json['semesterId'] as String? ?? '',
+      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      collegeId: json['collegeId']?.toString() ?? '',
+      departmentId: json['departmentId']?.toString() ?? '',
+      courseId: json['courseId']?.toString() ?? '',
+      semesterId: json['semesterId']?.toString() ?? '',
       name: json['name'] as String? ?? '',
       code: json['code'] as String? ?? '',
-      credits: json['credits'] as int? ?? 0,
+      credits: json['credits'] as int? ?? 3,
       type: json['type'] as String? ?? 'Theory',
+      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'] as String) : null,
+      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
       isActive: json['isActive'] as bool? ?? true,
     );
   }
@@ -582,11 +735,14 @@ class Subject {
       'id': id,
       'collegeId': collegeId,
       'departmentId': departmentId,
+      'courseId': courseId,
       'semesterId': semesterId,
       'name': name,
       'code': code,
       'credits': credits,
       'type': type,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
       'isActive': isActive,
     };
   }
@@ -598,6 +754,7 @@ class Faculty {
   final String departmentId;
   final String name;
   final String employeeId;
+  final String? instituteId;
   final String email;
   final String phone;
   final String? designation;
@@ -605,6 +762,7 @@ class Faculty {
   final String? specialization;
   final DateTime? joiningDate;
   final bool isActive;
+  final AccountStatus accountStatus;
   final List<String> subjectIds;
   final List<String> sectionIds;
 
@@ -614,6 +772,7 @@ class Faculty {
     required this.departmentId,
     required this.name,
     required this.employeeId,
+    this.instituteId,
     required this.email,
     required this.phone,
     this.designation,
@@ -621,6 +780,7 @@ class Faculty {
     this.specialization,
     this.joiningDate,
     this.isActive = true,
+    this.accountStatus = AccountStatus.active,
     this.subjectIds = const [],
     this.sectionIds = const [],
   });
@@ -631,6 +791,7 @@ class Faculty {
     String? departmentId,
     String? name,
     String? employeeId,
+    String? instituteId,
     String? email,
     String? phone,
     String? designation,
@@ -638,6 +799,7 @@ class Faculty {
     String? specialization,
     DateTime? joiningDate,
     bool? isActive,
+    AccountStatus? accountStatus,
     List<String>? subjectIds,
     List<String>? sectionIds,
   }) {
@@ -647,6 +809,7 @@ class Faculty {
       departmentId: departmentId ?? this.departmentId,
       name: name ?? this.name,
       employeeId: employeeId ?? this.employeeId,
+      instituteId: instituteId ?? this.instituteId,
       email: email ?? this.email,
       phone: phone ?? this.phone,
       designation: designation ?? this.designation,
@@ -654,27 +817,58 @@ class Faculty {
       specialization: specialization ?? this.specialization,
       joiningDate: joiningDate ?? this.joiningDate,
       isActive: isActive ?? this.isActive,
+      accountStatus: accountStatus ?? this.accountStatus,
       subjectIds: subjectIds ?? this.subjectIds,
       sectionIds: sectionIds ?? this.sectionIds,
     );
   }
 
   factory Faculty.fromJson(Map<String, dynamic> json) {
+    final user = json['user'] as Map<String, dynamic>?;
+    final faculty = json['faculty'] as Map<String, dynamic>?;
+
+    if (user != null || faculty != null) {
+      final u = user ?? {};
+      final f = faculty ?? {};
+      final rawStatus = u['accountStatus']?.toString() ?? f['status']?.toString() ?? 'active';
+      return Faculty(
+        id: (u['id'] ?? u['_id'] ?? f['id'] ?? f['_id'] ?? '').toString(),
+        collegeId: (f['collegeId'] ?? u['collegeId'] ?? '').toString(),
+        departmentId: (f['departmentId'] ?? u['departmentId'] ?? '').toString(),
+        name: (u['name'] ?? f['name'] ?? '').toString(),
+        employeeId: (f['employeeId'] ?? u['instituteId'] ?? '').toString(),
+        instituteId: u['instituteId'] as String? ?? f['instituteId'] as String?,
+        email: (u['email'] ?? f['email'] ?? '').toString(),
+        phone: (u['phone'] ?? f['phone'] ?? '').toString(),
+        designation: f['designation'] as String? ?? 'Assistant Professor',
+        qualification: f['qualification'] as String?,
+        specialization: f['specialization'] as String?,
+        joiningDate: f['joiningDate'] != null ? DateTime.tryParse(f['joiningDate'].toString()) : null,
+        isActive: f['isActive'] as bool? ?? (rawStatus == 'active'),
+        accountStatus: AccountStatusExtension.fromString(rawStatus),
+        subjectIds: (f['subjectIds'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+        sectionIds: (f['sectionIds'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      );
+    }
+
+    final rawStatus = json['accountStatus']?.toString() ?? json['status']?.toString() ?? 'active';
     return Faculty(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
       collegeId: (json['collegeId'] ?? '').toString(),
       departmentId: (json['departmentId'] ?? '').toString(),
       name: json['name'] as String? ?? '',
-      employeeId: json['employeeId'] as String? ?? '',
+      employeeId: (json['employeeId'] ?? json['instituteId'] ?? '').toString(),
+      instituteId: json['instituteId'] as String?,
       email: json['email'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
       designation: json['designation'] as String?,
       qualification: json['qualification'] as String?,
       specialization: json['specialization'] as String?,
       joiningDate: json['joiningDate'] != null ? DateTime.tryParse(json['joiningDate'].toString()) : null,
-      isActive: json['isActive'] as bool? ?? (json['status'] == 'active'),
-      subjectIds: (json['subjectIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
-      sectionIds: (json['sectionIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      isActive: json['isActive'] as bool? ?? (rawStatus == 'active'),
+      accountStatus: AccountStatusExtension.fromString(rawStatus),
+      subjectIds: (json['subjectIds'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      sectionIds: (json['sectionIds'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
     );
   }
 
@@ -685,6 +879,7 @@ class Faculty {
       'departmentId': departmentId,
       'name': name,
       'employeeId': employeeId,
+      if (instituteId != null) 'instituteId': instituteId,
       'email': email,
       'phone': phone,
       if (designation != null) 'designation': designation,
@@ -692,6 +887,7 @@ class Faculty {
       if (specialization != null) 'specialization': specialization,
       if (joiningDate != null) 'joiningDate': joiningDate!.toIso8601String(),
       'isActive': isActive,
+      'accountStatus': accountStatus.value,
       'subjectIds': subjectIds,
       'sectionIds': sectionIds,
     };
@@ -800,6 +996,95 @@ class ProvisionFacultyResult {
     return ProvisionFacultyResult(
       user: UserModel.fromJson(userData),
       faculty: Faculty.fromJson(facultyData),
+      invitation: InvitationInfo.fromJson(invitationData),
+      activationCode: activationCode,
+    );
+  }
+}
+
+class ProvisionStudentRequest {
+  final String departmentId;
+  final String name;
+  final String instituteId;
+  final String? email;
+  final String? phone;
+  final String? rollNumber;
+  final String? admissionNumber;
+  final String? parentName;
+  final String? parentPhone;
+  final String? bloodGroup;
+  final String? address;
+  final String? dateOfBirth;
+  final String? admissionDate;
+  final String? courseId;
+  final String? academicYearId;
+  final String? semesterId;
+  final String? sectionId;
+  final Map<String, dynamic>? metadata;
+
+  const ProvisionStudentRequest({
+    required this.departmentId,
+    required this.name,
+    required this.instituteId,
+    this.email,
+    this.phone,
+    this.rollNumber,
+    this.admissionNumber,
+    this.parentName,
+    this.parentPhone,
+    this.bloodGroup,
+    this.address,
+    this.dateOfBirth,
+    this.admissionDate,
+    this.courseId,
+    this.academicYearId,
+    this.semesterId,
+    this.sectionId,
+    this.metadata,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'departmentId': departmentId,
+      'name': name,
+      'instituteId': instituteId,
+      if (email != null && email!.isNotEmpty) 'email': email,
+      if (phone != null && phone!.isNotEmpty) 'phone': phone,
+      if (rollNumber != null && rollNumber!.isNotEmpty) 'rollNumber': rollNumber,
+      if (admissionNumber != null && admissionNumber!.isNotEmpty) 'admissionNumber': admissionNumber,
+      if (parentName != null && parentName!.isNotEmpty) 'parentName': parentName,
+      if (parentPhone != null && parentPhone!.isNotEmpty) 'parentPhone': parentPhone,
+      if (bloodGroup != null && bloodGroup!.isNotEmpty) 'bloodGroup': bloodGroup,
+      if (address != null && address!.isNotEmpty) 'address': address,
+      if (dateOfBirth != null && dateOfBirth!.isNotEmpty) 'dateOfBirth': dateOfBirth,
+      if (admissionDate != null && admissionDate!.isNotEmpty) 'admissionDate': admissionDate,
+      if (metadata != null) 'metadata': metadata,
+    };
+  }
+}
+
+class ProvisionStudentResult {
+  final UserModel user;
+  final Student student;
+  final InvitationInfo invitation;
+  final String activationCode;
+
+  const ProvisionStudentResult({
+    required this.user,
+    required this.student,
+    required this.invitation,
+    required this.activationCode,
+  });
+
+  factory ProvisionStudentResult.fromJson(Map<String, dynamic> json) {
+    final userData = json['user'] as Map<String, dynamic>? ?? {};
+    final studentData = json['student'] as Map<String, dynamic>? ?? {};
+    final invitationData = json['invitation'] as Map<String, dynamic>? ?? {};
+    final activationCode = json['activationCode']?.toString() ?? '';
+
+    return ProvisionStudentResult(
+      user: UserModel.fromJson(userData),
+      student: Student.fromJson(studentData.isNotEmpty ? studentData : json),
       invitation: InvitationInfo.fromJson(invitationData),
       activationCode: activationCode,
     );
@@ -1065,9 +1350,12 @@ class Student {
   final String sectionId;
   final String name;
   final String rollNumber;
+  final String? instituteId;
+  final String? admissionNumber;
   final String email;
   final String phone;
   final StudentLifecycleState lifecycleState;
+  final AccountStatus accountStatus;
   final DateTime? admissionDate;
   final DateTime? graduationDate;
   final String? parentName;
@@ -1088,9 +1376,12 @@ class Student {
     required this.sectionId,
     required this.name,
     required this.rollNumber,
+    this.instituteId,
+    this.admissionNumber,
     required this.email,
     required this.phone,
     this.lifecycleState = StudentLifecycleState.active,
+    this.accountStatus = AccountStatus.active,
     this.admissionDate,
     this.graduationDate,
     this.parentName,
@@ -1112,9 +1403,12 @@ class Student {
     String? sectionId,
     String? name,
     String? rollNumber,
+    String? instituteId,
+    String? admissionNumber,
     String? email,
     String? phone,
     StudentLifecycleState? lifecycleState,
+    AccountStatus? accountStatus,
     DateTime? admissionDate,
     DateTime? graduationDate,
     String? parentName,
@@ -1135,9 +1429,12 @@ class Student {
       sectionId: sectionId ?? this.sectionId,
       name: name ?? this.name,
       rollNumber: rollNumber ?? this.rollNumber,
+      instituteId: instituteId ?? this.instituteId,
+      admissionNumber: admissionNumber ?? this.admissionNumber,
       email: email ?? this.email,
       phone: phone ?? this.phone,
       lifecycleState: lifecycleState ?? this.lifecycleState,
+      accountStatus: accountStatus ?? this.accountStatus,
       admissionDate: admissionDate ?? this.admissionDate,
       graduationDate: graduationDate ?? this.graduationDate,
       parentName: parentName ?? this.parentName,
@@ -1151,29 +1448,72 @@ class Student {
   }
 
   factory Student.fromJson(Map<String, dynamic> json) {
+    // Handle nested { user, student } structure
+    if (json.containsKey('user') && json['user'] is Map<String, dynamic>) {
+      final user = json['user'] as Map<String, dynamic>;
+      final profile = json['student'] as Map<String, dynamic>? ?? {};
+      final rawStatus = user['accountStatus']?.toString() ?? profile['status']?.toString() ?? 'active';
+
+      return Student(
+        id: (profile['id'] ?? profile['_id'] ?? user['id'] ?? user['_id'] ?? '').toString(),
+        collegeId: (user['collegeId'] ?? profile['collegeId'] ?? '').toString(),
+        departmentId: (user['departmentId'] ?? profile['departmentId'] ?? '').toString(),
+        courseId: (profile['courseId'] ?? '').toString(),
+        academicYearId: (profile['academicYearId'] ?? '').toString(),
+        semesterId: (profile['semesterId'] ?? '').toString(),
+        sectionId: (profile['sectionId'] ?? '').toString(),
+        name: (user['name'] ?? profile['name'] ?? '').toString(),
+        rollNumber: (profile['rollNumber'] ?? '').toString(),
+        instituteId: (user['instituteId'] ?? profile['instituteId'])?.toString(),
+        admissionNumber: profile['admissionNumber']?.toString(),
+        email: (user['email'] ?? profile['email'] ?? '').toString(),
+        phone: (user['phone'] ?? profile['phone'] ?? '').toString(),
+        lifecycleState: profile['lifecycleState'] != null
+            ? StudentLifecycleState.fromString(profile['lifecycleState'].toString())
+            : (rawStatus == 'active' ? StudentLifecycleState.active : StudentLifecycleState.admitted),
+        accountStatus: AccountStatusExtension.fromString(rawStatus),
+        admissionDate: profile['admissionDate'] != null ? DateTime.tryParse(profile['admissionDate'].toString()) : null,
+        graduationDate: profile['graduationDate'] != null ? DateTime.tryParse(profile['graduationDate'].toString()) : null,
+        parentName: profile['parentName'] as String?,
+        parentPhone: profile['parentPhone'] as String?,
+        bloodGroup: profile['bloodGroup'] as String?,
+        address: profile['address'] as String?,
+        dateOfBirth: profile['dateOfBirth'] != null ? DateTime.tryParse(profile['dateOfBirth'].toString()) : null,
+        isActive: profile['isActive'] as bool? ?? (rawStatus == 'active'),
+        history: (profile['history'] as List<dynamic>?)
+                ?.map((e) => AcademicTimelineRecord.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            [],
+      );
+    }
+
+    final rawStatus = json['accountStatus']?.toString() ?? json['status']?.toString() ?? 'active';
     return Student(
-      id: json['id'] as String? ?? '',
-      collegeId: json['collegeId'] as String? ?? '',
-      departmentId: json['departmentId'] as String? ?? '',
-      courseId: json['courseId'] as String? ?? '',
-      academicYearId: json['academicYearId'] as String? ?? '',
-      semesterId: json['semesterId'] as String? ?? '',
-      sectionId: json['sectionId'] as String? ?? '',
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      collegeId: (json['collegeId'] ?? '').toString(),
+      departmentId: (json['departmentId'] ?? '').toString(),
+      courseId: (json['courseId'] ?? '').toString(),
+      academicYearId: (json['academicYearId'] ?? '').toString(),
+      semesterId: (json['semesterId'] ?? '').toString(),
+      sectionId: (json['sectionId'] ?? '').toString(),
       name: json['name'] as String? ?? '',
-      rollNumber: json['rollNumber'] as String? ?? '',
+      rollNumber: (json['rollNumber'] ?? '').toString(),
+      instituteId: json['instituteId'] as String?,
+      admissionNumber: json['admissionNumber'] as String?,
       email: json['email'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
       lifecycleState: json['lifecycleState'] != null
           ? StudentLifecycleState.fromString(json['lifecycleState'] as String)
           : (json['isActive'] == false ? StudentLifecycleState.alumni : StudentLifecycleState.active),
-      admissionDate: json['admissionDate'] != null ? DateTime.tryParse(json['admissionDate'] as String) : null,
-      graduationDate: json['graduationDate'] != null ? DateTime.tryParse(json['graduationDate'] as String) : null,
+      accountStatus: AccountStatusExtension.fromString(rawStatus),
+      admissionDate: json['admissionDate'] != null ? DateTime.tryParse(json['admissionDate'].toString()) : null,
+      graduationDate: json['graduationDate'] != null ? DateTime.tryParse(json['graduationDate'].toString()) : null,
       parentName: json['parentName'] as String?,
       parentPhone: json['parentPhone'] as String?,
       bloodGroup: json['bloodGroup'] as String?,
       address: json['address'] as String?,
-      dateOfBirth: json['dateOfBirth'] != null ? DateTime.tryParse(json['dateOfBirth'] as String) : null,
-      isActive: json['isActive'] as bool? ?? true,
+      dateOfBirth: json['dateOfBirth'] != null ? DateTime.tryParse(json['dateOfBirth'].toString()) : null,
+      isActive: json['isActive'] as bool? ?? (rawStatus == 'active'),
       history: (json['history'] as List<dynamic>?)
               ?.map((e) => AcademicTimelineRecord.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -1192,16 +1532,19 @@ class Student {
       'sectionId': sectionId,
       'name': name,
       'rollNumber': rollNumber,
+      if (instituteId != null) 'instituteId': instituteId,
+      if (admissionNumber != null) 'admissionNumber': admissionNumber,
       'email': email,
       'phone': phone,
       'lifecycleState': lifecycleState.name,
-      'admissionDate': admissionDate?.toIso8601String(),
-      'graduationDate': graduationDate?.toIso8601String(),
-      'parentName': parentName,
-      'parentPhone': parentPhone,
-      'bloodGroup': bloodGroup,
-      'address': address,
-      'dateOfBirth': dateOfBirth?.toIso8601String(),
+      'accountStatus': accountStatus.value,
+      if (admissionDate != null) 'admissionDate': admissionDate!.toIso8601String(),
+      if (graduationDate != null) 'graduationDate': graduationDate!.toIso8601String(),
+      if (parentName != null) 'parentName': parentName,
+      if (parentPhone != null) 'parentPhone': parentPhone,
+      if (bloodGroup != null) 'bloodGroup': bloodGroup,
+      if (address != null) 'address': address,
+      if (dateOfBirth != null) 'dateOfBirth': dateOfBirth!.toIso8601String(),
       'isActive': isActive,
       'history': history.map((h) => h.toJson()).toList(),
     };

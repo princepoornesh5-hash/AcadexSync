@@ -41,14 +41,12 @@ class AcadexDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Dialog(
-      backgroundColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+      backgroundColor: AcadexColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: AcadexRadius.borderRadiusXl,
-        side: BorderSide(
-          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        side: const BorderSide(
+          color: AcadexColors.hairline,
           width: 1,
         ),
       ),
@@ -71,7 +69,7 @@ class AcadexDialog extends StatelessWidget {
                         Text(
                           title,
                           style: AcadexTypography.heading2(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            color: AcadexColors.ink,
                           ),
                         ),
                         if (subtitle != null) ...[
@@ -79,7 +77,7 @@ class AcadexDialog extends StatelessWidget {
                           Text(
                             subtitle!,
                             style: AcadexTypography.bodySmall(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              color: AcadexColors.inkMuted,
                             ),
                           ),
                         ],
@@ -87,10 +85,10 @@ class AcadexDialog extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(LucideIcons.x, size: 18),
+                    icon: const Icon(LucideIcons.x, size: 18, color: AcadexColors.inkSecondary),
                     onPressed: () => Navigator.of(context).pop(),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                   ),
                 ],
               ),
@@ -160,15 +158,13 @@ class AcadexConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return AcadexDialog(
       title: title,
       maxWidth: 440,
       content: Text(
         message,
         style: AcadexTypography.body(
-          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+          color: AcadexColors.inkSecondary,
         ),
       ),
       actions: [
@@ -223,15 +219,13 @@ class AcadexBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+      decoration: const BoxDecoration(
+        color: AcadexColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AcadexRadius.xl)),
         border: Border(
           top: BorderSide(
-            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+            color: AcadexColors.hairline,
             width: 1,
           ),
         ),
@@ -251,7 +245,7 @@ class AcadexBottomSheet extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkHairlineHover : AcadexColors.hairlineHover,
+                color: AcadexColors.hairlineHover,
                 borderRadius: AcadexRadius.borderRadiusFull,
               ),
             ),
@@ -267,7 +261,7 @@ class AcadexBottomSheet extends StatelessWidget {
                     Text(
                       title,
                       style: AcadexTypography.heading2(
-                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                        color: AcadexColors.ink,
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -275,7 +269,7 @@ class AcadexBottomSheet extends StatelessWidget {
                       Text(
                         subtitle!,
                         style: AcadexTypography.bodySmall(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          color: AcadexColors.inkMuted,
                         ),
                       ),
                     ],
@@ -283,10 +277,10 @@ class AcadexBottomSheet extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(LucideIcons.x, size: 18),
+                icon: const Icon(LucideIcons.x, size: 18, color: AcadexColors.inkSecondary),
                 onPressed: () => Navigator.of(context).pop(),
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               ),
             ],
           ),

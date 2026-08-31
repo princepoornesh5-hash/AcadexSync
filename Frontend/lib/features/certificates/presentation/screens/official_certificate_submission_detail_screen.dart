@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
@@ -131,7 +131,7 @@ class _OfficialCertificateSubmissionDetailScreenState
             children: [
               const Text('Submission not found'),
               const SizedBox(height: 16),
-              AcadexButton(label: 'Back', onPressed: () => context.pop()),
+              AcadexButton(label: 'Back', onPressed: () => context.safePop(fallbackRoute: '/certificates/official')),
             ],
           ),
         ),
@@ -155,7 +155,7 @@ class _OfficialCertificateSubmissionDetailScreenState
                     label: 'Back to List',
                     icon: LucideIcons.arrowLeft,
                     variant: AcadexButtonVariant.secondary,
-                    onPressed: () => context.pop(),
+                    onPressed: () => context.safePop(fallbackRoute: '/certificates/official'),
                   ),
                 ],
               ),

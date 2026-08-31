@@ -56,8 +56,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: Colors.transparent,
       body: AcadexPageContainer(
+        backgroundColor: Colors.transparent,
         scrollable: false,
         maxWidth: AcadexLayout.contentMaxWidth,
         child: Column(
@@ -80,16 +81,19 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
             // Navigation Tabs
             Container(
               decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
               ),
               child: TabBar(
                 controller: _tabController,
-                indicatorColor: AcadexColors.primary,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                indicatorColor: const Color(0xFF0080FF),
                 indicatorWeight: 3,
-                labelColor: AcadexColors.primary,
-                unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                labelColor: const Color(0xFF003366),
+                unselectedLabelColor: const Color(0xFF07111F),
                 labelStyle: AcadexTypography.bodySmall().copyWith(fontWeight: FontWeight.w700),
                 unselectedLabelStyle: AcadexTypography.bodySmall().copyWith(fontWeight: FontWeight.w500),
                 tabs: const [

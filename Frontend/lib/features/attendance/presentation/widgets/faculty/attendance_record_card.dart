@@ -76,7 +76,7 @@ class AttendanceRecordCard extends StatelessWidget {
                           ).copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 6),
-                        AttendanceLockChip(isLocked: session.isLocked),
+                        AttendanceLockChip(isLocked: session.isLocked, status: session.status),
                       ],
                     )
                   ],

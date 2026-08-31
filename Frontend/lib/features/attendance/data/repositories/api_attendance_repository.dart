@@ -187,14 +187,18 @@ class ApiAttendanceRepository implements AttendanceRepository {
               ? DateTime.tryParse(m['date'].toString()) ?? DateTime.now()
               : DateTime.now();
 
+          final subjectIdStr = (m['subjectId'] is Map ? (m['subjectId']['_id'] ?? m['subjectId']['id']) : m['subjectId'] ?? '').toString();
+          final subjectNameStr = (m['subjectName'] ?? (m['subjectId'] is Map ? m['subjectId']['name'] : null) ?? 'Subject').toString();
+          final facultyNameStr = (m['facultyName'] ?? (m['facultyId'] is Map ? m['facultyId']['name'] : null) ?? 'Faculty').toString();
+
           return AttendanceHistoryRecord(
             id: (m['id'] ?? m['_id'] ?? '').toString(),
-            subjectId: (m['subjectId'] ?? '').toString(),
-            subjectName: (m['subjectName'] ?? 'Subject').toString(),
+            subjectId: subjectIdStr,
+            subjectName: subjectNameStr,
             date: dateParsed,
             timeSlot: (m['timeSlot'] ?? '10:00 AM - 11:00 AM').toString(),
             status: status,
-            facultyName: (m['facultyName'] ?? 'Faculty').toString(),
+            facultyName: facultyNameStr,
           );
         }).toList();
       }
@@ -222,35 +226,75 @@ class ApiAttendanceRepository implements AttendanceRepository {
     String? timetableEntryId,
   }) async {
     try {
+      // 1. Fetch active enrollments for this section if any exist
+      final Set<String> enrolledStudentIds = {};
+      try {
+        final enrollResponse = await _client.dio.get(
+          '/academics/enrollments',
+          queryParameters: {'sectionId': sectionId, 'status': 'active'},
+        );
+        final enrollBody = enrollResponse.data;
+        final enrollData = enrollBody is Map<String, dynamic> ? (enrollBody['data'] ?? enrollBody) : enrollBody;
+        final enrollList = enrollData is List ? enrollData : (enrollData is Map && enrollData['items'] is List ? enrollData['items'] as List : null);
+        if (enrollList != null) {
+          for (final item in enrollList) {
+            if (item is Map) {
+              final sid = (item['studentId'] ?? item['id'] ?? '').toString();
+              if (sid.isNotEmpty) enrolledStudentIds.add(sid);
+            }
+          }
+        }
+      } catch (_) {
+        // Fallback to student list directly if enrollments lookup fails
+      }
+
+      // 2. Fetch students
       final response = await _client.dio.get(
         '/academics/students',
-        queryParameters: {'sectionId': sectionId},
+        queryParameters: {'limit': 100},
       );
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       final list = data is List ? data : (data is Map && data['items'] is List ? data['items'] as List : null);
 
       if (list != null) {
-        return list.map((item) {
+        final List<AttendanceRecord> records = [];
+        for (final item in list) {
           final m = item as Map<String, dynamic>;
-          final sId = (m['id'] ?? m['_id'] ?? '').toString();
-          final sName = (m['name'] ?? 'Student').toString();
-          final roll = (m['rollNumber'] ?? m['instituteId'] ?? 'ROLL-01').toString();
+          final userMap = m['user'] as Map<String, dynamic>?;
+          final stuMap = m['student'] as Map<String, dynamic>?;
 
-          return AttendanceRecord(
-            id: 'rec_$sId',
-            studentId: sId,
+          final studentDocId = (stuMap?['id'] ?? stuMap?['_id'] ?? '').toString();
+          final userDocId = (userMap?['id'] ?? userMap?['_id'] ?? m['id'] ?? m['_id'] ?? '').toString();
+          final effectiveStudentId = studentDocId.isNotEmpty ? studentDocId : userDocId;
+
+          // If active enrollments are found for this section, filter by enrolled IDs
+          if (enrolledStudentIds.isNotEmpty &&
+              !enrolledStudentIds.contains(studentDocId) &&
+              !enrolledStudentIds.contains(userDocId)) {
+            continue;
+          }
+
+          final sName = (userMap?['name'] ?? stuMap?['name'] ?? m['name'] ?? 'Student').toString();
+          final roll = (stuMap?['rollNumber'] ?? m['rollNumber'] ?? userMap?['instituteId'] ?? 'N/A').toString();
+
+          records.add(AttendanceRecord(
+            id: 'rec_$effectiveStudentId',
+            studentId: effectiveStudentId,
             studentName: sName,
             rollNumber: roll,
             sectionId: sectionId,
             status: null,
-          );
-        }).toList();
+          ));
+        }
+        return records;
       }
       return [];
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return [];
       throw _extractError(e, 'Failed to fetch students for section');
+    } catch (_) {
+      return [];
     }
   }
 
@@ -271,7 +315,7 @@ class ApiAttendanceRepository implements AttendanceRepository {
           'studentId': r.studentId,
           'studentName': r.studentName,
           'rollNumber': r.rollNumber,
-          'status': (r.status?.name ?? 'PRESENT').toUpperCase(),
+          'status': (r.status?.name ?? 'present').toLowerCase(),
         }).toList(),
       });
       return response.statusCode == 200 || response.statusCode == 201;
@@ -282,6 +326,11 @@ class ApiAttendanceRepository implements AttendanceRepository {
 
   @override
   Future<List<AttendanceSession>> getRecentSessions(String facultyId) async {
+    return getFacultySessions();
+  }
+
+  @override
+  Future<List<AttendanceSession>> getFacultySessions() async {
     try {
       final response = await _client.dio.get('/attendance/faculty/me');
       final body = response.data;
@@ -289,57 +338,120 @@ class ApiAttendanceRepository implements AttendanceRepository {
       final list = data is List ? data : (data is Map && data['sessions'] is List ? data['sessions'] as List : null);
 
       if (list != null) {
-        return list.map((item) {
-          final m = item as Map<String, dynamic>;
-          final dateParsed = m['date'] != null
-              ? DateTime.tryParse(m['date'].toString()) ?? DateTime.now()
-              : DateTime.now();
-
-          final secId = (m['sectionId'] ?? '').toString();
-          final recordsRaw = (m['records'] as List?) ?? [];
-          final records = recordsRaw.map((r) {
-            final rm = r as Map<String, dynamic>;
-            final stStr = (rm['status'] ?? 'PRESENT').toString().toLowerCase();
-            AttendanceStatus st;
-            if (stStr.contains('late')) {
-              st = AttendanceStatus.late;
-            } else if (stStr.contains('absent')) {
-              st = AttendanceStatus.absent;
-            } else if (stStr.contains('excused')) {
-              st = AttendanceStatus.excused;
-            } else {
-              st = AttendanceStatus.present;
-            }
-            final rStudentId = (rm['studentId'] ?? '').toString();
-            return AttendanceRecord(
-              id: (rm['id'] ?? 'rec_$rStudentId').toString(),
-              studentId: rStudentId,
-              studentName: (rm['studentName'] ?? 'Student').toString(),
-              rollNumber: (rm['rollNumber'] ?? '').toString(),
-              sectionId: secId,
-              status: st,
-            );
-          }).toList();
-
-          return AttendanceSession(
-            id: (m['id'] ?? m['_id'] ?? '').toString(),
-            collegeId: (m['collegeId'] ?? '').toString(),
-            departmentId: (m['departmentId'] ?? '').toString(),
-            sectionId: secId,
-            sectionName: (m['sectionName'] ?? 'Section').toString(),
-            subjectId: (m['subjectId'] ?? '').toString(),
-            subjectName: (m['subjectName'] ?? 'Subject').toString(),
-            facultyId: (m['facultyId'] ?? facultyId).toString(),
-            timeSlot: (m['timeSlot'] ?? '10:00 AM - 11:00 AM').toString(),
-            date: dateParsed,
-            records: records,
-          );
-        }).toList();
+        return list.map((item) => AttendanceSession.fromJson(item as Map<String, dynamic>)).toList();
       }
       return [];
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return [];
       throw _extractError(e, 'Failed to fetch faculty sessions');
+    }
+  }
+
+  @override
+  Future<AttendanceSession> getSessionById(String sessionId) async {
+    try {
+      final response = await _client.dio.get('/attendance/sessions/$sessionId');
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      return AttendanceSession.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch session details');
+    }
+  }
+
+  @override
+  Future<List<AttendanceSession>> listSessions({
+    String? departmentId,
+    String? sectionId,
+    String? subjectId,
+    String? facultyId,
+    String? status,
+    DateTime? from,
+    DateTime? to,
+    int? page,
+    int? limit,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (departmentId != null && departmentId.isNotEmpty) queryParams['departmentId'] = departmentId;
+      if (sectionId != null && sectionId.isNotEmpty) queryParams['sectionId'] = sectionId;
+      if (subjectId != null && subjectId.isNotEmpty) queryParams['subjectId'] = subjectId;
+      if (facultyId != null && facultyId.isNotEmpty) queryParams['facultyId'] = facultyId;
+      if (status != null && status.isNotEmpty) queryParams['status'] = status;
+      if (from != null) queryParams['from'] = from.toIso8601String();
+      if (to != null) queryParams['to'] = to.toIso8601String();
+      if (page != null) queryParams['page'] = page;
+      if (limit != null) queryParams['limit'] = limit;
+
+      final response = await _client.dio.get('/attendance/sessions', queryParameters: queryParams);
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      final items = data is Map && data['items'] is List
+          ? data['items'] as List
+          : (data is List ? data : null);
+
+      if (items != null) {
+        return items.map((item) => AttendanceSession.fromJson(item as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return [];
+      throw _extractError(e, 'Failed to list attendance sessions');
+    }
+  }
+
+  @override
+  Future<AttendanceSession> lockSession(String sessionId) async {
+    try {
+      final response = await _client.dio.post('/attendance/sessions/$sessionId/lock');
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      return AttendanceSession.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to lock attendance session');
+    }
+  }
+
+  @override
+  Future<AttendanceSession> closeSession(String sessionId) async {
+    try {
+      final response = await _client.dio.post('/attendance/sessions/$sessionId/close');
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      return AttendanceSession.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to close attendance session');
+    }
+  }
+
+  @override
+  Future<AttendanceSession> cancelSession(String sessionId) async {
+    try {
+      final response = await _client.dio.post('/attendance/sessions/$sessionId/cancel');
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      return AttendanceSession.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to cancel attendance session');
+    }
+  }
+
+  @override
+  Future<AttendanceRecord> correctRecord(
+    String recordId, {
+    required AttendanceStatus newStatus,
+    required String reason,
+  }) async {
+    try {
+      final response = await _client.dio.patch('/attendance/records/$recordId/correct', data: {
+        'newStatus': newStatus.name,
+        'reason': reason,
+      });
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      return AttendanceRecord.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to correct attendance record');
     }
   }
 

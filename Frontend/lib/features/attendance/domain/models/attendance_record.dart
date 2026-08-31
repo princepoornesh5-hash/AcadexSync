@@ -7,9 +7,11 @@ class AttendanceRecord {
   final String rollNumber;
   final String sectionId;
   final AttendanceStatus? status;
-  final AttendanceStatus? oldStatus; // Used during editing to show what changed
+  final AttendanceStatus? oldStatus; // Used during editing/corrections to show what changed
   final DateTime? lastModified;
-  final String? modifiedBy; // ID of faculty who edited
+  final String? modifiedBy; // ID of faculty or HOD who edited/corrected
+  final String? remarks;
+  final bool isCancelled;
 
   AttendanceRecord({
     required this.id,
@@ -21,6 +23,8 @@ class AttendanceRecord {
     this.oldStatus,
     this.lastModified,
     this.modifiedBy,
+    this.remarks,
+    this.isCancelled = false,
   });
 
   AttendanceRecord copyWith({
@@ -33,6 +37,8 @@ class AttendanceRecord {
     AttendanceStatus? oldStatus,
     DateTime? lastModified,
     String? modifiedBy,
+    String? remarks,
+    bool? isCancelled,
   }) {
     return AttendanceRecord(
       id: id ?? this.id,
@@ -44,32 +50,42 @@ class AttendanceRecord {
       oldStatus: oldStatus ?? this.oldStatus,
       lastModified: lastModified ?? this.lastModified,
       modifiedBy: modifiedBy ?? this.modifiedBy,
+      remarks: remarks ?? this.remarks,
+      isCancelled: isCancelled ?? this.isCancelled,
     );
   }
 
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
     return AttendanceRecord(
-      id: json['id'] as String? ?? json['attendanceId'] as String? ?? '',
-      studentId: json['studentId'] as String? ?? '',
+      id: (json['id'] ?? json['_id'] ?? json['attendanceId'] ?? '').toString(),
+      studentId: (json['studentId'] is Map
+              ? (json['studentId']['_id'] ?? json['studentId']['id'] ?? '')
+              : (json['studentId'] ?? ''))
+          .toString(),
       studentName: json['studentName'] as String? ?? '',
       rollNumber: json['rollNumber'] as String? ?? '',
-      sectionId: json['sectionId'] as String? ?? '',
+      sectionId: (json['sectionId'] is Map
+              ? (json['sectionId']['_id'] ?? json['sectionId']['id'] ?? '')
+              : (json['sectionId'] ?? ''))
+          .toString(),
       status: json['status'] != null
           ? AttendanceStatus.values.firstWhere(
-              (e) => e.name == json['status'],
+              (e) => e.name.toLowerCase() == json['status'].toString().toLowerCase(),
               orElse: () => AttendanceStatus.present,
             )
           : null,
       oldStatus: json['oldStatus'] != null
           ? AttendanceStatus.values.firstWhere(
-              (e) => e.name == json['oldStatus'],
+              (e) => e.name.toLowerCase() == json['oldStatus'].toString().toLowerCase(),
               orElse: () => AttendanceStatus.present,
             )
           : null,
       lastModified: json['lastModified'] != null
-          ? DateTime.parse(json['lastModified'] as String)
+          ? DateTime.tryParse(json['lastModified'].toString())
           : null,
       modifiedBy: json['modifiedBy'] as String?,
+      remarks: json['remarks'] as String?,
+      isCancelled: json['isCancelled'] as bool? ?? false,
     );
   }
 
@@ -84,6 +100,8 @@ class AttendanceRecord {
       'oldStatus': oldStatus?.name,
       'lastModified': lastModified?.toIso8601String(),
       'modifiedBy': modifiedBy,
+      'remarks': remarks,
+      'isCancelled': isCancelled,
     };
   }
 }

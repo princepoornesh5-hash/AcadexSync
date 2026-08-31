@@ -31,8 +31,7 @@ class _FirebaseErrorScreenState extends State<FirebaseErrorScreen> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.light,
       home: Scaffold(
         backgroundColor: DashboardColors.background,
         body: Center(

@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../domain/models/note_model.dart';
 import '../providers/notes_lookup_providers.dart';
 import '../providers/notes_providers.dart';
@@ -19,14 +20,20 @@ class NoteDetailScreen extends ConsumerWidget {
     final subject = subjectMap[note.subjectId];
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Text(
-          'Note Details',
-          style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
+          tooltip: 'Back to Notes',
+          onPressed: () => context.safePop(fallbackRoute: '/notes'),
         ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
+        title: const Text(
+          'Note Details',
+          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Center(
         child: ConstrainedBox(

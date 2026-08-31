@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../domain/models/role_enum.dart';
@@ -33,6 +34,7 @@ class ApiAuthRepository implements AuthRepository {
 
       return UserModel.fromJson(userJson);
     } on DioException catch (e) {
+      debugPrint('[AUTH] Login network/server error: ${e.type} | message: ${e.message} | response: ${e.response?.data}');
       throw _extractError(e, 'Login failed');
     }
   }
@@ -167,9 +169,20 @@ class ApiAuthRepository implements AuthRepository {
 
   /// Extracts a human-readable error message from a DioException.
   Exception _extractError(DioException e, String fallback) {
+    if (e.response == null) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        return Exception('Connection timed out while reaching ACADEX server. Please check your connection and try again.');
+      }
+      if (e.type == DioExceptionType.connectionError || (e.message != null && e.message!.contains('XMLHttpRequest'))) {
+        return Exception('Unable to reach ACADEX server. Please check your network or verify backend service connectivity.');
+      }
+    }
+
     final message = e.response?.data?['error']?['message'] ??
         e.response?.data?['message'] ??
-        e.message ??
+        (e.message != null && !e.message!.contains('XMLHttpRequest') ? e.message : null) ??
         fallback;
     return Exception(message);
   }

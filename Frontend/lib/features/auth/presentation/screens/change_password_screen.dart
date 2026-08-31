@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../providers/auth_provider.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
@@ -110,7 +110,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             LucideIcons.arrowLeft,
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () => context.safePop(fallbackRoute: '/settings'),
         ),
         title: Text(
           "Change Password",
@@ -423,7 +423,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             icon: LucideIcons.check,
             isFullWidth: true,
             size: AcadexButtonSize.lg,
-            onPressed: () => context.pop(),
+            onPressed: () => context.safePop(fallbackRoute: '/settings'),
           ),
         ],
       ),

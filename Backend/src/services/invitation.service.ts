@@ -34,6 +34,15 @@ export interface CreateInvitationResult {
   invitation: IInvitation;
   activationCode: string;
   user: IUser;
+  collegeCode?: string;
+  collegeName?: string;
+}
+
+export interface ReissueInvitationResult {
+  invitation: IInvitation;
+  activationCode: string;
+  collegeCode?: string;
+  collegeName?: string;
 }
 
 export interface ActivationResult {
@@ -301,7 +310,7 @@ export class InvitationService {
   static async createInvitation(
     creator: AuthenticatedUser,
     data: CreateInvitationInput
-  ): Promise<{ invitation: IInvitation; activationCode: string; user: IUser }> {
+  ): Promise<CreateInvitationResult> {
     if (!data.name || data.name.trim() === '') {
       throw ApiError.badRequest('User name is required');
     }
@@ -433,10 +442,14 @@ export class InvitationService {
       });
     }
 
+    const college = await College.findById(collegeId);
+
     return {
       invitation,
       activationCode: rawActivationCode,
       user,
+      collegeCode: college?.code,
+      collegeName: college?.name,
     };
   }
 
@@ -456,16 +469,24 @@ export class InvitationService {
       );
     }
 
-    // 1. Locate institution by college code
+    // 1. Locate institution by college code (case-insensitive & trimmed)
     const normalizedCollegeCode = collegeCode.trim().toUpperCase();
-    const college = await College.findOne({ code: normalizedCollegeCode });
+    const college = await College.findOne({
+      code: { $regex: new RegExp(`^${normalizedCollegeCode.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+    });
     if (!college) {
       throw ApiError.badRequest('Invalid activation details');
     }
 
-    // 2. Locate user by instituteId
+    // 2. Locate user by instituteId or Email
     const normalizedInstituteId = instituteId.trim().toUpperCase();
-    const user = await User.findOne({ instituteId: normalizedInstituteId });
+    const normalizedEmail = instituteId.trim().toLowerCase();
+    const user = await User.findOne({
+      $or: [
+        { instituteId: { $regex: new RegExp(`^${normalizedInstituteId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } },
+        { email: normalizedEmail },
+      ],
+    });
     if (!user) {
       throw ApiError.badRequest('Invalid activation details');
     }
@@ -487,7 +508,7 @@ export class InvitationService {
     // 5. Find pending invitation for user
     const invitation = await Invitation.findOne({
       userId: user._id,
-      status: InvitationStatus.PENDING,
+      status: { $in: [InvitationStatus.PENDING, 'pending', 'PENDING'] },
     }).sort({ createdAt: -1 });
 
     if (!invitation) {
@@ -523,10 +544,11 @@ export class InvitationService {
     user.activationStatus = 'activated';
     await user.save();
 
-    // 10. Mark invitation as USED (single-use)
-    invitation.status = InvitationStatus.USED;
-    invitation.usedAt = new Date();
-    await invitation.save();
+    // 10. Mark all pending invitations for this user as USED (single-use)
+    await Invitation.updateMany(
+      { userId: user._id, status: { $in: [InvitationStatus.PENDING, 'pending', 'PENDING'] } },
+      { status: InvitationStatus.USED, usedAt: new Date() }
+    );
 
     // 11. Audit log
     await AuditLog.create({
@@ -555,7 +577,7 @@ export class InvitationService {
   static async reissueInvitation(
     invitationId: string,
     creator: AuthenticatedUser
-  ): Promise<{ invitation: IInvitation; activationCode: string }> {
+  ): Promise<ReissueInvitationResult> {
     const allowedRoles = [AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD, AppRole.FACULTY];
     if (!allowedRoles.includes(creator.role)) {
       throw ApiError.forbidden('You are not authorized to manage invitations');
@@ -617,9 +639,13 @@ export class InvitationService {
       metadata: { previousInvitationId: invitation.id },
     });
 
+    const college = await College.findById(invitation.collegeId);
+
     return {
       invitation: newInvitation,
       activationCode: rawActivationCode,
+      collegeCode: college?.code,
+      collegeName: college?.name,
     };
   }
 

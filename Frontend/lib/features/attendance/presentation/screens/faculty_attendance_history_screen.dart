@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_search_bar.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
@@ -24,26 +25,36 @@ class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendan
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
-          icon: Icon(
+          icon: const Icon(
             LucideIcons.arrowLeft,
-            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            color: Colors.white,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () => context.safePop(fallbackRoute: '/attendance'),
         ),
         title: Text(
           "Attendance Sessions History",
           style: AcadexTypography.title(
-            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            color: Colors.white,
           ),
         ),
       ),
       body: Column(
         children: [
           Container(
-            color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+              borderRadius: AcadexRadius.borderRadiusLg,
+              border: Border.all(
+                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              ),
+              boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+            ),
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
@@ -54,32 +65,51 @@ class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendan
                   },
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    AcadexChip(
-                      label: "All Records",
-                      isSelected: statusFilter == null,
-                      onSelected: (_) {
-                        ref.read(historyStatusFilterProvider.notifier).state = null;
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    AcadexChip(
-                      label: "Locked",
-                      isSelected: statusFilter == 'Locked',
-                      onSelected: (_) {
-                        ref.read(historyStatusFilterProvider.notifier).state = 'Locked';
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    AcadexChip(
-                      label: "Drafts",
-                      isSelected: statusFilter == 'Draft',
-                      onSelected: (_) {
-                        ref.read(historyStatusFilterProvider.notifier).state = 'Draft';
-                      },
-                    ),
-                  ],
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      AcadexChip(
+                        label: "All Records",
+                        isSelected: statusFilter == null,
+                        onSelected: (_) {
+                          ref.read(historyStatusFilterProvider.notifier).state = null;
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      AcadexChip(
+                        label: "Open",
+                        isSelected: statusFilter == 'open',
+                        onSelected: (_) {
+                          ref.read(historyStatusFilterProvider.notifier).state = 'open';
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      AcadexChip(
+                        label: "Locked",
+                        isSelected: statusFilter == 'locked',
+                        onSelected: (_) {
+                          ref.read(historyStatusFilterProvider.notifier).state = 'locked';
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      AcadexChip(
+                        label: "Closed",
+                        isSelected: statusFilter == 'closed',
+                        onSelected: (_) {
+                          ref.read(historyStatusFilterProvider.notifier).state = 'closed';
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      AcadexChip(
+                        label: "Cancelled",
+                        isSelected: statusFilter == 'cancelled',
+                        onSelected: (_) {
+                          ref.read(historyStatusFilterProvider.notifier).state = 'cancelled';
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

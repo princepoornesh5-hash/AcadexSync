@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/presentation/design_system/acadex_colors.dart';
 import '../../../../core/presentation/design_system/acadex_spacing.dart';
 import '../../../../core/presentation/design_system/acadex_typography.dart';
-import '../../../../core/presentation/widgets/app_avatar.dart';
-import '../../../../core/presentation/widgets/app_card.dart';
+import '../../../../core/presentation/widgets/acadex_avatar.dart';
+import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../domain/models/user_profile_model.dart';
 import 'user_role_badge.dart';
 import 'user_status_badge.dart';
@@ -28,21 +28,18 @@ class UserListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     final idLabel = user.employeeId ?? user.rollNumber ?? '';
 
-    return AppCard(
+    return AcadexCard(
       onTap: onTap,
       padding: const EdgeInsets.all(AcadexSpacing.md),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          AppAvatar(
+          AcadexAvatar(
             name: user.name,
             imageUrl: user.profilePictureUrl,
-            size: 48,
+            size: 44,
           ),
           const SizedBox(width: AcadexSpacing.md),
           Expanded(
@@ -59,7 +56,7 @@ class UserListItem extends StatelessWidget {
                       user.name,
                       style: AcadexTypography.bodyLarge.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: isDark ? AcadexColors.darkTextPrimary : AcadexColors.textPrimary,
+                        color: AcadexColors.textPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -78,14 +75,14 @@ class UserListItem extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.email_outlined, size: 13, color: isDark ? AcadexColors.darkTextSecondary : AcadexColors.textSecondary),
+                          const Icon(Icons.email_outlined, size: 13, color: AcadexColors.textSecondary),
                           const SizedBox(width: 4),
                           ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 180),
                             child: Text(
                               user.email,
                               style: AcadexTypography.caption.copyWith(
-                                color: isDark ? AcadexColors.darkTextSecondary : AcadexColors.textSecondary,
+                                color: AcadexColors.textSecondary,
                               ),
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
@@ -97,12 +94,12 @@ class UserListItem extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.badge_outlined, size: 13, color: isDark ? AcadexColors.darkTextSecondary : AcadexColors.textSecondary),
+                          const Icon(Icons.badge_outlined, size: 13, color: AcadexColors.textSecondary),
                           const SizedBox(width: 4),
                           Text(
                             idLabel,
                             style: AcadexTypography.caption.copyWith(
-                              color: isDark ? AcadexColors.darkTextSecondary : AcadexColors.textSecondary,
+                              color: AcadexColors.textSecondary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -112,14 +109,14 @@ class UserListItem extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.account_tree_outlined, size: 13, color: isDark ? AcadexColors.darkTextSecondary : AcadexColors.textSecondary),
+                          const Icon(Icons.account_tree_outlined, size: 13, color: AcadexColors.textSecondary),
                           const SizedBox(width: 4),
                           ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 160),
                             child: Text(
                               departmentName!,
                               style: AcadexTypography.caption.copyWith(
-                                color: isDark ? AcadexColors.darkTextSecondary : AcadexColors.textSecondary,
+                                color: AcadexColors.textSecondary,
                               ),
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
@@ -133,9 +130,9 @@ class UserListItem extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AcadexSpacing.sm),
-          Icon(
+          const Icon(
             Icons.chevron_right,
-            color: isDark ? AcadexColors.darkTextSecondary : AcadexColors.textSecondary,
+            color: AcadexColors.textSecondary,
             size: 20,
           ),
         ],

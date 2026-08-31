@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../providers/settings_providers.dart';
 import '../widgets/settings_widgets.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
@@ -18,7 +18,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        leading: IconButton(icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface), onPressed: () => context.pop()),
+        leading: IconButton(icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface), onPressed: () => context.safePop(fallbackRoute: '/settings')),
         title: Text("Notifications", style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface)),
       ),
       body: prefsAsync.when(

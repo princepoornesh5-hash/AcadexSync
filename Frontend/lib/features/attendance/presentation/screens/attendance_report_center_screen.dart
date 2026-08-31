@@ -114,15 +114,22 @@ class _AttendanceReportCenterScreenState extends ConsumerState<AttendanceReportC
     final effectiveFilter = currentFilter.copyWith(reportType: effectiveType);
     final reportAsync = ref.watch(attendanceReportDataProvider(effectiveFilter));
 
+    final isGradientRole = role == AppRole.superAdmin ||
+        role == AppRole.collegeAdmin ||
+        role == AppRole.hod ||
+        role == AppRole.faculty ||
+        role == AppRole.student;
+
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: isGradientRole ? Colors.transparent : (isDark ? AcadexColors.darkCanvas : AcadexColors.canvas),
       appBar: AppBar(
         title: Text(
           'Attendance Report Center',
-          style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+          style: AcadexTypography.heading3(color: isGradientRole ? Colors.white : (isDark ? AcadexColors.darkInk : AcadexColors.ink)),
         ),
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: isGradientRole ? Colors.transparent : (isDark ? AcadexColors.darkSurface : AcadexColors.surface),
         elevation: 0,
+        iconTheme: IconThemeData(color: isGradientRole ? Colors.white : (isDark ? AcadexColors.darkInk : AcadexColors.ink)),
         actions: [
           reportAsync.maybeWhen(
             data: (report) => Padding(

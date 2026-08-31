@@ -25,9 +25,8 @@ class AcadexCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = backgroundColor ?? (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface);
-    final border = borderColor ?? (isDark ? AcadexColors.darkHairline : AcadexColors.hairline);
+    final bg = backgroundColor ?? AcadexColors.surface;
+    final border = borderColor ?? AcadexColors.hairline;
     final radius = borderRadius ?? AcadexRadius.borderRadiusLg;
 
     final content = Container(
@@ -38,7 +37,7 @@ class AcadexCard extends StatelessWidget {
         color: bg,
         borderRadius: radius,
         border: Border.all(color: border, width: 1),
-        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+        boxShadow: AcadexShadows.lightSm,
       ),
       child: child,
     );
@@ -68,6 +67,7 @@ class AcadexStatCard extends StatelessWidget {
   final String? trend;
   final bool? isPositiveTrend;
   final VoidCallback? onTap;
+  final EdgeInsetsGeometry? padding;
 
   const AcadexStatCard({
     super.key,
@@ -80,31 +80,34 @@ class AcadexStatCard extends StatelessWidget {
     this.trend,
     this.isPositiveTrend,
     this.onTap,
+    this.padding,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final defaultIconColor = iconColor ?? AcadexColors.primary;
-    final defaultIconBg = iconBackgroundColor ??
-        (isDark ? AcadexColors.primaryMuted.withValues(alpha: 0.15) : AcadexColors.primaryLight);
+    final defaultIconBg = iconBackgroundColor ?? AcadexColors.primaryLight;
 
     return AcadexCard(
       onTap: onTap,
-      padding: AcadexSpacing.cardPadding,
+      padding: padding ?? const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: AcadexTypography.caption(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                ).copyWith(fontWeight: FontWeight.w600),
+              Flexible(
+                child: Text(
+                  title,
+                  style: AcadexTypography.caption(
+                    color: AcadexColors.inkMuted,
+                  ).copyWith(fontWeight: FontWeight.w600),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 width: 36,
                 height: 36,
@@ -120,20 +123,21 @@ class AcadexStatCard extends StatelessWidget {
           Text(
             value,
             style: AcadexTypography.heading1(
-              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              color: AcadexColors.ink,
             ),
           ),
           if (subtitle != null || trend != null) ...[
             const SizedBox(height: 8),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 if (trend != null) ...[
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: (isPositiveTrend ?? true)
-                          ? (isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight)
-                          : (isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight),
+                          ? AcadexColors.successLight
+                          : AcadexColors.errorLight,
                       borderRadius: AcadexRadius.borderRadiusXs,
                     ),
                     child: Text(
@@ -146,11 +150,11 @@ class AcadexStatCard extends StatelessWidget {
                   const SizedBox(width: 8),
                 ],
                 if (subtitle != null)
-                  Expanded(
+                  Flexible(
                     child: Text(
                       subtitle!,
                       style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                        color: AcadexColors.inkSecondary,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),

@@ -29,9 +29,8 @@ class MyAssignmentsScreen extends ConsumerWidget {
     final studentsState = ref.watch(studentsProvider((sectionId: null, departmentId: null)));
     final students = studentsState.items;
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      body: AcadexPageContainer(
+    return AcadexPageContainer(
+        backgroundColor: Colors.transparent,
         maxWidth: 1400,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +203,6 @@ class MyAssignmentsScreen extends ConsumerWidget {
               ),
           ],
         ),
-      ),
-    );
+      );
   }
 }

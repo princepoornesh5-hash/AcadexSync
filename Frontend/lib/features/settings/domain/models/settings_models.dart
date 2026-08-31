@@ -24,11 +24,8 @@ class AppSettings {
   }
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
-    ThemeMode mode = ThemeMode.dark;
-    if (json['themeMode'] == 'light') mode = ThemeMode.light;
-    if (json['themeMode'] == 'system') mode = ThemeMode.system;
     return AppSettings(
-      themeMode: mode,
+      themeMode: ThemeMode.light,
       language: json['language'] ?? 'en',
       fontScale: (json['fontScale'] ?? 1.0).toDouble(),
     );
@@ -36,7 +33,7 @@ class AppSettings {
 
   Map<String, dynamic> toJson() {
     return {
-      'themeMode': themeMode.name,
+      'themeMode': 'light',
       'language': language,
       'fontScale': fontScale,
     };
@@ -45,7 +42,7 @@ class AppSettings {
   // Factory for default settings
   factory AppSettings.defaults() {
     return const AppSettings(
-      themeMode: ThemeMode.dark,
+      themeMode: ThemeMode.light,
       language: 'en',
       fontScale: 1.0,
     );

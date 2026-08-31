@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../features/auth/domain/models/auth_state.dart';
+import '../../../../features/auth/domain/models/role_enum.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../widgets/settings_widgets.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
@@ -14,10 +16,17 @@ class SettingsHomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final isGradientRole = authState is AuthAuthenticated &&
+        (authState.user.role == AppRole.superAdmin ||
+            authState.user.role == AppRole.collegeAdmin ||
+            authState.user.role == AppRole.hod ||
+            authState.user.role == AppRole.faculty ||
+            authState.user.role == AppRole.student);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: isGradientRole ? Colors.transparent : (isDark ? AcadexColors.darkCanvas : AcadexColors.canvas),
       body: AcadexPageContainer(
         maxWidth: AcadexLayout.formMaxWidth,
         child: Column(
@@ -53,7 +62,7 @@ class SettingsHomeScreen extends ConsumerWidget {
                 SettingsTile(
                   icon: LucideIcons.palette,
                   title: "Appearance",
-                  subtitle: "Switch between Light, Dark, and System modes",
+                  subtitle: "Interface theme and typography display options",
                   onTap: () => context.push('/settings/appearance'),
                 ),
                 SettingsTile(
@@ -101,23 +110,7 @@ class SettingsHomeScreen extends ConsumerWidget {
               ],
             ),
 
-            SettingsSection(
-              title: "System & Support",
-              children: [
-                SettingsTile(
-                  icon: LucideIcons.helpCircle,
-                  title: "Help & FAQ",
-                  subtitle: "Documentation and tutorials for campus workflows",
-                  onTap: () => context.push('/settings/support'),
-                ),
-                SettingsTile(
-                  icon: LucideIcons.info,
-                  title: "About Acadex",
-                  subtitle: "Version 2.4.0 (Enterprise Academic Build)",
-                  onTap: () => context.push('/settings/about'),
-                ),
-              ],
-            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),

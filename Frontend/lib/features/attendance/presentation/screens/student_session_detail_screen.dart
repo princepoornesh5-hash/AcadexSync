@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
@@ -24,31 +24,29 @@ class StudentSessionDetailScreen extends ConsumerWidget {
     final sessionAsync = ref.watch(studentSessionDetailProvider(sessionId));
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      body: AcadexPageContainer(
-        maxWidth: AcadexLayout.contentMaxWidth,
-        child: sessionAsync.when(
-          loading: () => const AcadexLoadingState(message: 'Loading session details...'),
-          error: (err, _) => AcadexErrorState(
-            message: 'Unable to load attendance session: $err',
-            onRetry: () => ref.refresh(studentSessionDetailProvider(sessionId)),
-          ),
-          data: (session) {
-            if (session == null) {
-              return Center(
-                child: AcadexEmptyState(
-                  title: 'Session Not Found',
-                  subtitle: 'No verified attendance record was found for session ID "$sessionId".',
-                  actionLabel: 'Return to Portal',
-                  onActionTap: () => context.pop(),
-                ),
-              );
-            }
-
-            return _buildDetailContent(context, session, isDark);
-          },
+    return AcadexPageContainer(
+      backgroundColor: Colors.transparent,
+      maxWidth: AcadexLayout.contentMaxWidth,
+      child: sessionAsync.when(
+        loading: () => const AcadexLoadingState(message: 'Loading session details...'),
+        error: (err, _) => AcadexErrorState(
+          message: 'Unable to load attendance session: $err',
+          onRetry: () => ref.refresh(studentSessionDetailProvider(sessionId)),
         ),
+        data: (session) {
+          if (session == null) {
+            return Center(
+              child: AcadexEmptyState(
+                title: 'Session Not Found',
+                subtitle: 'No verified attendance record was found for session ID "$sessionId".',
+                actionLabel: 'Return to Portal',
+                onActionTap: () => context.safePop(fallbackRoute: '/attendance'),
+              ),
+            );
+          }
+
+          return _buildDetailContent(context, session, isDark);
+        },
       ),
     );
   }
@@ -67,7 +65,7 @@ class StudentSessionDetailScreen extends ConsumerWidget {
               label: 'Back to Attendance',
               icon: LucideIcons.arrowLeft,
               variant: AcadexButtonVariant.secondary,
-              onPressed: () => context.pop(),
+              onPressed: () => context.safePop(fallbackRoute: '/attendance'),
             ),
           ],
         ),

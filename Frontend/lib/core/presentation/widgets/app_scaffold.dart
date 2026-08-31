@@ -45,8 +45,27 @@ class AppScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMobile = AcadexBreakpoints.isMobile(context);
     final hasNavigation = navDestinations != null && navDestinations!.isNotEmpty;
+    final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
+
+    if (hasEnclosingScaffold) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (topBarActions != null && topBarActions!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: topBarActions!,
+              ),
+            ),
+          Expanded(child: body),
+        ],
+      );
+    }
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppTopBar(
         title: title,
         subtitle: subtitle,
@@ -63,10 +82,10 @@ class AppScaffold extends StatelessWidget {
               onDestinationSelected: onNavDestinationSelected,
               labelType: NavigationRailLabelType.all,
               backgroundColor: AcadexColors.surfaceLight,
-              indicatorColor: AcadexColors.primaryNavy,
+              indicatorColor: AcadexColors.primary,
               selectedIconTheme: const IconThemeData(color: Colors.white),
               selectedLabelTextStyle: const TextStyle(
-                color: AcadexColors.primaryNavy,
+                color: AcadexColors.primary,
                 fontWeight: FontWeight.w600,
                 fontSize: 12,
               ),
@@ -95,11 +114,11 @@ class AppScaffold extends StatelessWidget {
               selectedIndex: selectedNavIndex,
               onDestinationSelected: onNavDestinationSelected,
               backgroundColor: AcadexColors.surfaceLight,
-              indicatorColor: AcadexColors.primaryNavyLight.withOpacity(0.15),
+              indicatorColor: AcadexColors.primaryLight,
               destinations: navDestinations!.map((dest) {
                 return NavigationDestination(
                   icon: Icon(dest.icon),
-                  selectedIcon: Icon(dest.selectedIcon, color: AcadexColors.primaryNavy),
+                  selectedIcon: Icon(dest.selectedIcon, color: AcadexColors.primary),
                   label: dest.label,
                 );
               }).toList(),

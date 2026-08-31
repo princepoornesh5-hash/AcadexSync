@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/firebase/firebase_services.dart';
 import '../../domain/models/academic_models.dart';
+import '../../../auth/domain/models/user_model.dart';
 import '../../domain/repositories/academic_repository.dart';
 
 class ApiAcademicRepository implements AcademicRepository {
@@ -25,13 +26,21 @@ class ApiAcademicRepository implements AcademicRepository {
   @override
   Future<List<College>> getColleges() async {
     try {
-      final response = await _client.dio.get('/colleges');
+      final response = await _client.dio.get('/colleges', queryParameters: {'limit': 100});
       final body = response.data;
-      final list = (body is Map<String, dynamic> && body['data'] is List)
-          ? body['data'] as List
-          : (body is List ? body : []);
-
-      return list.map((e) => College.fromJson(e as Map<String, dynamic>)).toList();
+      // Backend returns paginated: { data: { items: [...], total, page } }
+      List raw = [];
+      if (body is Map<String, dynamic>) {
+        final data = body['data'];
+        if (data is Map<String, dynamic> && data['items'] is List) {
+          raw = data['items'] as List;
+        } else if (data is List) {
+          raw = data;
+        }
+      } else if (body is List) {
+        raw = body;
+      }
+      return raw.map((e) => College.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
       if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
@@ -41,9 +50,100 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<College> getCollegeById(String id) async {
+    try {
+      final response = await _client.dio.get('/colleges/$id');
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : body as Map<String, dynamic>;
+      return College.fromJson(data);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch college');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getCollegeSummary(String id) async {
+    try {
+      final response = await _client.dio.get('/colleges/$id/summary');
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : (body is Map<String, dynamic> ? body : <String, dynamic>{});
+      return data;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
+        return {};
+      }
+      throw _extractError(e, 'Failed to fetch college summary');
+    }
+  }
+
+  @override
+  Future<void> updateCollegeStatus(String id, String status) async {
+    try {
+      await _client.dio.patch('/colleges/$id/status', data: {'status': status});
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to update college status');
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCollegeAdmins(String id) async {
+    try {
+      final response = await _client.dio.get('/colleges/$id/admins');
+      final body = response.data;
+      List raw = [];
+      if (body is Map<String, dynamic>) {
+        final data = body['data'];
+        if (data is List) {
+          raw = data;
+        } else if (data is Map<String, dynamic> && data['items'] is List) {
+          raw = data['items'] as List;
+        }
+      } else if (body is List) {
+        raw = body;
+      }
+      return raw.map((e) => e as Map<String, dynamic>).toList();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
+        return [];
+      }
+      throw _extractError(e, 'Failed to fetch college admins');
+    }
+  }
+
+  @override
+  Future<ProvisionAdminResult> provisionCollegeAdmin(
+    String collegeId,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final response = await _client.dio.post('/colleges/$collegeId/admins', data: data);
+      final body = response.data;
+      final payload = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : body as Map<String, dynamic>;
+      return ProvisionAdminResult.fromJson(payload);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to provision college admin');
+    }
+  }
+
+  @override
   Future<void> addCollege(College college) async {
     try {
-      await _client.dio.post('/colleges', data: college.toJson());
+      // Send only backend-validated fields (not id/isActive which are backend-controlled)
+      await _client.dio.post('/colleges', data: {
+        'name': college.name,
+        'code': college.code,
+        'address': college.address,
+        'email': college.email,
+        'phone': college.phone,
+        'principal': college.principal,
+        if (college.logoUrl != null) 'logoUrl': college.logoUrl,
+      });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to create college');
     }
@@ -68,19 +168,34 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   // ===========================================================================
+  // ===========================================================================
   // 2. DEPARTMENTS
   // ===========================================================================
 
   @override
-  Future<List<Department>> getDepartments() async {
+  Future<List<Department>> getDepartments({String? collegeId, String? search, String? status}) async {
     try {
-      final response = await _client.dio.get('/departments');
+      final queryParams = <String, dynamic>{
+        'limit': 100,
+        if (collegeId != null && collegeId.isNotEmpty) 'collegeId': collegeId,
+        if (search != null && search.isNotEmpty) 'search': search,
+        if (status != null && status.isNotEmpty) 'status': status,
+      };
+      final response = await _client.dio.get('/departments', queryParameters: queryParams);
       final body = response.data;
-      final list = (body is Map<String, dynamic> && body['data'] is List)
-          ? body['data'] as List
-          : (body is List ? body : []);
+      List raw = [];
+      if (body is Map<String, dynamic>) {
+        final data = body['data'];
+        if (data is Map<String, dynamic> && data['items'] is List) {
+          raw = data['items'] as List;
+        } else if (data is List) {
+          raw = data;
+        }
+      } else if (body is List) {
+        raw = body;
+      }
 
-      return list.map((e) => Department.fromJson(e as Map<String, dynamic>)).toList();
+      return raw.map((e) => Department.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
       if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
@@ -90,9 +205,62 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<Department> getDepartmentById(String id) async {
+    try {
+      final response = await _client.dio.get('/departments/$id');
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : body as Map<String, dynamic>;
+      return Department.fromJson(data);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch department');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getDepartmentSummary(String id) async {
+    try {
+      final response = await _client.dio.get('/departments/$id/summary');
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : (body is Map<String, dynamic> ? body : <String, dynamic>{});
+      return data;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
+        return {};
+      }
+      throw _extractError(e, 'Failed to fetch department summary');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getDepartmentHod(String departmentId) async {
+    try {
+      final response = await _client.dio.get('/departments/$departmentId/hod');
+      final body = response.data;
+      if (body is Map<String, dynamic> && body['data'] != null) {
+        return body['data'] as Map<String, dynamic>;
+      }
+      return null;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
+        return null;
+      }
+      throw _extractError(e, 'Failed to fetch department HOD');
+    }
+  }
+
+  @override
   Future<void> addDepartment(Department department) async {
     try {
-      await _client.dio.post('/departments', data: department.toJson());
+      await _client.dio.post('/departments', data: {
+        'name': department.name,
+        'code': department.code,
+        if (department.description.isNotEmpty) 'description': department.description,
+        if (department.collegeId.isNotEmpty) 'collegeId': department.collegeId,
+      });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to create department');
     }
@@ -101,9 +269,22 @@ class ApiAcademicRepository implements AcademicRepository {
   @override
   Future<void> updateDepartment(Department department) async {
     try {
-      await _client.dio.put('/departments/${department.id}', data: department.toJson());
+      await _client.dio.put('/departments/${department.id}', data: {
+        'name': department.name,
+        'code': department.code,
+        'description': department.description,
+      });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to update department');
+    }
+  }
+
+  @override
+  Future<void> updateDepartmentStatus(String id, String status) async {
+    try {
+      await _client.dio.patch('/departments/$id/status', data: {'status': status});
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to update department status');
     }
   }
 
@@ -126,19 +307,150 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   // ===========================================================================
+  // 2b. HEADS OF DEPARTMENT (HOD)
+  // ===========================================================================
+
+  @override
+  Future<ProvisionHodResult> provisionHod({
+    required String departmentId,
+    required String name,
+    required String instituteId,
+    required String email,
+    String? phone,
+  }) async {
+    try {
+      final response = await _client.dio.post('/academics/hods', data: {
+        'departmentId': departmentId,
+        'name': name,
+        'instituteId': instituteId,
+        'email': email,
+        if (phone != null && phone.isNotEmpty) 'phone': phone,
+      });
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : body as Map<String, dynamic>;
+      return ProvisionHodResult.fromJson(data);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to provision HOD');
+    }
+  }
+
+  @override
+  Future<List<UserModel>> getHods({String? departmentId, String? search, String? status}) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'limit': 100,
+        if (departmentId != null && departmentId.isNotEmpty) 'departmentId': departmentId,
+        if (search != null && search.isNotEmpty) 'search': search,
+        if (status != null && status.isNotEmpty) 'status': status,
+      };
+      final response = await _client.dio.get('/academics/hods', queryParameters: queryParams);
+      final body = response.data;
+      List raw = [];
+      if (body is Map<String, dynamic>) {
+        final data = body['data'];
+        if (data is Map<String, dynamic> && data['items'] is List) {
+          raw = data['items'] as List;
+        } else if (data is List) {
+          raw = data;
+        }
+      } else if (body is List) {
+        raw = body;
+      }
+
+      return raw.map((e) => UserModel.fromJson(e as Map<String, dynamic>)).toList();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
+        return [];
+      }
+      throw _extractError(e, 'Failed to fetch HODs');
+    }
+  }
+
+  @override
+  Future<UserModel> getHodById(String id) async {
+    try {
+      final response = await _client.dio.get('/academics/hods/$id');
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : body as Map<String, dynamic>;
+      return UserModel.fromJson(data);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch HOD details');
+    }
+  }
+
+  @override
+  Future<void> updateHodProfile(String id, {String? name, String? email, String? phone}) async {
+    try {
+      await _client.dio.put('/academics/hods/$id', data: {
+        if (name != null) 'name': name,
+        if (email != null) 'email': email,
+        if (phone != null) 'phone': phone,
+      });
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to update HOD profile');
+    }
+  }
+
+  @override
+  Future<void> transferHodDepartment(String id, String targetDepartmentId) async {
+    try {
+      await _client.dio.patch('/academics/hods/$id/department', data: {
+        'departmentId': targetDepartmentId,
+      });
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to transfer HOD department');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getHodSummary(String id) async {
+    try {
+      final response = await _client.dio.get('/academics/hods/$id/summary');
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : (body is Map<String, dynamic> ? body : <String, dynamic>{});
+      return data;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
+        return {};
+      }
+      throw _extractError(e, 'Failed to fetch HOD summary');
+    }
+  }
+
+  // ===========================================================================
   // 3. COURSES / PROGRAMS
   // ===========================================================================
 
   @override
-  Future<List<Course>> getCourses() async {
+  Future<List<Course>> getCourses({String? collegeId, String? departmentId, String? search}) async {
     try {
-      final response = await _client.dio.get('/academics/courses');
+      final queryParams = <String, dynamic>{
+        'limit': 100,
+        if (collegeId != null && collegeId.isNotEmpty) 'collegeId': collegeId,
+        if (departmentId != null && departmentId.isNotEmpty) 'departmentId': departmentId,
+        if (search != null && search.isNotEmpty) 'search': search,
+      };
+      final response = await _client.dio.get('/academics/courses', queryParameters: queryParams);
       final body = response.data;
-      final list = (body is Map<String, dynamic> && body['data'] is List)
-          ? body['data'] as List
-          : (body is List ? body : []);
+      List raw = [];
+      if (body is Map<String, dynamic>) {
+        final data = body['data'];
+        if (data is Map<String, dynamic> && data['items'] is List) {
+          raw = data['items'] as List;
+        } else if (data is List) {
+          raw = data;
+        }
+      } else if (body is List) {
+        raw = body;
+      }
 
-      return list.map((e) => Course.fromJson(e as Map<String, dynamic>)).toList();
+      return raw.map((e) => Course.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
       if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
@@ -148,9 +460,29 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<Course> getCourseById(String id) async {
+    try {
+      final response = await _client.dio.get('/academics/courses/$id');
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : body as Map<String, dynamic>;
+      return Course.fromJson(data);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch course');
+    }
+  }
+
+  @override
   Future<void> addCourse(Course course) async {
     try {
-      await _client.dio.post('/academics/courses', data: course.toJson());
+      await _client.dio.post('/academics/courses', data: {
+        'departmentId': course.departmentId,
+        'name': course.name,
+        'code': course.code,
+        'duration': course.duration,
+        if (course.collegeId.isNotEmpty) 'collegeId': course.collegeId,
+      });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to create course');
     }
@@ -159,9 +491,23 @@ class ApiAcademicRepository implements AcademicRepository {
   @override
   Future<void> updateCourse(Course course) async {
     try {
-      await _client.dio.put('/academics/courses/${course.id}', data: course.toJson());
+      await _client.dio.put('/academics/courses/${course.id}', data: {
+        'name': course.name,
+        'code': course.code,
+        'duration': course.duration,
+        'isActive': course.isActive,
+      });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to update course');
+    }
+  }
+
+  @override
+  Future<void> updateCourseStatus(String id, bool isActive) async {
+    try {
+      await _client.dio.put('/academics/courses/$id', data: {'isActive': isActive});
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to update course status');
     }
   }
 
@@ -179,15 +525,27 @@ class ApiAcademicRepository implements AcademicRepository {
   // ===========================================================================
 
   @override
-  Future<List<AcademicYear>> getAcademicYears() async {
+  Future<List<AcademicYear>> getAcademicYears({String? collegeId}) async {
     try {
-      final response = await _client.dio.get('/academics/academic-years');
+      final queryParams = <String, dynamic>{
+        'limit': 100,
+        if (collegeId != null && collegeId.isNotEmpty) 'collegeId': collegeId,
+      };
+      final response = await _client.dio.get('/academics/academic-years', queryParameters: queryParams);
       final body = response.data;
-      final list = (body is Map<String, dynamic> && body['data'] is List)
-          ? body['data'] as List
-          : (body is List ? body : []);
+      List raw = [];
+      if (body is Map<String, dynamic>) {
+        final data = body['data'];
+        if (data is Map<String, dynamic> && data['items'] is List) {
+          raw = data['items'] as List;
+        } else if (data is List) {
+          raw = data;
+        }
+      } else if (body is List) {
+        raw = body;
+      }
 
-      return list.map((e) => AcademicYear.fromJson(e as Map<String, dynamic>)).toList();
+      return raw.map((e) => AcademicYear.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
       if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
@@ -197,9 +555,29 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<AcademicYear> getAcademicYearById(String id) async {
+    try {
+      final response = await _client.dio.get('/academics/academic-years/$id');
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : body as Map<String, dynamic>;
+      return AcademicYear.fromJson(data);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch academic year');
+    }
+  }
+
+  @override
   Future<void> addAcademicYear(AcademicYear academicYear) async {
     try {
-      await _client.dio.post('/academics/academic-years', data: academicYear.toJson());
+      await _client.dio.post('/academics/academic-years', data: {
+        'name': academicYear.name,
+        'startDate': academicYear.startDate.toIso8601String(),
+        'endDate': academicYear.endDate.toIso8601String(),
+        'isCurrent': academicYear.isCurrent,
+        if (academicYear.collegeId.isNotEmpty) 'collegeId': academicYear.collegeId,
+      });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to create academic year');
     }
@@ -208,16 +586,40 @@ class ApiAcademicRepository implements AcademicRepository {
   @override
   Future<void> updateAcademicYear(AcademicYear academicYear) async {
     try {
-      await _client.dio.put('/academics/academic-years/${academicYear.id}', data: academicYear.toJson());
+      await _client.dio.put('/academics/academic-years/${academicYear.id}', data: {
+        'name': academicYear.name,
+        'startDate': academicYear.startDate.toIso8601String(),
+        'endDate': academicYear.endDate.toIso8601String(),
+        'isCurrent': academicYear.isCurrent,
+        'isActive': academicYear.isActive,
+      });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to update academic year');
     }
   }
 
   @override
+  Future<void> setCurrentAcademicYear(String id) async {
+    try {
+      await _client.dio.put('/academics/academic-years/$id', data: {'isCurrent': true});
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to set current academic year');
+    }
+  }
+
+  @override
+  Future<void> updateAcademicYearStatus(String id, bool isActive) async {
+    try {
+      await _client.dio.put('/academics/academic-years/$id', data: {'isActive': isActive});
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to update academic year status');
+    }
+  }
+
+  @override
   Future<void> deactivateAcademicYear(String id) async {
     try {
-      await _client.dio.put('/academics/academic-years/$id', data: {'status': 'archived'});
+      await _client.dio.put('/academics/academic-years/$id', data: {'isActive': false});
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to deactivate academic year');
     }
@@ -226,7 +628,7 @@ class ApiAcademicRepository implements AcademicRepository {
   @override
   Future<void> activateAcademicYear(String collegeId, String academicYearId) async {
     try {
-      await _client.dio.put('/academics/academic-years/$academicYearId', data: {'status': 'active'});
+      await _client.dio.put('/academics/academic-years/$academicYearId', data: {'isCurrent': true, 'isActive': true});
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to activate academic year');
     }
@@ -237,15 +639,29 @@ class ApiAcademicRepository implements AcademicRepository {
   // ===========================================================================
 
   @override
-  Future<List<Semester>> getSemesters() async {
+  Future<List<Semester>> getSemesters({String? courseId, String? academicYearId, String? collegeId}) async {
     try {
-      final response = await _client.dio.get('/academics/semesters');
+      final queryParams = <String, dynamic>{
+        'limit': 100,
+        if (courseId != null && courseId.isNotEmpty) 'courseId': courseId,
+        if (academicYearId != null && academicYearId.isNotEmpty) 'academicYearId': academicYearId,
+        if (collegeId != null && collegeId.isNotEmpty) 'collegeId': collegeId,
+      };
+      final response = await _client.dio.get('/academics/semesters', queryParameters: queryParams);
       final body = response.data;
-      final list = (body is Map<String, dynamic> && body['data'] is List)
-          ? body['data'] as List
-          : (body is List ? body : []);
+      List raw = [];
+      if (body is Map<String, dynamic>) {
+        final data = body['data'];
+        if (data is Map<String, dynamic> && data['items'] is List) {
+          raw = data['items'] as List;
+        } else if (data is List) {
+          raw = data;
+        }
+      } else if (body is List) {
+        raw = body;
+      }
 
-      return list.map((e) => Semester.fromJson(e as Map<String, dynamic>)).toList();
+      return raw.map((e) => Semester.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
       if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
@@ -255,9 +671,32 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<Semester> getSemesterById(String id) async {
+    try {
+      final response = await _client.dio.get('/academics/semesters/$id');
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : body as Map<String, dynamic>;
+      return Semester.fromJson(data);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch semester');
+    }
+  }
+
+  @override
   Future<void> addSemester(Semester semester) async {
     try {
-      await _client.dio.post('/academics/semesters', data: semester.toJson());
+      await _client.dio.post('/academics/semesters', data: {
+        'courseId': semester.courseId,
+        'academicYearId': semester.academicYearId,
+        'name': semester.name,
+        'number': semester.number,
+        if (semester.startDate != null) 'startDate': semester.startDate!.toIso8601String(),
+        if (semester.endDate != null) 'endDate': semester.endDate!.toIso8601String(),
+        'isCurrent': semester.isCurrent,
+        if (semester.collegeId.isNotEmpty) 'collegeId': semester.collegeId,
+      });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to create semester');
     }
@@ -266,16 +705,41 @@ class ApiAcademicRepository implements AcademicRepository {
   @override
   Future<void> updateSemester(Semester semester) async {
     try {
-      await _client.dio.put('/academics/semesters/${semester.id}', data: semester.toJson());
+      await _client.dio.put('/academics/semesters/${semester.id}', data: {
+        'name': semester.name,
+        'number': semester.number,
+        if (semester.startDate != null) 'startDate': semester.startDate!.toIso8601String(),
+        if (semester.endDate != null) 'endDate': semester.endDate!.toIso8601String(),
+        'isCurrent': semester.isCurrent,
+        'isActive': semester.isActive,
+      });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to update semester');
     }
   }
 
   @override
+  Future<void> updateSemesterStatus(String id, bool isActive) async {
+    try {
+      await _client.dio.put('/academics/semesters/$id', data: {'isActive': isActive});
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to update semester status');
+    }
+  }
+
+  @override
+  Future<void> toggleSemesterCurrent(String id, bool isCurrent) async {
+    try {
+      await _client.dio.put('/academics/semesters/$id', data: {'isCurrent': isCurrent});
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to update semester current state');
+    }
+  }
+
+  @override
   Future<void> deactivateSemester(String id) async {
     try {
-      await _client.dio.put('/academics/semesters/$id', data: {'status': 'archived'});
+      await _client.dio.put('/academics/semesters/$id', data: {'isActive': false});
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to deactivate semester');
     }
@@ -284,7 +748,7 @@ class ApiAcademicRepository implements AcademicRepository {
   @override
   Future<void> activateSemester(String collegeId, String courseId, String semesterId) async {
     try {
-      await _client.dio.put('/academics/semesters/$semesterId', data: {'status': 'active'});
+      await _client.dio.put('/academics/semesters/$semesterId', data: {'isCurrent': true, 'isActive': true});
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to activate semester');
     }
@@ -293,7 +757,7 @@ class ApiAcademicRepository implements AcademicRepository {
   @override
   Future<void> completeSemester(String semesterId) async {
     try {
-      await _client.dio.put('/academics/semesters/$semesterId', data: {'status': 'completed'});
+      await _client.dio.put('/academics/semesters/$semesterId', data: {'isCurrent': false, 'isActive': true});
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to complete semester');
     }
@@ -304,15 +768,29 @@ class ApiAcademicRepository implements AcademicRepository {
   // ===========================================================================
 
   @override
-  Future<List<Section>> getSections() async {
+  Future<List<Section>> getSections({String? semesterId, String? courseId, String? collegeId}) async {
     try {
-      final response = await _client.dio.get('/academics/sections');
+      final queryParams = <String, dynamic>{
+        'limit': 100,
+        if (semesterId != null && semesterId.isNotEmpty) 'semesterId': semesterId,
+        if (courseId != null && courseId.isNotEmpty) 'courseId': courseId,
+        if (collegeId != null && collegeId.isNotEmpty) 'collegeId': collegeId,
+      };
+      final response = await _client.dio.get('/academics/sections', queryParameters: queryParams);
       final body = response.data;
-      final list = (body is Map<String, dynamic> && body['data'] is List)
-          ? body['data'] as List
-          : (body is List ? body : []);
+      List raw = [];
+      if (body is Map<String, dynamic>) {
+        final data = body['data'];
+        if (data is Map<String, dynamic> && data['items'] is List) {
+          raw = data['items'] as List;
+        } else if (data is List) {
+          raw = data;
+        }
+      } else if (body is List) {
+        raw = body;
+      }
 
-      return list.map((e) => Section.fromJson(e as Map<String, dynamic>)).toList();
+      return raw.map((e) => Section.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
       if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
@@ -322,9 +800,30 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<Section> getSectionById(String id) async {
+    try {
+      final response = await _client.dio.get('/academics/sections/$id');
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : body as Map<String, dynamic>;
+      return Section.fromJson(data);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch section');
+    }
+  }
+
+  @override
   Future<void> addSection(Section section) async {
     try {
-      await _client.dio.post('/academics/sections', data: section.toJson());
+      await _client.dio.post('/academics/sections', data: {
+        'courseId': section.courseId,
+        'academicYearId': section.academicYearId,
+        'semesterId': section.semesterId,
+        'name': section.name,
+        'capacity': section.capacity,
+        if (section.collegeId.isNotEmpty) 'collegeId': section.collegeId,
+      });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to create section');
     }
@@ -333,16 +832,29 @@ class ApiAcademicRepository implements AcademicRepository {
   @override
   Future<void> updateSection(Section section) async {
     try {
-      await _client.dio.put('/academics/sections/${section.id}', data: section.toJson());
+      await _client.dio.put('/academics/sections/${section.id}', data: {
+        'name': section.name,
+        'capacity': section.capacity,
+        'isActive': section.isActive,
+      });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to update section');
     }
   }
 
   @override
+  Future<void> updateSectionStatus(String id, bool isActive) async {
+    try {
+      await _client.dio.put('/academics/sections/$id', data: {'isActive': isActive});
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to update section status');
+    }
+  }
+
+  @override
   Future<void> deactivateSection(String id) async {
     try {
-      await _client.dio.put('/academics/sections/$id', data: {'status': 'inactive'});
+      await _client.dio.put('/academics/sections/$id', data: {'isActive': false});
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to deactivate section');
     }
@@ -398,16 +910,34 @@ class ApiAcademicRepository implements AcademicRepository {
   // 7. SUBJECTS
   // ===========================================================================
 
-  @override
-  Future<List<Subject>> getSubjects() async {
-    try {
-      final response = await _client.dio.get('/academics/subjects');
-      final body = response.data;
-      final list = (body is Map<String, dynamic> && body['data'] is List)
-          ? body['data'] as List
-          : (body is List ? body : []);
+  // ===========================================================================
+  // 7. SUBJECTS
+  // ===========================================================================
 
-      return list.map((e) => Subject.fromJson(e as Map<String, dynamic>)).toList();
+  @override
+  Future<List<Subject>> getSubjects({String? semesterId, String? courseId, String? collegeId}) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'limit': 100,
+        if (semesterId != null && semesterId.isNotEmpty) 'semesterId': semesterId,
+        if (courseId != null && courseId.isNotEmpty) 'courseId': courseId,
+        if (collegeId != null && collegeId.isNotEmpty) 'collegeId': collegeId,
+      };
+      final response = await _client.dio.get('/academics/subjects', queryParameters: queryParams);
+      final body = response.data;
+      List raw = [];
+      if (body is Map<String, dynamic>) {
+        final data = body['data'];
+        if (data is Map<String, dynamic> && data['items'] is List) {
+          raw = data['items'] as List;
+        } else if (data is List) {
+          raw = data;
+        }
+      } else if (body is List) {
+        raw = body;
+      }
+
+      return raw.map((e) => Subject.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
       if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
@@ -417,9 +947,31 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<Subject> getSubjectById(String id) async {
+    try {
+      final response = await _client.dio.get('/academics/subjects/$id');
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : body as Map<String, dynamic>;
+      return Subject.fromJson(data);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch subject');
+    }
+  }
+
+  @override
   Future<void> addSubject(Subject subject) async {
     try {
-      await _client.dio.post('/academics/subjects', data: subject.toJson());
+      await _client.dio.post('/academics/subjects', data: {
+        'courseId': subject.courseId,
+        'semesterId': subject.semesterId,
+        'name': subject.name,
+        'code': subject.code,
+        'credits': subject.credits,
+        'type': subject.type,
+        if (subject.collegeId.isNotEmpty) 'collegeId': subject.collegeId,
+      });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to create subject');
     }
@@ -428,16 +980,31 @@ class ApiAcademicRepository implements AcademicRepository {
   @override
   Future<void> updateSubject(Subject subject) async {
     try {
-      await _client.dio.put('/academics/subjects/${subject.id}', data: subject.toJson());
+      await _client.dio.put('/academics/subjects/${subject.id}', data: {
+        'name': subject.name,
+        'code': subject.code,
+        'credits': subject.credits,
+        'type': subject.type,
+        'isActive': subject.isActive,
+      });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to update subject');
     }
   }
 
   @override
+  Future<void> updateSubjectStatus(String id, bool isActive) async {
+    try {
+      await _client.dio.put('/academics/subjects/$id', data: {'isActive': isActive});
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to update subject status');
+    }
+  }
+
+  @override
   Future<void> deactivateSubject(String id) async {
     try {
-      await _client.dio.put('/academics/subjects/$id', data: {'status': 'inactive'});
+      await _client.dio.put('/academics/subjects/$id', data: {'isActive': false});
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to deactivate subject');
     }
@@ -448,19 +1015,29 @@ class ApiAcademicRepository implements AcademicRepository {
   // ===========================================================================
 
   @override
-  Future<List<Faculty>> getFaculty({String? departmentId}) async {
+  Future<List<Faculty>> getFaculty({String? departmentId, String? search, String? status}) async {
     try {
-      final queryParams = <String, dynamic>{};
-      if (departmentId != null && departmentId.isNotEmpty) {
-        queryParams['departmentId'] = departmentId;
-      }
+      final queryParams = <String, dynamic>{
+        'limit': 100,
+        if (departmentId != null && departmentId.isNotEmpty) 'departmentId': departmentId,
+        if (search != null && search.isNotEmpty) 'search': search,
+        if (status != null && status.isNotEmpty) 'status': status,
+      };
       final response = await _client.dio.get('/academics/faculty', queryParameters: queryParams);
       final body = response.data;
-      final list = (body is Map<String, dynamic> && body['data'] is List)
-          ? body['data'] as List
-          : (body is List ? body : []);
+      List raw = [];
+      if (body is Map<String, dynamic>) {
+        final data = body['data'];
+        if (data is Map<String, dynamic> && data['items'] is List) {
+          raw = data['items'] as List;
+        } else if (data is List) {
+          raw = data;
+        }
+      } else if (body is List) {
+        raw = body;
+      }
 
-      return list.map((e) => Faculty.fromJson(e as Map<String, dynamic>)).toList();
+      return raw.map((e) => Faculty.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
       if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
@@ -483,8 +1060,10 @@ class ApiAcademicRepository implements AcademicRepository {
   Future<Faculty?> getFacultyById(String id) async {
     try {
       final response = await _client.dio.get('/academics/faculty/$id');
-      final body = response.data as Map<String, dynamic>;
-      final data = body['data'] as Map<String, dynamic>? ?? body;
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : (body is Map<String, dynamic> ? body : <String, dynamic>{});
       return Faculty.fromJson(data);
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null;
@@ -527,9 +1106,34 @@ class ApiAcademicRepository implements AcademicRepository {
   @override
   Future<void> updateFaculty(Faculty faculty) async {
     try {
-      await _client.dio.put('/academics/faculty/${faculty.id}', data: faculty.toJson());
+      await _client.dio.put('/academics/faculty/${faculty.id}', data: {
+        'name': faculty.name,
+        'email': faculty.email,
+        if (faculty.phone.isNotEmpty) 'phone': faculty.phone,
+        if (faculty.employeeId.isNotEmpty) 'employeeId': faculty.employeeId,
+        if (faculty.designation != null) 'designation': faculty.designation,
+        if (faculty.qualification != null) 'qualification': faculty.qualification,
+        if (faculty.specialization != null) 'specialization': faculty.specialization,
+      });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to update faculty profile');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getFacultySummary(String id) async {
+    try {
+      final response = await _client.dio.get('/academics/faculty/$id/summary');
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : (body is Map<String, dynamic> ? body : <String, dynamic>{});
+      return data;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
+        return {};
+      }
+      throw _extractError(e, 'Failed to fetch faculty summary');
     }
   }
 
@@ -586,29 +1190,36 @@ class ApiAcademicRepository implements AcademicRepository {
     String? academicYearId,
   }) async {
     try {
-      final facultyList = await getFaculty(departmentId: departmentId);
-      final assignments = <FacultyAssignment>[];
-      for (final f in facultyList) {
-        if (facultyId != null && f.id != facultyId) continue;
-        for (final subId in f.subjectIds) {
-          if (subjectId != null && subId != subjectId) continue;
-          assignments.add(FacultyAssignment(
-            id: 'assign_${f.id}_$subId',
-            collegeId: f.collegeId,
-            facultyId: f.id,
-            facultyName: f.name,
-            subjectId: subId,
-            sectionId: sectionId ?? (f.sectionIds.isNotEmpty ? f.sectionIds.first : ''),
-            academicYearId: academicYearId ?? '',
-            semesterId: semesterId ?? '',
-            departmentId: f.departmentId,
-            courseId: courseId ?? '',
-          ));
+      final queryParams = <String, dynamic>{
+        'limit': 100,
+        if (facultyId != null && facultyId.isNotEmpty) 'facultyId': facultyId,
+        if (departmentId != null && departmentId.isNotEmpty) 'departmentId': departmentId,
+        if (courseId != null && courseId.isNotEmpty) 'courseId': courseId,
+        if (semesterId != null && semesterId.isNotEmpty) 'semesterId': semesterId,
+        if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
+        if (subjectId != null && subjectId.isNotEmpty) 'subjectId': subjectId,
+        if (academicYearId != null && academicYearId.isNotEmpty) 'academicYearId': academicYearId,
+      };
+      final response = await _client.dio.get('/academics/faculty-assignments', queryParameters: queryParams);
+      final body = response.data;
+      List raw = [];
+      if (body is Map<String, dynamic>) {
+        final data = body['data'];
+        if (data is Map<String, dynamic> && data['items'] is List) {
+          raw = data['items'] as List;
+        } else if (data is List) {
+          raw = data;
         }
+      } else if (body is List) {
+        raw = body;
       }
-      return assignments;
-    } catch (_) {
-      return [];
+
+      return raw.map((e) => FacultyAssignment.fromJson(e as Map<String, dynamic>)).toList();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
+        return [];
+      }
+      throw _extractError(e, 'Failed to fetch faculty assignments');
     }
   }
 
@@ -623,7 +1234,11 @@ class ApiAcademicRepository implements AcademicRepository {
 
   @override
   Future<void> removeFacultyAssignment(String assignmentId) async {
-    // Legacy stub
+    try {
+      await _client.dio.delete('/academics/faculty-assignments/$assignmentId');
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to remove faculty assignment');
+    }
   }
 
   @override
@@ -639,16 +1254,42 @@ class ApiAcademicRepository implements AcademicRepository {
 
   @override
   Future<List<FacultyWorkloadSummary>> getFacultyWorkloadSummaries({String? departmentId}) async {
-    final facultyList = await getFaculty(departmentId: departmentId);
-    return facultyList.map((f) => FacultyWorkloadSummary(
-      facultyId: f.id,
-      facultyName: f.name,
-      employeeId: f.employeeId,
-      departmentId: f.departmentId,
-      subjectsAssigned: f.subjectIds.length,
-      sectionsAssigned: f.sectionIds.length,
-      weeklyClasses: f.subjectIds.length * 4,
-    )).toList();
+    try {
+      final queryParams = <String, dynamic>{
+        if (departmentId != null && departmentId.isNotEmpty) 'departmentId': departmentId,
+      };
+      final response = await _client.dio.get('/academics/faculty-assignments/workload', queryParameters: queryParams);
+      final body = response.data;
+      List raw = [];
+      if (body is Map<String, dynamic> && body['data'] is List) {
+        raw = body['data'] as List;
+      } else if (body is List) {
+        raw = body;
+      }
+      return raw.map((e) {
+        final m = e as Map<String, dynamic>;
+        return FacultyWorkloadSummary(
+          facultyId: m['facultyId'] ?? '',
+          facultyName: m['facultyName'] ?? '',
+          employeeId: m['employeeId'] ?? '',
+          departmentId: m['departmentId'] ?? '',
+          subjectsAssigned: m['assignedSubjectCount'] ?? 0,
+          sectionsAssigned: m['assignedSectionCount'] ?? 0,
+          weeklyClasses: (m['assignedSubjectCount'] ?? 0) * 4,
+        );
+      }).toList();
+    } catch (_) {
+      final facultyList = await getFaculty(departmentId: departmentId);
+      return facultyList.map((f) => FacultyWorkloadSummary(
+        facultyId: f.id,
+        facultyName: f.name,
+        employeeId: f.employeeId,
+        departmentId: f.departmentId,
+        subjectsAssigned: f.subjectIds.length,
+        sectionsAssigned: f.sectionIds.length,
+        weeklyClasses: f.subjectIds.length * 4,
+      )).toList();
+    }
   }
 
   // ===========================================================================
@@ -656,17 +1297,22 @@ class ApiAcademicRepository implements AcademicRepository {
   // ===========================================================================
 
   @override
-  Future<List<Student>> getStudents({String? sectionId, String? departmentId}) async {
+  Future<List<Student>> getStudents({String? sectionId, String? departmentId, String? search, String? status}) async {
     try {
-      final queryParams = <String, dynamic>{};
+      final queryParams = <String, dynamic>{
+        'limit': 100,
+      };
       if (sectionId != null && sectionId.isNotEmpty) queryParams['sectionId'] = sectionId;
       if (departmentId != null && departmentId.isNotEmpty) queryParams['departmentId'] = departmentId;
+      if (search != null && search.isNotEmpty) queryParams['search'] = search;
+      if (status != null && status.isNotEmpty) queryParams['status'] = status;
 
       final response = await _client.dio.get('/academics/students', queryParameters: queryParams);
       final body = response.data;
-      final list = (body is Map<String, dynamic> && body['data'] is List)
-          ? body['data'] as List
+      final dynamic listRaw = (body is Map<String, dynamic> && body['data'] != null)
+          ? (body['data'] is Map<String, dynamic> ? body['data']['items'] : body['data'])
           : (body is List ? body : []);
+      final list = listRaw is List ? listRaw : [];
 
       return list.map((e) => Student.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
@@ -711,9 +1357,98 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<ProvisionStudentResult> provisionStudent(ProvisionStudentRequest request) async {
+    try {
+      final response = await _client.dio.post('/academics/students', data: request.toJson());
+      final body = response.data as Map<String, dynamic>;
+      final resultData = body['data'] as Map<String, dynamic>? ?? body;
+      final result = ProvisionStudentResult.fromJson(resultData);
+
+      // Perform initial enrollment if academic hierarchy was selected
+      if (request.courseId != null &&
+          request.academicYearId != null &&
+          request.semesterId != null &&
+          request.sectionId != null) {
+        try {
+          await enrollStudent(
+            studentId: result.student.id,
+            courseId: request.courseId!,
+            academicYearId: request.academicYearId!,
+            semesterId: request.semesterId!,
+            sectionId: request.sectionId!,
+          );
+        } catch (_) {
+          // Non-fatal if enrollment fails, student profile is already provisioned
+        }
+      }
+
+      return result;
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to provision student');
+    }
+  }
+
+  @override
+  Future<void> enrollStudent({
+    required String studentId,
+    required String courseId,
+    required String academicYearId,
+    required String semesterId,
+    required String sectionId,
+    String? enrollmentDate,
+  }) async {
+    try {
+      await _client.dio.post('/academics/enrollments', data: {
+        'studentId': studentId,
+        'courseId': courseId,
+        'academicYearId': academicYearId,
+        'semesterId': semesterId,
+        'sectionId': sectionId,
+        if (enrollmentDate != null) 'enrollmentDate': enrollmentDate,
+      });
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to enroll student in section');
+    }
+  }
+
+  @override
+  Future<void> transferStudentDepartment(String studentId, String newDepartmentId) async {
+    try {
+      await _client.dio.patch('/academics/students/$studentId/department', data: {
+        'departmentId': newDepartmentId,
+      });
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to transfer student department');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getStudentSummary(String studentId) async {
+    try {
+      final response = await _client.dio.get('/academics/students/$studentId/summary');
+      final body = response.data as Map<String, dynamic>;
+      return body['data'] as Map<String, dynamic>? ?? body;
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch student summary');
+    }
+  }
+
+  @override
   Future<void> updateStudent(Student student) async {
     try {
-      await _client.dio.put('/academics/students/${student.id}', data: student.toJson());
+      await _client.dio.put('/academics/students/${student.id}', data: {
+        if (student.name.isNotEmpty) 'name': student.name,
+        if (student.email.isNotEmpty) 'email': student.email,
+        if (student.phone.isNotEmpty) 'phone': student.phone,
+        if (student.rollNumber.isNotEmpty) 'rollNumber': student.rollNumber,
+        if (student.admissionNumber != null && student.admissionNumber!.isNotEmpty) 'admissionNumber': student.admissionNumber,
+        if (student.parentName != null) 'parentName': student.parentName,
+        if (student.parentPhone != null) 'parentPhone': student.parentPhone,
+        if (student.bloodGroup != null) 'bloodGroup': student.bloodGroup,
+        if (student.address != null) 'address': student.address,
+        if (student.dateOfBirth != null) 'dateOfBirth': student.dateOfBirth!.toIso8601String(),
+        if (student.admissionDate != null) 'admissionDate': student.admissionDate!.toIso8601String(),
+      });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to update student profile');
     }
