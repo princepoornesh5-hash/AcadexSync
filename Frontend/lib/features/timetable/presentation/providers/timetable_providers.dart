@@ -7,7 +7,6 @@ import '../../data/repositories/timetable_repository.dart';
 import '../../data/repositories/mock_timetable_repository.dart';
 import '../../data/repositories/firebase_timetable_repository.dart';
 import '../../data/repositories/api_timetable_repository.dart';
-import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
 export 'timetable_authoring_providers.dart';
@@ -32,9 +31,6 @@ final apiTimetableRepositoryProvider = Provider<TimetableRepository>((ref) {
 });
 
 final timetableRepositoryProvider = Provider<TimetableRepository>((ref) {
-  if (FirebaseInitializer.shouldUseMock) {
-    return ref.watch(mockTimetableRepositoryProvider);
-  }
   return ref.watch(apiTimetableRepositoryProvider);
 });
 
@@ -48,7 +44,7 @@ final weeklyTimetableProvider = StreamProvider<Map<TimetableDay, List<TimetableM
   final user = authState.user;
   
   // Profile readiness guard: non-super-admin users must have collegeId loaded
-  if (!FirebaseInitializer.shouldUseMock && (user.collegeId == null || user.collegeId!.isEmpty) && user.role != AppRole.superAdmin) {
+  if ((user.collegeId == null || user.collegeId!.isEmpty) && user.role != AppRole.superAdmin) {
     yield {for (var day in TimetableDay.values) day: []};
     return;
   }

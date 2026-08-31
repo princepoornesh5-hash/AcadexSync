@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../domain/models/assigned_class.dart';
 import '../../domain/models/attendance_history_record.dart';
@@ -24,36 +25,49 @@ import '../../domain/models/super_admin_student_shortage.dart';
 import '../../domain/models/super_admin_system_health.dart';
 import '../../domain/models/attendance_analytics_models.dart';
 import '../../domain/repositories/attendance_repository.dart';
-import 'mock_attendance_repository.dart';
 
 class ApiAttendanceRepository implements AttendanceRepository {
   final ApiClient _client;
-  final MockAttendanceRepository _fallbackMock;
 
-  ApiAttendanceRepository([ApiClient? client])
-      : _client = client ?? apiClient,
-        _fallbackMock = MockAttendanceRepository();
+  ApiAttendanceRepository([ApiClient? client]) : _client = client ?? apiClient;
+
+  Exception _extractError(DioException e, String fallback) {
+    String? message;
+    final data = e.response?.data;
+    if (data is Map) {
+      final err = data['error'];
+      if (err is Map) {
+        message = err['message']?.toString();
+      } else if (err is String) {
+        message = err;
+      }
+      message ??= data['message']?.toString();
+    } else if (data is String && data.isNotEmpty) {
+      message = data;
+    }
+    message ??= e.message ?? fallback;
+    return Exception(message);
+  }
 
   @override
   Future<List<AssignedClass>> getAssignedClasses(String facultyId, DateTime date) async {
     try {
-      final response = await _client.dio.get('/academics/faculty/workload');
+      final response = await _client.dio.get('/timetables/faculty/$facultyId');
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
-      
-      final list = data is List ? data : (data is Map && data['workload'] is List ? data['workload'] as List : null);
-      if (list != null && list.isNotEmpty) {
+      final list = data is List ? data : (data is Map && data['entries'] is List ? data['entries'] as List : null);
+      if (list != null) {
         return list.asMap().entries.map((entry) {
           final idx = entry.key;
           final item = entry.value as Map<String, dynamic>;
-          final subjectName = (item['subjectName'] ?? item['subject'] ?? 'Subject').toString();
-          final sectionName = (item['sectionName'] ?? item['section'] ?? 'A').toString();
-          final subjectId = (item['subjectId'] ?? '').toString();
-          final sectionId = (item['sectionId'] ?? '').toString();
-          final timeSlot = (item['timeSlot'] ?? '${9 + idx}:00 AM - ${10 + idx}:00 AM').toString();
-          
+          final subjectName = (item['subjectName'] ?? item['subject']?['name'] ?? 'Subject').toString();
+          final sectionName = (item['sectionName'] ?? item['section']?['name'] ?? 'A').toString();
+          final subjectId = (item['subjectId'] ?? item['subject']?['_id'] ?? '').toString();
+          final sectionId = (item['sectionId'] ?? item['section']?['_id'] ?? '').toString();
+          final timeSlot = (item['timeSlot'] ?? '${item['startTime'] ?? '09:00'} - ${item['endTime'] ?? '10:00'}').toString();
+
           return AssignedClass(
-            id: (item['id'] ?? 'class_$idx').toString(),
+            id: (item['id'] ?? item['_id'] ?? 'class_$idx').toString(),
             subjectName: subjectName,
             subjectId: subjectId,
             sectionName: sectionName,
@@ -66,9 +80,14 @@ class ApiAttendanceRepository implements AttendanceRepository {
           );
         }).toList();
       }
-      return _fallbackMock.getAssignedClasses(facultyId, date);
+      return [];
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404 || (e.response?.statusCode != null && e.response!.statusCode! >= 400) || e.type == DioExceptionType.connectionError) {
+        return [];
+      }
+      throw _extractError(e, 'Failed to fetch assigned classes');
     } catch (_) {
-      return _fallbackMock.getAssignedClasses(facultyId, date);
+      return [];
     }
   }
 
@@ -83,7 +102,7 @@ class ApiAttendanceRepository implements AttendanceRepository {
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       final subjects = data is List ? data : (data is Map && data['subjects'] is List ? data['subjects'] as List : null);
-      if (subjects != null && subjects.isNotEmpty) {
+      if (subjects != null) {
         return subjects.map((s) {
           final m = s as Map<String, dynamic>;
           final present = (m['presentCount'] as num?)?.toInt() ?? (m['present'] as num?)?.toInt() ?? 0;
@@ -100,9 +119,10 @@ class ApiAttendanceRepository implements AttendanceRepository {
           );
         }).toList();
       }
-      return _fallbackMock.getStudentSubjectAttendance(studentId);
-    } catch (_) {
-      return _fallbackMock.getStudentSubjectAttendance(studentId);
+      return [];
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return [];
+      throw _extractError(e, 'Failed to fetch subject attendance');
     }
   }
 
@@ -120,9 +140,10 @@ class ApiAttendanceRepository implements AttendanceRepository {
           overallPercentage: percentage,
         );
       }
-      return _fallbackMock.getStudentAttendanceOverview(studentId);
-    } catch (_) {
-      return _fallbackMock.getStudentAttendanceOverview(studentId);
+      return StudentAttendanceOverview(overallPercentage: 0.0);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return StudentAttendanceOverview(overallPercentage: 0.0);
+      throw _extractError(e, 'Failed to fetch student attendance overview');
     }
   }
 
@@ -147,7 +168,7 @@ class ApiAttendanceRepository implements AttendanceRepository {
           ? data['items'] as List
           : (data is List ? data : null);
 
-      if (items != null && items.isNotEmpty) {
+      if (items != null) {
         return items.map((item) {
           final m = item as Map<String, dynamic>;
           final statusStr = (m['status'] ?? 'PRESENT').toString().toLowerCase();
@@ -177,15 +198,21 @@ class ApiAttendanceRepository implements AttendanceRepository {
           );
         }).toList();
       }
-      return _fallbackMock.getStudentAttendanceHistory(studentId, startDate: startDate, endDate: endDate);
+      return [];
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404 || (e.response?.statusCode != null && e.response!.statusCode! >= 400) || e.type == DioExceptionType.connectionError) {
+        return [];
+      }
+      throw _extractError(e, 'Failed to fetch attendance history');
     } catch (_) {
-      return _fallbackMock.getStudentAttendanceHistory(studentId, startDate: startDate, endDate: endDate);
+      return [];
     }
   }
 
   @override
-  Future<List<MonthlyAttendanceSummary>> getStudentMonthlySummary(String studentId) =>
-      _fallbackMock.getStudentMonthlySummary(studentId);
+  Future<List<MonthlyAttendanceSummary>> getStudentMonthlySummary(String studentId) async {
+    return [];
+  }
 
   @override
   Future<List<AttendanceRecord>> getStudentsForSection(
@@ -196,18 +223,18 @@ class ApiAttendanceRepository implements AttendanceRepository {
   }) async {
     try {
       final response = await _client.dio.get(
-        '/academics/students/enrollment',
+        '/academics/students',
         queryParameters: {'sectionId': sectionId},
       );
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
-      final list = data is List ? data : (data is Map && data['enrollments'] is List ? data['enrollments'] as List : null);
+      final list = data is List ? data : (data is Map && data['items'] is List ? data['items'] as List : null);
 
-      if (list != null && list.isNotEmpty) {
+      if (list != null) {
         return list.map((item) {
           final m = item as Map<String, dynamic>;
-          final sId = (m['studentId'] ?? m['id'] ?? m['_id'] ?? '').toString();
-          final sName = (m['studentName'] ?? m['name'] ?? 'Student').toString();
+          final sId = (m['id'] ?? m['_id'] ?? '').toString();
+          final sName = (m['name'] ?? 'Student').toString();
           final roll = (m['rollNumber'] ?? m['instituteId'] ?? 'ROLL-01').toString();
 
           return AttendanceRecord(
@@ -216,13 +243,14 @@ class ApiAttendanceRepository implements AttendanceRepository {
             studentName: sName,
             rollNumber: roll,
             sectionId: sectionId,
-            status: null, // Initial unmarked status for faculty to mark
+            status: null,
           );
         }).toList();
       }
-      return _fallbackMock.getStudentsForSection(sectionId, subjectId, date, timetableEntryId: timetableEntryId);
-    } catch (_) {
-      return _fallbackMock.getStudentsForSection(sectionId, subjectId, date, timetableEntryId: timetableEntryId);
+      return [];
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return [];
+      throw _extractError(e, 'Failed to fetch students for section');
     }
   }
 
@@ -247,8 +275,8 @@ class ApiAttendanceRepository implements AttendanceRepository {
         }).toList(),
       });
       return response.statusCode == 200 || response.statusCode == 201;
-    } catch (_) {
-      return _fallbackMock.saveSession(session);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to submit attendance session');
     }
   }
 
@@ -260,7 +288,7 @@ class ApiAttendanceRepository implements AttendanceRepository {
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       final list = data is List ? data : (data is Map && data['sessions'] is List ? data['sessions'] as List : null);
 
-      if (list != null && list.isNotEmpty) {
+      if (list != null) {
         return list.map((item) {
           final m = item as Map<String, dynamic>;
           final dateParsed = m['date'] != null
@@ -308,101 +336,253 @@ class ApiAttendanceRepository implements AttendanceRepository {
           );
         }).toList();
       }
-      return _fallbackMock.getRecentSessions(facultyId);
-    } catch (_) {
-      return _fallbackMock.getRecentSessions(facultyId);
+      return [];
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return [];
+      throw _extractError(e, 'Failed to fetch faculty sessions');
     }
   }
 
   @override
-  Future<DepartmentAttendanceSummary> getDepartmentSummary(String departmentId) =>
-      _fallbackMock.getDepartmentSummary(departmentId);
+  Future<DepartmentAttendanceSummary> getDepartmentSummary(String departmentId) async {
+    try {
+      final response = await _client.dio.get('/reports/attendance/department/$departmentId');
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      if (data is Map<String, dynamic>) {
+        final summary = data['summary'] as Map<String, dynamic>? ?? data;
+        return DepartmentAttendanceSummary(
+          overallPercentage: (summary['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+          studentsBelow75: (summary['studentsBelow75'] as num?)?.toInt() ?? 0,
+          facultyCompleted: (summary['facultyCompleted'] as num?)?.toInt() ?? 0,
+          facultyPending: (summary['facultyPending'] as num?)?.toInt() ?? 0,
+          todayClasses: (summary['todayClasses'] as num?)?.toInt() ?? 0,
+          totalStudents: (summary['totalStudents'] as num?)?.toInt() ?? 0,
+          totalFaculty: (summary['totalFaculty'] as num?)?.toInt() ?? 0,
+        );
+      }
+      return DepartmentAttendanceSummary(
+        overallPercentage: 0.0,
+        studentsBelow75: 0,
+        facultyCompleted: 0,
+        facultyPending: 0,
+        todayClasses: 0,
+        totalStudents: 0,
+        totalFaculty: 0,
+      );
+    } catch (_) {
+      return DepartmentAttendanceSummary(
+        overallPercentage: 0.0,
+        studentsBelow75: 0,
+        facultyCompleted: 0,
+        facultyPending: 0,
+        todayClasses: 0,
+        totalStudents: 0,
+        totalFaculty: 0,
+      );
+    }
+  }
 
   @override
   Stream<DepartmentAttendanceSummary> watchDepartmentSummary(String departmentId) =>
-      _fallbackMock.watchDepartmentSummary(departmentId);
+      Stream.fromFuture(getDepartmentSummary(departmentId));
 
   @override
-  Future<List<FacultyAttendanceCompletion>> getFacultyCompletionStatus(String departmentId, DateTime date) =>
-      _fallbackMock.getFacultyCompletionStatus(departmentId, date);
+  Future<List<FacultyAttendanceCompletion>> getFacultyCompletionStatus(String departmentId, DateTime date) async => [];
 
   @override
-  Future<List<StudentShortage>> getStudentShortages(String departmentId) =>
-      _fallbackMock.getStudentShortages(departmentId);
+  Future<List<StudentShortage>> getStudentShortages(String departmentId) async => [];
 
   @override
-  Future<List<SectionAttendanceSummary>> getSectionAttendance(String departmentId, DateTime date) =>
-      _fallbackMock.getSectionAttendance(departmentId, date);
+  Future<List<SectionAttendanceSummary>> getSectionAttendance(String departmentId, DateTime date) async => [];
 
   @override
-  Future<CollegeAttendanceSummary> getCollegeSummary() =>
-      _fallbackMock.getCollegeSummary();
+  Future<CollegeAttendanceSummary> getCollegeSummary() async {
+    try {
+      final response = await _client.dio.get('/reports/dashboard');
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      if (data is Map<String, dynamic>) {
+        final metrics = (data['metrics'] as Map<String, dynamic>?) ??
+            (data['kpis'] as Map<String, dynamic>?) ??
+            data;
+        return CollegeAttendanceSummary(
+          todayAttendancePercentage: (metrics['collegeAttendancePercentage'] as num?)?.toDouble() ??
+              (metrics['avgAttendance'] as num?)?.toDouble() ??
+              0.0,
+          totalStudents: (metrics['studentsCount'] as num?)?.toInt() ??
+              (metrics['totalStudents'] as num?)?.toInt() ??
+              0,
+          totalFaculty: (metrics['facultyCount'] as num?)?.toInt() ??
+              (metrics['totalFaculty'] as num?)?.toInt() ??
+              0,
+          totalDepartments: (metrics['departmentsCount'] as num?)?.toInt() ??
+              (metrics['totalDepartments'] as num?)?.toInt() ??
+              0,
+          studentsBelowThreshold: (metrics['studentsBelowThreshold'] as num?)?.toInt() ?? 0,
+          pendingFaculty: 0,
+          completedFaculty: (metrics['facultyCount'] as num?)?.toInt() ??
+              (metrics['totalFaculty'] as num?)?.toInt() ??
+              0,
+        );
+      }
+      return CollegeAttendanceSummary(
+        todayAttendancePercentage: 0.0,
+        totalStudents: 0,
+        totalFaculty: 0,
+        totalDepartments: 0,
+        studentsBelowThreshold: 0,
+        pendingFaculty: 0,
+        completedFaculty: 0,
+      );
+    } catch (_) {
+      return CollegeAttendanceSummary(
+        todayAttendancePercentage: 0.0,
+        totalStudents: 0,
+        totalFaculty: 0,
+        totalDepartments: 0,
+        studentsBelowThreshold: 0,
+        pendingFaculty: 0,
+        completedFaculty: 0,
+      );
+    }
+  }
 
   @override
   Stream<CollegeAttendanceSummary> watchCollegeSummary() =>
-      _fallbackMock.watchCollegeSummary();
+      Stream.fromFuture(getCollegeSummary());
 
   @override
-  Future<List<DepartmentAttendanceComparison>> getDepartmentComparisons() =>
-      _fallbackMock.getDepartmentComparisons();
+  Future<List<DepartmentAttendanceComparison>> getDepartmentComparisons() async => [];
 
   @override
-  Future<List<CollegeInsight>> getCollegeInsights() =>
-      _fallbackMock.getCollegeInsights();
+  Future<List<CollegeInsight>> getCollegeInsights() async => [];
 
   @override
-  Future<List<CollegeFacultyCompletion>> getCollegeFacultyCompletion(DateTime date) =>
-      _fallbackMock.getCollegeFacultyCompletion(date);
+  Future<List<CollegeFacultyCompletion>> getCollegeFacultyCompletion(DateTime date) async => [];
 
   @override
-  Future<List<CollegeStudentShortage>> getCollegeStudentShortages() =>
-      _fallbackMock.getCollegeStudentShortages();
+  Future<List<CollegeStudentShortage>> getCollegeStudentShortages() async => [];
 
   @override
-  Future<SuperAdminAttendanceSummary> getSuperAdminSummary() =>
-      _fallbackMock.getSuperAdminSummary();
+  Future<SuperAdminAttendanceSummary> getSuperAdminSummary() async {
+    try {
+      final response = await _client.dio.get('/reports/dashboard');
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      if (data is Map<String, dynamic>) {
+        final metrics = (data['metrics'] as Map<String, dynamic>?) ??
+            (data['kpis'] as Map<String, dynamic>?) ??
+            data;
+        return SuperAdminAttendanceSummary(
+          totalColleges: (metrics['totalColleges'] as num?)?.toInt() ??
+              (metrics['collegesCount'] as num?)?.toInt() ??
+              0,
+          totalDepartments: (metrics['totalDepartments'] as num?)?.toInt() ??
+              (metrics['departmentsCount'] as num?)?.toInt() ??
+              0,
+          totalStudents: (metrics['totalStudents'] as num?)?.toInt() ??
+              (metrics['studentsCount'] as num?)?.toInt() ??
+              0,
+          totalFaculty: (metrics['totalFaculty'] as num?)?.toInt() ??
+              (metrics['facultyCount'] as num?)?.toInt() ??
+              0,
+          todayAttendancePercentage: (metrics['systemAttendancePercentage'] as num?)?.toDouble() ??
+              (metrics['avgAttendance'] as num?)?.toDouble() ??
+              0.0,
+          pendingColleges: 0,
+        );
+      }
+      return SuperAdminAttendanceSummary(
+        totalColleges: 0,
+        totalDepartments: 0,
+        totalStudents: 0,
+        totalFaculty: 0,
+        todayAttendancePercentage: 0.0,
+        pendingColleges: 0,
+      );
+    } catch (_) {
+      return SuperAdminAttendanceSummary(
+        totalColleges: 0,
+        totalDepartments: 0,
+        totalStudents: 0,
+        totalFaculty: 0,
+        todayAttendancePercentage: 0.0,
+        pendingColleges: 0,
+      );
+    }
+  }
 
   @override
   Stream<SuperAdminAttendanceSummary> watchSuperAdminSummary() =>
-      _fallbackMock.watchSuperAdminSummary();
+      Stream.fromFuture(getSuperAdminSummary());
 
   @override
-  Future<List<CollegeAttendanceComparison>> getCollegeComparisons() =>
-      _fallbackMock.getCollegeComparisons();
+  Future<List<CollegeAttendanceComparison>> getCollegeComparisons() async => [];
 
   @override
-  Future<List<SuperAdminInsight>> getSuperAdminInsights() =>
-      _fallbackMock.getSuperAdminInsights();
+  Future<List<SuperAdminInsight>> getSuperAdminInsights() async => [];
 
   @override
-  Future<SuperAdminSystemHealth> getSuperAdminSystemHealth() =>
-      _fallbackMock.getSuperAdminSystemHealth();
+  Future<SuperAdminSystemHealth> getSuperAdminSystemHealth() async =>
+      SuperAdminSystemHealth(
+        serverStatus: 'Healthy',
+        syncStatus: 'Synchronized',
+        apiLatency: '45ms',
+        activeUsers: 0,
+      );
 
   @override
-  Future<List<SuperAdminFacultyCompletion>> getSuperAdminFacultyCompletion(DateTime date) =>
-      _fallbackMock.getSuperAdminFacultyCompletion(date);
+  Future<List<SuperAdminFacultyCompletion>> getSuperAdminFacultyCompletion(DateTime date) async => [];
 
   @override
-  Future<List<SuperAdminStudentShortage>> getSuperAdminStudentShortages() =>
-      _fallbackMock.getSuperAdminStudentShortages();
+  Future<List<SuperAdminStudentShortage>> getSuperAdminStudentShortages() async => [];
 
   @override
-  Future<StudentAttendanceAnalytics> getStudentAttendanceAnalytics(String studentId, {AttendanceDateRange? dateRange}) =>
-      _fallbackMock.getStudentAttendanceAnalytics(studentId, dateRange: dateRange);
+  Future<StudentAttendanceAnalytics> getStudentAttendanceAnalytics(String studentId, {AttendanceDateRange? dateRange}) async {
+    final overview = await getStudentAttendanceOverview(studentId);
+    return StudentAttendanceAnalytics(
+      studentId: studentId,
+      attendancePercentage: overview.overallPercentage,
+      isLowAttendance: overview.overallPercentage < 75.0,
+      dateRange: dateRange,
+    );
+  }
 
   @override
-  Future<SubjectAttendanceAnalytics> getSubjectAttendanceAnalytics(String subjectId, {String? sectionId, AttendanceDateRange? dateRange}) =>
-      _fallbackMock.getSubjectAttendanceAnalytics(subjectId, sectionId: sectionId, dateRange: dateRange);
+  Future<SubjectAttendanceAnalytics> getSubjectAttendanceAnalytics(String subjectId, {String? sectionId, AttendanceDateRange? dateRange}) async {
+    return SubjectAttendanceAnalytics(
+      subjectId: subjectId,
+      attendancePercentage: 0.0,
+      dateRange: dateRange,
+    );
+  }
 
   @override
-  Future<SectionAttendanceAnalytics> getSectionAttendanceAnalytics(String sectionId, {AttendanceDateRange? dateRange}) =>
-      _fallbackMock.getSectionAttendanceAnalytics(sectionId, dateRange: dateRange);
+  Future<SectionAttendanceAnalytics> getSectionAttendanceAnalytics(String sectionId, {AttendanceDateRange? dateRange}) async {
+    return SectionAttendanceAnalytics(
+      sectionId: sectionId,
+      attendancePercentage: 0.0,
+      dateRange: dateRange,
+    );
+  }
 
   @override
-  Future<FacultyAttendanceAnalytics> getFacultyAttendanceAnalytics(String facultyId, {AttendanceDateRange? dateRange}) =>
-      _fallbackMock.getFacultyAttendanceAnalytics(facultyId, dateRange: dateRange);
+  Future<FacultyAttendanceAnalytics> getFacultyAttendanceAnalytics(String facultyId, {AttendanceDateRange? dateRange}) async {
+    return FacultyAttendanceAnalytics(
+      facultyId: facultyId,
+      attendancePercentage: 100.0,
+      dateRange: dateRange,
+    );
+  }
 
   @override
-  Future<AttendanceDateRangeSummary> getAttendanceDateRangeSummary({AttendanceDateRange? dateRange, String? departmentId, String? sectionId}) =>
-      _fallbackMock.getAttendanceDateRangeSummary(dateRange: dateRange, departmentId: departmentId, sectionId: sectionId);
+  Future<AttendanceDateRangeSummary> getAttendanceDateRangeSummary({AttendanceDateRange? dateRange, String? departmentId, String? sectionId}) async {
+    final now = DateTime.now();
+    return AttendanceDateRangeSummary(
+      startDate: dateRange?.startDate ?? DateTime(now.year, now.month, 1),
+      endDate: dateRange?.endDate ?? now,
+      attendancePercentage: 0.0,
+    );
+  }
 }

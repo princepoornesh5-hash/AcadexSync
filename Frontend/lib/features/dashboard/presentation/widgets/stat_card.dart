@@ -35,9 +35,7 @@ class _StatCardState extends State<StatCard> with SingleTickerProviderStateMixin
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
-    Future.delayed(Duration(milliseconds: widget.animationDelay), () {
-      if (mounted) _controller.forward();
-    });
+    _controller.forward();
   }
 
 

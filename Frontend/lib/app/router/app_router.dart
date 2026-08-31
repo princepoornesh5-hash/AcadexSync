@@ -12,6 +12,7 @@ import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/activation_screen.dart';
+import '../../features/auth/presentation/screens/change_password_screen.dart';
 import '../../features/dashboard/presentation/screens/super_admin_dashboard.dart';
 import '../../features/dashboard/presentation/screens/college_admin_dashboard.dart';
 import '../../features/dashboard/presentation/screens/hod_dashboard.dart';
@@ -106,9 +107,11 @@ class ShellWrapper extends ConsumerWidget {
     final isMobile = width <= AcadexBreakpoints.mobileMax;
     final isTablet = width > AcadexBreakpoints.mobileMax && width <= AcadexBreakpoints.tabletMax;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(navigationProvider.notifier).updateRoute(activeRoute);
-    });
+    if (ref.read(navigationProvider).currentRoute != activeRoute) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(navigationProvider.notifier).updateRoute(activeRoute);
+      });
+    }
 
     return Scaffold(
       appBar: isMobile ? const AcadexAppBar(showDrawerButton: true) : null,
@@ -202,23 +205,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: refreshListenable,
     redirect: (context, state) {
       final currentAuthState = ref.read(authProvider);
-      final isGoingToAuth = state.matchedLocation == '/login' ||
-          state.matchedLocation == '/forgot-password' ||
-          state.matchedLocation == '/activate' ||
-          state.matchedLocation == '/';
+      final loc = state.matchedLocation;
+      final isGoingToAuth = loc == '/login' ||
+          loc == '/forgot-password' ||
+          loc == '/verify-otp' ||
+          loc == '/reset-password' ||
+          loc == '/activate';
+      final isSplash = loc == '/';
 
       developer.log(
-        'Router redirect decision: path=${state.matchedLocation}, authState=${currentAuthState.runtimeType}',
+        'Router redirect decision: path=$loc, authState=${currentAuthState.runtimeType}',
         name: 'Acadex.Router',
       );
 
-      if (currentAuthState is AuthProfileLoading) {
-        // Stay on splash or loading screen if trying to access auth screens,
+      if (currentAuthState is AuthProfileLoading || currentAuthState is AuthInitial) {
+        // Stay on splash or loading screen if trying to access auth screens or splash,
         // otherwise block access to protected routes while loading.
-        return isGoingToAuth && state.matchedLocation != '/' ? '/' : (isGoingToAuth ? null : '/');
+        return (isGoingToAuth || isSplash) ? null : '/';
       }
 
-      if (currentAuthState is AuthProfileError) {
+      if (currentAuthState is AuthProfileError || currentAuthState is AuthError) {
         // Force to login if profile fails, but avoid infinite redirect loop if already on an auth route
         return isGoingToAuth ? null : '/login';
       }
@@ -238,11 +244,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return isGoingToAuth ? null : '/login';
       }
 
-      if (isGoingToAuth) {
+      if (isGoingToAuth || isSplash) {
         return getHomeRouteForRole(role);
       }
-
-      final loc = state.matchedLocation;
 
       // Role guards
       if (loc.startsWith('/dashboard/')) {
@@ -337,8 +341,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
       GoRoute(
+        path: '/verify-otp',
+        builder: (context, state) => ForgotPasswordScreen(
+          initialStep: 1,
+          initialIdentifier: state.uri.queryParameters['identifier'],
+        ),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        builder: (context, state) => ForgotPasswordScreen(
+          initialStep: 2,
+          initialIdentifier: state.uri.queryParameters['identifier'],
+          initialResetToken: state.uri.queryParameters['resetToken'],
+        ),
+      ),
+      GoRoute(
         path: '/activate',
         builder: (context, state) => const ActivationScreen(),
+      ),
+      GoRoute(
+        path: '/change-password',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          context: context,
+          state: state,
+          child: const ChangePasswordScreen(),
+        ),
       ),
       GoRoute(
         path: '/search',

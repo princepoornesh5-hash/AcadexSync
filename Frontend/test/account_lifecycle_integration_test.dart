@@ -163,7 +163,7 @@ void main() {
       );
 
       expect(find.text('Forgot your password?'), findsOneWidget);
-      expect(find.text('Email or Phone'), findsOneWidget);
+      expect(find.text('Email or Phone Number'), findsOneWidget);
       expect(find.text('Send Verification Code'), findsOneWidget);
     });
 
@@ -185,7 +185,7 @@ void main() {
       await tester.tap(sendBtn);
       await tester.pumpAndSettle();
 
-      expect(find.text('Please enter your email or phone'), findsOneWidget);
+      expect(find.text('Please enter your email or phone number'), findsOneWidget);
     });
   });
 

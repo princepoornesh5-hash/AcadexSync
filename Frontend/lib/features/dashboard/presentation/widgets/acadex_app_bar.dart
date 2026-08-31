@@ -4,20 +4,24 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../auth/domain/models/user_model.dart';
+import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../notifications/presentation/widgets/notification_badge.dart';
 import '../../../settings/presentation/providers/settings_providers.dart';
 import '../../../../core/presentation/widgets/acadex_avatar.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
 
 class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
+  final String? subtitle;
   final List<Widget>? extraActions;
   final bool showDrawerButton;
 
   const AcadexAppBar({
     super.key,
     this.title = 'Acadex',
+    this.subtitle,
     this.extraActions,
     this.showDrawerButton = true,
   });
@@ -35,6 +39,9 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
     if (authState is AuthAuthenticated) {
       user = authState.user;
     }
+
+    final isMobile = AcadexBreakpoints.isMobile(context);
+    final isDesktop = AcadexBreakpoints.isDesktop(context);
 
     return Container(
       height: 64,
@@ -59,41 +66,74 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
                     size: 20,
                   ),
-                  tooltip: 'Menu',
+                  tooltip: 'Open Navigation Menu',
                   onPressed: () => Scaffold.of(ctx).openDrawer(),
                   splashRadius: 20,
                 ),
               ),
             if (showDrawerButton) const SizedBox(width: 8),
 
-            // Logo & Brand
-            GestureDetector(
-              onTap: () => context.go('/dashboard'),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: AcadexColors.primary,
-                      borderRadius: AcadexRadius.borderRadiusMd,
+            // Logo & Brand (for Mobile/Top) or Page Title with breadcrumb
+            if (isMobile) ...[
+              GestureDetector(
+                onTap: () => context.go('/dashboard'),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [AcadexColors.primary, Color(0xFF6366F1)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: AcadexRadius.borderRadiusMd,
+                      ),
+                      child: const Icon(LucideIcons.graduationCap, color: Colors.white, size: 18),
                     ),
-                    child: const Icon(LucideIcons.graduationCap, color: Colors.white, size: 18),
-                  ),
-                  const SizedBox(width: 10),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Acadex',
+                      style: AcadexTypography.title(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ).copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                   Text(
-                    'Acadex',
+                    title,
                     style: AcadexTypography.title(
                       color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                     ).copyWith(fontWeight: FontWeight.w700),
                   ),
+                  if (subtitle != null && subtitle!.isNotEmpty)
+                    Text(
+                      subtitle!,
+                      style: AcadexTypography.caption(
+                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      ),
+                    ),
                 ],
               ),
-            ),
+              if (user != null && isDesktop) ...[
+                const SizedBox(width: 16),
+                AcadexBadge(
+                  label: user.role.displayName.toUpperCase(),
+                  variant: AcadexBadgeVariant.primary,
+                ),
+              ],
+            ],
 
             const Spacer(),
 
-            // Extra actions if any
+            // Extra actions if provided
             if (extraActions != null) ...extraActions!,
 
             // Search Icon
@@ -109,11 +149,11 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
             const SizedBox(width: 2),
 
-            // Notifications
+            // Live Notifications Badge
             const NotificationBadge(),
             const SizedBox(width: 2),
 
-            // Theme Toggle Button (Light / Dark)
+            // Theme Mode Toggle Button
             IconButton(
               icon: Icon(
                 isDark ? LucideIcons.sun : LucideIcons.moon,
@@ -131,24 +171,123 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
               },
               splashRadius: 20,
             ),
-            const SizedBox(width: 2),
+            const SizedBox(width: 8),
 
-            // Settings Icon
-            IconButton(
-              icon: Icon(
-                LucideIcons.settings,
-                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                size: 19,
+            // Authenticated User Profile Menu
+            PopupMenuButton<String>(
+              tooltip: 'Account Menu',
+              offset: const Offset(0, 52),
+              shape: RoundedRectangleBorder(
+                borderRadius: AcadexRadius.borderRadiusLg,
+                side: BorderSide(
+                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                ),
               ),
-              tooltip: 'Settings',
-              onPressed: () => context.push('/settings'),
-              splashRadius: 20,
-            ),
-            const SizedBox(width: 10),
-
-            // User Avatar & Profile Quick Link
-            GestureDetector(
-              onTap: () => context.push('/profile'),
+              color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+              elevation: 6,
+              onSelected: (value) async {
+                switch (value) {
+                  case 'profile':
+                    context.push('/profile');
+                    break;
+                  case 'settings':
+                    context.push('/settings');
+                    break;
+                  case 'change_password':
+                    context.push('/change-password');
+                    break;
+                  case 'logout':
+                    await ref.read(authProvider.notifier).logout();
+                    if (context.mounted) {
+                      context.go('/login');
+                    }
+                    break;
+                }
+              },
+              itemBuilder: (BuildContext context) => [
+                // Header Tile with user details
+                PopupMenuItem<String>(
+                  enabled: false,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      children: [
+                        AcadexAvatar(
+                          name: user?.name ?? 'User',
+                          size: 38,
+                          isOnline: true,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user?.name ?? 'Authenticated User',
+                                style: AcadexTypography.body(
+                                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                ).copyWith(fontWeight: FontWeight.w600),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                user?.email ?? user?.role.displayName ?? '',
+                                style: AcadexTypography.caption(
+                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const PopupMenuDivider(),
+                PopupMenuItem<String>(
+                  value: 'profile',
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.user, size: 16, color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                      const SizedBox(width: 12),
+                      Text('My Profile', style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink)),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'settings',
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.settings, size: 16, color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                      const SizedBox(width: 12),
+                      Text('Settings', style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink)),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'change_password',
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.keyRound, size: 16, color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                      const SizedBox(width: 12),
+                      Text('Change Password', style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink)),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                PopupMenuItem<String>(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      const Icon(LucideIcons.logOut, size: 16, color: AcadexColors.error),
+                      const SizedBox(width: 12),
+                      Text('Sign Out', style: AcadexTypography.body(color: AcadexColors.error).copyWith(fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ],
               child: AcadexAvatar(
                 name: user?.name ?? 'User',
                 size: 34,

@@ -34,41 +34,50 @@ class AppTopBar extends ConsumerWidget implements PreferredSizeWidget {
 
     return AppBar(
       titleSpacing: 16,
-      title: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AcadexColors.textPrimaryLight,
-                  ),
-                ),
-                if (subtitle != null)
-                  Text(
-                    subtitle!,
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      color: AcadexColors.textMutedLight,
-                      fontWeight: FontWeight.w400,
+      title: LayoutBuilder(
+        builder: (context, constraints) {
+          final showRoleBadge = currentUser != null && constraints.maxWidth > 340;
+          return Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AcadexColors.textPrimaryLight,
+                      ),
                     ),
-                  ),
+                    if (subtitle != null)
+                      Text(
+                        subtitle!,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: AcadexColors.textMutedLight,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (showRoleBadge) ...[
+                AppBadge(
+                  label: currentUser.role.displayName,
+                  variant: AppBadgeVariant.primary,
+                ),
+                const SizedBox(width: AcadexSpacing.md),
               ],
-            ),
-          ),
-          if (currentUser != null) ...[
-            AppBadge(
-              label: currentUser.role.displayName,
-              variant: AppBadgeVariant.primary,
-            ),
-            const SizedBox(width: AcadexSpacing.md),
-          ],
-        ],
+            ],
+          );
+        },
       ),
       actions: [
         if (actions != null) ...actions!,

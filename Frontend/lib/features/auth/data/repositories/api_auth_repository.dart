@@ -62,6 +62,17 @@ class ApiAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> logoutAll() async {
+    try {
+      await _client.dio.post('/auth/logout-all');
+    } catch (_) {
+      // Best effort remote logout
+    } finally {
+      await _client.clearTokens();
+    }
+  }
+
+  @override
   Future<void> sendPasswordResetEmail(String identifier) async {
     try {
       await _client.dio.post('/auth/forgot-password', data: {

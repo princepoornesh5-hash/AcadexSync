@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../auth/domain/models/auth_state.dart';
-import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/dashboard_providers.dart';
@@ -29,49 +31,61 @@ class StudentDashboard extends ConsumerWidget {
 
     UserModel? user;
     if (authState is AuthAuthenticated) user = authState.user;
+
     final profileAsync = ref.watch(currentStudentAcademicProfileProvider);
     final scheduleAsync = ref.watch(todayScheduleProvider);
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: LayoutBuilder(builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final statCols = AcadexLayout.statGridColumns(context);
-        final firstName = user?.name.split(' ').first ?? 'Student';
-        final classesToday = scheduleAsync.value?.length ?? 0;
-        final profile = profileAsync.value;
-        final attPercentage = profile?.overallAttendancePercentage ?? 85.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final firstName = user?.name.split(' ').first ?? 'Student';
+    final classesToday = scheduleAsync.value?.length ?? 0;
+    final profile = profileAsync.value;
 
-        return AcadexPageContainer(
-          particleSphereVariant: ParticleSphereVariant.dashboard,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-                // Greeting
+    return Scaffold(
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final statCols = AcadexLayout.statGridColumns(context);
+
+          return AcadexPageContainer(
+            particleSphereVariant: ParticleSphereVariant.dashboard,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Greeting & Role Badge
                 Row(
                   children: [
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Hey, $firstName! 🎓',
-                              style: AcadexTypography.heading2(color: Theme.of(context).colorScheme.onSurface)),
-                          const SizedBox(height: 6),
                           Text(
-                            classesToday > 0 
-                                ? 'You have $classesToday classes scheduled today. Keep it up!'
+                            'Hey, $firstName! 🎓',
+                            style: AcadexTypography.heading1(
+                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            classesToday > 0
+                                ? 'You have $classesToday classes scheduled today. Stay on track!'
                                 : 'No classes scheduled for today. Have a great day!',
-                            style: AcadexTypography.body(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                            style: AcadexTypography.body(
+                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    _RolePill(label: user?.role.displayName ?? 'Student'),
+                    const AcadexBadge(
+                      label: 'STUDENT',
+                      variant: AcadexBadgeVariant.primary,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
 
-                // Academic Placement Banner
+                // Academic Placement & Enrolled Section Card
                 if (profile != null)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -86,8 +100,10 @@ class StudentDashboard extends ConsumerWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            "${profile.course?.name ?? 'Course'} • ${profile.semester?.name ?? 'Semester'} • Section ${profile.section?.name ?? 'A'} (${profile.academicYear?.name ?? 'Current Academic Year'})",
-                            style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.w600),
+                            "${profile.course?.name ?? 'Course'} • ${profile.semester?.name ?? 'Semester'} • Section ${profile.section?.name ?? 'A'} (${profile.academicYear?.name ?? 'Current Year'})",
+                            style: AcadexTypography.body(
+                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            ).copyWith(fontWeight: FontWeight.w600),
                           ),
                         ),
                         Container(
@@ -97,50 +113,36 @@ class StudentDashboard extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(AcadexRadius.xs),
                           ),
                           child: Text(
-                            "Roll: ${profile.student.rollNumber}",
-                            style: const TextStyle(color: AcadexColors.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                            'Roll: ${profile.student.rollNumber}',
+                            style: const TextStyle(
+                              color: AcadexColors.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                const SizedBox(height: 24),
+                AcadexLayout.sectionSpacer,
 
-              // Attendance Warning Banner (conditional only if attendance < 75%)
-              if (attPercentage < 75.0) ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AcadexColors.warning.withValues(alpha: 0.1),
-                    borderRadius: AcadexRadius.borderRadiusMd,
-                    border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(LucideIcons.alertTriangle, color: AcadexColors.warning, size: 22),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Attendance Alert', style: AcadexTypography.bodySmall(color: AcadexColors.warning).copyWith(fontWeight: FontWeight.w700)),
-                            Text('Your overall attendance is currently at ${attPercentage.toStringAsFixed(1)}% (below the required 75%). Please attend classes regularly.',
-                                style: AcadexTypography.caption(color: AcadexColors.warning)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
-
-                // Stats
-                const SectionHeader(title: 'My Overview'),
+                // Overview Stat Cards (Attendance, Classes Missed, etc.)
+                const SectionHeader(title: 'My Academic Overview'),
                 AcadexLayout.headerGap,
                 stats.when(
-                  loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
-                  error: (err, stack) => Text('Error: $err'),
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(28),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                  error: (err, _) => AcadexCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Failed to load student metrics: $err',
+                      style: AcadexTypography.caption(color: AcadexColors.error),
+                    ),
+                  ),
                   data: (data) => GridView.builder(
                     physics: const NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
@@ -149,81 +151,76 @@ class StudentDashboard extends ConsumerWidget {
                       crossAxisCount: statCols,
                       crossAxisSpacing: AcadexLayout.gridSpacing,
                       mainAxisSpacing: AcadexLayout.gridSpacing,
-                      childAspectRatio: width > 600 ? 1.15 : 1.05,
+                      childAspectRatio: width > 600 ? 1.25 : 1.15,
                     ),
-                    itemBuilder: (_, i) => StatCard(stat: data[i], animationDelay: i * 80),
+                    itemBuilder: (_, i) => StatCard(stat: data[i]),
                   ),
                 ),
                 AcadexLayout.sectionSpacer,
 
-                // Today's timetable preview
-                const SectionHeader(title: "Today's Timetable"),
+                // Today's Timetable Preview
+                const SectionHeader(title: "Today's Schedule & Classes"),
                 AcadexLayout.headerGap,
                 Consumer(
                   builder: (context, ref, _) {
                     final todayAsync = ref.watch(todayScheduleProvider);
                     return todayAsync.when(
                       loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (err, stack) => Text('Error loading schedule: $err'),
+                      error: (err, _) => Text('Error loading schedule: $err'),
                       data: (data) => TodayScheduleWidget(todayEntries: data),
                     );
                   },
                 ),
                 AcadexLayout.sectionSpacer,
 
-                const SectionHeader(title: 'Quick Actions'),
+                // Quick Navigation Actions
+                const SectionHeader(title: 'Quick Operations'),
                 AcadexLayout.headerGap,
                 GridView.builder(
                   physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
                   itemCount: quickActions.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: width > 600 ? 6 : 3,
+                    crossAxisCount: width > 900 ? 6 : (width > 600 ? 3 : 2),
                     crossAxisSpacing: AcadexLayout.gridSpacing,
                     mainAxisSpacing: AcadexLayout.gridSpacing,
-                    childAspectRatio: 0.9,
+                    childAspectRatio: 1.15,
                   ),
                   itemBuilder: (_, i) => QuickActionCard(action: quickActions[i]),
                 ),
                 AcadexLayout.sectionSpacer,
+
+                // Notifications Preview Section
                 const NotificationPreviewList(),
                 AcadexLayout.sectionSpacer,
-                SectionHeader(title: 'Recent Activity', actionLabel: 'View All', onAction: () {}),
+
+                // Recent Notifications / Activity Feed
+                SectionHeader(
+                  title: 'Recent Activity & Announcements',
+                  actionLabel: 'View All',
+                  onAction: () => context.go('/notifications'),
+                ),
                 AcadexLayout.headerGap,
                 activity.when(
-                  loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
-                  error: (err, stack) => Text('Error: $err'),
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                  error: (err, _) => AcadexCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Failed to load activity: $err',
+                      style: AcadexTypography.caption(color: AcadexColors.error),
+                    ),
+                  ),
                   data: (data) => ActivityFeed(items: data),
                 ),
-            ],
-          ),
-        );
-      }),
-    );
-  }
-}
-
-
-class _RolePill extends StatelessWidget {
-  final String label;
-  const _RolePill({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-        borderRadius: AcadexRadius.borderRadiusFull,
-        border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(width: 8, height: 8, decoration: const BoxDecoration(color: AcadexColors.success, shape: BoxShape.circle)),
-          const SizedBox(width: 6),
-          Text(label, style: AcadexTypography.eyebrow(color: Theme.of(context).primaryColor)),
-        ],
+              ],
+            ),
+          );
+        },
       ),
     );
   }

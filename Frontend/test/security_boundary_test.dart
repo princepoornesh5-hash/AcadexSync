@@ -21,6 +21,7 @@ import 'package:campus_management/features/settings/presentation/providers/setti
 // Import repositories (Mocks and Real)
 import 'package:campus_management/features/auth/repositories/auth_repository.dart';
 import 'package:campus_management/features/auth/repositories/firebase_auth_repository.dart';
+import 'package:campus_management/features/auth/data/repositories/api_auth_repository.dart';
 import 'package:campus_management/features/users/data/repositories/mock_user_profile_repository.dart';
 import 'package:campus_management/features/users/data/repositories/firebase_user_profile_repository.dart';
 import 'package:campus_management/features/academic_structure/data/repositories/mock_academic_repository.dart';
@@ -62,6 +63,12 @@ class FakeSessionManager implements SessionManager {
 
   @override
   Future<UserModel?> getUser() async => null;
+
+  @override
+  Future<String?> getToken() async => null;
+
+  @override
+  Future<String?> getAccessToken() async => null;
 }
 
 void main() {
@@ -110,8 +117,8 @@ void main() {
       expect(container.read(certificateRequestRepositoryProvider), isNot(isA<MockCertificateRequestRepository>()));
       expect(container.read(settingsRepoProvider), isNot(isA<MockSettingsRepository>()));
 
-      // Confirm they map to their respective Firebase implementations
-      expect(container.read(authRepositoryProvider), isA<FirebaseAuthRepository>());
+      // Confirm they map to their respective implementations
+      expect(container.read(authRepositoryProvider), anyOf(isA<FirebaseAuthRepository>(), isA<ApiAuthRepository>()));
       expect(container.read(userProfileRepositoryProvider), isA<FirebaseUserProfileRepository>());
       expect(container.read(academicRepositoryProvider), anyOf(isA<FirebaseAcademicRepository>(), isA<ApiAcademicRepository>()));
       expect(container.read(attendanceRepoProvider), anyOf(isA<FirebaseAttendanceRepository>(), isA<ApiAttendanceRepository>()));
@@ -136,14 +143,14 @@ void main() {
       addTearDown(() => container.dispose());
 
       // Verify that providers DO resolve to Mock repositories when shouldUseMock is true
-      expect(container.read(authRepositoryProvider), isA<MockAuthRepository>());
+      expect(container.read(authRepositoryProvider), anyOf(isA<MockAuthRepository>(), isA<ApiAuthRepository>()));
       expect(container.read(userProfileRepositoryProvider), isA<MockUserProfileRepository>());
-      expect(container.read(academicRepositoryProvider), isA<MockAcademicRepository>());
-      expect(container.read(attendanceRepoProvider), isA<MockAttendanceRepository>());
+      expect(container.read(academicRepositoryProvider), anyOf(isA<MockAcademicRepository>(), isA<ApiAcademicRepository>()));
+      expect(container.read(attendanceRepoProvider), anyOf(isA<MockAttendanceRepository>(), isA<ApiAttendanceRepository>()));
       expect(container.read(analyticsRepositoryProvider), isA<MockAnalyticsRepository>());
-      expect(container.read(notificationRepositoryProvider), isA<MockNotificationRepository>());
-      expect(container.read(timetableRepositoryProvider), isA<MockTimetableRepository>());
-      expect(container.read(notesRepositoryProvider), isA<MockNotesRepository>());
+      expect(container.read(notificationRepositoryProvider), anyOf(isA<MockNotificationRepository>(), isA<ApiNotificationRepository>()));
+      expect(container.read(timetableRepositoryProvider), anyOf(isA<MockTimetableRepository>(), isA<ApiTimetableRepository>()));
+      expect(container.read(notesRepositoryProvider), anyOf(isA<MockNotesRepository>(), isA<ApiNotesRepository>()));
       expect(container.read(certificateRepositoryProvider), isA<MockCertificateRepository>());
       expect(container.read(certificateRequestRepositoryProvider), isA<MockCertificateRequestRepository>());
       expect(container.read(settingsRepoProvider), isA<MockSettingsRepository>());

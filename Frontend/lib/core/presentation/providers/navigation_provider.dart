@@ -39,6 +39,13 @@ class NavigationNotifier extends Notifier<GlobalNavigationState> {
   }
 
   void updateRoute(String route) {
+    // Idempotent guard: avoid emitting state when currentRoute is already active
+    if (state.currentRoute == route &&
+        state.navigationHistory.isNotEmpty &&
+        state.navigationHistory.last == route) {
+      return;
+    }
+
     final history = List<String>.from(state.navigationHistory);
     if (history.isEmpty || history.last != route) {
       history.add(route);
@@ -71,6 +78,7 @@ class NavigationNotifier extends Notifier<GlobalNavigationState> {
   }
 
   void toggleDrawer(bool open) {
+    if (state.drawerOpen == open) return;
     state = state.copyWith(drawerOpen: open);
   }
 
@@ -82,3 +90,4 @@ class NavigationNotifier extends Notifier<GlobalNavigationState> {
 final navigationProvider = NotifierProvider<NavigationNotifier, GlobalNavigationState>(() {
   return NavigationNotifier();
 });
+

@@ -1,3 +1,5 @@
+import '../../../auth/domain/models/user_model.dart';
+
 class College {
   final String id;
   final String name;
@@ -598,6 +600,10 @@ class Faculty {
   final String employeeId;
   final String email;
   final String phone;
+  final String? designation;
+  final String? qualification;
+  final String? specialization;
+  final DateTime? joiningDate;
   final bool isActive;
   final List<String> subjectIds;
   final List<String> sectionIds;
@@ -610,6 +616,10 @@ class Faculty {
     required this.employeeId,
     required this.email,
     required this.phone,
+    this.designation,
+    this.qualification,
+    this.specialization,
+    this.joiningDate,
     this.isActive = true,
     this.subjectIds = const [],
     this.sectionIds = const [],
@@ -623,6 +633,10 @@ class Faculty {
     String? employeeId,
     String? email,
     String? phone,
+    String? designation,
+    String? qualification,
+    String? specialization,
+    DateTime? joiningDate,
     bool? isActive,
     List<String>? subjectIds,
     List<String>? sectionIds,
@@ -635,6 +649,10 @@ class Faculty {
       employeeId: employeeId ?? this.employeeId,
       email: email ?? this.email,
       phone: phone ?? this.phone,
+      designation: designation ?? this.designation,
+      qualification: qualification ?? this.qualification,
+      specialization: specialization ?? this.specialization,
+      joiningDate: joiningDate ?? this.joiningDate,
       isActive: isActive ?? this.isActive,
       subjectIds: subjectIds ?? this.subjectIds,
       sectionIds: sectionIds ?? this.sectionIds,
@@ -643,14 +661,18 @@ class Faculty {
 
   factory Faculty.fromJson(Map<String, dynamic> json) {
     return Faculty(
-      id: json['id'] as String? ?? '',
-      collegeId: json['collegeId'] as String? ?? '',
-      departmentId: json['departmentId'] as String? ?? '',
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      collegeId: (json['collegeId'] ?? '').toString(),
+      departmentId: (json['departmentId'] ?? '').toString(),
       name: json['name'] as String? ?? '',
       employeeId: json['employeeId'] as String? ?? '',
       email: json['email'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
-      isActive: json['isActive'] as bool? ?? true,
+      designation: json['designation'] as String?,
+      qualification: json['qualification'] as String?,
+      specialization: json['specialization'] as String?,
+      joiningDate: json['joiningDate'] != null ? DateTime.tryParse(json['joiningDate'].toString()) : null,
+      isActive: json['isActive'] as bool? ?? (json['status'] == 'active'),
       subjectIds: (json['subjectIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
       sectionIds: (json['sectionIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
     );
@@ -665,10 +687,122 @@ class Faculty {
       'employeeId': employeeId,
       'email': email,
       'phone': phone,
+      if (designation != null) 'designation': designation,
+      if (qualification != null) 'qualification': qualification,
+      if (specialization != null) 'specialization': specialization,
+      if (joiningDate != null) 'joiningDate': joiningDate!.toIso8601String(),
       'isActive': isActive,
       'subjectIds': subjectIds,
       'sectionIds': sectionIds,
     };
+  }
+}
+
+class InvitationInfo {
+  final String id;
+  final DateTime? expiresAt;
+  final String status;
+  final DateTime? lastSentAt;
+  final int attemptCount;
+
+  const InvitationInfo({
+    required this.id,
+    this.expiresAt,
+    required this.status,
+    this.lastSentAt,
+    this.attemptCount = 0,
+  });
+
+  factory InvitationInfo.fromJson(Map<String, dynamic> json) {
+    return InvitationInfo(
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      expiresAt: json['expiresAt'] != null ? DateTime.tryParse(json['expiresAt'].toString()) : null,
+      status: json['status'] as String? ?? 'pending',
+      lastSentAt: json['lastSentAt'] != null ? DateTime.tryParse(json['lastSentAt'].toString()) : null,
+      attemptCount: json['attemptCount'] as int? ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      if (expiresAt != null) 'expiresAt': expiresAt!.toIso8601String(),
+      'status': status,
+      if (lastSentAt != null) 'lastSentAt': lastSentAt!.toIso8601String(),
+      'attemptCount': attemptCount,
+    };
+  }
+}
+
+class ProvisionFacultyRequest {
+  final String departmentId;
+  final String name;
+  final String instituteId;
+  final String email;
+  final String? phone;
+  final String? employeeId;
+  final String? designation;
+  final String? qualification;
+  final String? specialization;
+  final String? joiningDate;
+  final Map<String, dynamic>? metadata;
+
+  const ProvisionFacultyRequest({
+    required this.departmentId,
+    required this.name,
+    required this.instituteId,
+    required this.email,
+    this.phone,
+    this.employeeId,
+    this.designation,
+    this.qualification,
+    this.specialization,
+    this.joiningDate,
+    this.metadata,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'departmentId': departmentId,
+      'name': name.trim(),
+      'instituteId': instituteId.trim().toUpperCase(),
+      'email': email.trim().toLowerCase(),
+      if (phone != null && phone!.trim().isNotEmpty) 'phone': phone!.trim(),
+      if (employeeId != null && employeeId!.trim().isNotEmpty) 'employeeId': employeeId!.trim(),
+      if (designation != null && designation!.trim().isNotEmpty) 'designation': designation!.trim(),
+      if (qualification != null && qualification!.trim().isNotEmpty) 'qualification': qualification!.trim(),
+      if (specialization != null && specialization!.trim().isNotEmpty) 'specialization': specialization!.trim(),
+      if (joiningDate != null && joiningDate!.trim().isNotEmpty) 'joiningDate': joiningDate,
+      if (metadata != null) 'metadata': metadata,
+    };
+  }
+}
+
+class ProvisionFacultyResult {
+  final UserModel user;
+  final Faculty faculty;
+  final InvitationInfo invitation;
+  final String activationCode;
+
+  const ProvisionFacultyResult({
+    required this.user,
+    required this.faculty,
+    required this.invitation,
+    required this.activationCode,
+  });
+
+  factory ProvisionFacultyResult.fromJson(Map<String, dynamic> json) {
+    final userData = json['user'] as Map<String, dynamic>? ?? {};
+    final facultyData = json['faculty'] as Map<String, dynamic>? ?? {};
+    final invitationData = json['invitation'] as Map<String, dynamic>? ?? {};
+    final activationCode = json['activationCode']?.toString() ?? '';
+
+    return ProvisionFacultyResult(
+      user: UserModel.fromJson(userData),
+      faculty: Faculty.fromJson(facultyData),
+      invitation: InvitationInfo.fromJson(invitationData),
+      activationCode: activationCode,
+    );
   }
 }
 

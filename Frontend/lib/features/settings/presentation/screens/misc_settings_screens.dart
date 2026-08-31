@@ -8,6 +8,8 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../users/presentation/providers/user_profile_providers.dart';
 import '../widgets/settings_widgets.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../core/presentation/widgets/acadex_form_controls.dart';
 
 class LanguageScreen extends StatelessWidget {
   const LanguageScreen({super.key});
@@ -65,9 +67,6 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  bool _currentObscure = true;
-  bool _newObscure = true;
-  bool _confirmObscure = true;
 
   @override
   void dispose() {
@@ -156,34 +155,24 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        TextFormField(
+                        AcadexTextField(
                           controller: _currentPasswordController,
-                          obscureText: _currentObscure,
-                          decoration: InputDecoration(
-                            labelText: 'Current Password',
-                            prefixIcon: const Icon(LucideIcons.lock),
-                            suffixIcon: IconButton(
-                              icon: Icon(_currentObscure ? LucideIcons.eyeOff : LucideIcons.eye),
-                              onPressed: () => setState(() => _currentObscure = !_currentObscure),
-                            ),
-                          ),
+                          label: 'Current Password',
+                          prefixIcon: LucideIcons.lock,
+                          isPassword: true,
+                          enabled: !isSaving,
                           validator: (v) {
                             if (v == null || v.isEmpty) return 'Current password is required';
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
-                        TextFormField(
+                        AcadexTextField(
                           controller: _newPasswordController,
-                          obscureText: _newObscure,
-                          decoration: InputDecoration(
-                            labelText: 'New Password',
-                            prefixIcon: const Icon(LucideIcons.keyRound),
-                            suffixIcon: IconButton(
-                              icon: Icon(_newObscure ? LucideIcons.eyeOff : LucideIcons.eye),
-                              onPressed: () => setState(() => _newObscure = !_newObscure),
-                            ),
-                          ),
+                          label: 'New Password',
+                          prefixIcon: LucideIcons.keyRound,
+                          isPassword: true,
+                          enabled: !isSaving,
                           validator: (v) {
                             if (v == null || v.isEmpty) return 'New password is required';
                             if (v.length < 8) return 'Password must be at least 8 characters';
@@ -192,17 +181,12 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
-                        TextFormField(
+                        AcadexTextField(
                           controller: _confirmPasswordController,
-                          obscureText: _confirmObscure,
-                          decoration: InputDecoration(
-                            labelText: 'Confirm New Password',
-                            prefixIcon: const Icon(LucideIcons.keyRound),
-                            suffixIcon: IconButton(
-                              icon: Icon(_confirmObscure ? LucideIcons.eyeOff : LucideIcons.eye),
-                              onPressed: () => setState(() => _confirmObscure = !_confirmObscure),
-                            ),
-                          ),
+                          label: 'Confirm New Password',
+                          prefixIcon: LucideIcons.keyRound,
+                          isPassword: true,
+                          enabled: !isSaving,
                           validator: (v) {
                             if (v == null || v.isEmpty) return 'Please confirm your new password';
                             if (v != _newPasswordController.text) return 'Passwords do not match';
@@ -210,20 +194,13 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).primaryColor,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            onPressed: isSaving ? null : _changePassword,
-                            child: isSaving
-                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                : const Text('Update Password'),
-                          ),
+                        AcadexButton(
+                          label: 'Update Password',
+                          icon: LucideIcons.checkCircle,
+                          isLoading: isSaving,
+                          isFullWidth: true,
+                          size: AcadexButtonSize.lg,
+                          onPressed: isSaving ? null : _changePassword,
                         ),
                       ],
                     ),
@@ -233,7 +210,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Logout all sessions
+            // Logout sessions
             SettingsSection(
               title: "Session",
               children: [
@@ -243,6 +220,40 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
                   title: "Sign Out",
                   subtitle: "Ends your current session on this device",
                   onTap: () => ref.read(authProvider.notifier).logout(),
+                ),
+                SettingsTile(
+                  icon: LucideIcons.shieldAlert,
+                  iconColor: AcadexColors.error,
+                  title: "Sign Out All Devices",
+                  subtitle: "Revokes all active sessions on other phones and computers",
+                  onTap: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text("Revoke All Sessions?"),
+                        content: const Text(
+                          "This will immediately sign you out from all browsers, mobile devices, and sessions.",
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text("Cancel"),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AcadexColors.error,
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text("Sign Out All"),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true && mounted) {
+                      await ref.read(authProvider.notifier).logoutAll();
+                    }
+                  },
                 ),
               ],
             ),

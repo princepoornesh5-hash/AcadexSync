@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../auth/domain/models/auth_state.dart';
-import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
-import '../../domain/models/activity_item_model.dart';
-import '../../domain/models/dashboard_stat_model.dart';
-import '../../domain/models/quick_action_model.dart';
 import '../providers/dashboard_providers.dart';
 import '../widgets/activity_feed.dart';
 import '../widgets/quick_action_card.dart';
@@ -33,269 +32,368 @@ class HodDashboard extends ConsumerWidget {
     UserModel? user;
     if (authState is AuthAuthenticated) user = authState.user;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final departmentId = user?.departmentId ?? '';
+
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: _HodBody(user: user, stats: stats, quickActions: quickActions, activity: activity),
-    );
-  }
-}
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final statCols = AcadexLayout.statGridColumns(context);
+          final firstName = user?.name.split(' ').first ?? 'HOD';
 
-class _HodBody extends ConsumerWidget {
-  final UserModel? user;
-  final AsyncValue<List<DashboardStatModel>> stats;
-  final List<QuickActionModel> quickActions;
-  final AsyncValue<List<ActivityItemModel>> activity;
+          final deptMap = ref.watch(departmentMapProvider);
+          final dept = departmentId.isNotEmpty ? deptMap[departmentId] : null;
+          final deptName = dept?.name ?? (departmentId.isNotEmpty ? 'Department Administration' : 'No Department Assigned');
+          final deptCode = dept?.code ?? '';
 
-  const _HodBody({required this.user, required this.stats, required this.quickActions, required this.activity});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final deptMap = ref.watch(departmentMapProvider);
-    final deptName = user?.departmentId != null && deptMap.containsKey(user!.departmentId)
-        ? deptMap[user!.departmentId]!.name
-        : 'Department Administration';
-
-    return LayoutBuilder(builder: (context, constraints) {
-      final width = constraints.maxWidth;
-      final statCols = AcadexLayout.statGridColumns(context);
-      final firstName = user?.name.split(' ').first ?? 'HOD';
-
-      return AcadexPageContainer(
-        particleSphereVariant: ParticleSphereVariant.dashboard,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+          return AcadexPageContainer(
+            particleSphereVariant: ParticleSphereVariant.dashboard,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Welcome, Dr. $firstName', style: AcadexTypography.heading2(color: Theme.of(context).colorScheme.onSurface)),
-                      const SizedBox(height: 6),
-                      Text('Department overview & management tools.', style: AcadexTypography.body(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)),
-                    ],
-                  ),
+                // Top Greeting & Role Badge
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Welcome, Dr. $firstName 👋',
+                            style: AcadexTypography.heading1(
+                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Departmental operations, faculty teaching workload, and student attendance overview.',
+                            style: AcadexTypography.body(
+                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const AcadexBadge(
+                      label: 'HOD',
+                      variant: AcadexBadgeVariant.primary,
+                    ),
+                  ],
                 ),
-                _RoleBadge(label: user?.role.displayName ?? 'HOD'),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // Dept summary banner
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withValues(alpha: 0.8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: AcadexRadius.borderRadiusLg,
-              ),
-              child: Row(
-                children: [
-                  const Icon(LucideIcons.building, color: Colors.white, size: 32),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                AcadexLayout.sectionSpacer,
+
+                // Department Identification Banner
+                if (departmentId.isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [AcadexColors.primary, const Color(0xFF6366F1)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: AcadexRadius.borderRadiusLg,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AcadexColors.primary.withValues(alpha: 0.25),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
                       children: [
-                        Text(deptName, style: AcadexTypography.title(color: Colors.white)),
-                        Text('Department Summary', style: AcadexTypography.bodySmall(color: Colors.white70)),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            borderRadius: AcadexRadius.borderRadiusMd,
+                          ),
+                          child: const Icon(LucideIcons.building, color: Colors.white, size: 28),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                deptName,
+                                style: AcadexTypography.heading2(color: Colors.white),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                deptCode.isNotEmpty
+                                    ? 'Department Code: $deptCode • Department Operational Overview'
+                                    : 'Department Operational Overview',
+                                style: AcadexTypography.caption(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                      border: Border.all(color: AcadexColors.warning),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(LucideIcons.alertTriangle, color: AcadexColors.warning, size: 22),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Department Not Assigned',
+                                style: AcadexTypography.body(
+                                  color: isDark ? Colors.white : AcadexColors.warningDark,
+                                ).copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              Text(
+                                'Your account has not been linked to a specific department yet. Please contact your college administrator.',
+                                style: AcadexTypography.caption(
+                                  color: isDark ? Colors.white70 : AcadexColors.warningDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            
-            const SectionHeader(title: "Today's Timetable"),
-            AcadexLayout.headerGap,
-            Consumer(
-              builder: (context, ref, _) {
-                final todayAsync = ref.watch(todayScheduleProvider);
-                return todayAsync.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (err, stack) => Text('Error loading schedule: $err'),
-                  data: (data) => TodayScheduleWidget(todayEntries: data),
-                );
-              },
-            ),
-            AcadexLayout.sectionSpacer,
-            AcademicStructureSummaryWidget(departmentId: user?.departmentId),
-            AcadexLayout.sectionSpacer,
+                AcadexLayout.sectionSpacer,
 
-            // Faculty Assignments Section
-            SectionHeader(
-              title: "Faculty Assignments",
-              actionLabel: "Manage All",
-              onAction: () => Navigator.of(context).pushNamed('/faculty-assignments'),
-            ),
-            AcadexLayout.headerGap,
-            Consumer(
-              builder: (context, ref, _) {
-                final assignmentsAsync = ref.watch(facultyAssignmentsProvider);
-                final subMap = ref.watch(subjectMapProvider);
-                final secMap = ref.watch(sectionMapProvider);
+                // Department Key Metrics
+                const SectionHeader(title: 'Department Overview'),
+                AcadexLayout.headerGap,
+                stats.when(
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(28),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                  error: (err, _) => AcadexCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Failed to load department metrics: $err',
+                      style: AcadexTypography.caption(color: AcadexColors.error),
+                    ),
+                  ),
+                  data: (data) => GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: data.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: statCols,
+                      crossAxisSpacing: AcadexLayout.gridSpacing,
+                      mainAxisSpacing: AcadexLayout.gridSpacing,
+                      childAspectRatio: width > 600 ? 1.25 : 1.15,
+                    ),
+                    itemBuilder: (_, i) => StatCard(stat: data[i]),
+                  ),
+                ),
+                AcadexLayout.sectionSpacer,
 
-                return assignmentsAsync.when(
-                  loading: () => const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())),
-                  error: (err, _) => Text('Error loading assignments: $err'),
-                  data: (allAssignments) {
-                    final deptAssignments = user?.departmentId != null && user!.departmentId!.isNotEmpty
-                        ? allAssignments.where((a) => a.departmentId == user!.departmentId && a.isActive).take(4).toList()
-                        : allAssignments.where((a) => a.isActive).take(4).toList();
+                // Today's Timetable Preview
+                const SectionHeader(title: "Today's Department Timetable"),
+                AcadexLayout.headerGap,
+                Consumer(
+                  builder: (context, ref, _) {
+                    final todayAsync = ref.watch(todayScheduleProvider);
+                    return todayAsync.when(
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (err, _) => Text('Error loading schedule: $err'),
+                      data: (data) => TodayScheduleWidget(todayEntries: data),
+                    );
+                  },
+                ),
+                AcadexLayout.sectionSpacer,
 
-                    if (deptAssignments.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Text(
-                          "No active faculty assignments found for this department.",
-                          style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                // Department Academic Structure Summary
+                if (departmentId.isNotEmpty) ...[
+                  AcademicStructureSummaryWidget(departmentId: departmentId),
+                  AcadexLayout.sectionSpacer,
+                ],
+
+                // Active Faculty Allocations (Live from facultyAssignmentsProvider)
+                SectionHeader(
+                  title: 'Faculty Teaching Allocations',
+                  actionLabel: 'Manage All',
+                  onAction: () => context.go('/faculty-assignments'),
+                ),
+                AcadexLayout.headerGap,
+                Consumer(
+                  builder: (context, ref, _) {
+                    final assignmentsAsync = ref.watch(facultyAssignmentsProvider);
+                    final subMap = ref.watch(subjectMapProvider);
+                    final secMap = ref.watch(sectionMapProvider);
+
+                    return assignmentsAsync.when(
+                      loading: () => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: CircularProgressIndicator(),
                         ),
-                      );
-                    }
-
-                    return GridView.builder(
-                      physics: const NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      itemCount: deptAssignments.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: width > 900 ? 4 : (width > 600 ? 2 : 1),
-                        crossAxisSpacing: AcadexLayout.gridSpacing,
-                        mainAxisSpacing: AcadexLayout.gridSpacing,
-                        childAspectRatio: width > 600 ? 1.5 : 2.0,
                       ),
-                      itemBuilder: (context, i) {
-                        final a = deptAssignments[i];
-                        final sub = subMap[a.subjectId];
-                        final sec = secMap[a.sectionId];
+                      error: (err, _) => Text('Error loading assignments: $err'),
+                      data: (allAssignments) {
+                        final deptAssignments = departmentId.isNotEmpty
+                            ? allAssignments.where((a) => a.departmentId == departmentId && a.isActive).take(4).toList()
+                            : allAssignments.where((a) => a.isActive).take(4).toList();
 
-                        return Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardColor,
-                            borderRadius: BorderRadius.circular(AcadexRadius.md),
-                            border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.1)),
+                        if (deptAssignments.isEmpty) {
+                          return AcadexCard(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(
+                              'No active faculty allocations recorded for this department.',
+                              style: AcadexTypography.bodySmall(
+                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              ),
+                            ),
+                          );
+                        }
+
+                        return GridView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount: deptAssignments.length,
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: width > 900 ? 4 : (width > 600 ? 2 : 1),
+                            crossAxisSpacing: AcadexLayout.gridSpacing,
+                            mainAxisSpacing: AcadexLayout.gridSpacing,
+                            childAspectRatio: width > 600 ? 1.6 : 2.0,
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
+                          itemBuilder: (context, i) {
+                            final a = deptAssignments[i];
+                            final sub = subMap[a.subjectId];
+                            final sec = secMap[a.sectionId];
+
+                            return Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                borderRadius: AcadexRadius.borderRadiusMd,
+                                border: Border.all(
+                                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Expanded(
-                                    child: Text(
-                                      a.facultyName,
-                                      style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          a.facultyName,
+                                          style: AcadexTypography.body(
+                                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                          ).copyWith(fontWeight: FontWeight.w600),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: AcadexColors.primary.withValues(alpha: 0.12),
+                                          borderRadius: AcadexRadius.borderRadiusSm,
+                                        ),
+                                        child: Text(
+                                          'Sec ${sec?.name ?? a.sectionId}',
+                                          style: const TextStyle(
+                                            color: AcadexColors.primary,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: AcadexColors.primary.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                  Text(
+                                    sub?.name ?? a.subjectId,
+                                    style: AcadexTypography.caption(
+                                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                                     ),
-                                    child: Text(
-                                      "Sec ${sec?.name ?? a.sectionId}",
-                                      style: const TextStyle(color: AcadexColors.primary, fontSize: 11, fontWeight: FontWeight.bold),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    sub?.code ?? '',
+                                    style: const TextStyle(
+                                      color: AcadexColors.primary,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ],
                               ),
-                              Text(
-                                sub?.name ?? a.subjectId,
-                                style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                sub?.code ?? '',
-                                style: const TextStyle(color: AcadexColors.primary, fontSize: 11, fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
+                            );
+                          },
                         );
                       },
                     );
                   },
-                );
-              },
-            ),
-            AcadexLayout.sectionSpacer,
-
-            const SectionHeader(title: 'Overview'),
-            AcadexLayout.headerGap,
-            stats.when(
-              loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
-              error: (err, stack) => Text('Error: $err'),
-              data: (data) => GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemCount: data.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: statCols,
-                  crossAxisSpacing: AcadexLayout.gridSpacing,
-                  mainAxisSpacing: AcadexLayout.gridSpacing,
-                  childAspectRatio: width > 600 ? 1.15 : 1.05,
                 ),
-                itemBuilder: (_, i) => StatCard(stat: data[i], animationDelay: i * 80),
-              ),
-            ),
-            AcadexLayout.sectionSpacer,
-            const SectionHeader(title: 'Quick Actions'),
-            AcadexLayout.headerGap,
-            GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: quickActions.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: width > 600 ? 4 : 2,
-                crossAxisSpacing: AcadexLayout.gridSpacing,
-                mainAxisSpacing: AcadexLayout.gridSpacing,
-                childAspectRatio: 1.2,
-              ),
-              itemBuilder: (_, i) => QuickActionCard(action: quickActions[i]),
-            ),
-            AcadexLayout.sectionSpacer,
-            SectionHeader(title: 'Recent Activity', actionLabel: 'View All', onAction: () {}),
-            AcadexLayout.headerGap,
-            activity.when(
-              loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
-              error: (err, stack) => Text('Error: $err'),
-              data: (data) => ActivityFeed(items: data),
-            ),
-          ],
-        ),
-      );
-    });
-  }
-}
+                AcadexLayout.sectionSpacer,
 
-class _RoleBadge extends StatelessWidget {
-  final String label;
-  const _RoleBadge({required this.label});
+                // Quick Navigation Actions
+                const SectionHeader(title: 'Quick Operations'),
+                AcadexLayout.headerGap,
+                GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: quickActions.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: width > 900 ? 5 : (width > 600 ? 3 : 2),
+                    crossAxisSpacing: AcadexLayout.gridSpacing,
+                    mainAxisSpacing: AcadexLayout.gridSpacing,
+                    childAspectRatio: 1.15,
+                  ),
+                  itemBuilder: (_, i) => QuickActionCard(action: quickActions[i]),
+                ),
+                AcadexLayout.sectionSpacer,
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-        borderRadius: AcadexRadius.borderRadiusFull,
-        border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(width: 8, height: 8, decoration: const BoxDecoration(color: AcadexColors.success, shape: BoxShape.circle)),
-          const SizedBox(width: 6),
-          Text(label, style: AcadexTypography.eyebrow(color: Theme.of(context).primaryColor)),
-        ],
+                // Recent Notifications
+                SectionHeader(
+                  title: 'Recent Activity & Notifications',
+                  actionLabel: 'View All',
+                  onAction: () => context.go('/notifications'),
+                ),
+                AcadexLayout.headerGap,
+                activity.when(
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                  error: (err, _) => AcadexCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Failed to load activity: $err',
+                      style: AcadexTypography.caption(color: AcadexColors.error),
+                    ),
+                  ),
+                  data: (data) => ActivityFeed(items: data),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

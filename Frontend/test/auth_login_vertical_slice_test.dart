@@ -86,7 +86,19 @@ class _FakeAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier
   }
 
   @override
+  Future<void> logoutAll() async {
+    logoutCalled = true;
+    state = const AuthUnauthenticated();
+  }
+
+  @override
   Future<void> resetPassword(String email) async {}
+
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {}
 
   @override
   void updateCurrentUser(UserModel updatedUser) {

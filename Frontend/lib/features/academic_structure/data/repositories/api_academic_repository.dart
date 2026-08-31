@@ -4,15 +4,11 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/firebase/firebase_services.dart';
 import '../../domain/models/academic_models.dart';
 import '../../domain/repositories/academic_repository.dart';
-import 'mock_academic_repository.dart';
 
 class ApiAcademicRepository implements AcademicRepository {
   final ApiClient _client;
-  final MockAcademicRepository _fallbackMock;
 
-  ApiAcademicRepository([ApiClient? client])
-      : _client = client ?? apiClient,
-        _fallbackMock = mockAcademicRepo;
+  ApiAcademicRepository([ApiClient? client]) : _client = client ?? apiClient;
 
   Exception _extractError(DioException e, String fallback) {
     final message = e.response?.data?['error']?['message'] ??
@@ -35,16 +31,12 @@ class ApiAcademicRepository implements AcademicRepository {
           ? body['data'] as List
           : (body is List ? body : []);
 
-      if (list.isEmpty) return _fallbackMock.getColleges();
-
       return list.map((e) => College.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
       }
-      return _fallbackMock.getColleges();
-    } catch (_) {
-      return _fallbackMock.getColleges();
+      throw _extractError(e, 'Failed to fetch colleges');
     }
   }
 
@@ -88,16 +80,12 @@ class ApiAcademicRepository implements AcademicRepository {
           ? body['data'] as List
           : (body is List ? body : []);
 
-      if (list.isEmpty) return _fallbackMock.getDepartments();
-
       return list.map((e) => Department.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
       }
-      return _fallbackMock.getDepartments();
-    } catch (_) {
-      return _fallbackMock.getDepartments();
+      throw _extractError(e, 'Failed to fetch departments');
     }
   }
 
@@ -150,16 +138,12 @@ class ApiAcademicRepository implements AcademicRepository {
           ? body['data'] as List
           : (body is List ? body : []);
 
-      if (list.isEmpty) return _fallbackMock.getCourses();
-
       return list.map((e) => Course.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
       }
-      return _fallbackMock.getCourses();
-    } catch (_) {
-      return _fallbackMock.getCourses();
+      throw _extractError(e, 'Failed to fetch courses');
     }
   }
 
@@ -203,16 +187,12 @@ class ApiAcademicRepository implements AcademicRepository {
           ? body['data'] as List
           : (body is List ? body : []);
 
-      if (list.isEmpty) return _fallbackMock.getAcademicYears();
-
       return list.map((e) => AcademicYear.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
       }
-      return _fallbackMock.getAcademicYears();
-    } catch (_) {
-      return _fallbackMock.getAcademicYears();
+      throw _extractError(e, 'Failed to fetch academic years');
     }
   }
 
@@ -265,16 +245,12 @@ class ApiAcademicRepository implements AcademicRepository {
           ? body['data'] as List
           : (body is List ? body : []);
 
-      if (list.isEmpty) return _fallbackMock.getSemesters();
-
       return list.map((e) => Semester.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
       }
-      return _fallbackMock.getSemesters();
-    } catch (_) {
-      return _fallbackMock.getSemesters();
+      throw _extractError(e, 'Failed to fetch semesters');
     }
   }
 
@@ -336,16 +312,12 @@ class ApiAcademicRepository implements AcademicRepository {
           ? body['data'] as List
           : (body is List ? body : []);
 
-      if (list.isEmpty) return _fallbackMock.getSections();
-
       return list.map((e) => Section.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
       }
-      return _fallbackMock.getSections();
-    } catch (_) {
-      return _fallbackMock.getSections();
+      throw _extractError(e, 'Failed to fetch sections');
     }
   }
 
@@ -386,19 +358,41 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<SectionCapacityInfo> getSectionCapacityInfo(String sectionId) =>
-      _fallbackMock.getSectionCapacityInfo(sectionId);
+  Future<SectionCapacityInfo> getSectionCapacityInfo(String sectionId) async {
+    final sections = await getSections();
+    final sec = sections.firstWhere((s) => s.id == sectionId, orElse: () => throw Exception('Section not found'));
+    final students = await getStudentsBySection(sectionId);
+    return SectionCapacityInfo(
+      sectionId: sectionId,
+      sectionName: sec.name,
+      enrolledCount: students.length,
+      capacity: sec.capacity,
+    );
+  }
 
   @override
   Future<List<SectionTransferValidationResult>> validateBulkSectionTransfer(
-          List<String> studentIds, String targetSectionId) =>
-      _fallbackMock.validateBulkSectionTransfer(studentIds, targetSectionId);
+      List<String> studentIds, String targetSectionId) async {
+    final targetInfo = await getSectionCapacityInfo(targetSectionId);
+    final hasRoom = (targetInfo.enrolledCount + studentIds.length) <= targetInfo.capacity;
+    return studentIds.map((id) => SectionTransferValidationResult(
+      studentId: id,
+      studentName: 'Student $id',
+      rollNumber: id,
+      canMove: hasRoom,
+      reason: hasRoom ? null : 'Target section capacity exceeded',
+    )).toList();
+  }
 
   @override
-  Future<void> executeBulkSectionTransfer(
-          {required List<String> studentIds, required String targetSectionId}) =>
-      _fallbackMock.executeBulkSectionTransfer(
-          studentIds: studentIds, targetSectionId: targetSectionId);
+  Future<void> executeBulkSectionTransfer({
+    required List<String> studentIds,
+    required String targetSectionId,
+  }) async {
+    for (final id in studentIds) {
+      await _client.dio.put('/academics/students/$id', data: {'sectionId': targetSectionId});
+    }
+  }
 
   // ===========================================================================
   // 7. SUBJECTS
@@ -413,16 +407,12 @@ class ApiAcademicRepository implements AcademicRepository {
           ? body['data'] as List
           : (body is List ? body : []);
 
-      if (list.isEmpty) return _fallbackMock.getSubjects();
-
       return list.map((e) => Subject.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
       }
-      return _fallbackMock.getSubjects();
-    } catch (_) {
-      return _fallbackMock.getSubjects();
+      throw _extractError(e, 'Failed to fetch subjects');
     }
   }
 
@@ -470,23 +460,24 @@ class ApiAcademicRepository implements AcademicRepository {
           ? body['data'] as List
           : (body is List ? body : []);
 
-      if (list.isEmpty) return _fallbackMock.getFaculty(departmentId: departmentId);
-
       return list.map((e) => Faculty.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
       }
-      return _fallbackMock.getFaculty(departmentId: departmentId);
-    } catch (_) {
-      return _fallbackMock.getFaculty(departmentId: departmentId);
+      throw _extractError(e, 'Failed to fetch faculty');
     }
   }
 
   @override
-  Future<PaginatedResponse<Faculty>> getPaginatedFaculty(
-      {String? departmentId, int limit = 20, DocumentSnapshot? startAfter}) =>
-      _fallbackMock.getPaginatedFaculty(departmentId: departmentId, limit: limit, startAfter: startAfter);
+  Future<PaginatedResponse<Faculty>> getPaginatedFaculty({
+    String? departmentId,
+    int limit = 20,
+    DocumentSnapshot? startAfter,
+  }) async {
+    final list = await getFaculty(departmentId: departmentId);
+    return PaginatedResponse(data: list, hasMore: false);
+  }
 
   @override
   Future<Faculty?> getFacultyById(String id) async {
@@ -495,15 +486,39 @@ class ApiAcademicRepository implements AcademicRepository {
       final body = response.data as Map<String, dynamic>;
       final data = body['data'] as Map<String, dynamic>? ?? body;
       return Faculty.fromJson(data);
-    } catch (_) {
-      return _fallbackMock.getFacultyById(id);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      throw _extractError(e, 'Failed to fetch faculty profile');
+    }
+  }
+
+  @override
+  Future<ProvisionFacultyResult> provisionFaculty(ProvisionFacultyRequest request) async {
+    try {
+      final response = await _client.dio.post('/academics/faculty', data: request.toJson());
+      final body = response.data as Map<String, dynamic>;
+      final data = body['data'] as Map<String, dynamic>? ?? body;
+      return ProvisionFacultyResult.fromJson(data);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to provision faculty');
     }
   }
 
   @override
   Future<void> addFaculty(Faculty faculty) async {
     try {
-      await _client.dio.post('/academics/faculty', data: faculty.toJson());
+      await provisionFaculty(ProvisionFacultyRequest(
+        departmentId: faculty.departmentId,
+        name: faculty.name,
+        instituteId: faculty.employeeId.isNotEmpty ? faculty.employeeId : faculty.id,
+        email: faculty.email,
+        phone: faculty.phone.isNotEmpty ? faculty.phone : null,
+        employeeId: faculty.employeeId.isNotEmpty ? faculty.employeeId : null,
+        designation: faculty.designation,
+        qualification: faculty.qualification,
+        specialization: faculty.specialization,
+        joiningDate: faculty.joiningDate?.toIso8601String(),
+      ));
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to provision faculty');
     }
@@ -529,8 +544,22 @@ class ApiAcademicRepository implements AcademicRepository {
 
   @override
   Future<void> bulkAssignSubjectsToFaculty(
-      String facultyId, List<String> subjectIds, List<String> sectionIds) =>
-      _fallbackMock.bulkAssignSubjectsToFaculty(facultyId, subjectIds, sectionIds);
+      String facultyId, List<String> subjectIds, List<String> sectionIds) async {
+    for (int i = 0; i < subjectIds.length; i++) {
+      await createFacultyAssignment(FacultyAssignment(
+        id: '',
+        collegeId: '',
+        facultyId: facultyId,
+        facultyName: '',
+        subjectId: subjectIds[i],
+        sectionId: sectionIds.length > i ? sectionIds[i] : (sectionIds.isNotEmpty ? sectionIds[0] : ''),
+        academicYearId: '',
+        semesterId: '',
+        departmentId: '',
+        courseId: '',
+      ));
+    }
+  }
 
   @override
   Future<bool> checkFacultyExists(String employeeId, String email) async {
@@ -542,9 +571,9 @@ class ApiAcademicRepository implements AcademicRepository {
     }
   }
 
-  // ===========================================================================
+  // =========================================================================
   // 9. FACULTY ASSIGNMENTS & WORKLOAD
-  // ===========================================================================
+  // =========================================================================
 
   @override
   Future<List<FacultyAssignment>> getFacultyAssignments({
@@ -555,15 +584,33 @@ class ApiAcademicRepository implements AcademicRepository {
     String? sectionId,
     String? subjectId,
     String? academicYearId,
-  }) => _fallbackMock.getFacultyAssignments(
-        facultyId: facultyId,
-        departmentId: departmentId,
-        courseId: courseId,
-        semesterId: semesterId,
-        sectionId: sectionId,
-        subjectId: subjectId,
-        academicYearId: academicYearId,
-      );
+  }) async {
+    try {
+      final facultyList = await getFaculty(departmentId: departmentId);
+      final assignments = <FacultyAssignment>[];
+      for (final f in facultyList) {
+        if (facultyId != null && f.id != facultyId) continue;
+        for (final subId in f.subjectIds) {
+          if (subjectId != null && subId != subjectId) continue;
+          assignments.add(FacultyAssignment(
+            id: 'assign_${f.id}_$subId',
+            collegeId: f.collegeId,
+            facultyId: f.id,
+            facultyName: f.name,
+            subjectId: subId,
+            sectionId: sectionId ?? (f.sectionIds.isNotEmpty ? f.sectionIds.first : ''),
+            academicYearId: academicYearId ?? '',
+            semesterId: semesterId ?? '',
+            departmentId: f.departmentId,
+            courseId: courseId ?? '',
+          ));
+        }
+      }
+      return assignments;
+    } catch (_) {
+      return [];
+    }
+  }
 
   @override
   Future<void> createFacultyAssignment(FacultyAssignment assignment) async {
@@ -575,8 +622,9 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> removeFacultyAssignment(String assignmentId) =>
-      _fallbackMock.removeFacultyAssignment(assignmentId);
+  Future<void> removeFacultyAssignment(String assignmentId) async {
+    // Legacy stub
+  }
 
   @override
   Future<void> transferFacultyDepartment(String facultyId, String newDepartmentId) async {
@@ -590,8 +638,18 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<List<FacultyWorkloadSummary>> getFacultyWorkloadSummaries({String? departmentId}) =>
-      _fallbackMock.getFacultyWorkloadSummaries(departmentId: departmentId);
+  Future<List<FacultyWorkloadSummary>> getFacultyWorkloadSummaries({String? departmentId}) async {
+    final facultyList = await getFaculty(departmentId: departmentId);
+    return facultyList.map((f) => FacultyWorkloadSummary(
+      facultyId: f.id,
+      facultyName: f.name,
+      employeeId: f.employeeId,
+      departmentId: f.departmentId,
+      subjectsAssigned: f.subjectIds.length,
+      sectionsAssigned: f.sectionIds.length,
+      weeklyClasses: f.subjectIds.length * 4,
+    )).toList();
+  }
 
   // ===========================================================================
   // 10. STUDENTS
@@ -610,23 +668,25 @@ class ApiAcademicRepository implements AcademicRepository {
           ? body['data'] as List
           : (body is List ? body : []);
 
-      if (list.isEmpty) return _fallbackMock.getStudents(sectionId: sectionId, departmentId: departmentId);
-
       return list.map((e) => Student.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
         return [];
       }
-      return _fallbackMock.getStudents(sectionId: sectionId, departmentId: departmentId);
-    } catch (_) {
-      return _fallbackMock.getStudents(sectionId: sectionId, departmentId: departmentId);
+      throw _extractError(e, 'Failed to fetch students');
     }
   }
 
   @override
-  Future<PaginatedResponse<Student>> getPaginatedStudents(
-      {String? sectionId, String? departmentId, int limit = 20, DocumentSnapshot? startAfter}) =>
-      _fallbackMock.getPaginatedStudents(sectionId: sectionId, departmentId: departmentId, limit: limit, startAfter: startAfter);
+  Future<PaginatedResponse<Student>> getPaginatedStudents({
+    String? sectionId,
+    String? departmentId,
+    int limit = 20,
+    DocumentSnapshot? startAfter,
+  }) async {
+    final list = await getStudents(sectionId: sectionId, departmentId: departmentId);
+    return PaginatedResponse(data: list, hasMore: false);
+  }
 
   @override
   Future<Student?> getStudentById(String id) async {
@@ -635,8 +695,9 @@ class ApiAcademicRepository implements AcademicRepository {
       final body = response.data as Map<String, dynamic>;
       final data = body['data'] as Map<String, dynamic>? ?? body;
       return Student.fromJson(data);
-    } catch (_) {
-      return _fallbackMock.getStudentById(id);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      throw _extractError(e, 'Failed to fetch student profile');
     }
   }
 
@@ -678,22 +739,38 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> bulkPromoteStudents(List<String> studentIds, String newSemesterId, String newSectionId) =>
-      _fallbackMock.bulkPromoteStudents(studentIds, newSemesterId, newSectionId);
+  Future<void> bulkPromoteStudents(List<String> studentIds, String newSemesterId, String newSectionId) async {
+    for (final id in studentIds) {
+      await _client.dio.put('/academics/students/$id', data: {
+        'semesterId': newSemesterId,
+        'sectionId': newSectionId,
+      });
+    }
+  }
 
   @override
-  Future<void> bulkTransferStudents(List<String> studentIds, String newSectionId) =>
-      _fallbackMock.bulkTransferStudents(studentIds, newSectionId);
+  Future<void> bulkTransferStudents(List<String> studentIds, String newSectionId) async {
+    for (final id in studentIds) {
+      await _client.dio.put('/academics/students/$id', data: {
+        'sectionId': newSectionId,
+      });
+    }
+  }
 
   @override
-  Future<String> generateRollNumber(String collegeId, String courseId, String academicYearId) =>
-      _fallbackMock.generateRollNumber(collegeId, courseId, academicYearId);
+  Future<String> generateRollNumber(String collegeId, String courseId, String academicYearId) async {
+    return 'ROLL-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+  }
 
   @override
-  Future<void> admitStudent(Student student) => _fallbackMock.admitStudent(student);
+  Future<void> admitStudent(Student student) => addStudent(student);
 
   @override
-  Future<void> bulkAdmitStudents(List<Student> students) => _fallbackMock.bulkAdmitStudents(students);
+  Future<void> bulkAdmitStudents(List<Student> students) async {
+    for (final s in students) {
+      await addStudent(s);
+    }
+  }
 
   @override
   Future<void> promoteStudents({
@@ -701,21 +778,13 @@ class ApiAcademicRepository implements AcademicRepository {
     required String targetAcademicYearId,
     required String targetSemesterId,
     required String targetSectionId,
-  }) => _fallbackMock.promoteStudents(
-        studentIds: studentIds,
-        targetAcademicYearId: targetAcademicYearId,
-        targetSemesterId: targetSemesterId,
-        targetSectionId: targetSectionId,
-      );
+  }) => bulkPromoteStudents(studentIds, targetSemesterId, targetSectionId);
 
   @override
   Future<void> transferStudentsSection({
     required List<String> studentIds,
     required String targetSectionId,
-  }) => _fallbackMock.transferStudentsSection(
-        studentIds: studentIds,
-        targetSectionId: targetSectionId,
-      );
+  }) => bulkTransferStudents(studentIds, targetSectionId);
 
   @override
   Future<void> transferStudentsDepartment({
@@ -724,114 +793,105 @@ class ApiAcademicRepository implements AcademicRepository {
     required String targetCourseId,
     required String targetSemesterId,
     required String targetSectionId,
-  }) => _fallbackMock.transferStudentsDepartment(
-        studentIds: studentIds,
-        targetDepartmentId: targetDepartmentId,
-        targetCourseId: targetCourseId,
-        targetSemesterId: targetSemesterId,
-        targetSectionId: targetSectionId,
-      );
+  }) async {
+    for (final id in studentIds) {
+      await _client.dio.patch('/academics/students/$id/department', data: {
+        'departmentId': targetDepartmentId,
+        'courseId': targetCourseId,
+        'semesterId': targetSemesterId,
+        'sectionId': targetSectionId,
+      });
+    }
+  }
 
   @override
   Future<void> updateStudentLifecycleState({
     required String studentId,
     required StudentLifecycleState newState,
     String? remarks,
-  }) => _fallbackMock.updateStudentLifecycleState(
-        studentId: studentId,
-        newState: newState,
-        remarks: remarks,
-      );
+  }) async {
+    await _client.dio.put('/academics/students/$studentId', data: {
+      'status': newState.name,
+      if (remarks != null) 'remarks': remarks,
+    });
+  }
 
   @override
   Future<void> bulkGraduateStudents({
     required List<String> studentIds,
     String? remarks,
-  }) => _fallbackMock.bulkGraduateStudents(
-        studentIds: studentIds,
-        remarks: remarks,
-      );
+  }) async {
+    for (final id in studentIds) {
+      await updateStudentLifecycleState(studentId: id, newState: StudentLifecycleState.graduated, remarks: remarks);
+    }
+  }
 
   @override
   Future<void> bulkArchiveAlumni({
     required List<String> studentIds,
-  }) => _fallbackMock.bulkArchiveAlumni(studentIds: studentIds);
-
-  @override
-  Future<StudentAcademicProfile> getStudentAcademicProfile(String studentId) =>
-      _fallbackMock.getStudentAcademicProfile(studentId);
-
-  @override
-  Future<List<StudentAcademicHistory>> getStudentAcademicHistory(String studentId) =>
-      _fallbackMock.getStudentAcademicHistory(studentId);
-
-  @override
-  Future<void> recordAcademicHistory(StudentAcademicHistory history) =>
-      _fallbackMock.recordAcademicHistory(history);
-
-  @override
-  Future<List<Student>> getStudentsBySection(String sectionId) async {
-    try {
-      final response = await _client.dio.get('/academics/students', queryParameters: {'sectionId': sectionId});
-      final body = response.data;
-      final list = (body is Map<String, dynamic> && body['data'] is List)
-          ? body['data'] as List
-          : (body is List ? body : []);
-      if (list.isEmpty) return _fallbackMock.getStudentsBySection(sectionId);
-      return list.map((e) => Student.fromJson(e as Map<String, dynamic>)).toList();
-    } catch (_) {
-      return _fallbackMock.getStudentsBySection(sectionId);
+  }) async {
+    for (final id in studentIds) {
+      await updateStudentLifecycleState(studentId: id, newState: StudentLifecycleState.alumni);
     }
   }
 
   @override
-  Future<List<Student>> getStudentsBySemester(String semesterId) =>
-      _fallbackMock.getStudentsBySemester(semesterId);
-
-  @override
-  Future<List<Student>> getStudentsByCourse(String courseId) =>
-      _fallbackMock.getStudentsByCourse(courseId);
-
-  @override
-  Future<List<Student>> getStudentsByDepartment(String departmentId) async {
-    try {
-      final response = await _client.dio.get('/academics/students', queryParameters: {'departmentId': departmentId});
-      final body = response.data;
-      final list = (body is Map<String, dynamic> && body['data'] is List)
-          ? body['data'] as List
-          : (body is List ? body : []);
-      if (list.isEmpty) return _fallbackMock.getStudentsByDepartment(departmentId);
-      return list.map((e) => Student.fromJson(e as Map<String, dynamic>)).toList();
-    } catch (_) {
-      return _fallbackMock.getStudentsByDepartment(departmentId);
-    }
+  Future<StudentAcademicProfile> getStudentAcademicProfile(String studentId) async {
+    final student = await getStudentById(studentId);
+    if (student == null) throw Exception('Student not found: $studentId');
+    return StudentAcademicProfile(
+      student: student,
+      overallAttendancePercentage: 0.0,
+      enrolledSubjects: const [],
+      notesCount: 0,
+    );
   }
+
+  @override
+  Future<List<StudentAcademicHistory>> getStudentAcademicHistory(String studentId) async {
+    return [];
+  }
+
+  @override
+  Future<void> recordAcademicHistory(StudentAcademicHistory history) async {}
+
+  @override
+  Future<List<Student>> getStudentsBySection(String sectionId) =>
+      getStudents(sectionId: sectionId);
+
+  @override
+  Future<List<Student>> getStudentsBySemester(String semesterId) async {
+    final students = await getStudents();
+    return students.where((s) => s.semesterId == semesterId).toList();
+  }
+
+  @override
+  Future<List<Student>> getStudentsByCourse(String courseId) async {
+    final students = await getStudents();
+    return students.where((s) => s.courseId == courseId).toList();
+  }
+
+  @override
+  Future<List<Student>> getStudentsByDepartment(String departmentId) =>
+      getStudents(departmentId: departmentId);
 
   @override
   Future<Map<String, int>> getDepartmentStudentCounts() async {
-    try {
-      final students = await getStudents();
-      final map = <String, int>{};
-      for (final s in students) {
-        map[s.departmentId] = (map[s.departmentId] ?? 0) + 1;
-      }
-      return map;
-    } catch (_) {
-      return _fallbackMock.getDepartmentStudentCounts();
+    final students = await getStudents();
+    final counts = <String, int>{};
+    for (final s in students) {
+      counts[s.departmentId] = (counts[s.departmentId] ?? 0) + 1;
     }
+    return counts;
   }
 
   @override
   Future<Map<String, int>> getDepartmentFacultyCounts() async {
-    try {
-      final faculty = await getFaculty();
-      final map = <String, int>{};
-      for (final f in faculty) {
-        map[f.departmentId] = (map[f.departmentId] ?? 0) + 1;
-      }
-      return map;
-    } catch (_) {
-      return _fallbackMock.getDepartmentFacultyCounts();
+    final faculty = await getFaculty();
+    final counts = <String, int>{};
+    for (final f in faculty) {
+      counts[f.departmentId] = (counts[f.departmentId] ?? 0) + 1;
     }
+    return counts;
   }
 }

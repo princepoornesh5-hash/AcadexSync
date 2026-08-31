@@ -152,4 +152,9 @@ class FirebaseAuthRepository implements AuthRepository {
     // Firebase password change uses reauthentication.
     throw UnimplementedError('Use ApiAuthRepository for change password');
   }
+
+  @override
+  Future<void> logoutAll() async {
+    await logout();
+  }
 }

@@ -1,20 +1,15 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:firebase_messaging/firebase_messaging.dart' as fcm;
 import 'package:flutter/foundation.dart';
-import '../../../../core/firebase/firebase_initializer.dart';
-
-import '../../../../core/firebase/firebase_services.dart';
+import '../../../../core/network/api_client.dart';
 import '../../domain/models/auth_state.dart';
 import '../../domain/models/role_enum.dart';
 import '../../domain/models/user_model.dart';
 import '../../repositories/auth_repository.dart';
-import '../../repositories/firebase_auth_repository.dart';
 import '../../data/repositories/api_auth_repository.dart';
 import '../../services/session_manager.dart';
-import '../../../users/presentation/providers/user_profile_providers.dart';
 import '../../../notifications/data/repositories/api_notification_repository.dart';
 
 // Providers for dependencies
@@ -28,81 +23,66 @@ final apiAuthRepositoryProvider = Provider<ApiAuthRepository>((ref) {
   return ApiAuthRepository();
 });
 
-// Switch between FirebaseAuthRepository and MockAuthRepository based on initialization
+/// Production auth repository: Always uses the authoritative REST API repository
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  if (FirebaseInitializer.shouldUseMock) {
-    return MockAuthRepository();
-  }
-  final authService = ref.watch(firebaseAuthServiceProvider);
-  final userProfileRepo = ref.watch(userProfileRepositoryProvider);
-  return FirebaseAuthRepository(authService, userProfileRepo);
+  return ref.watch(apiAuthRepositoryProvider);
 });
 
 // Auth Notifier
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _repository;
   final SessionManager _sessionManager;
-  final FirebaseAuthService _firebaseAuthService;
-  final FirestoreService _firestoreService;
-  StreamSubscription<firebase.User?>? _authStateSubscription;
+  final ApiClient _apiClient;
 
-  AuthNotifier(this._repository, this._sessionManager, this._firebaseAuthService, this._firestoreService) : super(const AuthInitial()) {
-    _initializeAuthListener();
+  AuthNotifier(this._repository, this._sessionManager, [ApiClient? client])
+      : _apiClient = client ?? apiClient,
+        super(const AuthInitial()) {
+    _restoreSession();
   }
 
-  void _initializeAuthListener() {
-    _authStateSubscription = _firebaseAuthService.authStateChanges.listen((firebaseUser) async {
-      if (firebaseUser == null) {
-        // User is logged out in Firebase
-        await _sessionManager.clearSession();
-        if (state is! AuthUnauthenticated) {
-          state = const AuthUnauthenticated();
-        }
-      } else {
-        // User is logged in to Firebase, need to fetch profile if not already authenticated or loading
-        if (state is! AuthAuthenticated && state is! AuthProfileLoading) {
-          await _loadProfile(firebaseUser.uid);
-        }
-      }
-    });
-  }
-
-  Future<void> _loadProfile(String uid) async {
+  Future<void> _restoreSession() async {
     state = const AuthProfileLoading();
     try {
+      final token = await _sessionManager.getAccessToken() ?? await _apiClient.getToken();
+      if (!mounted) return;
+      if (token == null || token.isEmpty) {
+        state = const AuthUnauthenticated();
+        return;
+      }
       final user = await _repository.getCurrentUser();
+      if (!mounted) return;
       if (user != null) {
         if (user.accountStatus != AccountStatus.active) {
           state = AuthError(message: 'Your account is ${user.accountStatus.name}. Access denied.');
-          await _firebaseAuthService.signOut();
+          await _repository.logout();
+          await _sessionManager.clearSession();
           return;
         }
-        final token = await _firebaseAuthService.currentUser?.getIdToken() ?? 'token';
         await _sessionManager.saveSession(token: token, user: user);
+        if (!mounted) return;
         state = AuthAuthenticated(user: user, token: token);
-        await _manageFcmToken(true, uid);
+        await _manageFcmToken(true, user.id);
       } else {
-        state = const AuthProfileError(message: 'Profile not found. Please contact support.');
+        await _sessionManager.clearSession();
+        if (!mounted) return;
+        state = const AuthUnauthenticated();
       }
-    } catch (e) {
-      state = AuthProfileError(message: e.toString());
+    } catch (_) {
+      await _sessionManager.clearSession();
+      if (!mounted) return;
+      state = const AuthUnauthenticated();
     }
-  }
-
-  @override
-  void dispose() {
-    _authStateSubscription?.cancel();
-    super.dispose();
   }
 
   Future<void> login(String identifier, String password) async {
     state = const AuthLoading();
     try {
       final user = await _repository.login(identifier, password);
-      final token = await _firebaseAuthService.currentUser?.getIdToken() ?? 'token';
+      final token = await _sessionManager.getAccessToken() ?? await _apiClient.getToken() ?? 'token';
       
       await _sessionManager.saveSession(token: token, user: user);
       state = AuthAuthenticated(user: user, token: token);
+      await _manageFcmToken(true, user.id);
     } catch (e) {
       final cleanMsg = e.toString().replaceFirst('Exception: ', '');
       state = AuthError(message: cleanMsg);
@@ -112,11 +92,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> loginAsDevelopmentRole(AppRole role) async {
     state = const AuthLoading();
     try {
-      if (kDebugMode) {
-        FirebaseInitializer.overrideShouldUseMock = true; // Force all feature repos to use Mock
-      }
       final user = await _repository.loginAsDevelopmentRole(role);
-      final token = 'dev-token'; // mock token
+      const token = 'dev-token';
       await _sessionManager.saveSession(token: token, user: user);
       state = AuthAuthenticated(user: user, token: token);
     } catch (e) {
@@ -127,18 +104,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     state = const AuthLoading();
     try {
-      if (kDebugMode) {
-        FirebaseInitializer.overrideShouldUseMock = null; // Reset mock override on logout
-      }
-      final user = _firebaseAuthService.currentUser;
+      final user = state is AuthAuthenticated ? (state as AuthAuthenticated).user : null;
       if (user != null) {
-        await _manageFcmToken(false, user.uid);
+        await _manageFcmToken(false, user.id);
       }
       await _repository.logout();
+    } catch (_) {
+      // Best effort remote logout
+    } finally {
       await _sessionManager.clearSession();
-      // State is handled by _authStateSubscription (will emit null)
-    } catch (e) {
-      // Even if backend fails, clear local session
+      state = const AuthUnauthenticated();
+    }
+  }
+
+  Future<void> logoutAll() async {
+    state = const AuthLoading();
+    try {
+      final user = state is AuthAuthenticated ? (state as AuthAuthenticated).user : null;
+      if (user != null) {
+        await _manageFcmToken(false, user.id);
+      }
+      await _repository.logoutAll();
+    } catch (_) {
+      // Best effort remote logout
+    } finally {
       await _sessionManager.clearSession();
       state = const AuthUnauthenticated();
     }
@@ -148,7 +137,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       await _repository.sendPasswordResetEmail(email);
     } catch (e) {
-      throw Exception(e.toString()); // Handled by UI
+      throw Exception(e.toString());
     }
   }
 
@@ -159,8 +148,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await _repository.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+    } catch (e) {
+      final cleanMsg = e.toString().replaceFirst('Exception: ', '');
+      throw Exception(cleanMsg);
+    }
+  }
+
   Future<void> _manageFcmToken(bool isLogin, String uid) async {
-    if (FirebaseInitializer.shouldUseMock) return;
     try {
       final messaging = fcm.FirebaseMessaging.instance;
       
@@ -174,41 +177,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
         
         final token = await messaging.getToken();
         if (token != null) {
-          // Register with MongoDB backend via ApiNotificationRepository
           try {
             final platform = kIsWeb ? 'web' : (defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android');
-            ApiNotificationRepository().registerDeviceToken(deviceToken: token, platform: platform);
+            await ApiNotificationRepository().registerDeviceToken(deviceToken: token, platform: platform);
           } catch (_) {}
-
-          final doc = await _firestoreService.getDocument('users', uid);
-          if (doc != null) {
-            final tokens = List<String>.from(doc['fcmTokens'] ?? []);
-            if (!tokens.contains(token)) {
-              tokens.add(token);
-              final mergedData = Map<String, dynamic>.from(doc);
-              mergedData['fcmTokens'] = tokens;
-              await _firestoreService.setDocument('users', uid, mergedData);
-            }
-          }
         }
       } else {
         final token = await messaging.getToken();
         if (token != null) {
-          // Remove from MongoDB backend via ApiNotificationRepository
           try {
-            ApiNotificationRepository().removeDeviceToken(token);
+            await ApiNotificationRepository().removeDeviceToken(token);
           } catch (_) {}
-
-          final doc = await _firestoreService.getDocument('users', uid);
-          if (doc != null) {
-            final tokens = List<String>.from(doc['fcmTokens'] ?? []);
-            if (tokens.contains(token)) {
-              tokens.remove(token);
-              final mergedData = Map<String, dynamic>.from(doc);
-              mergedData['fcmTokens'] = tokens;
-              await _firestoreService.setDocument('users', uid, mergedData);
-            }
-          }
           await messaging.deleteToken();
         }
       }
@@ -222,8 +201,6 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(
     ref.watch(authRepositoryProvider),
     ref.watch(sessionManagerProvider),
-    ref.watch(firebaseAuthServiceProvider),
-    ref.watch(firestoreServiceProvider),
   );
 });
 

@@ -38,6 +38,9 @@ abstract class AuthRepository {
     required String currentPassword,
     required String newPassword,
   });
+
+  /// Revoke all active sessions for this user across all devices
+  Future<void> logoutAll();
 }
 
 class MockAuthRepository implements AuthRepository {
@@ -176,6 +179,11 @@ class MockAuthRepository implements AuthRepository {
 
   @override
   Future<void> logout() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+  }
+
+  @override
+  Future<void> logoutAll() async {
     await Future.delayed(const Duration(milliseconds: 300));
   }
 }

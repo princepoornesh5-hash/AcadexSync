@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../../core/firebase/firebase_services.dart';
 import '../../domain/models/academic_models.dart';
 import '../../domain/repositories/academic_repository.dart';
@@ -9,7 +8,6 @@ import '../../../../features/auth/presentation/providers/auth_provider.dart' as 
 import '../../../../features/auth/domain/models/auth_state.dart';
 import '../../../../features/auth/domain/models/user_model.dart';
 import '../../../../features/auth/domain/models/role_enum.dart';
-import '../../data/repositories/mock_academic_repository.dart';
 import '../../../../core/providers/pagination_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -30,9 +28,6 @@ final apiAcademicRepositoryProvider = Provider<ApiAcademicRepository>((ref) {
 });
 
 final academicRepositoryProvider = Provider<AcademicRepository>((ref) {
-  if (FirebaseInitializer.shouldUseMock) {
-    return mockAcademicRepo;
-  }
   return ref.watch(apiAcademicRepositoryProvider);
 });
 
@@ -242,12 +237,49 @@ class FacultyNotifier extends PaginationNotifier<Faculty> {
     await refresh();
     ref.invalidate(facultyAssignmentsProvider);
   }
+
+  Future<ProvisionFacultyResult> provisionFaculty(ProvisionFacultyRequest request) async {
+    final result = await ref.read(academicRepositoryProvider).provisionFaculty(request);
+    await refresh();
+    ref.invalidate(departmentFacultyCountsProvider);
+    return result;
+  }
 }
 
 final facultyProvider = StateNotifierProvider.autoDispose.family<FacultyNotifier, PaginatedState<Faculty>, String?>((ref, departmentId) {
   // Watch auth to force rebuild on logout
   ref.watch(auth.authProvider);
   return FacultyNotifier(ref, departmentId: departmentId)..loadInitial();
+});
+
+class FacultyProvisionNotifier extends StateNotifier<AsyncValue<ProvisionFacultyResult?>> {
+  final Ref ref;
+  FacultyProvisionNotifier(this.ref) : super(const AsyncData(null));
+
+  Future<ProvisionFacultyResult> provisionFaculty(ProvisionFacultyRequest request) async {
+    state = const AsyncLoading();
+    try {
+      final result = await ref.read(academicRepositoryProvider).provisionFaculty(request);
+      ref.invalidate(facultyProvider(null));
+      if (request.departmentId.isNotEmpty) {
+        ref.invalidate(facultyProvider(request.departmentId));
+      }
+      ref.invalidate(departmentFacultyCountsProvider);
+      state = AsyncData(result);
+      return result;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+
+  void reset() {
+    state = const AsyncData(null);
+  }
+}
+
+final facultyProvisionProvider = StateNotifierProvider.autoDispose<FacultyProvisionNotifier, AsyncValue<ProvisionFacultyResult?>>((ref) {
+  return FacultyProvisionNotifier(ref);
 });
 
 // --- Student Notifier ---

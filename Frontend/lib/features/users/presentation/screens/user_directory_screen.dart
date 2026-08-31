@@ -153,37 +153,47 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   // Status Filter Dropdown
-                  DropdownButton<UserStatus?>(
-                    value: selectedStatus,
-                    hint: const Text('All Statuses'),
-                    underline: const SizedBox.shrink(),
-                    items: const [
-                      DropdownMenuItem(value: null, child: Text('All Statuses')),
-                      DropdownMenuItem(value: UserStatus.active, child: Text('Active')),
-                      DropdownMenuItem(value: UserStatus.pending, child: Text('Pending Activation')),
-                      DropdownMenuItem(value: UserStatus.deactivated, child: Text('Deactivated')),
-                    ],
-                    onChanged: (val) {
-                      ref.read(userStatusFilterProvider.notifier).state = val;
-                    },
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 160),
+                    child: DropdownButton<UserStatus?>(
+                      value: selectedStatus,
+                      hint: const Text('All Statuses', overflow: TextOverflow.ellipsis),
+                      underline: const SizedBox.shrink(),
+                      isDense: true,
+                      isExpanded: true,
+                      items: const [
+                        DropdownMenuItem(value: null, child: Text('All Statuses', overflow: TextOverflow.ellipsis)),
+                        DropdownMenuItem(value: UserStatus.active, child: Text('Active', overflow: TextOverflow.ellipsis)),
+                        DropdownMenuItem(value: UserStatus.pending, child: Text('Pending Activation', overflow: TextOverflow.ellipsis)),
+                        DropdownMenuItem(value: UserStatus.deactivated, child: Text('Deactivated', overflow: TextOverflow.ellipsis)),
+                      ],
+                      onChanged: (val) {
+                        ref.read(userStatusFilterProvider.notifier).state = val;
+                      },
+                    ),
                   ),
 
                   // Department Filter Dropdown (if departments available)
                   if (departmentsAsync.value != null && departmentsAsync.value!.isNotEmpty && !isHod)
-                    DropdownButton<String?>(
-                      value: selectedDept,
-                      hint: const Text('All Departments'),
-                      underline: const SizedBox.shrink(),
-                      items: [
-                        const DropdownMenuItem(value: null, child: Text('All Departments')),
-                        ...departmentsAsync.value!.map((d) => DropdownMenuItem(
-                              value: d.id,
-                              child: Text(d.name),
-                            )),
-                      ],
-                      onChanged: (val) {
-                        ref.read(userDeptFilterProvider.notifier).state = val;
-                      },
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 160),
+                      child: DropdownButton<String?>(
+                        value: selectedDept,
+                        hint: const Text('All Departments', overflow: TextOverflow.ellipsis),
+                        underline: const SizedBox.shrink(),
+                        isDense: true,
+                        isExpanded: true,
+                        items: [
+                          const DropdownMenuItem(value: null, child: Text('All Departments', overflow: TextOverflow.ellipsis)),
+                          ...departmentsAsync.value!.map((d) => DropdownMenuItem(
+                                value: d.id,
+                                child: Text(d.name, overflow: TextOverflow.ellipsis),
+                              )),
+                        ],
+                        onChanged: (val) {
+                          ref.read(userDeptFilterProvider.notifier).state = val;
+                        },
+                      ),
                     ),
 
                   if (selectedRole != null || selectedStatus != null || selectedDept != null || _searchController.text.isNotEmpty)
@@ -284,10 +294,14 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AcadexRadius.md),
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(
-            isDark ? AcadexColors.darkSurfaceElevated : AcadexColors.surfaceMuted,
-          ),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            dataRowMinHeight: 64,
+            dataRowMaxHeight: 72,
+            headingRowColor: WidgetStateProperty.all(
+              isDark ? AcadexColors.darkSurfaceElevated : AcadexColors.surfaceMuted,
+            ),
           columns: const [
             DataColumn(label: Text('Name & ID', style: TextStyle(fontWeight: FontWeight.bold))),
             DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
@@ -305,14 +319,9 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
                 DataCell(
                   InkWell(
                     onTap: () => context.go('/users/${u.id}'),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(u.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        if (idLabel.isNotEmpty)
-                          Text(idLabel, style: TextStyle(fontSize: 11, color: isDark ? AcadexColors.darkTextSecondary : AcadexColors.textSecondary)),
-                      ],
+                    child: Text(
+                      idLabel.isNotEmpty ? '${u.name}\n$idLabel' : u.name,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                     ),
                   ),
                 ),
@@ -331,6 +340,7 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
           }).toList(),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

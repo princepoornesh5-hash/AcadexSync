@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "jest --runInBand",
     "test:coverage": "jest --runInBand --coverage",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "create-super-admin": "ts-node src/scripts/create-super-admin.ts"
   },
   "keywords": [
     "acadex",

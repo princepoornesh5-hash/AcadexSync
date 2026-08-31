@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -18,9 +17,6 @@ final apiNotesRepositoryProvider = Provider<ApiNotesRepository>((ref) {
 });
 
 final notesRepositoryProvider = Provider<NotesRepository>((ref) {
-  if (FirebaseInitializer.shouldUseMock) {
-    return ref.watch(mockNotesRepositoryProvider);
-  }
   return ref.watch(apiNotesRepositoryProvider);
 });
 

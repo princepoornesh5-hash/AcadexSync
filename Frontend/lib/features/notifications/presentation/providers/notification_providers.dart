@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../../core/firebase/firebase_services.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
@@ -10,7 +9,6 @@ import '../../domain/services/notification_service.dart';
 import '../../../attendance/domain/services/attendance_notification_dispatcher.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../data/repositories/api_notification_repository.dart';
-import '../../data/repositories/mock_notification_repository.dart';
 
 // --- Repository Provider ---
 final apiNotificationRepositoryProvider = Provider<ApiNotificationRepository>((ref) {
@@ -18,10 +16,6 @@ final apiNotificationRepositoryProvider = Provider<ApiNotificationRepository>((r
 });
 
 final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
-  if (FirebaseInitializer.shouldUseMock) {
-    return mockNotificationRepo;
-  }
-  
   return ref.watch(apiNotificationRepositoryProvider);
 });
 
@@ -43,7 +37,7 @@ enum NotificationFilter { all, unread, read, attendance, academic, notes, timeta
 final notificationFilterProvider = StateProvider<NotificationFilter>((ref) => NotificationFilter.all);
 
 // --- Stream Notifier Provider ---
-class NotificationsNotifier extends StreamNotifier<List<NotificationModel>> {
+class NotificationsNotifier extends AutoDisposeStreamNotifier<List<NotificationModel>> {
   @override
   Stream<List<NotificationModel>> build() {
     final authState = ref.watch(authProvider);
@@ -103,13 +97,13 @@ class NotificationsNotifier extends StreamNotifier<List<NotificationModel>> {
   }
 }
 
-final notificationsProvider = StreamNotifierProvider<NotificationsNotifier, List<NotificationModel>>(() {
+final notificationsProvider = StreamNotifierProvider.autoDispose<NotificationsNotifier, List<NotificationModel>>(() {
   return NotificationsNotifier();
 });
 
 // --- Computed Providers ---
 
-final unreadNotificationCountProvider = Provider<int>((ref) {
+final unreadNotificationCountProvider = Provider.autoDispose<int>((ref) {
   final asyncNotifications = ref.watch(notificationsProvider);
   return asyncNotifications.maybeWhen(
     data: (notifications) => notifications.where((n) => !n.isRead).length,
@@ -117,7 +111,7 @@ final unreadNotificationCountProvider = Provider<int>((ref) {
   );
 });
 
-final filteredNotificationsProvider = Provider<List<NotificationModel>>((ref) {
+final filteredNotificationsProvider = Provider.autoDispose<List<NotificationModel>>((ref) {
   final asyncNotifications = ref.watch(notificationsProvider);
   final filter = ref.watch(notificationFilterProvider);
 

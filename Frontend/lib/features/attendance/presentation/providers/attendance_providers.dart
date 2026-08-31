@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/notifications/presentation/providers/notification_providers.dart';
-import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../../core/firebase/firebase_services.dart';
 import '../../domain/models/attendance_record.dart';
 import '../../domain/models/attendance_session.dart';
@@ -10,7 +9,6 @@ import '../../domain/models/assigned_class.dart';
 import '../../domain/repositories/attendance_repository.dart';
 import '../../data/repositories/api_attendance_repository.dart';
 import '../../data/repositories/firebase_attendance_repository.dart';
-import '../../data/repositories/mock_attendance_repository.dart';
 
 final firebaseAttendanceRepoProvider = Provider<AttendanceRepository>((ref) {
   final firestoreService = ref.watch(firestoreServiceProvider);
@@ -28,9 +26,6 @@ final apiAttendanceRepoProvider = Provider<AttendanceRepository>((ref) {
 });
 
 final attendanceRepoProvider = Provider<AttendanceRepository>((ref) {
-  if (FirebaseInitializer.shouldUseMock) {
-    return mockAttendanceRepo;
-  }
   return ref.watch(apiAttendanceRepoProvider);
 });
 
@@ -45,9 +40,6 @@ final assignedClassesProvider = FutureProvider<List<AssignedClass>>((ref) async 
   final currentUser = ref.watch(currentUserProvider);
   
   if (currentUser == null || currentUser.id.isEmpty) {
-    if (FirebaseInitializer.shouldUseMock) {
-      return repo.getAssignedClasses('faculty1', date);
-    }
     return [];
   }
   
@@ -153,11 +145,11 @@ final saveSessionProvider = FutureProvider.family<bool, String>((ref, activeClas
 
   final facultyId = activeClass.facultyId?.isNotEmpty == true
       ? activeClass.facultyId!
-      : (currentUser?.id ?? (FirebaseInitializer.shouldUseMock ? 'faculty1' : ''));
-  final collegeId = currentUser?.collegeId ?? (FirebaseInitializer.shouldUseMock ? 'col-1' : '');
-  final departmentId = currentUser?.departmentId ?? (FirebaseInitializer.shouldUseMock ? 'dept-1' : '');
+      : (currentUser?.id ?? '');
+  final collegeId = currentUser?.collegeId ?? '';
+  final departmentId = currentUser?.departmentId ?? '';
 
-  if (!FirebaseInitializer.shouldUseMock && (facultyId.isEmpty || collegeId.isEmpty)) {
+  if (facultyId.isEmpty || collegeId.isEmpty) {
     throw StateError("Cannot save attendance: Incomplete user profile.");
   }
 

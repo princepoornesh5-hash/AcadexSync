@@ -58,6 +58,7 @@ abstract class AcademicRepository {
   Future<void> deactivateSubject(String id);
 
   Future<void> addFaculty(Faculty faculty);
+  Future<ProvisionFacultyResult> provisionFaculty(ProvisionFacultyRequest request);
   Future<void> updateFaculty(Faculty faculty);
   Future<void> deactivateFaculty(String id);
   Future<void> bulkAssignSubjectsToFaculty(String facultyId, List<String> subjectIds, List<String> sectionIds);

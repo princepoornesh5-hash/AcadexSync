@@ -5,8 +5,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../auth/domain/models/auth_state.dart';
-import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../academic_structure/domain/models/academic_models.dart';
@@ -32,55 +32,102 @@ class FacultyDashboard extends ConsumerWidget {
     UserModel? user;
     if (authState is AuthAuthenticated) user = authState.user;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: LayoutBuilder(builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final statCols = AcadexLayout.statGridColumns(context);
-        final firstName = user?.name.split(' ').first ?? 'Faculty';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final firstName = user?.name.split(' ').first ?? 'Faculty';
 
-        return AcadexPageContainer(
-          particleSphereVariant: ParticleSphereVariant.dashboard,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-                // Greeting + role
+    return Scaffold(
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final statCols = AcadexLayout.statGridColumns(context);
+
+          return AcadexPageContainer(
+            particleSphereVariant: ParticleSphereVariant.dashboard,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Greeting & Role Badge
                 Row(
                   children: [
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Good morning, Prof. $firstName!',
-                              style: AcadexTypography.heading2(color: Theme.of(context).colorScheme.onSurface)),
-                          const SizedBox(height: 6),
-                          Text("Manage your assigned classes, attendance, lesson notes, and timetable.",
-                              style: AcadexTypography.body(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)),
+                          Text(
+                            'Good morning, Prof. $firstName 👋',
+                            style: AcadexTypography.heading1(
+                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Manage your allocated classes, student attendance, lesson notes, and teaching schedule.',
+                            style: AcadexTypography.body(
+                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    _RolePill(label: user?.role.displayName ?? 'Faculty'),
+                    const AcadexBadge(
+                      label: 'FACULTY',
+                      variant: AcadexBadgeVariant.primary,
+                    ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                AcadexLayout.sectionSpacer,
 
-                const SectionHeader(title: "Today's Schedule"),
+                // Overview Stat Cards
+                const SectionHeader(title: 'Teaching Overview'),
+                AcadexLayout.headerGap,
+                stats.when(
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(28),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                  error: (err, _) => AcadexCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Failed to load teaching metrics: $err',
+                      style: AcadexTypography.caption(color: AcadexColors.error),
+                    ),
+                  ),
+                  data: (data) => GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: data.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: statCols,
+                      crossAxisSpacing: AcadexLayout.gridSpacing,
+                      mainAxisSpacing: AcadexLayout.gridSpacing,
+                      childAspectRatio: width > 600 ? 1.25 : 1.15,
+                    ),
+                    itemBuilder: (_, i) => StatCard(stat: data[i]),
+                  ),
+                ),
+                AcadexLayout.sectionSpacer,
+
+                // Today's Timetable Schedule
+                const SectionHeader(title: "Today's Teaching Schedule"),
                 AcadexLayout.headerGap,
                 Consumer(
                   builder: (context, ref, _) {
                     final todayAsync = ref.watch(todayScheduleProvider);
                     return todayAsync.when(
                       loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (err, stack) => Text('Error loading schedule: $err'),
+                      error: (err, _) => Text('Error loading schedule: $err'),
                       data: (data) => TodayScheduleWidget(todayEntries: data),
                     );
                   },
                 ),
                 AcadexLayout.sectionSpacer,
 
-                // My Assigned Subjects
+                // My Assigned Subjects Allocation Grid
                 SectionHeader(
-                  title: 'My Assigned Subjects',
+                  title: 'My Assigned Subjects & Sections',
                   actionLabel: 'View All Assignments',
                   onAction: () => context.push('/my-assignments'),
                 ),
@@ -94,11 +141,13 @@ class FacultyDashboard extends ConsumerWidget {
                     final semMap = ref.watch(semesterMapProvider);
 
                     if (myAssignments.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      return AcadexCard(
+                        padding: const EdgeInsets.all(16),
                         child: Text(
-                          "No assigned subjects allocated yet.",
-                          style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                          'No assigned subjects allocated to your account yet.',
+                          style: AcadexTypography.bodySmall(
+                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          ),
                         ),
                       );
                     }
@@ -166,11 +215,11 @@ class FacultyDashboard extends ConsumerWidget {
                                         ),
                                       ),
                                       Text(
-                                        "${entry.value.length} Section${entry.value.length > 1 ? 's' : ''}",
+                                        '${entry.value.length} Section${entry.value.length > 1 ? 's' : ''}',
                                         style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
-                                          color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                                         ),
                                       ),
                                     ],
@@ -180,33 +229,40 @@ class FacultyDashboard extends ConsumerWidget {
                                     sub?.name ?? 'Assigned Course',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface),
+                                    style: AcadexTypography.title(
+                                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    "Sections: $sectionNames",
+                                    'Sections: $sectionNames',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                                    style: AcadexTypography.caption(
+                                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                    ),
                                   ),
                                 ],
                               ),
-                              const Divider(height: 1),
+                              Divider(
+                                height: 1,
+                                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                              ),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   IconButton(
-                                    tooltip: "Mark Attendance",
+                                    tooltip: 'Mark Attendance',
                                     icon: const Icon(LucideIcons.clipboardCheck, size: 16, color: AcadexColors.primary),
                                     onPressed: () => context.push('/attendance'),
                                   ),
                                   IconButton(
-                                    tooltip: "Upload Notes",
+                                    tooltip: 'Upload Notes',
                                     icon: const Icon(LucideIcons.filePlus, size: 16, color: AcadexColors.accentTeal),
                                     onPressed: () => context.push('/notes/new'),
                                   ),
                                   IconButton(
-                                    tooltip: "View Timetable",
+                                    tooltip: 'View Timetable',
                                     icon: const Icon(LucideIcons.calendarDays, size: 16, color: AcadexColors.accentPurple),
                                     onPressed: () => context.push('/timetable'),
                                   ),
@@ -221,51 +277,51 @@ class FacultyDashboard extends ConsumerWidget {
                 ),
                 AcadexLayout.sectionSpacer,
 
-                const SectionHeader(title: 'Overview'),
-                AcadexLayout.headerGap,
-                stats.when(
-                  loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
-                  error: (err, stack) => Text('Error: $err'),
-                  data: (data) => GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    itemCount: data.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: statCols,
-                      crossAxisSpacing: AcadexLayout.gridSpacing,
-                      mainAxisSpacing: AcadexLayout.gridSpacing,
-                      childAspectRatio: width > 600 ? 1.15 : 1.05,
-                    ),
-                    itemBuilder: (_, i) => StatCard(stat: data[i], animationDelay: i * 80),
-                  ),
-                ),
-                AcadexLayout.sectionSpacer,
-                const SectionHeader(title: 'Quick Actions'),
+                // Quick Navigation Actions
+                const SectionHeader(title: 'Quick Operations'),
                 AcadexLayout.headerGap,
                 GridView.builder(
                   physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
                   itemCount: quickActions.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: width > 600 ? 4 : 2,
+                    crossAxisCount: width > 900 ? 5 : (width > 600 ? 3 : 2),
                     crossAxisSpacing: AcadexLayout.gridSpacing,
                     mainAxisSpacing: AcadexLayout.gridSpacing,
-                    childAspectRatio: 1.2,
+                    childAspectRatio: 1.15,
                   ),
                   itemBuilder: (_, i) => QuickActionCard(action: quickActions[i]),
                 ),
                 AcadexLayout.sectionSpacer,
-                SectionHeader(title: 'Recent Activity', actionLabel: 'View All', onAction: () {}),
+
+                // Recent Activity / Announcements Feed
+                SectionHeader(
+                  title: 'Recent Activity & Notifications',
+                  actionLabel: 'View All',
+                  onAction: () => context.go('/notifications'),
+                ),
                 AcadexLayout.headerGap,
                 activity.when(
-                  loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
-                  error: (err, stack) => Text('Error: $err'),
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                  error: (err, _) => AcadexCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Failed to load activity: $err',
+                      style: AcadexTypography.caption(color: AcadexColors.error),
+                    ),
+                  ),
                   data: (data) => ActivityFeed(items: data),
                 ),
-            ],
-          ),
-        );
-      }),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -280,8 +336,7 @@ class FacultyDashboard extends ConsumerWidget {
     required Map<String, Department> deptMap,
     required List<FacultyAssignment> assignments,
   }) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final firstAssign = assignments.isNotEmpty ? assignments.first : null;
     final dept = firstAssign != null ? deptMap[firstAssign.departmentId] : null;
@@ -308,12 +363,16 @@ class FacultyDashboard extends ConsumerWidget {
                   children: [
                     Text(
                       subject?.name ?? subjectId,
-                      style: AcadexTypography.heading3(color: theme.colorScheme.onSurface),
+                      style: AcadexTypography.heading3(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Code: ${subject?.code ?? "N/A"} • Type: ${subject?.type ?? "Theory"} • Credits: ${subject?.credits ?? 3}',
-                      style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+                      style: AcadexTypography.caption(
+                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      ),
                     ),
                   ],
                 ),
@@ -324,24 +383,24 @@ class FacultyDashboard extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(AcadexRadius.xs),
                   ),
                   child: Text(
-                    "${assignments.length} Section${assignments.length > 1 ? 's' : ''}",
+                    '${assignments.length} Section${assignments.length > 1 ? 's' : ''}',
                     style: const TextStyle(color: AcadexColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            const Divider(height: 1),
+            Divider(height: 1, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
             const SizedBox(height: 16),
 
             // Academic details grid
             Row(
               children: [
                 Expanded(
-                  child: _DetailTile(label: "Department", value: dept?.name ?? firstAssign?.departmentId ?? "N/A"),
+                  child: _DetailTile(label: 'Department', value: dept?.name ?? firstAssign?.departmentId ?? 'N/A'),
                 ),
                 Expanded(
-                  child: _DetailTile(label: "Course", value: course?.name ?? firstAssign?.courseId ?? "N/A"),
+                  child: _DetailTile(label: 'Course', value: course?.name ?? firstAssign?.courseId ?? 'N/A'),
                 ),
               ],
             ),
@@ -349,11 +408,11 @@ class FacultyDashboard extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
-                  child: _DetailTile(label: "Semester", value: semester?.name ?? firstAssign?.semesterId ?? "N/A"),
+                  child: _DetailTile(label: 'Semester', value: semester?.name ?? firstAssign?.semesterId ?? 'N/A'),
                 ),
                 Expanded(
                   child: _DetailTile(
-                    label: "Assigned Sections",
+                    label: 'Assigned Sections',
                     value: sectionIds.map((s) => secMap[s]?.name ?? s).join(', '),
                   ),
                 ),
@@ -373,7 +432,7 @@ class FacultyDashboard extends ConsumerWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
                     ),
                     icon: const Icon(LucideIcons.clipboardCheck, size: 18),
-                    label: const Text("Take Attendance"),
+                    label: const Text('Take Attendance'),
                     onPressed: () {
                       Navigator.pop(ctx);
                       context.push('/attendance');
@@ -390,7 +449,7 @@ class FacultyDashboard extends ConsumerWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
                     ),
                     icon: const Icon(LucideIcons.filePlus, size: 18),
-                    label: const Text("Upload Notes"),
+                    label: const Text('Upload Notes'),
                     onPressed: () {
                       Navigator.pop(ctx);
                       context.push('/notes/new');
@@ -405,7 +464,7 @@ class FacultyDashboard extends ConsumerWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
                     ),
                     icon: const Icon(LucideIcons.calendarDays, size: 18),
-                    label: const Text("Timetable"),
+                    label: const Text('Timetable'),
                     onPressed: () {
                       Navigator.pop(ctx);
                       context.push('/timetable');
@@ -429,38 +488,24 @@ class _DetailTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AcadexTypography.caption(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+        Text(
+          label,
+          style: AcadexTypography.caption(
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(value, style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.w600)),
+        Text(
+          value,
+          style: AcadexTypography.body(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ).copyWith(fontWeight: FontWeight.w600),
+        ),
       ],
-    );
-  }
-}
-
-class _RolePill extends StatelessWidget {
-  final String label;
-  const _RolePill({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-        borderRadius: AcadexRadius.borderRadiusFull,
-        border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(width: 8, height: 8, decoration: const BoxDecoration(color: AcadexColors.success, shape: BoxShape.circle)),
-          const SizedBox(width: 6),
-          Text(label, style: AcadexTypography.eyebrow(color: Theme.of(context).primaryColor)),
-        ],
-      ),
     );
   }
 }

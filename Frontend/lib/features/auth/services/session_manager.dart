@@ -36,4 +36,7 @@ class SessionManager {
     }
     return null;
   }
+
+  Future<String?> getToken() => _storage.read(key: _keyToken);
+  Future<String?> getAccessToken() => _storage.read(key: _keyToken);
 }

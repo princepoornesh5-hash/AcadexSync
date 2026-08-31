@@ -79,7 +79,7 @@ void main() async {
     // PRODUCTION BOUNDARY: Force production initialization by default
     await FirebaseInitializer.initialize(FirebaseEnv.production);
 
-    if (!FirebaseInitializer.shouldUseMock) {
+    if (!FirebaseInitializer.shouldUseMock && !kIsWeb) {
       FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     }
 

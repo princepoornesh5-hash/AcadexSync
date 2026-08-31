@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
-import '../../../../core/firebase/firebase_initializer.dart';
 import '../../domain/models/department_attendance_summary.dart';
 import '../../domain/models/faculty_attendance_completion.dart';
 import '../../domain/models/student_shortage.dart';
@@ -9,13 +8,7 @@ import 'attendance_providers.dart';
 
 final currentDepartmentIdProvider = Provider<String>((ref) {
   final user = ref.watch(currentUserProvider);
-  if (user != null && user.departmentId != null && user.departmentId!.isNotEmpty) {
-    return user.departmentId!;
-  }
-  if (FirebaseInitializer.shouldUseMock) {
-    return 'dept1';
-  }
-  return '';
+  return user?.departmentId ?? '';
 });
 
 final hodDepartmentSummaryProvider = FutureProvider<DepartmentAttendanceSummary>((ref) async {

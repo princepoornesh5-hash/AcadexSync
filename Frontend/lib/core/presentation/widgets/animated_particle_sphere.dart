@@ -75,7 +75,7 @@ class _AnimatedParticleSphereBackgroundState
     with TickerProviderStateMixin {
   late AnimationController _rotationController;
   late AnimationController _themeController;
-  Offset? _mousePos;
+  final ValueNotifier<Offset?> _mousePosNotifier = ValueNotifier<Offset?>(null);
   List<_SphereParticle3D>? _cachedParticles;
   int _lastParticleCount = 0;
   bool _isDarkCurrent = true;
@@ -152,6 +152,7 @@ class _AnimatedParticleSphereBackgroundState
   void dispose() {
     _rotationController.dispose();
     _themeController.dispose();
+    _mousePosNotifier.dispose();
     super.dispose();
   }
 
@@ -303,7 +304,7 @@ class _AnimatedParticleSphereBackgroundState
 
         final canvas = RepaintBoundary(
           child: AnimatedBuilder(
-            animation: Listenable.merge([_rotationController, _themeController]),
+            animation: Listenable.merge([_rotationController, _themeController, _mousePosNotifier]),
             builder: (context, _) {
               return CustomPaint(
                 size: Size(w, h),
@@ -315,7 +316,7 @@ class _AnimatedParticleSphereBackgroundState
                   sphereRadius: baseRadius,
                   intensity: _effectiveIntensity,
                   drawBackground: widget.drawBackground,
-                  mousePos: widget.enableMouseParallax ? _mousePos : null,
+                  mousePos: widget.enableMouseParallax ? _mousePosNotifier.value : null,
                   screenSize: Size(w, h),
                 ),
               );
@@ -337,15 +338,11 @@ class _AnimatedParticleSphereBackgroundState
     if (hasPointerSupport) {
       backgroundLayer = MouseRegion(
         onHover: (event) {
-          setState(() {
-            _mousePos = event.localPosition;
-          });
+          _mousePosNotifier.value = event.localPosition;
         },
         onExit: (_) {
-          if (_mousePos != null) {
-            setState(() {
-              _mousePos = null;
-            });
+          if (_mousePosNotifier.value != null) {
+            _mousePosNotifier.value = null;
           }
         },
         child: sphereWidget,

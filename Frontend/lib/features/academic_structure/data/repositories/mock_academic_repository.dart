@@ -642,6 +642,11 @@ class MockAcademicRepository implements AcademicRepository {
     _validateScope(dept.collegeId, dept.id);
     _faculty.add(faculty);
   }
+
+  @override
+  Future<ProvisionFacultyResult> provisionFaculty(ProvisionFacultyRequest request) async {
+    throw UnimplementedError('Faculty provisioning is only handled via ApiAcademicRepository in production');
+  }
   @override
   Future<void> updateFaculty(Faculty faculty) async {
     await _delay();

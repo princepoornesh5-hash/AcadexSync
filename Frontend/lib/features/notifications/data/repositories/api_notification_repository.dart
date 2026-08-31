@@ -134,12 +134,10 @@ class ApiNotificationRepository implements NotificationRepository {
     UserModel user,
     NotificationPreferences prefs,
   ) {
-    final controller = StreamController<List<NotificationModel>>();
-    Timer? pollTimer;
+    late StreamController<List<NotificationModel>> controller;
     StreamSubscription? updateSub;
 
     Future<void> loadAndEmit() async {
-      if (controller.isClosed) return;
       try {
         final notifications = await fetchNotifications(page: 1, limit: 50);
         
@@ -163,19 +161,18 @@ class ApiNotificationRepository implements NotificationRepository {
       }
     }
 
-    // Initial load
-    loadAndEmit();
-
-    // Periodic refresh every 30 seconds
-    pollTimer = Timer.periodic(const Duration(seconds: 30), (_) => loadAndEmit());
-
-    // Trigger on mutation
-    updateSub = _updateStreamController.stream.listen((_) => loadAndEmit());
-
-    controller.onCancel = () {
-      pollTimer?.cancel();
-      updateSub?.cancel();
-    };
+    controller = StreamController<List<NotificationModel>>(
+      onListen: () {
+        loadAndEmit();
+        updateSub = _updateStreamController.stream.listen((_) => loadAndEmit());
+      },
+      onCancel: () {
+        updateSub?.cancel();
+        if (!controller.isClosed) {
+          controller.close();
+        }
+      },
+    );
 
     return controller.stream;
   }

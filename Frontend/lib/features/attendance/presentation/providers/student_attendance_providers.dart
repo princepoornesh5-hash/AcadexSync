@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
-import '../../../../core/firebase/firebase_initializer.dart';
 import '../../domain/models/subject_attendance.dart';
 import '../../domain/models/attendance_history_record.dart';
 import '../../domain/models/monthly_attendance_summary.dart';
@@ -8,13 +7,7 @@ import 'attendance_providers.dart';
 
 final currentStudentIdProvider = Provider<String>((ref) {
   final user = ref.watch(currentUserProvider);
-  if (user != null && user.id.isNotEmpty) {
-    return user.id;
-  }
-  if (FirebaseInitializer.shouldUseMock) {
-    return 'student123';
-  }
-  return '';
+  return user?.id ?? '';
 });
 
 // ---------------------------------------------------------

@@ -743,6 +743,11 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<ProvisionFacultyResult> provisionFaculty(ProvisionFacultyRequest request) async {
+    throw UnimplementedError('Faculty provisioning is only handled via ApiAcademicRepository in production');
+  }
+
+  @override
   Future<void> updateFaculty(Faculty faculty) async {
     _validateScope(faculty.collegeId, faculty.departmentId);
     final doc = await _firestoreService.getDocument('faculty', faculty.id);

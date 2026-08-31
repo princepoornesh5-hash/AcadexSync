@@ -1,7 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../auth/domain/models/role_enum.dart';
-import '../../data/repositories/mock_user_repository.dart';
 import '../../data/repositories/api_user_repository.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../domain/models/user_profile_model.dart';
@@ -14,9 +12,6 @@ final apiUserRepositoryProvider = Provider<ApiUserRepository>((ref) {
 });
 
 final userRepositoryProvider = Provider<UserRepository>((ref) {
-  if (FirebaseInitializer.shouldUseMock) {
-    return MockUserRepository();
-  }
   return ref.watch(apiUserRepositoryProvider);
 });
 
@@ -32,11 +27,11 @@ final usersListProvider = FutureProvider.autoDispose<List<UserProfileModel>>((re
   final repo = ref.watch(userRepositoryProvider);
   final authState = ref.watch(authProvider);
   
-  if (authState is! AuthAuthenticated || authState.user is! UserProfileModel) {
+  if (authState is! AuthAuthenticated) {
     return [];
   }
   
-  final currentUser = authState.user as UserProfileModel;
+  final currentUser = authState.user;
   
   String? scopeCollegeId;
   String? scopeDepartmentId;
