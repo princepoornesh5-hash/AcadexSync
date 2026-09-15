@@ -16,5 +16,7 @@ router.post('/', authenticateRequest, requireSuperAdmin, CollegeController.creat
 router.put('/:id', authenticateRequest, requireSuperAdmin, CollegeController.update);
 router.patch('/:id/status', authenticateRequest, requireSuperAdmin, CollegeController.updateStatus);
 router.post('/:id/admins', authenticateRequest, requireSuperAdmin, CollegeController.provisionAdmin);
+router.delete('/:id', authenticateRequest, requireSuperAdmin, CollegeController.deletePermanently);
 
 export const collegeRouter = router;
+

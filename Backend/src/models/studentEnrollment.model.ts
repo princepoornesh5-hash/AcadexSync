@@ -33,7 +33,12 @@ const StudentEnrollmentSchema = new Schema<IStudentEnrollment>(
       transform: (_: unknown, ret: Record<string, any>) => {
         ret.id = ret._id?.toString();
         ret.collegeId = ret.collegeId?.toString();
-        ret.studentId = ret.studentId?.toString();
+        if (ret.studentId && typeof ret.studentId === 'object' && ret.studentId._id) {
+          ret.student = ret.studentId;
+          ret.studentId = ret.studentId._id.toString();
+        } else {
+          ret.studentId = ret.studentId?.toString();
+        }
         ret.departmentId = ret.departmentId?.toString();
         ret.courseId = ret.courseId?.toString();
         ret.academicYearId = ret.academicYearId?.toString();

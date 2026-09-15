@@ -1,8 +1,17 @@
+import mongoose from 'mongoose';
 import { User, IUser } from '../models/user.model';
+import { AuthSession } from '../models/authSession.model';
+import { FacultyAssignment } from '../models/facultyAssignment.model';
+import { Faculty } from '../models/faculty.model';
+import { Student } from '../models/student.model';
+import { StudentEnrollment } from '../models/studentEnrollment.model';
+import { Note } from '../models/note.model';
+import { AuditLog } from '../models/auditLog.model';
 import { ApiError } from '../utils/apiError';
 import { AppRole } from '../constants/roles';
 import { ImageKitService } from '../storage/imagekit.service';
 import { env } from '../config/env';
+import { AuthenticatedUser } from '../types/auth.types';
 
 export class UserService {
   static async createUser(data: Partial<IUser>): Promise<IUser> {
@@ -207,4 +216,49 @@ export class UserService {
 
     return user;
   }
+
+  /**
+   * Super Admin Permanent User Deletion
+   */
+  static async deleteUserPermanently(userId: string, actor: AuthenticatedUser): Promise<void> {
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      throw ApiError.badRequest(`Invalid User ID format: "${userId}"`);
+    }
+
+    if (actor.id === userId) {
+      throw ApiError.badRequest('Super Admin cannot delete their own account');
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw ApiError.notFound(`User with ID "${userId}" not found`);
+    }
+
+    const targetObjectId = new mongoose.Types.ObjectId(userId);
+
+    await Promise.all([
+      User.findByIdAndDelete(targetObjectId),
+      AuthSession.deleteMany({ userId: targetObjectId }),
+      FacultyAssignment.deleteMany({ facultyUserId: targetObjectId }),
+      Student.deleteMany({ userId: targetObjectId }),
+      Faculty.deleteMany({ userId: targetObjectId }),
+      StudentEnrollment.deleteMany({ studentUserId: targetObjectId }),
+      Note.deleteMany({ authorUserId: targetObjectId }),
+    ]);
+
+    await AuditLog.create({
+      actorUserId: actor.id,
+      collegeId: user.collegeId || null,
+      action: 'USER_PERMANENTLY_DELETED',
+      entityType: 'User',
+      entityId: user.id,
+      oldValue: {
+        instituteId: user.instituteId,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  }
 }
+

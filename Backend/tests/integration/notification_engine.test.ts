@@ -13,6 +13,7 @@ import {
   Student,
   Faculty,
   StudentEnrollment,
+  FacultyAssignment,
   Notification,
   DeviceToken,
   AuditLog,
@@ -577,6 +578,20 @@ describe('ACADEX Phase 9M.1 — Notifications Engine Integration Tests', () => {
       accountStatus: AccountStatus.ACTIVE,
     };
 
+    // Seed active Faculty Assignment
+    const assignment = await FacultyAssignment.create({
+      collegeId: collegeA._id,
+      departmentId: deptA._id,
+      facultyId: facultyDoc._id,
+      facultyName: facultyDoc.name,
+      courseId: courseA._id,
+      semesterId: semA._id,
+      sectionId: secA._id,
+      subjectId: subjectA._id,
+      academicYearId: yearA._id,
+      isActive: true,
+    });
+
     // Create draft timetable
     const tt = await TimetableService.createTimetable(collegeA.id, {
       name: 'Fall 2026 Timetable',
@@ -595,6 +610,7 @@ describe('ACADEX Phase 9M.1 — Notifications Engine Integration Tests', () => {
           sessionType: TimetableSessionType.LECTURE,
           subjectId: subjectA.id,
           facultyId: facultyDoc.id,
+          facultyAssignmentId: assignment._id,
         },
       ],
     }, adminAuth);

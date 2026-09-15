@@ -65,8 +65,9 @@ export const timetableGridEntrySchema = z.object({
   periodSpan: z.number().int().min(1).default(1),
   startTime: z.string().regex(timeRegex, 'startTime must be in HH:mm format'),
   endTime: z.string().regex(timeRegex, 'endTime must be in HH:mm format'),
-  subjectId: z.string().min(1, 'subjectId is required'),
-  facultyId: z.string().min(1, 'facultyId is required'),
+  subjectId: z.string().min(1, 'subjectId is required').optional(),
+  facultyId: z.string().min(1, 'facultyId is required').optional(),
+  facultyAssignmentId: z.string().optional(),
   roomId: z.string().optional(),
   roomNumber: z.string().optional(),
   building: z.string().optional(),
@@ -74,6 +75,9 @@ export const timetableGridEntrySchema = z.object({
 }).refine((e) => e.startTime < e.endTime, {
   message: 'startTime must be before endTime',
   path: ['endTime'],
+}).refine((e) => Boolean(e.facultyAssignmentId || (e.subjectId && e.facultyId)), {
+  message: 'Either facultyAssignmentId or both subjectId and facultyId must be provided',
+  path: ['facultyAssignmentId'],
 });
 
 // Timetable Mutation Schemas

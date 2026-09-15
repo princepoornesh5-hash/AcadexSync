@@ -145,4 +145,18 @@ export class CollegeController {
       'College Admin invitation provisioned successfully'
     );
   });
+
+  /**
+   * DELETE /api/v1/colleges/:id
+   * Super Admin Permanent College Deletion
+   */
+  static deletePermanently = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user || req.user.role !== AppRole.SUPER_ADMIN) {
+      throw ApiError.forbidden('Only Super Admin can permanently delete colleges');
+    }
+
+    await CollegeService.deleteCollegePermanently(req.params.id, req.user.id);
+    return ApiResponse.success(res, null, 'College permanently deleted successfully');
+  });
 }
+

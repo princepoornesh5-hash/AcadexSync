@@ -11,6 +11,7 @@ import { noteRouter } from './note.routes';
 import { notificationRouter } from './notification.routes';
 import { auditRouter } from './audit.routes';
 import { reportRouter } from './report.routes';
+import { analyticsRouter } from './analytics.routes';
 
 const router = Router();
 
@@ -29,5 +30,6 @@ router.use('/notes', noteRouter);
 router.use('/notifications', notificationRouter);
 router.use('/audit', auditRouter);
 router.use('/reports', reportRouter);
+router.use('/analytics', analyticsRouter);
 
 export const v1Router = router;

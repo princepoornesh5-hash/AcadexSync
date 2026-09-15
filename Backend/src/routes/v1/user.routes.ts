@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { UserController } from '../../controllers/user.controller';
 import { authenticateRequest } from '../../middleware/auth.middleware';
-import { requireCollegeAdmin } from '../../middleware/role.middleware';
+import { requireCollegeAdmin, requireSuperAdmin } from '../../middleware/role.middleware';
 import { requireCollegeScope } from '../../middleware/tenant.middleware';
 import { uploadRateLimiter } from '../../middleware/rateLimiter.middleware';
 
@@ -19,5 +19,7 @@ router.get('/institute/:instituteId', requireCollegeScope, UserController.getByI
 router.get('/:id', requireCollegeScope, UserController.getById);
 router.post('/', requireCollegeAdmin, requireCollegeScope, UserController.create);
 router.put('/:id', requireCollegeScope, UserController.update);
+router.delete('/:id', requireSuperAdmin, UserController.deletePermanently);
 
 export const userRouter = router;
+

@@ -63,4 +63,10 @@ export class UserController {
     );
     return ApiResponse.success(res, user, 'Profile image updated successfully');
   });
+
+  static deletePermanently = asyncHandler(async (req: Request, res: Response) => {
+    await UserService.deleteUserPermanently(req.params.id, req.user as any);
+    return ApiResponse.success(res, null, 'User permanently deleted successfully');
+  });
 }
+

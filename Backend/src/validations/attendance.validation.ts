@@ -10,6 +10,7 @@ export const attendanceRecordItemInputSchema = z.object({
 export const createAttendanceSessionSchema = z.object({
   timetableId: z.string().optional(),
   timetableEntryId: z.string().optional(),
+  facultyAssignmentId: z.string().optional(),
   departmentId: z.string().optional(),
   courseId: z.string().optional(),
   academicYearId: z.string().optional(),

@@ -16,6 +16,7 @@ router.put('/rooms/:id', requireCollegeAdmin, TimetableController.updateRoom);
 // Specialized Timetable Lookups
 router.get('/students/me', TimetableController.getStudentTimetable);
 router.get('/sections/:sectionId', TimetableController.getSectionTimetable);
+router.get('/faculty/me', TimetableController.getFacultyTimetable);
 router.get('/faculty/:facultyId', TimetableController.getFacultyTimetable);
 
 // Timetable CRUD & Lifecycle
@@ -26,5 +27,6 @@ router.put('/:id', requireHodOrAbove, TimetableController.update);
 router.post('/:id/publish', requireHodOrAbove, TimetableController.publish);
 router.post('/:id/unpublish', requireHodOrAbove, TimetableController.unpublish);
 router.post('/:id/archive', requireHodOrAbove, TimetableController.archive);
+router.delete('/:id', requireHodOrAbove, TimetableController.delete);
 
 export const timetableRouter = router;

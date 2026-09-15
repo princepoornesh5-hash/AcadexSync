@@ -12,6 +12,7 @@ import { StudentEnrollment } from '../models/studentEnrollment.model';
 import { AuditLog } from '../models/auditLog.model';
 import { College } from '../models/college.model';
 import { Department } from '../models/department.model';
+import { FacultyAssignment } from '../models/facultyAssignment.model';
 import { AppRole } from '../constants/roles';
 import { TimetableStatus, TimetableDay, CollegeStatus } from '../constants/status';
 import { NotificationService } from './notification.service';
@@ -252,12 +253,15 @@ export class TimetableService {
     courseId: string,
     section: InstanceType<typeof Section>,
     entries: ITimetableGridEntry[],
-    currentTimetableId?: string
+    currentTimetableId?: string,
+    academicYearId?: string
   ): Promise<void> {
-    // 1. Internal Overlap Checks (within the timetable itself)
+    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+    // 1. Time Format & Internal Overlap Checks (within the timetable itself)
     for (let i = 0; i < entries.length; i++) {
       const e1 = entries[i];
-      if (e1.startTime >= e1.endTime) {
+      if (!timeRegex.test(e1.startTime) || !timeRegex.test(e1.endTime) || e1.startTime >= e1.endTime) {
         throw ApiError.badRequest(`Entry has invalid time range: ${e1.startTime} - ${e1.endTime}`);
       }
 
@@ -275,8 +279,71 @@ export class TimetableService {
       }
     }
 
-    // 2. Validate Subject, Faculty, Room and External Conflicts
+    // 2. Validate Subject, Faculty, Room, Faculty Assignment and External Conflicts
     for (const entry of entries) {
+      // Validate Faculty Assignment (authoritative linkage) first
+      if (entry.facultyAssignmentId) {
+        if (!mongoose.Types.ObjectId.isValid(entry.facultyAssignmentId.toString())) {
+          throw ApiError.badRequest('Invalid facultyAssignmentId');
+        }
+        const assignment = await FacultyAssignment.findById(entry.facultyAssignmentId);
+        if (!assignment || !assignment.isActive) {
+          throw ApiError.badRequest('Faculty assignment does not match this subject and section or is inactive');
+        }
+        if (assignment.collegeId.toString() !== collegeId) {
+          throw ApiError.badRequest('Faculty assignment does not match this college');
+        }
+        if (assignment.departmentId.toString() !== section.departmentId.toString()) {
+          throw ApiError.badRequest('Faculty assignment does not match this department');
+        }
+        if (assignment.sectionId.toString() !== section.id.toString()) {
+          throw ApiError.badRequest('Faculty assignment does not match this section');
+        }
+        if (assignment.courseId.toString() !== courseId.toString()) {
+          throw ApiError.badRequest('Faculty assignment does not match this course');
+        }
+        if (assignment.semesterId.toString() !== semesterId.toString()) {
+          throw ApiError.badRequest('Faculty assignment does not match this semester');
+        }
+        if (academicYearId && assignment.academicYearId && assignment.academicYearId.toString() !== academicYearId.toString()) {
+          throw ApiError.badRequest('Faculty assignment does not match this academic year');
+        }
+
+        // Auto-populate or verify subject & faculty from authoritative assignment
+        if (!entry.subjectId) {
+          entry.subjectId = assignment.subjectId;
+        } else if (assignment.subjectId.toString() !== entry.subjectId.toString()) {
+          throw ApiError.badRequest('Faculty assignment does not match this subject and section');
+        }
+
+        if (!entry.facultyId) {
+          entry.facultyId = assignment.facultyId;
+        } else if (assignment.facultyId.toString() !== entry.facultyId.toString()) {
+          throw ApiError.badRequest('Faculty assignment does not match this subject and section');
+        }
+      } else {
+        if (!entry.subjectId || !entry.facultyId) {
+          throw ApiError.badRequest('Either facultyAssignmentId or both subjectId and facultyId must be provided');
+        }
+        const assignmentQuery: Record<string, unknown> = {
+          collegeId: new mongoose.Types.ObjectId(collegeId),
+          sectionId: section._id,
+          subjectId: new mongoose.Types.ObjectId(entry.subjectId.toString()),
+          facultyId: new mongoose.Types.ObjectId(entry.facultyId.toString()),
+          isActive: true,
+        };
+        if (academicYearId && mongoose.Types.ObjectId.isValid(academicYearId)) {
+          assignmentQuery.academicYearId = new mongoose.Types.ObjectId(academicYearId);
+        }
+        const assignment = await FacultyAssignment.findOne(assignmentQuery);
+        if (!assignment) {
+          throw ApiError.badRequest(
+            'Faculty assignment does not match this subject and section'
+          );
+        }
+        entry.facultyAssignmentId = assignment._id;
+      }
+
       // Validate Subject
       const subject = await Subject.findById(entry.subjectId);
       if (!subject) throw ApiError.notFound(`Subject with ID "${entry.subjectId}" not found`);
@@ -319,6 +386,7 @@ export class TimetableService {
         collegeId: new mongoose.Types.ObjectId(collegeId),
         status: TimetableStatus.PUBLISHED,
         _id: currentTimetableId ? { $ne: new mongoose.Types.ObjectId(currentTimetableId) } : { $exists: true },
+        sectionId: { $ne: section._id },
         'entries.dayOfWeek': entry.dayOfWeek,
       });
 
@@ -341,7 +409,7 @@ export class TimetableService {
               // Check Room Overlap (if roomId matching or roomNumber matching)
               if (
                 (entry.roomId && otherEntry.roomId && entry.roomId.toString() === otherEntry.roomId.toString()) ||
-                (entry.roomNumber && otherEntry.roomNumber && entry.roomNumber === otherEntry.roomNumber)
+                (entry.roomNumber && otherEntry.roomNumber && entry.roomNumber.trim().toUpperCase() === otherEntry.roomNumber.trim().toUpperCase())
               ) {
                 throw ApiError.conflict(
                   `Room conflict: Room is already booked on ${entry.dayOfWeek} between ${otherEntry.startTime} and ${otherEntry.endTime}`
@@ -382,6 +450,9 @@ export class TimetableService {
     if (requester?.role === AppRole.COLLEGE_ADMIN && requester.collegeId !== collegeId) {
       throw ApiError.forbidden('Cross-college timetable creation is strictly prohibited');
     }
+    if (requester?.role === AppRole.HOD && requester.collegeId !== collegeId) {
+      throw ApiError.forbidden('Cross-college timetable creation is strictly prohibited');
+    }
 
     // Hierarchy validation
     if (data.departmentId && data.courseId && data.academicYearId && data.semesterId && data.sectionId) {
@@ -406,7 +477,9 @@ export class TimetableService {
             data.semesterId.toString(),
             data.courseId.toString(),
             section,
-            data.entries
+            data.entries,
+            undefined,
+            data.academicYearId.toString()
           );
         }
       }
@@ -417,6 +490,8 @@ export class TimetableService {
       collegeId: new mongoose.Types.ObjectId(collegeId),
       status: data.status || TimetableStatus.DRAFT,
       version: data.version || 1,
+      createdBy: requester?.id,
+      updatedBy: requester?.id,
     });
 
     if (requester) {
@@ -455,6 +530,7 @@ export class TimetableService {
       academicYearId?: string;
       semesterId?: string;
       sectionId?: string;
+      facultyId?: string;
       status?: TimetableStatus;
       page?: number;
       limit?: number;
@@ -462,11 +538,24 @@ export class TimetableService {
   ): Promise<{ items: ITimetable[]; page: number; limit: number; total: number; totalPages: number } | ITimetable[]> {
     const mongoQuery: Record<string, unknown> = {};
 
+    let facultyScopedId: mongoose.Types.ObjectId | null = null;
     if (requester && requester.role !== AppRole.SUPER_ADMIN) {
       if (!requester.collegeId) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
       if (requester.role === AppRole.HOD && requester.departmentId) {
         mongoQuery.departmentId = new mongoose.Types.ObjectId(requester.departmentId);
+      }
+      if (requester.role === AppRole.FACULTY) {
+        const myFaculty = await Faculty.findOne({ userId: requester.id });
+        if (!myFaculty) throw ApiError.notFound('Faculty profile not found for authenticated user');
+        facultyScopedId = myFaculty._id as mongoose.Types.ObjectId;
+
+        if (query.facultyId && query.facultyId !== myFaculty._id.toString() && query.facultyId !== requester.id) {
+          throw ApiError.forbidden('Faculty members can only query their own timetables');
+        }
+
+        mongoQuery.status = TimetableStatus.PUBLISHED;
+        mongoQuery['entries.facultyId'] = facultyScopedId;
       }
     } else if (query.collegeId) {
       if (!mongoose.Types.ObjectId.isValid(query.collegeId)) throw ApiError.badRequest('Invalid collegeId');
@@ -478,7 +567,7 @@ export class TimetableService {
     if (query.academicYearId) mongoQuery.academicYearId = new mongoose.Types.ObjectId(query.academicYearId);
     if (query.semesterId) mongoQuery.semesterId = new mongoose.Types.ObjectId(query.semesterId);
     if (query.sectionId) mongoQuery.sectionId = new mongoose.Types.ObjectId(query.sectionId);
-    if (query.status) mongoQuery.status = query.status;
+    if (query.status && requester?.role !== AppRole.FACULTY) mongoQuery.status = query.status;
 
     // Backwards-compatibility for unauthenticated direct calls without pagination params
     if (!requester && !query.page && !query.limit) {
@@ -493,6 +582,12 @@ export class TimetableService {
       Timetable.find(mongoQuery).sort({ updatedAt: -1 }).skip(skip).limit(limit),
       Timetable.countDocuments(mongoQuery),
     ]);
+
+    if (facultyScopedId) {
+      items.forEach((t) => {
+        t.entries = t.entries.filter((e) => e.facultyId.toString() === facultyScopedId!.toString());
+      });
+    }
 
     return { items, page, limit, total, totalPages: Math.ceil(total / limit) };
   }
@@ -511,6 +606,10 @@ export class TimetableService {
       requester.collegeId,
       requester.role === AppRole.SUPER_ADMIN
     );
+
+    if (requester.role !== AppRole.SUPER_ADMIN && timetable.collegeId.toString() !== requester.collegeId) {
+      throw ApiError.forbidden('Cross-college timetable updates are prohibited');
+    }
 
     if (requester.role === AppRole.HOD && timetable.departmentId.toString() !== requester.departmentId) {
       throw ApiError.forbidden('Cross-department timetable updates are prohibited');
@@ -538,12 +637,14 @@ export class TimetableService {
         timetable.courseId.toString(),
         section,
         update.entries,
-        timetable.id
+        timetable.id,
+        timetable.academicYearId.toString()
       );
 
       timetable.entries = update.entries;
     }
 
+    timetable.updatedBy = requester.id;
     await timetable.save();
 
     await AuditLog.create({
@@ -572,6 +673,14 @@ export class TimetableService {
       throw ApiError.forbidden('Unauthorized to publish timetables');
     }
 
+    if (requester && requester.role !== AppRole.SUPER_ADMIN && timetable.collegeId.toString() !== requester.collegeId) {
+      throw ApiError.forbidden('Cross-college timetable publication is strictly prohibited');
+    }
+
+    if (requester && requester.role === AppRole.HOD && timetable.departmentId.toString() !== requester.departmentId) {
+      throw ApiError.forbidden('Cross-department timetable publication is prohibited');
+    }
+
     if (timetable.status === TimetableStatus.PUBLISHED) {
       return timetable;
     }
@@ -594,14 +703,27 @@ export class TimetableService {
           timetable.courseId.toString(),
           section,
           timetable.entries,
-          timetable.id
+          timetable.id,
+          timetable.academicYearId.toString()
         );
       }
     }
 
+    // Atomically draft any existing published timetables for this same section
+    await Timetable.updateMany(
+      {
+        collegeId: timetable.collegeId,
+        sectionId: timetable.sectionId,
+        status: TimetableStatus.PUBLISHED,
+        _id: { $ne: timetable._id },
+      },
+      { status: TimetableStatus.DRAFT }
+    );
+
     timetable.status = TimetableStatus.PUBLISHED;
     timetable.publishedAt = new Date();
     timetable.publishedBy = publishedBy;
+    timetable.updatedBy = requester?.id || publishedBy;
     await timetable.save();
 
     if (requester) {
@@ -632,7 +754,16 @@ export class TimetableService {
       requester.role === AppRole.SUPER_ADMIN
     );
 
+    if (requester.role !== AppRole.SUPER_ADMIN && timetable.collegeId.toString() !== requester.collegeId) {
+      throw ApiError.forbidden('Cross-college timetable access is strictly prohibited');
+    }
+
+    if (requester.role === AppRole.HOD && timetable.departmentId.toString() !== requester.departmentId) {
+      throw ApiError.forbidden('Cross-department timetable unpublish is prohibited');
+    }
+
     timetable.status = TimetableStatus.DRAFT;
+    timetable.updatedBy = requester.id;
     await timetable.save();
 
     await AuditLog.create({
@@ -661,7 +792,16 @@ export class TimetableService {
       requester.role === AppRole.SUPER_ADMIN
     );
 
+    if (requester.role !== AppRole.SUPER_ADMIN && timetable.collegeId.toString() !== requester.collegeId) {
+      throw ApiError.forbidden('Cross-college timetable access is strictly prohibited');
+    }
+
+    if (requester.role === AppRole.HOD && timetable.departmentId.toString() !== requester.departmentId) {
+      throw ApiError.forbidden('Cross-department timetable archive is prohibited');
+    }
+
     timetable.status = TimetableStatus.ARCHIVED;
+    timetable.updatedBy = requester.id;
     await timetable.save();
 
     await AuditLog.create({
@@ -677,6 +817,37 @@ export class TimetableService {
     );
 
     return timetable;
+  }
+
+  static async deleteTimetable(id: string, requester: AuthenticatedUser): Promise<void> {
+    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
+      throw ApiError.forbidden('Unauthorized to delete timetable');
+    }
+
+    const timetable = await this.getTimetableById(
+      id,
+      requester.collegeId,
+      requester.role === AppRole.SUPER_ADMIN
+    );
+
+    if (requester.role !== AppRole.SUPER_ADMIN && timetable.collegeId.toString() !== requester.collegeId) {
+      throw ApiError.forbidden('Cross-college timetable deletion is strictly prohibited');
+    }
+
+    if (requester.role === AppRole.HOD && timetable.departmentId.toString() !== requester.departmentId) {
+      throw ApiError.forbidden('Cross-department timetable deletion is prohibited');
+    }
+
+    await Timetable.findByIdAndDelete(timetable._id);
+
+    await AuditLog.create({
+      collegeId: timetable.collegeId.toString(),
+      actorUserId: requester.id,
+      action: 'TIMETABLE_DELETED',
+      entityType: 'Timetable',
+      entityId: timetable.id,
+      previousValue: timetable.toJSON(),
+    });
   }
 
   // =========================================================================
@@ -727,22 +898,42 @@ export class TimetableService {
   ): Promise<ITimetableGridEntry[]> {
     let facultyDoc: InstanceType<typeof Faculty> | null = null;
     const targetId = (facultyId === 'me' && requester) ? requester.id : facultyId;
-    if (mongoose.Types.ObjectId.isValid(targetId)) {
-      facultyDoc = await Faculty.findById(targetId);
-      if (!facultyDoc) {
-        facultyDoc = await Faculty.findOne({ userId: targetId });
-      }
-    } else {
-      facultyDoc = await Faculty.findOne({ userId: targetId });
-    }
-
-    if (!facultyDoc) throw ApiError.notFound('Faculty not found');
 
     if (requester && requester.role === AppRole.STUDENT) {
       throw ApiError.forbidden('Students are not permitted to query arbitrary faculty schedules');
     }
-    if (requester && requester.role === AppRole.COLLEGE_ADMIN && facultyDoc.collegeId.toString() !== requester.collegeId) {
-      throw ApiError.forbidden('Cross-college access is strictly prohibited');
+
+    if (requester && requester.role === AppRole.FACULTY) {
+      const myFaculty = await Faculty.findOne({ userId: requester.id });
+      if (!myFaculty) throw ApiError.notFound('Faculty profile not found for authenticated user');
+
+      if (facultyId !== 'me' && facultyId !== myFaculty._id.toString() && facultyId !== requester.id) {
+        throw ApiError.forbidden('Faculty members can only access their own timetable schedule');
+      }
+      facultyDoc = myFaculty;
+    } else {
+      if (mongoose.Types.ObjectId.isValid(targetId)) {
+        facultyDoc = await Faculty.findById(targetId);
+        if (!facultyDoc) {
+          facultyDoc = await Faculty.findOne({ userId: targetId });
+        }
+      } else {
+        facultyDoc = await Faculty.findOne({ userId: targetId });
+      }
+
+      if (!facultyDoc) throw ApiError.notFound('Faculty not found');
+
+      if (requester && requester.role === AppRole.COLLEGE_ADMIN && facultyDoc.collegeId.toString() !== requester.collegeId) {
+        throw ApiError.forbidden('Cross-college access is strictly prohibited');
+      }
+      if (requester && requester.role === AppRole.HOD) {
+        if (facultyDoc.collegeId.toString() !== requester.collegeId) {
+          throw ApiError.forbidden('Cross-college access is strictly prohibited');
+        }
+        if (facultyDoc.departmentId.toString() !== requester.departmentId) {
+          throw ApiError.forbidden('Cross-department access is strictly prohibited');
+        }
+      }
     }
 
     const actualFacultyId = facultyDoc._id;
@@ -758,7 +949,15 @@ export class TimetableService {
       for (const e of t.entries) {
         if (e.facultyId.toString() === actualFacultyId.toString()) {
           if (!targetDay || e.dayOfWeek === targetDay) {
-            entries.push(e);
+            const entryObj = (e as any).toObject ? (e as any).toObject() : { ...(e as any) };
+            entryObj.timetableId = t._id;
+            entryObj.sectionId = t.sectionId;
+            entryObj.courseId = t.courseId;
+            entryObj.semesterId = t.semesterId;
+            entryObj.academicYearId = t.academicYearId;
+            entryObj.departmentId = t.departmentId;
+            entryObj.collegeId = t.collegeId;
+            entries.push(entryObj as ITimetableGridEntry);
           }
         }
       }

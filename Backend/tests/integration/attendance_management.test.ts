@@ -12,6 +12,7 @@ import { Faculty } from '../../src/models/faculty.model';
 import { Student } from '../../src/models/student.model';
 import { StudentEnrollment } from '../../src/models/studentEnrollment.model';
 import { Timetable } from '../../src/models/timetable.model';
+import { FacultyAssignment } from '../../src/models/facultyAssignment.model';
 import { AttendanceSession } from '../../src/models/attendanceSession.model';
 import { AttendanceRecord } from '../../src/models/attendanceRecord.model';
 import { AuditLog } from '../../src/models/auditLog.model';
@@ -371,6 +372,33 @@ describe('ACADEX Phase 9K.1 — Attendance Management & Analytics Engine Tests',
       status: 'active',
     });
 
+    // Create Faculty Assignments
+    const assignmentA1 = await FacultyAssignment.create({
+      collegeId: collegeA._id,
+      departmentId: deptA1._id,
+      facultyId: facultyProfileA1._id,
+      facultyName: facultyProfileA1.name,
+      courseId: courseA._id,
+      semesterId: semesterA5._id,
+      sectionId: sectionA._id,
+      subjectId: subjectOS._id,
+      academicYearId: academicYearA._id,
+      isActive: true,
+    });
+
+    await FacultyAssignment.create({
+      collegeId: collegeA._id,
+      departmentId: deptA1._id,
+      facultyId: facultyProfileA2._id,
+      facultyName: facultyProfileA2.name,
+      courseId: courseA._id,
+      semesterId: semesterA5._id,
+      sectionId: sectionB._id,
+      subjectId: subjectDBMS._id,
+      academicYearId: academicYearA._id,
+      isActive: true,
+    });
+
     // Create a published Timetable for Section A (Monday 09:00 - 10:00 OS by Faculty A1)
     publishedTimetableA = await Timetable.create({
       collegeId: collegeA._id,
@@ -388,6 +416,7 @@ describe('ACADEX Phase 9K.1 — Attendance Management & Analytics Engine Tests',
           endTime: '10:00',
           subjectId: subjectOS._id,
           facultyId: facultyProfileA1._id,
+          facultyAssignmentId: assignmentA1._id,
           roomNumber: 'LH-101',
         },
       ],

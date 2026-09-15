@@ -84,6 +84,7 @@ router.get('/enrollments', AcademicController.listEnrollments);
 router.post('/enrollments', requireFacultyOrAbove, AcademicController.enrollStudent);
 router.get('/enrollments/:id', AcademicController.getEnrollmentById);
 router.patch('/enrollments/:id', requireHodOrAbove, AcademicController.updateEnrollment);
+router.delete('/enrollments/:id', requireHodOrAbove, AcademicController.deleteEnrollment);
 
 // Room Management (Phase 9J.1)
 router.post('/rooms', requireCollegeAdmin, TimetableController.createRoom);
@@ -103,6 +104,7 @@ router.put('/timetables/:id', requireHodOrAbove, TimetableController.update);
 router.post('/timetables/:id/publish', requireHodOrAbove, TimetableController.publish);
 router.post('/timetables/:id/unpublish', requireHodOrAbove, TimetableController.unpublish);
 router.post('/timetables/:id/archive', requireHodOrAbove, TimetableController.archive);
+router.delete('/timetables/:id', requireHodOrAbove, TimetableController.delete);
 
 // Notes Management (Phase 9L.1)
 router.get('/subjects/:subjectId/notes', NoteController.getSubjectNotes);
@@ -115,6 +117,7 @@ router.get('/faculty-assignments', AcademicController.listFacultyAssignments);
 router.get('/faculty-assignments/workload', AcademicController.getFacultyWorkload);
 router.get('/faculty-assignments/my', requireFacultyOrAbove, AcademicController.getMyFacultyAssignments);
 router.get('/faculty-assignments/:id', AcademicController.getFacultyAssignmentById);
+router.put('/faculty-assignments/:id', requireHodOrAbove, AcademicController.updateFacultyAssignment);
 router.delete('/faculty-assignments/:id', requireHodOrAbove, AcademicController.deleteFacultyAssignment);
 
 // Backwards-Compatible Legacy Routes

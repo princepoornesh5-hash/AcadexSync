@@ -35,6 +35,7 @@ export interface ITimetableGridEntry {
   endTime: string;
   subjectId: mongoose.Types.ObjectId;
   facultyId: mongoose.Types.ObjectId;
+  facultyAssignmentId?: mongoose.Types.ObjectId;
   roomId?: mongoose.Types.ObjectId;
   roomNumber?: string;
   building?: string;
@@ -58,6 +59,8 @@ export interface ITimetable extends Document {
   entries: ITimetableGridEntry[];
   publishedAt?: Date;
   publishedBy?: string;
+  createdBy?: string;
+  updatedBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -98,6 +101,7 @@ const TimetableGridEntrySchema = new Schema<ITimetableGridEntry>(
     endTime: { type: String, required: true },
     subjectId: { type: Schema.Types.ObjectId, ref: 'Subject', required: true },
     facultyId: { type: Schema.Types.ObjectId, ref: 'Faculty', required: true },
+    facultyAssignmentId: { type: Schema.Types.ObjectId, ref: 'FacultyAssignment', default: null },
     roomId: { type: Schema.Types.ObjectId, ref: 'Room', default: null },
     roomNumber: { type: String, default: null },
     building: { type: String, default: null },
@@ -141,6 +145,8 @@ const TimetableSchema = new Schema<ITimetable>(
     entries: [TimetableGridEntrySchema],
     publishedAt: { type: Date, default: null },
     publishedBy: { type: String, default: null },
+    createdBy: { type: String, default: null },
+    updatedBy: { type: String, default: null },
   },
   {
     timestamps: true,
@@ -164,6 +170,7 @@ const TimetableSchema = new Schema<ITimetable>(
 TimetableSchema.index({ collegeId: 1, sectionId: 1, status: 1 });
 TimetableSchema.index({ collegeId: 1, departmentId: 1 });
 TimetableSchema.index({ 'entries.facultyId': 1 });
+TimetableSchema.index({ 'entries.facultyAssignmentId': 1 });
 TimetableSchema.index({ 'entries.roomId': 1 });
 
 export const Timetable = mongoose.model<ITimetable>('Timetable', TimetableSchema);

@@ -151,7 +151,9 @@ export class AttendanceController {
 
   // Backwards compatibility for submit handler
   static submit = asyncHandler(async (req: Request, res: Response) => {
-    const collegeId = req.collegeId || req.body.collegeId;
+    const collegeId = req.user?.role === AppRole.SUPER_ADMIN
+      ? (req.body.collegeId || req.collegeId)
+      : (req.user?.collegeId || req.collegeId);
     if (!collegeId) throw ApiError.badRequest('collegeId is required');
 
     const session = await AttendanceService.createOrSubmitSession(

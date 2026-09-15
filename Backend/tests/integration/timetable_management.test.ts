@@ -13,6 +13,7 @@ import { Student } from '../../src/models/student.model';
 import { StudentEnrollment } from '../../src/models/studentEnrollment.model';
 import { Room } from '../../src/models/room.model';
 import { Timetable } from '../../src/models/timetable.model';
+import { FacultyAssignment } from '../../src/models/facultyAssignment.model';
 import { AuditLog } from '../../src/models/auditLog.model';
 import { AppRole } from '../../src/constants/roles';
 import { AccountStatus, CollegeStatus, DepartmentStatus, TimetableDay, TimetableStatus } from '../../src/constants/status';
@@ -72,6 +73,7 @@ describe('ACADEX Phase 9J.1 — Timetable Management & Scheduling Engine Tests',
     await StudentEnrollment.init();
     await Room.init();
     await Timetable.init();
+    await FacultyAssignment.init();
     await AuditLog.init();
   });
 
@@ -339,6 +341,82 @@ describe('ACADEX Phase 9J.1 — Timetable Management & Scheduling Engine Tests',
       status: 'active',
       isActive: true,
     });
+
+    // Seed authoritative Faculty Assignments for collegeA
+    await FacultyAssignment.create([
+      {
+        collegeId: collegeA._id,
+        departmentId: deptA1._id,
+        courseId: courseA._id,
+        academicYearId: academicYearA._id,
+        semesterId: semesterA5._id,
+        sectionId: sectionA._id,
+        subjectId: subjectOS._id,
+        facultyId: facultyProfileA1._id,
+        facultyName: facultyProfileA1.name,
+        isActive: true,
+      },
+      {
+        collegeId: collegeA._id,
+        departmentId: deptA1._id,
+        courseId: courseA._id,
+        academicYearId: academicYearA._id,
+        semesterId: semesterA5._id,
+        sectionId: sectionA._id,
+        subjectId: subjectDBMS._id,
+        facultyId: facultyProfileA1._id,
+        facultyName: facultyProfileA1.name,
+        isActive: true,
+      },
+      {
+        collegeId: collegeA._id,
+        departmentId: deptA1._id,
+        courseId: courseA._id,
+        academicYearId: academicYearA._id,
+        semesterId: semesterA5._id,
+        sectionId: sectionA._id,
+        subjectId: subjectOS._id,
+        facultyId: facultyProfileA2._id,
+        facultyName: facultyProfileA2.name,
+        isActive: true,
+      },
+      {
+        collegeId: collegeA._id,
+        departmentId: deptA1._id,
+        courseId: courseA._id,
+        academicYearId: academicYearA._id,
+        semesterId: semesterA5._id,
+        sectionId: sectionA._id,
+        subjectId: subjectDBMS._id,
+        facultyId: facultyProfileA2._id,
+        facultyName: facultyProfileA2.name,
+        isActive: true,
+      },
+      {
+        collegeId: collegeA._id,
+        departmentId: deptA1._id,
+        courseId: courseA._id,
+        academicYearId: academicYearA._id,
+        semesterId: semesterA5._id,
+        sectionId: sectionB._id,
+        subjectId: subjectOS._id,
+        facultyId: facultyProfileA1._id,
+        facultyName: facultyProfileA1.name,
+        isActive: true,
+      },
+      {
+        collegeId: collegeA._id,
+        departmentId: deptA1._id,
+        courseId: courseA._id,
+        academicYearId: academicYearA._id,
+        semesterId: semesterA5._id,
+        sectionId: sectionB._id,
+        subjectId: subjectDBMS._id,
+        facultyId: facultyProfileA2._id,
+        facultyName: facultyProfileA2.name,
+        isActive: true,
+      },
+    ]);
 
     superAdminHeader = createTestAuthHeader({
       userId: superAdminUser.id,

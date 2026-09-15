@@ -23,6 +23,7 @@ import {
   updateEnrollmentSchema,
   enrollmentQuerySchema,
   createFacultyAssignmentSchema,
+  updateFacultyAssignmentSchema,
   facultyAssignmentQuerySchema,
 } from '../validations/academic.validation';
 import { AppRole } from '../constants/roles';
@@ -40,6 +41,15 @@ export class AcademicController {
       : req.user.collegeId;
 
     if (!collegeId) throw ApiError.badRequest('collegeId is required');
+
+    // If HOD, automatically bind departmentId to requester.departmentId if not supplied,
+    // and reject if attempting to target another department
+    if (req.user.role === AppRole.HOD) {
+      if (req.body.departmentId && req.body.departmentId !== req.user.departmentId) {
+        throw ApiError.forbidden('HOD can only create courses within their assigned department');
+      }
+      req.body.departmentId = req.user.departmentId;
+    }
 
     const validatedData = createCourseSchema.parse(req.body);
     const course = await AcademicService.createCourse(collegeId, validatedData, req.user);
@@ -256,6 +266,12 @@ export class AcademicController {
     return ApiResponse.success(res, enrollment, 'Enrollment updated successfully');
   });
 
+  static deleteEnrollment = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    await AcademicService.deleteEnrollment(req.params.id, req.user);
+    return ApiResponse.success(res, null, 'Student enrollment withdrawn successfully');
+  });
+
   // =========================================================================
   // 7. ACADEMIC TREE & LOOKUPS
   // =========================================================================
@@ -295,6 +311,13 @@ export class AcademicController {
     if (!req.user) throw ApiError.unauthorized('User not authenticated');
     const assignment = await AcademicService.getFacultyAssignmentById(req.params.id, req.user);
     return ApiResponse.success(res, assignment);
+  });
+
+  static updateFacultyAssignment = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const validatedData = updateFacultyAssignmentSchema.parse(req.body);
+    const assignment = await AcademicService.updateFacultyAssignment(req.params.id, validatedData, req.user);
+    return ApiResponse.success(res, assignment, 'Faculty assignment updated successfully');
   });
 
   static deleteFacultyAssignment = asyncHandler(async (req: Request, res: Response) => {

@@ -30,6 +30,7 @@ export interface IAttendanceSession extends Document {
   records: IAttendanceRecordItem[];
   timetableId?: mongoose.Types.ObjectId;
   timetableEntryId?: string;
+  facultyAssignmentId?: mongoose.Types.ObjectId;
   roomNumber?: string;
   building?: string;
   status: AttendanceSessionStatus;
@@ -82,6 +83,7 @@ const AttendanceSessionSchema = new Schema<IAttendanceSession>(
     records: [AttendanceRecordItemSchema],
     timetableId: { type: Schema.Types.ObjectId, ref: 'Timetable', default: null, index: true },
     timetableEntryId: { type: String, default: null },
+    facultyAssignmentId: { type: Schema.Types.ObjectId, ref: 'FacultyAssignment', default: null, index: true },
     roomNumber: { type: String, default: null },
     building: { type: String, default: null },
     status: {
@@ -111,6 +113,7 @@ const AttendanceSessionSchema = new Schema<IAttendanceSession>(
         ret.subjectId = ret.subjectId?.toString();
         ret.sectionId = ret.sectionId?.toString();
         if (ret.timetableId) ret.timetableId = ret.timetableId.toString();
+        if (ret.facultyAssignmentId) ret.facultyAssignmentId = ret.facultyAssignmentId.toString();
         delete ret.__v;
         return ret;
       },

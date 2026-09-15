@@ -105,12 +105,13 @@ export class TimetableController {
   });
 
   static publish = asyncHandler(async (req: Request, res: Response) => {
-    const isSuperAdmin = req.user?.role === AppRole.SUPER_ADMIN || req.tenant?.isSuperAdmin || false;
-    const publishedBy = req.user?.id || 'system';
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const isSuperAdmin = req.user.role === AppRole.SUPER_ADMIN || req.tenant?.isSuperAdmin || false;
+    const publishedBy = req.user.id;
     const timetable = await TimetableService.publishTimetable(
       req.params.id,
       publishedBy,
-      req.user?.collegeId || req.collegeId,
+      req.user.collegeId || req.collegeId,
       isSuperAdmin,
       req.user
     );
@@ -129,6 +130,12 @@ export class TimetableController {
     return ApiResponse.success(res, timetable, 'Timetable archived successfully');
   });
 
+  static delete = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    await TimetableService.deleteTimetable(req.params.id, req.user);
+    return ApiResponse.noContent(res);
+  });
+
   // =========================================================================
   // 3. SPECIALIZED RETRIEVALS
   // =========================================================================
@@ -140,8 +147,9 @@ export class TimetableController {
   });
 
   static getFacultyTimetable = asyncHandler(async (req: Request, res: Response) => {
+    const facultyId = req.params.facultyId || 'me';
     const day = req.query.day as TimetableDay | undefined;
-    const entries = await TimetableService.getFacultyTimetable(req.params.facultyId, day, req.user);
+    const entries = await TimetableService.getFacultyTimetable(facultyId, day, req.user);
     return ApiResponse.success(res, entries);
   });
 

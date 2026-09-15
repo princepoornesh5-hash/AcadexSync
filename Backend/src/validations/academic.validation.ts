@@ -57,6 +57,14 @@ export const createSemesterSchema = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   isCurrent: z.boolean().optional().default(false),
+}).refine((data) => {
+  if (data.startDate && data.endDate) {
+    return new Date(data.startDate) < new Date(data.endDate);
+  }
+  return true;
+}, {
+  message: 'startDate must be before endDate',
+  path: ['endDate'],
 });
 
 export const updateSemesterSchema = z.object({
@@ -66,6 +74,14 @@ export const updateSemesterSchema = z.object({
   endDate: z.string().datetime().optional(),
   isCurrent: z.boolean().optional(),
   isActive: z.boolean().optional(),
+}).refine((data) => {
+  if (data.startDate && data.endDate) {
+    return new Date(data.startDate) < new Date(data.endDate);
+  }
+  return true;
+}, {
+  message: 'startDate must be before endDate',
+  path: ['endDate'],
 });
 
 export const semesterQuerySchema = z.object({
@@ -79,7 +95,7 @@ export const semesterQuerySchema = z.object({
 // Section Validation
 export const createSectionSchema = z.object({
   courseId: z.string().min(1, 'courseId is required'),
-  academicYearId: z.string().min(1, 'academicYearId is required'),
+  academicYearId: z.string().optional(),
   semesterId: z.string().min(1, 'semesterId is required'),
   name: z.string().trim().min(1, 'Section name is required').max(30),
   capacity: z.number().int().min(1).optional().default(60),
@@ -96,6 +112,7 @@ export const sectionQuerySchema = z.object({
   limit: z.string().optional().transform((v) => (v ? parseInt(v, 10) : 20)).pipe(z.number().positive().max(100).default(20)),
   semesterId: z.string().optional(),
   courseId: z.string().optional(),
+  academicYearId: z.string().optional(),
   collegeId: z.string().optional(),
 });
 
@@ -103,6 +120,7 @@ export const sectionQuerySchema = z.object({
 export const createSubjectSchema = z.object({
   courseId: z.string().min(1, 'courseId is required'),
   semesterId: z.string().min(1, 'semesterId is required'),
+  academicYearId: z.string().optional(),
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
   code: z.string().trim().min(2, 'Code must be at least 2 characters').max(30).toUpperCase(),
   credits: z.number().min(0).max(10).optional().default(3),
@@ -110,8 +128,8 @@ export const createSubjectSchema = z.object({
 });
 
 export const updateSubjectSchema = z.object({
-  name: z.string().trim().min(2).max(100).optional(),
-  code: z.string().trim().min(2).max(30).toUpperCase().optional(),
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100).optional(),
+  code: z.string().trim().min(2, 'Code must be at least 2 characters').max(30).toUpperCase().optional(),
   credits: z.number().min(0).max(10).optional(),
   type: z.string().trim().optional(),
   isActive: z.boolean().optional(),
@@ -122,21 +140,22 @@ export const subjectQuerySchema = z.object({
   limit: z.string().optional().transform((v) => (v ? parseInt(v, 10) : 20)).pipe(z.number().positive().max(100).default(20)),
   semesterId: z.string().optional(),
   courseId: z.string().optional(),
+  academicYearId: z.string().optional(),
   collegeId: z.string().optional(),
 });
 
 // Student Enrollment Validation
 export const enrollStudentSchema = z.object({
   studentId: z.string().min(1, 'studentId is required'),
-  courseId: z.string().min(1, 'courseId is required'),
-  academicYearId: z.string().min(1, 'academicYearId is required'),
-  semesterId: z.string().min(1, 'semesterId is required'),
   sectionId: z.string().min(1, 'sectionId is required'),
-  enrollmentDate: z.string().datetime().optional(),
+  courseId: z.string().optional(),
+  academicYearId: z.string().optional(),
+  semesterId: z.string().optional(),
+  enrollmentDate: z.string().optional(),
 });
 
 export const updateEnrollmentSchema = z.object({
-  status: z.enum(['active', 'completed', 'withdrawn', 'transferred']).optional(),
+  status: z.enum(['active', 'completed', 'withdrawn', 'transferred', 'inactive']).optional(),
   sectionId: z.string().optional(),
 });
 
@@ -149,6 +168,7 @@ export const enrollmentQuerySchema = z.object({
   courseId: z.string().optional(),
   academicYearId: z.string().optional(),
   collegeId: z.string().optional(),
+  departmentId: z.string().optional(),
   status: z.string().optional(),
 });
 
@@ -164,6 +184,13 @@ export const createFacultyAssignmentSchema = z.object({
   roomId: z.string().optional(),
   maxStudents: z.number().int().positive().optional(),
   assignmentType: z.string().optional().default('lecture'),
+});
+
+export const updateFacultyAssignmentSchema = z.object({
+  roomId: z.string().optional(),
+  maxStudents: z.number().int().positive().optional(),
+  assignmentType: z.string().optional(),
+  isActive: z.boolean().optional(),
 });
 
 export const facultyAssignmentQuerySchema = z.object({

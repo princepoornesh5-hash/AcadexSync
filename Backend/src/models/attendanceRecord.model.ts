@@ -3,6 +3,7 @@ import { AttendanceStatus } from '../constants/status';
 
 export interface IAttendanceRecord extends Document {
   collegeId: mongoose.Types.ObjectId;
+  departmentId?: mongoose.Types.ObjectId;
   sessionId: mongoose.Types.ObjectId;
   studentId: mongoose.Types.ObjectId;
   studentName: string;
@@ -28,6 +29,7 @@ export interface IAttendanceRecord extends Document {
 const AttendanceRecordSchema = new Schema<IAttendanceRecord>(
   {
     collegeId: { type: Schema.Types.ObjectId, ref: 'College', required: true, index: true },
+    departmentId: { type: Schema.Types.ObjectId, ref: 'Department', default: null, index: true },
     sessionId: { type: Schema.Types.ObjectId, ref: 'AttendanceSession', required: true, index: true },
     studentId: { type: Schema.Types.ObjectId, ref: 'Student', required: true, index: true },
     studentName: { type: String, required: true },
@@ -63,6 +65,7 @@ const AttendanceRecordSchema = new Schema<IAttendanceRecord>(
       transform: (_: unknown, ret: Record<string, any>) => {
         ret.id = ret._id?.toString();
         ret.collegeId = ret.collegeId?.toString();
+        if (ret.departmentId) ret.departmentId = ret.departmentId.toString();
         ret.sessionId = ret.sessionId?.toString();
         ret.studentId = ret.studentId?.toString();
         ret.sectionId = ret.sectionId?.toString();
@@ -85,6 +88,9 @@ AttendanceRecordSchema.index(
 AttendanceRecordSchema.index({ collegeId: 1, studentId: 1, date: 1 });
 AttendanceRecordSchema.index({ collegeId: 1, sectionId: 1, subjectId: 1, date: 1 });
 AttendanceRecordSchema.index({ collegeId: 1, studentId: 1, subjectId: 1 });
+AttendanceRecordSchema.index({ collegeId: 1, departmentId: 1, date: 1 });
+AttendanceRecordSchema.index({ collegeId: 1, departmentId: 1, studentId: 1 });
+AttendanceRecordSchema.index({ collegeId: 1, departmentId: 1, sectionId: 1, subjectId: 1 });
 
 export const AttendanceRecord = mongoose.model<IAttendanceRecord>(
   'AttendanceRecord',

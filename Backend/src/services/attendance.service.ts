@@ -9,6 +9,7 @@ import { Timetable } from '../models/timetable.model';
 import { Section } from '../models/section.model';
 import { Subject } from '../models/subject.model';
 import { Faculty } from '../models/faculty.model';
+import { FacultyAssignment } from '../models/facultyAssignment.model';
 import { Student } from '../models/student.model';
 import { StudentEnrollment } from '../models/studentEnrollment.model';
 import { AuditLog } from '../models/auditLog.model';
@@ -55,13 +56,37 @@ export class AttendanceService {
   // 1. SESSION CREATION & TIMETABLE VALIDATION
   // =========================================================================
 
+  static async resolveFacultyProfile(requester: AuthenticatedUser): Promise<InstanceType<typeof Faculty>> {
+    let facultyDoc: InstanceType<typeof Faculty> | null = null;
+    if (mongoose.Types.ObjectId.isValid(requester.id)) {
+      facultyDoc = await Faculty.findOne({ userId: requester.id });
+      if (!facultyDoc) {
+        facultyDoc = await Faculty.findById(requester.id);
+      }
+    }
+    if (!facultyDoc) {
+      throw ApiError.forbidden('Authenticated user does not have a linked faculty profile');
+    }
+    if (!facultyDoc.isActive || facultyDoc.status === 'inactive') {
+      throw ApiError.forbidden('Faculty profile is inactive');
+    }
+    if (requester.collegeId && facultyDoc.collegeId.toString() !== requester.collegeId) {
+      throw ApiError.forbidden('Cross-college access is strictly prohibited');
+    }
+    return facultyDoc;
+  }
+
   static async createOrSubmitSession(
     collegeId: string,
-    data: Partial<IAttendanceSession> & { records?: any[] },
+    data: Partial<IAttendanceSession> & { records?: any[]; facultyAssignmentId?: any },
     actorUserId?: string,
     requester?: AuthenticatedUser
   ): Promise<IAttendanceSession> {
-    if (requester && requester.role === AppRole.COLLEGE_ADMIN && requester.collegeId !== collegeId) {
+    if (requester && requester.role === AppRole.STUDENT) {
+      throw ApiError.forbidden('Students are not permitted to create or modify attendance sessions');
+    }
+
+    if (requester && requester.role !== AppRole.SUPER_ADMIN && requester.collegeId && requester.collegeId !== collegeId) {
       throw ApiError.forbidden('Cross-college attendance creation is strictly prohibited');
     }
 
@@ -70,6 +95,41 @@ export class AttendanceService {
     let sectionDoc: InstanceType<typeof Section> | null = null;
     let subjectDoc: InstanceType<typeof Subject> | null = null;
     let facultyDoc: InstanceType<typeof Faculty> | null = null;
+    let authenticatedFacultyDoc: InstanceType<typeof Faculty> | null = null;
+
+    if (requester && requester.role === AppRole.FACULTY) {
+      authenticatedFacultyDoc = await this.resolveFacultyProfile(requester);
+      const authFacultyIdStr = authenticatedFacultyDoc._id.toString();
+
+      // If client attempts to pass a different facultyId, reject it immediately
+      if (data.facultyId && data.facultyId.toString() !== authFacultyIdStr && data.facultyId.toString() !== requester.id) {
+        throw ApiError.forbidden('You are not authorized to mark attendance for another faculty member');
+      }
+
+      // Authoritative derivation
+      data.facultyId = authenticatedFacultyDoc._id;
+      facultyDoc = authenticatedFacultyDoc;
+    }
+
+    // Direct Faculty Assignment validation if passed
+    if (authenticatedFacultyDoc && data.facultyAssignmentId) {
+      const specifiedAssignment = await FacultyAssignment.findById(data.facultyAssignmentId);
+      if (!specifiedAssignment || !specifiedAssignment.isActive) {
+        throw ApiError.forbidden('Specified faculty assignment is invalid or inactive');
+      }
+      if (specifiedAssignment.facultyId.toString() !== authenticatedFacultyDoc._id.toString()) {
+        throw ApiError.forbidden('Faculty assignment belongs to another faculty member');
+      }
+      if (specifiedAssignment.collegeId.toString() !== collegeId) {
+        throw ApiError.forbidden('Cross-college faculty assignment is strictly prohibited');
+      }
+      if (data.subjectId && specifiedAssignment.subjectId.toString() !== data.subjectId.toString()) {
+        throw ApiError.badRequest('Subject mismatch with specified faculty assignment');
+      }
+      if (data.sectionId && specifiedAssignment.sectionId.toString() !== data.sectionId.toString()) {
+        throw ApiError.badRequest('Section mismatch with specified faculty assignment');
+      }
+    }
 
     if (data.sectionId) {
       sectionDoc = await Section.findById(data.sectionId);
@@ -77,7 +137,7 @@ export class AttendanceService {
         throw ApiError.forbidden('Cannot create attendance session for an inactive section');
       }
       if (sectionDoc && sectionDoc.collegeId.toString() !== collegeId) {
-        throw ApiError.badRequest('Section does not belong to the specified college');
+        throw ApiError.forbidden('Section does not belong to the specified college');
       }
     }
 
@@ -87,11 +147,11 @@ export class AttendanceService {
         throw ApiError.forbidden('Cannot create attendance session for an inactive subject');
       }
       if (subjectDoc && subjectDoc.collegeId.toString() !== collegeId) {
-        throw ApiError.badRequest('Subject does not belong to the specified college');
+        throw ApiError.forbidden('Subject does not belong to the specified college');
       }
     }
 
-    if (data.facultyId) {
+    if (data.facultyId && !facultyDoc) {
       facultyDoc = await Faculty.findById(data.facultyId);
       if (facultyDoc && (!facultyDoc.isActive || facultyDoc.status === 'inactive')) {
         throw ApiError.forbidden('Cannot create attendance session for an inactive faculty');
@@ -99,6 +159,17 @@ export class AttendanceService {
     }
 
     // Timetable Validation
+    if (!data.timetableId && data.timetableEntryId) {
+      const candidateTt = await Timetable.findOne({
+        collegeId: new mongoose.Types.ObjectId(collegeId),
+        status: TimetableStatus.PUBLISHED,
+        'entries._id': new mongoose.Types.ObjectId(data.timetableEntryId),
+      });
+      if (candidateTt) {
+        data.timetableId = candidateTt._id as mongoose.Types.ObjectId;
+      }
+    }
+
     if (data.timetableId) {
       const timetable = await Timetable.findById(data.timetableId);
       if (!timetable) throw ApiError.notFound('Timetable not found');
@@ -106,7 +177,7 @@ export class AttendanceService {
         throw ApiError.badRequest('Attendance session can only be created for a PUBLISHED timetable');
       }
       if (timetable.collegeId.toString() !== collegeId) {
-        throw ApiError.badRequest('Timetable does not belong to the specified college');
+        throw ApiError.forbidden('Timetable does not belong to the specified college');
       }
 
       // If timetableEntryId is specified, validate day of week and subject/faculty
@@ -126,11 +197,108 @@ export class AttendanceService {
           );
         }
 
+        // Exact Faculty Ownership Check
+        if (authenticatedFacultyDoc) {
+          if (entry.facultyId.toString() !== authenticatedFacultyDoc._id.toString()) {
+            throw ApiError.forbidden('Faculty is not authorized to mark attendance for this class (assigned to another faculty)');
+          }
+
+          // Authoritative FacultyAssignment Check
+          if (entry.facultyAssignmentId) {
+            const assignment = await FacultyAssignment.findById(entry.facultyAssignmentId);
+            if (!assignment || !assignment.isActive) {
+              throw ApiError.forbidden('Faculty assignment is inactive or invalid');
+            }
+            if (assignment.facultyId.toString() !== authenticatedFacultyDoc._id.toString()) {
+              throw ApiError.forbidden('Faculty assignment belongs to another faculty member');
+            }
+            if (assignment.collegeId.toString() !== collegeId) {
+              throw ApiError.forbidden('Cross-college faculty assignment is strictly prohibited');
+            }
+            if (assignment.subjectId.toString() !== entry.subjectId.toString()) {
+              throw ApiError.badRequest('Subject mismatch with specified faculty assignment');
+            }
+            if (assignment.sectionId.toString() !== timetable.sectionId.toString()) {
+              throw ApiError.badRequest('Section mismatch with specified faculty assignment');
+            }
+            if (assignment.courseId && timetable.courseId && assignment.courseId.toString() !== timetable.courseId.toString()) {
+              throw ApiError.badRequest('Course mismatch with faculty assignment');
+            }
+            if (assignment.semesterId && timetable.semesterId && assignment.semesterId.toString() !== timetable.semesterId.toString()) {
+              throw ApiError.badRequest('Semester mismatch with faculty assignment');
+            }
+            if (assignment.academicYearId && timetable.academicYearId && assignment.academicYearId.toString() !== timetable.academicYearId.toString()) {
+              throw ApiError.badRequest('Academic year mismatch with faculty assignment');
+            }
+            data.facultyAssignmentId = assignment._id as mongoose.Types.ObjectId;
+          } else {
+            const assignmentQuery: Record<string, unknown> = {
+              collegeId: timetable.collegeId,
+              facultyId: authenticatedFacultyDoc._id,
+              subjectId: entry.subjectId,
+              sectionId: timetable.sectionId,
+              isActive: true,
+            };
+            const activeAssignment = await FacultyAssignment.findOne(assignmentQuery);
+            if (!activeAssignment) {
+              throw ApiError.forbidden('Faculty assignment does not match this subject and section');
+            }
+            data.facultyAssignmentId = activeAssignment._id as mongoose.Types.ObjectId;
+          }
+        }
+
         if (data.subjectId && entry.subjectId.toString() !== data.subjectId.toString()) {
           throw ApiError.badRequest('Subject mismatch with timetable entry');
         }
+        if (data.sectionId && timetable.sectionId.toString() !== data.sectionId.toString()) {
+          throw ApiError.badRequest('Section mismatch with timetable entry');
+        }
         if (data.facultyId && entry.facultyId.toString() !== data.facultyId.toString()) {
           throw ApiError.badRequest('Faculty mismatch with timetable entry');
+        }
+
+        // Authoritative overrides from the stored timetable entry
+        data.subjectId = entry.subjectId;
+        data.sectionId = timetable.sectionId;
+        data.departmentId = timetable.departmentId;
+        data.courseId = timetable.courseId;
+        data.semesterId = timetable.semesterId;
+        data.academicYearId = timetable.academicYearId;
+        if (entry.roomNumber) data.roomNumber = entry.roomNumber;
+        if (entry.building) data.building = entry.building;
+        if (!data.timeSlot) {
+          data.timeSlot = `${entry.startTime} - ${entry.endTime}`;
+        }
+      }
+    } else if (authenticatedFacultyDoc && data.sectionId && data.subjectId) {
+      // If timetableId is not explicitly supplied, verify active faculty assignment
+      const activeAssignment = await FacultyAssignment.findOne({
+        collegeId: new mongoose.Types.ObjectId(collegeId),
+        facultyId: authenticatedFacultyDoc._id,
+        subjectId: new mongoose.Types.ObjectId(data.subjectId),
+        sectionId: new mongoose.Types.ObjectId(data.sectionId),
+        isActive: true,
+      });
+      if (!activeAssignment) {
+        throw ApiError.forbidden('Faculty assignment does not match this subject and section');
+      }
+      data.facultyAssignmentId = activeAssignment._id as mongoose.Types.ObjectId;
+
+      // Check if another faculty is scheduled in a published timetable for this section on this day/timeslot
+      const dateDay = getTimetableDayFromDate(sessionDate);
+      const publishedTt = await Timetable.findOne({
+        collegeId: new mongoose.Types.ObjectId(collegeId),
+        sectionId: new mongoose.Types.ObjectId(data.sectionId),
+        status: TimetableStatus.PUBLISHED,
+      });
+      if (publishedTt) {
+        const conflictingEntry = publishedTt.entries.find(
+          (e) => e.dayOfWeek === dateDay &&
+                 e.facultyId.toString() !== authenticatedFacultyDoc!._id.toString() &&
+                 (!data.timeSlot || `${e.startTime} - ${e.endTime}` === data.timeSlot)
+        );
+        if (conflictingEntry) {
+          throw ApiError.forbidden('Faculty is not authorized to mark attendance for this class (assigned to another faculty)');
         }
       }
     }
@@ -179,20 +347,24 @@ export class AttendanceService {
         if (!student && mongoose.Types.ObjectId.isValid(rec.studentId)) {
           student = await Student.findOne({ userId: rec.studentId });
         }
+        if (!student) {
+          throw ApiError.notFound(`Student with ID "${rec.studentId}" not found`);
+        }
 
-        const resolvedStudentId = student ? student._id : (mongoose.Types.ObjectId.isValid(rec.studentId) ? new mongoose.Types.ObjectId(rec.studentId) : new mongoose.Types.ObjectId());
-        const resolvedName = student ? student.name : (rec.studentName || 'Student');
-        const resolvedRoll = student ? (student.rollNumber || 'N/A') : (rec.rollNumber || 'N/A');
+        // Cross-college check
+        if (student.collegeId.toString() !== collegeId) {
+          throw ApiError.forbidden('Cross-college student attendance is strictly prohibited');
+        }
 
-        // Validate that student is enrolled in this section (if enrollments exist)
-        if (student && validStudentIds.size > 0 && !validStudentIds.has(student._id.toString())) {
+        // Validate that student is enrolled in this section
+        if (!validStudentIds.has(student._id.toString())) {
           throw ApiError.badRequest(`Student "${student.name}" is not enrolled in section "${sectionDoc?.name || data.sectionId}"`);
         }
 
         populatedRecords.push({
-          studentId: resolvedStudentId,
-          studentName: resolvedName,
-          rollNumber: resolvedRoll,
+          studentId: student._id,
+          studentName: student.name,
+          rollNumber: student.rollNumber || 'N/A',
           sectionId: sectionDoc ? sectionDoc._id : (data.sectionId ? new mongoose.Types.ObjectId(data.sectionId) : new mongoose.Types.ObjectId()),
           status: rec.status || AttendanceStatus.PRESENT,
           remarks: rec.remarks || undefined,
@@ -229,6 +401,7 @@ export class AttendanceService {
         sectionId: session.sectionId,
         subjectId: session.subjectId,
         courseId: session.courseId,
+        departmentId: session.departmentId,
         academicYearId: session.academicYearId,
         semesterId: session.semesterId,
         facultyId: session.facultyId,
@@ -296,6 +469,18 @@ export class AttendanceService {
     if (requester && requester.role === AppRole.HOD && session.departmentId.toString() !== requester.departmentId) {
       throw ApiError.forbidden('Cross-department access is strictly prohibited');
     }
+    if (requester && requester.role === AppRole.FACULTY) {
+      const facultyProfile = await this.resolveFacultyProfile(requester);
+      if (session.facultyId.toString() !== facultyProfile._id.toString() && session.facultyId.toString() !== requester.id) {
+        throw ApiError.forbidden('Faculty is not authorized to access another faculty member\'s attendance session');
+      }
+    }
+    if (requester && requester.role === AppRole.STUDENT) {
+      const studentProfile = await Student.findOne({ userId: requester.id });
+      if (!studentProfile || session.sectionId.toString() !== studentProfile.sectionId?.toString()) {
+        throw ApiError.forbidden('Students can only view attendance sessions for their enrolled section');
+      }
+    }
 
     return session;
   }
@@ -326,6 +511,13 @@ export class AttendanceService {
       if (requester.role === AppRole.HOD && requester.departmentId) {
         filter.departmentId = new mongoose.Types.ObjectId(requester.departmentId);
       }
+      if (requester.role === AppRole.FACULTY) {
+        const myFaculty = await this.resolveFacultyProfile(requester);
+        if (query.facultyId && query.facultyId !== myFaculty._id.toString() && query.facultyId !== requester.id) {
+          throw ApiError.forbidden('Faculty members can only query their own attendance sessions');
+        }
+        filter.facultyId = myFaculty._id;
+      }
     } else if (query.collegeId) {
       if (!mongoose.Types.ObjectId.isValid(query.collegeId)) throw ApiError.badRequest('Invalid collegeId');
       filter.collegeId = new mongoose.Types.ObjectId(query.collegeId);
@@ -336,7 +528,7 @@ export class AttendanceService {
     if (query.academicYearId) filter.academicYearId = new mongoose.Types.ObjectId(query.academicYearId);
     if (query.semesterId) filter.semesterId = new mongoose.Types.ObjectId(query.semesterId);
     if (query.sectionId) filter.sectionId = new mongoose.Types.ObjectId(query.sectionId);
-    if (query.facultyId) filter.facultyId = new mongoose.Types.ObjectId(query.facultyId);
+    if (query.facultyId && requester?.role !== AppRole.FACULTY) filter.facultyId = new mongoose.Types.ObjectId(query.facultyId);
     if (query.subjectId) filter.subjectId = new mongoose.Types.ObjectId(query.subjectId);
     if (query.status) filter.status = query.status;
 
@@ -371,6 +563,10 @@ export class AttendanceService {
     records: Array<{ studentId: string; status: AttendanceStatus; remarks?: string }>,
     requester: AuthenticatedUser
   ): Promise<IAttendanceSession> {
+    if (requester.role === AppRole.STUDENT) {
+      throw ApiError.forbidden('Students are strictly prohibited from submitting attendance');
+    }
+
     const session = await this.getSessionById(sessionId, requester.collegeId, requester.role === AppRole.SUPER_ADMIN, requester);
 
     if (session.status === AttendanceSessionStatus.LOCKED || session.isLocked) {
@@ -383,13 +579,10 @@ export class AttendanceService {
       throw ApiError.badRequest('Cannot mark attendance on a CANCELLED session');
     }
 
-    // Role check: Faculty can only mark their own sessions unless HOD / Admin
-    if (
-      requester.role === AppRole.FACULTY &&
-      session.facultyId.toString() !== requester.id
-    ) {
-      const facultyProfile = await Faculty.findOne({ userId: requester.id });
-      if (!facultyProfile || session.facultyId.toString() !== facultyProfile._id.toString()) {
+    // Role check: Faculty can only mark their own sessions
+    if (requester.role === AppRole.FACULTY) {
+      const facultyProfile = await this.resolveFacultyProfile(requester);
+      if (session.facultyId.toString() !== facultyProfile._id.toString() && session.facultyId.toString() !== requester.id) {
         throw ApiError.forbidden('Faculty is not authorized to submit attendance for this session');
       }
     }
@@ -419,7 +612,11 @@ export class AttendanceService {
         throw ApiError.notFound(`Student with ID "${rec.studentId}" not found`);
       }
 
-      if (validStudentIds.size > 0 && !validStudentIds.has(student._id.toString())) {
+      if (student.collegeId.toString() !== session.collegeId.toString()) {
+        throw ApiError.forbidden('Cross-college student attendance is strictly prohibited');
+      }
+
+      if (!validStudentIds.has(student._id.toString())) {
         throw ApiError.badRequest(`Student "${student.name}" is not enrolled in this section`);
       }
 
@@ -452,6 +649,7 @@ export class AttendanceService {
       sectionId: session.sectionId,
       subjectId: session.subjectId,
       courseId: session.courseId,
+      departmentId: session.departmentId,
       academicYearId: session.academicYearId,
       semesterId: session.semesterId,
       facultyId: session.facultyId,
@@ -489,6 +687,13 @@ export class AttendanceService {
     }
 
     const session = await this.getSessionById(sessionId, requester.collegeId, requester.role === AppRole.SUPER_ADMIN, requester);
+
+    if (requester.role === AppRole.FACULTY) {
+      const facultyProfile = await this.resolveFacultyProfile(requester);
+      if (session.facultyId.toString() !== facultyProfile._id.toString() && session.facultyId.toString() !== requester.id) {
+        throw ApiError.forbidden('Faculty can only lock their own attendance sessions');
+      }
+    }
 
     session.status = AttendanceSessionStatus.LOCKED;
     session.isLocked = true;

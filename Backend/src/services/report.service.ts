@@ -36,7 +36,7 @@ import {
   RoleDashboardReport,
 } from '../types/report.types';
 import { DateRangeQueryInput } from '../validations/report.validation';
-import { AttendanceStatus, AttendanceSessionStatus, TimetableStatus, NoteStatus } from '../constants/status';
+import { AttendanceStatus, AttendanceSessionStatus, TimetableStatus, NoteStatus, AccountStatus } from '../constants/status';
 
 export class ReportService {
   /**
@@ -111,6 +111,9 @@ export class ReportService {
   }
 
   private static async getSuperAdminDashboard(dateMatch: Record<string, unknown>): Promise<RoleDashboardReport> {
+    const activeCollegesDocs = await College.find({ status: 'active', isActive: true }, '_id');
+    const activeCollegeIds = activeCollegesDocs.map((c) => c._id);
+
     const [
       totalColleges,
       activeColleges,
@@ -120,6 +123,7 @@ export class ReportService {
       totalSubjects,
       totalStudents,
       totalFaculty,
+      totalCollegeAdmins,
       totalHODs,
       totalNotes,
       totalSessions,
@@ -128,17 +132,18 @@ export class ReportService {
     ] = await Promise.all([
       College.countDocuments(),
       College.countDocuments({ status: 'active', isActive: true }),
-      Department.countDocuments({ isActive: true }),
-      Course.countDocuments({ isActive: true }),
-      Section.countDocuments({ isActive: true }),
-      Subject.countDocuments({ isActive: true }),
-      Student.countDocuments({ status: 'active', isActive: true }),
-      Faculty.countDocuments({ status: 'active', isActive: true }),
-      User.countDocuments({ role: AppRole.HOD }),
-      Note.countDocuments({ status: NoteStatus.PUBLISHED }),
-      AttendanceSession.countDocuments({ status: { $ne: AttendanceSessionStatus.CANCELLED }, ...dateMatch }),
+      Department.countDocuments({ collegeId: { $in: activeCollegeIds }, isActive: true }),
+      Course.countDocuments({ collegeId: { $in: activeCollegeIds }, isActive: true }),
+      Section.countDocuments({ collegeId: { $in: activeCollegeIds }, isActive: true }),
+      Subject.countDocuments({ collegeId: { $in: activeCollegeIds }, isActive: true }),
+      Student.countDocuments({ collegeId: { $in: activeCollegeIds }, status: 'active', isActive: true }),
+      Faculty.countDocuments({ collegeId: { $in: activeCollegeIds }, status: 'active', isActive: true }),
+      User.countDocuments({ role: AppRole.COLLEGE_ADMIN, collegeId: { $in: activeCollegeIds }, accountStatus: { $ne: AccountStatus.DEACTIVATED } }),
+      User.countDocuments({ role: AppRole.HOD, collegeId: { $in: activeCollegeIds }, accountStatus: { $ne: AccountStatus.DEACTIVATED } }),
+      Note.countDocuments({ collegeId: { $in: activeCollegeIds }, status: NoteStatus.PUBLISHED }),
+      AttendanceSession.countDocuments({ collegeId: { $in: activeCollegeIds }, status: { $ne: AttendanceSessionStatus.CANCELLED }, ...dateMatch }),
       AttendanceRecord.aggregate([
-        { $match: { isCancelled: { $ne: true }, ...dateMatch } },
+        { $match: { collegeId: { $in: activeCollegeIds }, isCancelled: { $ne: true }, ...dateMatch } },
         {
           $group: {
             _id: null,
@@ -208,6 +213,7 @@ export class ReportService {
         totalSubjects,
         totalStudents,
         totalFaculty,
+        totalCollegeAdmins,
         totalHODs,
         totalNotes,
         totalSessions,
@@ -217,6 +223,9 @@ export class ReportService {
         collegesCount: totalColleges,
         activeCollegesCount: activeColleges,
         overallAttendanceRate: systemAttendancePercentage,
+        collegeAdminsCount: totalCollegeAdmins,
+        facultyCount: totalFaculty,
+        studentsCount: totalStudents,
       },
       recentActivity: collegeComparison,
     };

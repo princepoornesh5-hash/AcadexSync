@@ -2,6 +2,21 @@ import mongoose from 'mongoose';
 import { College, ICollege } from '../models/college.model';
 import { User, IUser } from '../models/user.model';
 import { Department } from '../models/department.model';
+import { Course } from '../models/course.model';
+import { AcademicYear } from '../models/academicYear.model';
+import { Semester } from '../models/semester.model';
+import { Section } from '../models/section.model';
+import { Subject } from '../models/subject.model';
+import { Room } from '../models/room.model';
+import { Timetable } from '../models/timetable.model';
+import { AttendanceSession } from '../models/attendanceSession.model';
+import { AttendanceRecord } from '../models/attendanceRecord.model';
+import { FacultyAssignment } from '../models/facultyAssignment.model';
+import { Note } from '../models/note.model';
+import { Notification } from '../models/notification.model';
+import { StudentEnrollment } from '../models/studentEnrollment.model';
+import { Student } from '../models/student.model';
+import { Faculty } from '../models/faculty.model';
 import { Invitation } from '../models/invitation.model';
 import { AuthSession } from '../models/authSession.model';
 import { AuditLog } from '../models/auditLog.model';
@@ -380,4 +395,63 @@ export class CollegeService {
       pendingInvitationCount,
     };
   }
+
+  /**
+   * Super Admin Permanent College Deletion with Cascading Entity Cleanup
+   */
+  static async deleteCollegePermanently(collegeId: string, actorUserId: string): Promise<void> {
+    if (!mongoose.Types.ObjectId.isValid(collegeId)) {
+      throw ApiError.badRequest(`Invalid College ID format: "${collegeId}"`);
+    }
+
+    const college = await College.findById(collegeId);
+    if (!college) {
+      throw ApiError.notFound(`College with ID "${collegeId}" not found`);
+    }
+
+    const targetObjectId = new mongoose.Types.ObjectId(collegeId);
+
+    // Find all user IDs belonging to this college to clean up their sessions
+    const collegeUsers = await User.find({ collegeId: targetObjectId }).select('_id');
+    const userIds = collegeUsers.map((u) => u._id);
+
+    await Promise.all([
+      // Direct college entities
+      College.findByIdAndDelete(targetObjectId),
+      Department.deleteMany({ collegeId: targetObjectId }),
+      Course.deleteMany({ collegeId: targetObjectId }),
+      AcademicYear.deleteMany({ collegeId: targetObjectId }),
+      Semester.deleteMany({ collegeId: targetObjectId }),
+      Section.deleteMany({ collegeId: targetObjectId }),
+      Subject.deleteMany({ collegeId: targetObjectId }),
+      Room.deleteMany({ collegeId: targetObjectId }),
+      Timetable.deleteMany({ collegeId: targetObjectId }),
+      AttendanceSession.deleteMany({ collegeId: targetObjectId }),
+      AttendanceRecord.deleteMany({ collegeId: targetObjectId }),
+      FacultyAssignment.deleteMany({ collegeId: targetObjectId }),
+      Invitation.deleteMany({ collegeId: targetObjectId }),
+      Note.deleteMany({ collegeId: targetObjectId }),
+      Notification.deleteMany({ collegeId: targetObjectId }),
+      StudentEnrollment.deleteMany({ collegeId: targetObjectId }),
+      Student.deleteMany({ collegeId: targetObjectId }),
+      Faculty.deleteMany({ collegeId: targetObjectId }),
+      // Users and their sessions
+      User.deleteMany({ collegeId: targetObjectId }),
+      AuthSession.deleteMany({ userId: { $in: userIds } }),
+    ]);
+
+    await AuditLog.create({
+      actorUserId,
+      collegeId: targetObjectId,
+      action: 'COLLEGE_PERMANENTLY_DELETED',
+      entityType: 'College',
+      entityId: college.id,
+      oldValue: {
+        name: college.name,
+        code: college.code,
+        status: college.status,
+      },
+    });
+  }
 }
+
