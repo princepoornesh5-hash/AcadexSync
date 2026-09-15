@@ -98,6 +98,62 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
     }
   }
 
+  Future<void> _handlePermanentDeleteUser(UserProfileModel user) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        constraints: const BoxConstraints(maxWidth: 440),
+        title: const Text('Permanently Delete User?'),
+        content: Text(
+          'Are you sure you want to permanently delete "${user.name}" (${user.email})? '
+          'This will permanently remove the user, their credentials, sessions, and all associated records. '
+          'This action CANNOT be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete Permanently'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _isActionInProgress = true);
+      try {
+        await ref.read(userManagementProvider.notifier).deleteUserPermanently(user.id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('User "${user.name}" permanently deleted.'),
+              backgroundColor: AcadexColors.success,
+            ),
+          );
+          context.safePop(fallbackRoute: '/users');
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to permanently delete user: $e'),
+              backgroundColor: AcadexColors.error,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isActionInProgress = false);
+      }
+    }
+  }
+
   Future<void> _generateOrReissueActivationCode(UserProfileModel user) async {
     // Confirm before reissuing, since the old code is invalidated
     final confirmed = await showDialog<bool>(
@@ -433,6 +489,14 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
                             isLoading: _isActionInProgress,
                             onPressed: () => _handleDeactivateReactivate(user),
                           ),
+                          if (isSuperAdmin && !isSelf)
+                            AcadexButton(
+                              label: 'Delete Permanently',
+                              icon: Icons.delete_forever_outlined,
+                              variant: AcadexButtonVariant.danger,
+                              isLoading: _isActionInProgress,
+                              onPressed: () => _handlePermanentDeleteUser(user),
+                            ),
                         ],
                       ),
                     ],

@@ -17,7 +17,7 @@ bool _isGradientRole(AuthState authState) {
 }
 
 /// Reusable adaptive text component for content sitting DIRECTLY on the unified gradient.
-/// Operates as a strict TWO-STATE system (WHITE vs DARK) with dead-band hysteresis.
+/// Operates as a strict TWO-STATE system (WHITE vs DARK NAVY) with dead-band hysteresis.
 /// Only transitions (350ms easeInOutCubic) when contrast threshold is crossed. Never settles into gray.
 class AcadexAdaptiveGradientText extends ConsumerStatefulWidget {
   final String text;
@@ -45,13 +45,40 @@ class AcadexAdaptiveGradientText extends ConsumerStatefulWidget {
   ConsumerState<AcadexAdaptiveGradientText> createState() => _AcadexAdaptiveGradientTextState();
 }
 
-class _AcadexAdaptiveGradientTextState extends ConsumerState<AcadexAdaptiveGradientText> {
+class _AcadexAdaptiveGradientTextState extends ConsumerState<AcadexAdaptiveGradientText>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   ScrollPosition? _scrollPosition;
   Animation<double>? _routeAnimation;
+  late final AnimationController _controller;
+  late final CurvedAnimation _curvedAnimation;
+  Animation<Color?>? _colorAnimation;
+
   AcadexAdaptiveTextMode _currentMode = AcadexAdaptiveTextMode.light;
-  Color? _displayedColor;
+  Color? _currentColor;
   Color? _targetColor;
-  bool _initialized = false;
+  bool _isInitialized = false;
+  bool _evaluationScheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _curvedAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutCubic,
+    );
+    _controller.addStatusListener(_onAnimationStatus);
+  }
+
+  void _onAnimationStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      _currentColor = _targetColor;
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -63,41 +90,66 @@ class _AcadexAdaptiveGradientTextState extends ConsumerState<AcadexAdaptiveGradi
     _routeAnimation = ModalRoute.of(context)?.animation;
     _routeAnimation?.addListener(_onRouteAnimation);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => _evaluatePosition());
+    _scheduleEvaluation();
   }
 
   void _onRouteAnimation() {
     if (_routeAnimation?.isCompleted ?? false) {
-      _evaluatePosition();
+      _scheduleEvaluation();
     }
   }
 
   @override
   void didUpdateWidget(covariant AcadexAdaptiveGradientText oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _evaluatePosition();
+    if (widget.text != oldWidget.text ||
+        widget.darkColor != oldWidget.darkColor ||
+        widget.lightColor != oldWidget.lightColor ||
+        widget.isSecondary != oldWidget.isSecondary) {
+      _scheduleEvaluation();
+    }
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    _scheduleEvaluation();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _detachScrollListener();
     _routeAnimation?.removeListener(_onRouteAnimation);
     _routeAnimation = null;
+    _controller.removeStatusListener(_onAnimationStatus);
+    _controller.dispose();
     super.dispose();
   }
 
   void _attachScrollListener() {
     _scrollPosition = Scrollable.maybeOf(context)?.position;
-    _scrollPosition?.addListener(_onScroll);
+    _scrollPosition?.addListener(_onScrollChange);
   }
 
   void _detachScrollListener() {
-    _scrollPosition?.removeListener(_onScroll);
+    _scrollPosition?.removeListener(_onScrollChange);
     _scrollPosition = null;
   }
 
-  void _onScroll() {
-    _evaluatePosition();
+  void _onScrollChange() {
+    _scheduleEvaluation();
+  }
+
+  void _scheduleEvaluation() {
+    if (_evaluationScheduled || !mounted) return;
+    _evaluationScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _evaluationScheduled = false;
+      if (mounted) {
+        _evaluatePosition();
+      }
+    });
   }
 
   void _evaluatePosition() {
@@ -106,46 +158,67 @@ class _AcadexAdaptiveGradientTextState extends ConsumerState<AcadexAdaptiveGradi
     final authState = ref.read(authProvider);
     if (!_isGradientRole(authState)) return;
 
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox != null && renderBox.hasSize && renderBox.attached) {
-      final globalOffset = renderBox.localToGlobal(Offset.zero);
-      final screenHeight = MediaQuery.sizeOf(context).height;
-      if (screenHeight > 0) {
-        final centerY = globalOffset.dy + (renderBox.size.height / 2.0);
-        final t = (centerY / screenHeight).clamp(0.0, 1.0);
+    final scope = AcadexGradientScope.maybeOf(context);
+    if (scope == null) return;
 
-        final effectiveLight = widget.isSecondary ? const Color(0xFFCCE6FF) : widget.lightColor;
-        final effectiveDark = widget.isSecondary ? const Color(0xFF334155) : widget.darkColor;
+    final gradientBox = scope.gradientKey.currentContext?.findRenderObject() as RenderBox?;
+    final textRenderBox = context.findRenderObject() as RenderBox?;
 
-        if (!_initialized) {
-          _initialized = true;
-          final luminance = AcadexSuperAdminGradient.luminanceAt(t);
-          final initialMode = luminance >= 0.30 ? AcadexAdaptiveTextMode.dark : AcadexAdaptiveTextMode.light;
-          _currentMode = initialMode;
-          _targetColor = initialMode == AcadexAdaptiveTextMode.light ? effectiveLight : effectiveDark;
-          _displayedColor = _targetColor;
-          if (mounted) setState(() {});
-          return;
-        }
-
-        // Two-state hysteresis evaluation:
-        final newMode = AcadexSuperAdminGradient.evaluateMode(
-          t: t,
-          currentMode: _currentMode,
-        );
-
-        // ONLY trigger state change and animation when the threshold is crossed
-        if (newMode != _currentMode) {
-          final newTargetColor = newMode == AcadexAdaptiveTextMode.light ? effectiveLight : effectiveDark;
-          setState(() {
-            _currentMode = newMode;
-            _targetColor = newTargetColor;
-          });
-        }
+    if (gradientBox == null || !gradientBox.hasSize || !gradientBox.attached ||
+        textRenderBox == null || !textRenderBox.hasSize || !textRenderBox.attached) {
+      if (!_isInitialized) {
+        _scheduleEvaluation();
       }
-    } else if (!_initialized) {
-      // Re-schedule evaluation if layout is not ready on the initial frame
-      WidgetsBinding.instance.addPostFrameCallback((_) => _evaluatePosition());
+      return;
+    }
+
+    final textCenterGlobal = textRenderBox.localToGlobal(
+      Offset(0, textRenderBox.size.height / 2.0),
+    );
+    final localToGradient = gradientBox.globalToLocal(textCenterGlobal);
+    final gradientHeight = gradientBox.size.height;
+    if (gradientHeight <= 0) return;
+
+    final t = (localToGradient.dy / gradientHeight).clamp(0.0, 1.0);
+
+    final effectiveLight = widget.isSecondary ? const Color(0xFFCCE6FF) : widget.lightColor;
+    final effectiveDark = widget.isSecondary ? const Color(0xFF334155) : widget.darkColor;
+
+    if (!_isInitialized) {
+      _isInitialized = true;
+      final luminance = AcadexSuperAdminGradient.luminanceAt(t);
+      final initialMode = luminance >= 0.30 ? AcadexAdaptiveTextMode.dark : AcadexAdaptiveTextMode.light;
+      _currentMode = initialMode;
+      _currentColor = initialMode == AcadexAdaptiveTextMode.light ? effectiveLight : effectiveDark;
+      _targetColor = _currentColor;
+      _colorAnimation = AlwaysStoppedAnimation<Color?>(_currentColor);
+      if (mounted) setState(() {});
+      return;
+    }
+
+    final newMode = AcadexSuperAdminGradient.evaluateMode(
+      t: t,
+      currentMode: _currentMode,
+    );
+
+
+    if (newMode != _currentMode) {
+      final newTarget = newMode == AcadexAdaptiveTextMode.light ? effectiveLight : effectiveDark;
+      final beginColor = _colorAnimation?.value ??
+          _currentColor ??
+          (newMode == AcadexAdaptiveTextMode.light ? effectiveDark : effectiveLight);
+
+      _currentMode = newMode;
+      _targetColor = newTarget;
+      _currentColor = beginColor;
+
+      _colorAnimation = ColorTween(
+        begin: beginColor,
+        end: newTarget,
+      ).animate(_curvedAnimation);
+
+      _controller.forward(from: 0.0);
+      setState(() {});
     }
   }
 
@@ -153,9 +226,10 @@ class _AcadexAdaptiveGradientTextState extends ConsumerState<AcadexAdaptiveGradi
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final isGradRole = _isGradientRole(authState);
+    final scope = AcadexGradientScope.maybeOf(context);
 
-    // For non-gradient roles, render normal text with standard style
-    if (!isGradRole) {
+    // Safe deterministic fallback: when user is not in a gradient role OR content is outside gradient scope
+    if (!isGradRole || scope == null) {
       return Text(
         widget.text,
         style: widget.style,
@@ -165,31 +239,23 @@ class _AcadexAdaptiveGradientTextState extends ConsumerState<AcadexAdaptiveGradi
       );
     }
 
-    // If ScrollPosition became available after didChangeDependencies, attach it
     final currentScroll = Scrollable.maybeOf(context)?.position;
     if (currentScroll != null && currentScroll != _scrollPosition) {
       _detachScrollListener();
       _scrollPosition = currentScroll;
-      _scrollPosition?.addListener(_onScroll);
+      _scrollPosition?.addListener(_onScrollChange);
     }
 
     final effectiveLight = widget.isSecondary ? const Color(0xFFCCE6FF) : widget.lightColor;
     final effectiveDark = widget.isSecondary ? const Color(0xFF334155) : widget.darkColor;
-    final target = _targetColor ?? (_currentMode == AcadexAdaptiveTextMode.light ? effectiveLight : effectiveDark);
-    final beginColor = _displayedColor ?? target;
+    final fallbackColor = _currentMode == AcadexAdaptiveTextMode.light ? effectiveLight : effectiveDark;
 
-    return TweenAnimationBuilder<Color?>(
-      key: ValueKey(target.toARGB32()),
-      tween: ColorTween(begin: beginColor, end: target),
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeInOutCubic,
-      onEnd: () {
-        _displayedColor = target;
-      },
-      builder: (context, animatedColor, child) {
-        _displayedColor = animatedColor ?? target;
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final animatedColor = _colorAnimation?.value ?? _targetColor ?? fallbackColor;
         final finalStyle = (widget.style ?? const TextStyle()).copyWith(
-          color: _displayedColor,
+          color: animatedColor,
         );
 
         return Text(
@@ -223,13 +289,40 @@ class AcadexAdaptiveGradientIcon extends ConsumerStatefulWidget {
   ConsumerState<AcadexAdaptiveGradientIcon> createState() => _AcadexAdaptiveGradientIconState();
 }
 
-class _AcadexAdaptiveGradientIconState extends ConsumerState<AcadexAdaptiveGradientIcon> {
+class _AcadexAdaptiveGradientIconState extends ConsumerState<AcadexAdaptiveGradientIcon>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   ScrollPosition? _scrollPosition;
   Animation<double>? _routeAnimation;
+  late final AnimationController _controller;
+  late final CurvedAnimation _curvedAnimation;
+  Animation<Color?>? _colorAnimation;
+
   AcadexAdaptiveTextMode _currentMode = AcadexAdaptiveTextMode.light;
-  Color? _displayedColor;
+  Color? _currentColor;
   Color? _targetColor;
-  bool _initialized = false;
+  bool _isInitialized = false;
+  bool _evaluationScheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _curvedAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutCubic,
+    );
+    _controller.addStatusListener(_onAnimationStatus);
+  }
+
+  void _onAnimationStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      _currentColor = _targetColor;
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -241,41 +334,66 @@ class _AcadexAdaptiveGradientIconState extends ConsumerState<AcadexAdaptiveGradi
     _routeAnimation = ModalRoute.of(context)?.animation;
     _routeAnimation?.addListener(_onRouteAnimation);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => _evaluatePosition());
+    _scheduleEvaluation();
   }
 
   void _onRouteAnimation() {
     if (_routeAnimation?.isCompleted ?? false) {
-      _evaluatePosition();
+      _scheduleEvaluation();
     }
   }
 
   @override
   void didUpdateWidget(covariant AcadexAdaptiveGradientIcon oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _evaluatePosition();
+    if (widget.icon != oldWidget.icon ||
+        widget.darkColor != oldWidget.darkColor ||
+        widget.lightColor != oldWidget.lightColor ||
+        widget.size != oldWidget.size) {
+      _scheduleEvaluation();
+    }
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    _scheduleEvaluation();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _detachScrollListener();
     _routeAnimation?.removeListener(_onRouteAnimation);
     _routeAnimation = null;
+    _controller.removeStatusListener(_onAnimationStatus);
+    _controller.dispose();
     super.dispose();
   }
 
   void _attachScrollListener() {
     _scrollPosition = Scrollable.maybeOf(context)?.position;
-    _scrollPosition?.addListener(_onScroll);
+    _scrollPosition?.addListener(_onScrollChange);
   }
 
   void _detachScrollListener() {
-    _scrollPosition?.removeListener(_onScroll);
+    _scrollPosition?.removeListener(_onScrollChange);
     _scrollPosition = null;
   }
 
-  void _onScroll() {
-    _evaluatePosition();
+  void _onScrollChange() {
+    _scheduleEvaluation();
+  }
+
+  void _scheduleEvaluation() {
+    if (_evaluationScheduled || !mounted) return;
+    _evaluationScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _evaluationScheduled = false;
+      if (mounted) {
+        _evaluatePosition();
+      }
+    });
   }
 
   void _evaluatePosition() {
@@ -284,40 +402,63 @@ class _AcadexAdaptiveGradientIconState extends ConsumerState<AcadexAdaptiveGradi
     final authState = ref.read(authProvider);
     if (!_isGradientRole(authState)) return;
 
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox != null && renderBox.hasSize && renderBox.attached) {
-      final globalOffset = renderBox.localToGlobal(Offset.zero);
-      final screenHeight = MediaQuery.sizeOf(context).height;
-      if (screenHeight > 0) {
-        final centerY = globalOffset.dy + (renderBox.size.height / 2.0);
-        final t = (centerY / screenHeight).clamp(0.0, 1.0);
+    final scope = AcadexGradientScope.maybeOf(context);
+    if (scope == null) return;
 
-        if (!_initialized) {
-          _initialized = true;
-          final luminance = AcadexSuperAdminGradient.luminanceAt(t);
-          final initialMode = luminance >= 0.30 ? AcadexAdaptiveTextMode.dark : AcadexAdaptiveTextMode.light;
-          _currentMode = initialMode;
-          _targetColor = initialMode == AcadexAdaptiveTextMode.light ? widget.lightColor : widget.darkColor;
-          _displayedColor = _targetColor;
-          if (mounted) setState(() {});
-          return;
-        }
+    final gradientBox = scope.gradientKey.currentContext?.findRenderObject() as RenderBox?;
+    final iconRenderBox = context.findRenderObject() as RenderBox?;
 
-        final newMode = AcadexSuperAdminGradient.evaluateMode(
-          t: t,
-          currentMode: _currentMode,
-        );
-
-        if (newMode != _currentMode) {
-          final newTargetColor = newMode == AcadexAdaptiveTextMode.light ? widget.lightColor : widget.darkColor;
-          setState(() {
-            _currentMode = newMode;
-            _targetColor = newTargetColor;
-          });
-        }
+    if (gradientBox == null || !gradientBox.hasSize || !gradientBox.attached ||
+        iconRenderBox == null || !iconRenderBox.hasSize || !iconRenderBox.attached) {
+      if (!_isInitialized) {
+        _scheduleEvaluation();
       }
-    } else if (!_initialized) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _evaluatePosition());
+      return;
+    }
+
+    final iconCenterGlobal = iconRenderBox.localToGlobal(
+      Offset(0, iconRenderBox.size.height / 2.0),
+    );
+    final localToGradient = gradientBox.globalToLocal(iconCenterGlobal);
+    final gradientHeight = gradientBox.size.height;
+    if (gradientHeight <= 0) return;
+
+    final t = (localToGradient.dy / gradientHeight).clamp(0.0, 1.0);
+
+    if (!_isInitialized) {
+      _isInitialized = true;
+      final luminance = AcadexSuperAdminGradient.luminanceAt(t);
+      final initialMode = luminance >= 0.30 ? AcadexAdaptiveTextMode.dark : AcadexAdaptiveTextMode.light;
+      _currentMode = initialMode;
+      _currentColor = initialMode == AcadexAdaptiveTextMode.light ? widget.lightColor : widget.darkColor;
+      _targetColor = _currentColor;
+      _colorAnimation = AlwaysStoppedAnimation<Color?>(_currentColor);
+      if (mounted) setState(() {});
+      return;
+    }
+
+    final newMode = AcadexSuperAdminGradient.evaluateMode(
+      t: t,
+      currentMode: _currentMode,
+    );
+
+    if (newMode != _currentMode) {
+      final newTarget = newMode == AcadexAdaptiveTextMode.light ? widget.lightColor : widget.darkColor;
+      final beginColor = _colorAnimation?.value ??
+          _currentColor ??
+          (newMode == AcadexAdaptiveTextMode.light ? widget.darkColor : widget.lightColor);
+
+      _currentMode = newMode;
+      _targetColor = newTarget;
+      _currentColor = beginColor;
+
+      _colorAnimation = ColorTween(
+        begin: beginColor,
+        end: newTarget,
+      ).animate(_curvedAnimation);
+
+      _controller.forward(from: 0.0);
+      setState(() {});
     }
   }
 
@@ -325,8 +466,9 @@ class _AcadexAdaptiveGradientIconState extends ConsumerState<AcadexAdaptiveGradi
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final isGradRole = _isGradientRole(authState);
+    final scope = AcadexGradientScope.maybeOf(context);
 
-    if (!isGradRole) {
+    if (!isGradRole || scope == null) {
       return Icon(widget.icon, size: widget.size);
     }
 
@@ -334,26 +476,19 @@ class _AcadexAdaptiveGradientIconState extends ConsumerState<AcadexAdaptiveGradi
     if (currentScroll != null && currentScroll != _scrollPosition) {
       _detachScrollListener();
       _scrollPosition = currentScroll;
-      _scrollPosition?.addListener(_onScroll);
+      _scrollPosition?.addListener(_onScrollChange);
     }
 
-    final target = _targetColor ?? (_currentMode == AcadexAdaptiveTextMode.light ? widget.lightColor : widget.darkColor);
-    final beginColor = _displayedColor ?? target;
+    final fallbackColor = _currentMode == AcadexAdaptiveTextMode.light ? widget.lightColor : widget.darkColor;
 
-    return TweenAnimationBuilder<Color?>(
-      key: ValueKey(target.toARGB32()),
-      tween: ColorTween(begin: beginColor, end: target),
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeInOutCubic,
-      onEnd: () {
-        _displayedColor = target;
-      },
-      builder: (context, animatedColor, child) {
-        _displayedColor = animatedColor ?? target;
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final animatedColor = _colorAnimation?.value ?? _targetColor ?? fallbackColor;
         return Icon(
           widget.icon,
           size: widget.size,
-          color: _displayedColor,
+          color: animatedColor,
         );
       },
     );
@@ -373,42 +508,90 @@ class AcadexAdaptiveGradientBuilder extends ConsumerStatefulWidget {
   ConsumerState<AcadexAdaptiveGradientBuilder> createState() => _AcadexAdaptiveGradientBuilderState();
 }
 
-class _AcadexAdaptiveGradientBuilderState extends ConsumerState<AcadexAdaptiveGradientBuilder> {
+class _AcadexAdaptiveGradientBuilderState extends ConsumerState<AcadexAdaptiveGradientBuilder>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   ScrollPosition? _scrollPosition;
   Animation<double>? _routeAnimation;
+  late final AnimationController _controller;
+  late final CurvedAnimation _curvedAnimation;
+
   AcadexAdaptiveTextMode _currentMode = AcadexAdaptiveTextMode.light;
-  bool _initialized = false;
+  AcadexAdaptiveTextMode _previousMode = AcadexAdaptiveTextMode.light;
+  bool _isInitialized = false;
+  bool _evaluationScheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _curvedAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutCubic,
+    );
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _scrollPosition?.removeListener(_onScroll);
-    _scrollPosition = Scrollable.maybeOf(context)?.position;
-    _scrollPosition?.addListener(_onScroll);
+    _detachScrollListener();
+    _attachScrollListener();
 
     _routeAnimation?.removeListener(_onRouteAnimation);
     _routeAnimation = ModalRoute.of(context)?.animation;
     _routeAnimation?.addListener(_onRouteAnimation);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => _evaluatePosition());
+    _scheduleEvaluation();
   }
 
   void _onRouteAnimation() {
     if (_routeAnimation?.isCompleted ?? false) {
-      _evaluatePosition();
+      _scheduleEvaluation();
     }
   }
 
   @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    _scheduleEvaluation();
+  }
+
+  @override
   void dispose() {
-    _scrollPosition?.removeListener(_onScroll);
+    WidgetsBinding.instance.removeObserver(this);
+    _detachScrollListener();
     _routeAnimation?.removeListener(_onRouteAnimation);
     _routeAnimation = null;
+    _controller.dispose();
     super.dispose();
   }
 
-  void _onScroll() {
-    _evaluatePosition();
+  void _attachScrollListener() {
+    _scrollPosition = Scrollable.maybeOf(context)?.position;
+    _scrollPosition?.addListener(_onScrollChange);
+  }
+
+  void _detachScrollListener() {
+    _scrollPosition?.removeListener(_onScrollChange);
+    _scrollPosition = null;
+  }
+
+  void _onScrollChange() {
+    _scheduleEvaluation();
+  }
+
+  void _scheduleEvaluation() {
+    if (_evaluationScheduled || !mounted) return;
+    _evaluationScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _evaluationScheduled = false;
+      if (mounted) {
+        _evaluatePosition();
+      }
+    });
   }
 
   void _evaluatePosition() {
@@ -417,36 +600,50 @@ class _AcadexAdaptiveGradientBuilderState extends ConsumerState<AcadexAdaptiveGr
     final authState = ref.read(authProvider);
     if (!_isGradientRole(authState)) return;
 
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox != null && renderBox.hasSize && renderBox.attached) {
-      final globalOffset = renderBox.localToGlobal(Offset.zero);
-      final screenHeight = MediaQuery.sizeOf(context).height;
-      if (screenHeight > 0) {
-        final centerY = globalOffset.dy + (renderBox.size.height / 2.0);
-        final t = (centerY / screenHeight).clamp(0.0, 1.0);
+    final scope = AcadexGradientScope.maybeOf(context);
+    if (scope == null) return;
 
-        if (!_initialized) {
-          _initialized = true;
-          final luminance = AcadexSuperAdminGradient.luminanceAt(t);
-          final initialMode = luminance >= 0.30 ? AcadexAdaptiveTextMode.dark : AcadexAdaptiveTextMode.light;
-          _currentMode = initialMode;
-          if (mounted) setState(() {});
-          return;
-        }
+    final gradientBox = scope.gradientKey.currentContext?.findRenderObject() as RenderBox?;
+    final builderRenderBox = context.findRenderObject() as RenderBox?;
 
-        final newMode = AcadexSuperAdminGradient.evaluateMode(
-          t: t,
-          currentMode: _currentMode,
-        );
-
-        if (newMode != _currentMode) {
-          setState(() {
-            _currentMode = newMode;
-          });
-        }
+    if (gradientBox == null || !gradientBox.hasSize || !gradientBox.attached ||
+        builderRenderBox == null || !builderRenderBox.hasSize || !builderRenderBox.attached) {
+      if (!_isInitialized) {
+        _scheduleEvaluation();
       }
-    } else if (!_initialized) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _evaluatePosition());
+      return;
+    }
+
+    final builderCenterGlobal = builderRenderBox.localToGlobal(
+      Offset(0, builderRenderBox.size.height / 2.0),
+    );
+    final localToGradient = gradientBox.globalToLocal(builderCenterGlobal);
+    final gradientHeight = gradientBox.size.height;
+    if (gradientHeight <= 0) return;
+
+    final t = (localToGradient.dy / gradientHeight).clamp(0.0, 1.0);
+
+    if (!_isInitialized) {
+      _isInitialized = true;
+      final luminance = AcadexSuperAdminGradient.luminanceAt(t);
+      final initialMode = luminance >= 0.30 ? AcadexAdaptiveTextMode.dark : AcadexAdaptiveTextMode.light;
+      _previousMode = initialMode;
+      _currentMode = initialMode;
+      _controller.value = 1.0;
+      if (mounted) setState(() {});
+      return;
+    }
+
+    final newMode = AcadexSuperAdminGradient.evaluateMode(
+      t: t,
+      currentMode: _currentMode,
+    );
+
+    if (newMode != _currentMode) {
+      _previousMode = _currentMode;
+      _currentMode = newMode;
+      _controller.forward(from: 0.0);
+      setState(() {});
     }
   }
 
@@ -454,8 +651,9 @@ class _AcadexAdaptiveGradientBuilderState extends ConsumerState<AcadexAdaptiveGr
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final isGradRole = _isGradientRole(authState);
+    final scope = AcadexGradientScope.maybeOf(context);
 
-    if (!isGradRole) {
+    if (!isGradRole || scope == null) {
       return widget.builder(
         context,
         Theme.of(context).colorScheme.onSurface,
@@ -466,16 +664,33 @@ class _AcadexAdaptiveGradientBuilderState extends ConsumerState<AcadexAdaptiveGr
 
     final currentScroll = Scrollable.maybeOf(context)?.position;
     if (currentScroll != null && currentScroll != _scrollPosition) {
-      _scrollPosition?.removeListener(_onScroll);
+      _detachScrollListener();
       _scrollPosition = currentScroll;
-      _scrollPosition?.addListener(_onScroll);
+      _scrollPosition?.addListener(_onScrollChange);
     }
 
-    final isLight = _currentMode == AcadexAdaptiveTextMode.light;
-    final primary = isLight ? const Color(0xFFFFFFFF) : const Color(0xFF07111F);
-    final secondary = isLight ? const Color(0xFFCCE6FF) : const Color(0xFF334155);
-    final action = isLight ? const Color(0xFF93C5FD) : const Color(0xFF0066CC);
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final progress = _curvedAnimation.value;
+        final isLight = _currentMode == AcadexAdaptiveTextMode.light;
+        final prevLight = _previousMode == AcadexAdaptiveTextMode.light;
 
-    return widget.builder(context, primary, secondary, action);
+        final targetPrimary = isLight ? const Color(0xFFFFFFFF) : const Color(0xFF07111F);
+        final prevPrimary = prevLight ? const Color(0xFFFFFFFF) : const Color(0xFF07111F);
+        final primary = Color.lerp(prevPrimary, targetPrimary, progress) ?? targetPrimary;
+
+        final targetSecondary = isLight ? const Color(0xFFCCE6FF) : const Color(0xFF334155);
+        final prevSecondary = prevLight ? const Color(0xFFCCE6FF) : const Color(0xFF334155);
+        final secondary = Color.lerp(prevSecondary, targetSecondary, progress) ?? targetSecondary;
+
+        final targetAction = isLight ? const Color(0xFF93C5FD) : const Color(0xFF0066CC);
+        final prevAction = prevLight ? const Color(0xFF93C5FD) : const Color(0xFF0066CC);
+        final action = Color.lerp(prevAction, targetAction, progress) ?? targetAction;
+
+        return widget.builder(context, primary, secondary, action);
+      },
+    );
   }
 }
+

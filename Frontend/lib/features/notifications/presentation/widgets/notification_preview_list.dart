@@ -14,7 +14,12 @@ class NotificationPreviewList extends ConsumerWidget {
     final notificationsAsync = ref.watch(notificationsProvider);
 
     return notificationsAsync.when(
-      loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
+      loading: () => const SizedBox(
+        height: 64,
+        child: Center(
+          child: Text('Loading notifications...', style: TextStyle(fontSize: 13, color: AcadexColors.inkMuted)),
+        ),
+      ),
       error: (err, stack) => Text('Error loading notifications', style: AcadexTypography.bodySmall(color: AcadexColors.error)),
       data: (notifications) {
         if (notifications.isEmpty) {

@@ -70,9 +70,11 @@ class AcadexHeroCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Top Eyebrow + Status Badge Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 6,
             children: [
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -86,14 +88,18 @@ class AcadexHeroCard extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    eyebrow.toUpperCase(),
-                    style: AcadexTypography.eyebrow(
-                      color: accentColor,
-                    ).copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.6,
-                      fontSize: 10.5,
+                  Flexible(
+                    child: Text(
+                      eyebrow.toUpperCase(),
+                      style: AcadexTypography.eyebrow(
+                        color: accentColor,
+                      ).copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.6,
+                        fontSize: 10.5,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -175,6 +181,8 @@ class AcadexHeroCard extends ConsumerWidget {
                       backgroundColor: primaryBtnBg,
                       foregroundColor: Colors.white,
                       elevation: 0,
+                      minimumSize: const Size(48, 44),
+                      tapTargetSize: MaterialTapTargetSize.padded,
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       shape: RoundedRectangleBorder(
                         borderRadius: AcadexRadius.borderRadiusMd,
@@ -192,6 +200,8 @@ class AcadexHeroCard extends ConsumerWidget {
                     style: OutlinedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: secondaryBtnText,
+                      minimumSize: const Size(48, 44),
+                      tapTargetSize: MaterialTapTargetSize.padded,
                       side: BorderSide(color: secondaryBtnBorder, width: 1.2),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       shape: RoundedRectangleBorder(

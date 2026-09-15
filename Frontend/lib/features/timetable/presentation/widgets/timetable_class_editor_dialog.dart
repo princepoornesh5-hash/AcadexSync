@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../academic_structure/domain/models/academic_models.dart';
+import '../../../academic_structure/presentation/providers/academic_providers.dart';
 import '../../domain/models/timetable_models.dart';
 import '../providers/timetable_authoring_providers.dart';
 import '../providers/timetable_lookup_providers.dart';
@@ -34,10 +35,13 @@ class TimetableClassEditorDialog extends ConsumerStatefulWidget {
 class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEditorDialog> {
   late String _subjectId;
   late String _facultyId;
+  String? _facultyAssignmentId;
   late TimetableSessionType _sessionType;
   late int _periodSpan;
   late TextEditingController _roomController;
   late TextEditingController _buildingController;
+  late TimetableDay _day;
+  late int _startPeriodIndex;
 
   bool get _isEditing => widget.existingEntry != null;
 
@@ -47,10 +51,13 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     final entry = widget.existingEntry;
     _subjectId = entry?.subjectId ?? '';
     _facultyId = entry?.facultyId ?? '';
+    _facultyAssignmentId = entry?.facultyAssignmentId;
     _sessionType = entry?.sessionType ?? TimetableSessionType.lecture;
     _periodSpan = entry?.periodSpan ?? 1;
     _roomController = TextEditingController(text: entry?.roomNumber ?? '');
     _buildingController = TextEditingController(text: entry?.building ?? '');
+    _day = entry?.dayOfWeek ?? widget.day;
+    _startPeriodIndex = entry?.startPeriodIndex ?? widget.startPeriodIndex;
   }
 
   @override
@@ -67,7 +74,26 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
 
     final authoringState = ref.watch(timetableAuthoringProvider(widget.timetableId));
     final container = authoringState.container;
-    final periods = authoringState.getPeriodsForDay(widget.day);
+    final periods = authoringState.getPeriodsForDay(_day);
+
+    // Section-scoped active faculty assignments
+    final sectionAssignments = container != null
+        ? ref.watch(facultyAssignmentsBySectionProvider(container.sectionId))
+        : <FacultyAssignment>[];
+
+    // Auto-resolve faculty assignment ID if not explicitly set
+    if (_facultyAssignmentId == null && _subjectId.isNotEmpty && _facultyId.isNotEmpty && sectionAssignments.isNotEmpty) {
+      final match = sectionAssignments.where((a) => a.subjectId == _subjectId && a.facultyId == _facultyId).firstOrNull;
+      if (match != null) {
+        _facultyAssignmentId = match.id;
+      }
+    }
+
+    final selectedAssignment = sectionAssignments.where((a) => a.id == _facultyAssignmentId).firstOrNull;
+    if (selectedAssignment != null) {
+      _subjectId = selectedAssignment.subjectId;
+      _facultyId = selectedAssignment.facultyId;
+    }
 
     // Academic Lookups
     final subjectMap = ref.watch(timetableSubjectMapProvider);
@@ -75,19 +101,18 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     final deptMap = ref.watch(timetableDepartmentMapProvider);
     final courseMap = ref.watch(timetableCourseMapProvider);
     final sectionMap = ref.watch(timetableSectionMapProvider);
-
-    final subjectsList = subjectMap.values.toList();
-    final facultyList = facultyMap.values.toList();
+    final yearMap = ref.watch(timetableAcademicYearMapProvider);
+    final semMap = ref.watch(timetableSemesterMapProvider);
 
     // Calculate max available span
-    final maxAvailableSpan = (periods.length - widget.startPeriodIndex + 1).clamp(1, 12);
+    final maxAvailableSpan = (periods.length - _startPeriodIndex + 1).clamp(1, 12);
     if (_periodSpan > maxAvailableSpan) {
       _periodSpan = maxAvailableSpan;
     }
 
     // Calculate start & end times based on span
-    final startPeriod = periods.where((p) => p.index == widget.startPeriodIndex).firstOrNull;
-    final endPeriodIndex = widget.startPeriodIndex + _periodSpan - 1;
+    final startPeriod = periods.where((p) => p.index == _startPeriodIndex).firstOrNull;
+    final endPeriodIndex = _startPeriodIndex + _periodSpan - 1;
     final endPeriod = periods.where((p) => p.index == endPeriodIndex).firstOrNull;
 
     final startTime = startPeriod?.startTime ?? '00:00';
@@ -96,17 +121,19 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     // Calculate real-time local conflicts
     final validationErrors = _validateLocally(
       authoringState: authoringState,
-      day: widget.day,
-      startPeriodIndex: widget.startPeriodIndex,
+      day: _day,
+      startPeriodIndex: _startPeriodIndex,
       periodSpan: _periodSpan,
       startTime: startTime,
       endTime: endTime,
+      facultyAssignmentId: _facultyAssignmentId,
       subjectId: _subjectId,
       facultyId: _facultyId,
       roomNumber: _roomController.text,
       existingEntryId: widget.existingEntry?.id,
       facultyMap: facultyMap,
       subjectMap: subjectMap,
+      sectionAssignments: sectionAssignments,
     );
 
     // Resolve context names
@@ -121,150 +148,208 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-                // =============================================================
-                // 1. DIALOG HEADER & FIXED CONTEXT INFO
-                // =============================================================
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            // =============================================================
+            // 1. DIALOG HEADER & FIXED CONTEXT INFO
+            // =============================================================
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                  ),
+                  child: Icon(
+                    _isEditing ? LucideIcons.pencil : LucideIcons.bookOpen,
+                    size: 22,
+                    color: AcadexColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _isEditing ? 'Edit Class' : 'Add Class',
+                        style: AcadexTypography.heading2(
+                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${_day.displayName} • Period $_startPeriodIndex ($startTime)',
+                        style: AcadexTypography.bodySmall(
+                          color: AcadexColors.primary,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      if (container != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          '$deptName • $courseName • Sem ${container.semesterId} • Sec $sectionName',
+                          style: AcadexTypography.caption(
+                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    LucideIcons.x,
+                    size: 20,
+                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  ),
+                  onPressed: () => Navigator.of(context).pop(),
+                  tooltip: 'Close',
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+            Divider(
+              height: 1,
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+            ),
+            const SizedBox(height: 20),
+
+            // =============================================================
+            // 2. AUTHORITATIVE FACULTY ASSIGNMENT SELECTION
+            // =============================================================
+            _buildFieldLabel('Faculty Assignment *', isDark),
+            const SizedBox(height: 6),
+            if (sectionAssignments.isEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+                  borderRadius: AcadexRadius.borderRadiusSm,
+                  border: Border.all(
+                    color: AcadexColors.warning.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
-                        borderRadius: AcadexRadius.borderRadiusMd,
-                      ),
-                      child: Icon(
-                        _isEditing ? LucideIcons.pencil : LucideIcons.bookOpen,
-                        size: 22,
-                        color: AcadexColors.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
+                    const Icon(LucideIcons.alertTriangle, size: 18, color: AcadexColors.warning),
+                    const SizedBox(width: 10),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _isEditing ? 'Edit Class' : 'Add Class',
-                            style: AcadexTypography.heading2(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${widget.day.displayName} • Period ${widget.startPeriodIndex} ($startTime)',
-                            style: AcadexTypography.bodySmall(
-                              color: AcadexColors.primary,
-                            ).copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          if (container != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              '$deptName • $courseName • Sem ${container.semesterId} • Sec $sectionName',
-                              style: AcadexTypography.caption(
-                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                              ),
-                            ),
-                          ],
-                        ],
+                      child: Text(
+                        'No active faculty assignments found for this section. Please assign faculty to subjects in Academic Structure first.',
+                        style: AcadexTypography.caption(
+                          color: isDark ? AcadexColors.warning : AcadexColors.warningDark,
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        LucideIcons.x,
-                        size: 20,
-                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                      ),
-                      onPressed: () => Navigator.of(context).pop(),
-                      tooltip: 'Close',
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 20),
-                Divider(
-                  height: 1,
-                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              ),
+              const SizedBox(height: 16),
+            ] else ...[
+              DropdownButtonFormField<String>(
+                isExpanded: true,
+                value: _facultyAssignmentId != null && sectionAssignments.any((a) => a.id == _facultyAssignmentId)
+                    ? _facultyAssignmentId
+                    : null,
+                decoration: _buildInputDecoration(
+                  hintText: 'Select Faculty Assignment',
+                  prefixIcon: LucideIcons.badgeCheck,
+                  isDark: isDark,
                 ),
-                const SizedBox(height: 20),
-
-                // =============================================================
-                // 2. SUBJECT SELECTION
-                // =============================================================
-                _buildFieldLabel('Subject *', isDark),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  value: _subjectId.isNotEmpty && (subjectsList.any((s) => s.id == _subjectId) || subjectMap.containsKey(_subjectId))
-                      ? _subjectId
-                      : null,
-                  decoration: _buildInputDecoration(
-                    hintText: 'Select subject',
-                    prefixIcon: LucideIcons.book,
-                    isDark: isDark,
-                  ),
-                  dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                  items: subjectsList.map((s) {
-                    return DropdownMenuItem<String>(
-                      value: s.id,
-                      child: Text(
-                        '${s.name} (${s.code})',
-                        style: AcadexTypography.bodyMedium(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                items: sectionAssignments.map((a) {
+                  final subName = subjectMap[a.subjectId]?.name ?? a.subjectId;
+                  final subCode = subjectMap[a.subjectId]?.code ?? '';
+                  final facName = facultyMap[a.facultyId]?.name ?? a.facultyName;
+                  final codeText = subCode.isNotEmpty ? ' ($subCode)' : '';
+                  return DropdownMenuItem<String>(
+                    value: a.id,
+                    child: Text(
+                      '$subName$codeText — $facName',
+                      style: AcadexTypography.bodyMedium(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _facultyAssignmentId = val;
                     if (val != null) {
-                      setState(() {
-                        _subjectId = val;
-                      });
+                      final match = sectionAssignments.where((a) => a.id == val).firstOrNull;
+                      if (match != null) {
+                        _subjectId = match.subjectId;
+                        _facultyId = match.facultyId;
+                      }
                     }
-                  },
-                ),
+                  });
+                },
+              ),
+              const SizedBox(height: 14),
 
-                const SizedBox(height: 16),
-
-                // =============================================================
-                // 3. FACULTY SELECTION
-                // =============================================================
-                _buildFieldLabel('Faculty *', isDark),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  value: _facultyId.isNotEmpty && (facultyList.any((f) => f.id == _facultyId) || facultyMap.containsKey(_facultyId))
-                      ? _facultyId
-                      : null,
-                  decoration: _buildInputDecoration(
-                    hintText: 'Select faculty member',
-                    prefixIcon: LucideIcons.user,
-                    isDark: isDark,
+              // READ-ONLY ASSIGNMENT SUMMARY (Section 5 requirement)
+              if (selectedAssignment != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                    border: Border.all(
+                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                    ),
                   ),
-                  dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                  items: facultyList.map((f) {
-                    return DropdownMenuItem<String>(
-                      value: f.id,
-                      child: Text(
-                        f.name,
-                        style: AcadexTypography.bodyMedium(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(LucideIcons.info, size: 14, color: AcadexColors.primary),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Authoritative Assignment Summary',
+                            style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ],
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() {
-                        _facultyId = val;
-                      });
-                    }
-                  },
+                      const SizedBox(height: 8),
+                      _buildSummaryRow(
+                        'Faculty:',
+                        facultyMap[selectedAssignment.facultyId]?.name ?? selectedAssignment.facultyName,
+                        isDark,
+                      ),
+                      _buildSummaryRow(
+                        'Subject:',
+                        '${subjectMap[selectedAssignment.subjectId]?.name ?? selectedAssignment.subjectId}${subjectMap[selectedAssignment.subjectId]?.code != null ? ' (${subjectMap[selectedAssignment.subjectId]!.code})' : ''}',
+                        isDark,
+                      ),
+                      _buildSummaryRow(
+                        'Section:',
+                        sectionMap[selectedAssignment.sectionId]?.name ?? (container?.sectionId ?? ''),
+                        isDark,
+                      ),
+                      _buildSummaryRow(
+                        'Course:',
+                        courseMap[selectedAssignment.courseId]?.name ?? (container?.courseId ?? ''),
+                        isDark,
+                      ),
+                      _buildSummaryRow(
+                        'Academic Year:',
+                        yearMap[selectedAssignment.academicYearId]?.name ?? (container?.academicYearId ?? ''),
+                        isDark,
+                      ),
+                      _buildSummaryRow(
+                        'Semester:',
+                        semMap[selectedAssignment.semesterId]?.name ?? (container != null ? 'Semester ${container.semesterId}' : ''),
+                        isDark,
+                      ),
+                    ],
+                  ),
                 ),
-
                 const SizedBox(height: 16),
+              ],
+            ],
 
                 // =============================================================
                 // 4. SESSION TYPE SELECTION
@@ -641,33 +726,32 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     required int periodSpan,
     required String startTime,
     required String endTime,
+    String? facultyAssignmentId,
     required String subjectId,
     required String facultyId,
     required String roomNumber,
     String? existingEntryId,
     required Map<String, Faculty> facultyMap,
     required Map<String, Subject> subjectMap,
+    required List<FacultyAssignment> sectionAssignments,
   }) {
     final errors = <String>[];
 
-    // 1. Missing Subject
-    if (subjectId.trim().isEmpty) {
-      errors.add('Please select a Subject.');
+    // 1. Authoritative Faculty Assignment Check
+    if (facultyAssignmentId == null || facultyAssignmentId.trim().isEmpty) {
+      errors.add('Please select an authoritative Faculty Assignment.');
+    } else if (sectionAssignments.isNotEmpty && !sectionAssignments.any((a) => a.id == facultyAssignmentId)) {
+      errors.add('Selected faculty assignment is not valid for this section context.');
     }
 
-    // 2. Missing Faculty
-    if (facultyId.trim().isEmpty) {
-      errors.add('Please select a Faculty member.');
-    }
-
-    // 3. Check Break Conflicts
+    // 2. Check Break Conflicts
     for (final b in authoringState.breaks) {
       if (b.appliesTo(day) && b.overlapsWithTime(startTime, endTime)) {
         errors.add('Break Conflict: Timeslot ($startTime - $endTime) overlaps with ${b.name} (${b.startTime} - ${b.endTime}).');
       }
     }
 
-    // 4. Check Section, Faculty, and Room Conflicts against existing entries in this timetable
+    // 3. Check Section, Faculty, and Room Conflicts against existing entries in this timetable
     final endPeriodIndex = startPeriodIndex + periodSpan - 1;
 
     for (final other in authoringState.entries) {
@@ -709,13 +793,14 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
 
     if (_isEditing) {
       final updated = widget.existingEntry!.copyWith(
-        dayOfWeek: widget.day,
-        startPeriodIndex: widget.startPeriodIndex,
+        dayOfWeek: _day,
+        startPeriodIndex: _startPeriodIndex,
         periodSpan: _periodSpan,
         startTime: startTime,
         endTime: endTime,
         subjectId: _subjectId,
         facultyId: _facultyId,
+        facultyAssignmentId: _facultyAssignmentId,
         roomNumber: _roomController.text.trim(),
         building: _buildingController.text.trim().isEmpty ? null : _buildingController.text.trim(),
         sessionType: _sessionType,
@@ -724,13 +809,14 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     } else {
       final newEntry = TimetableGridEntryModel(
         id: const Uuid().v4(),
-        dayOfWeek: widget.day,
-        startPeriodIndex: widget.startPeriodIndex,
+        dayOfWeek: _day,
+        startPeriodIndex: _startPeriodIndex,
         periodSpan: _periodSpan,
         startTime: startTime,
         endTime: endTime,
         subjectId: _subjectId,
         facultyId: _facultyId,
+        facultyAssignmentId: _facultyAssignmentId,
         roomNumber: _roomController.text.trim(),
         building: _buildingController.text.trim().isEmpty ? null : _buildingController.text.trim(),
         sessionType: _sessionType,
@@ -739,6 +825,35 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     }
 
     Navigator.of(context).pop();
+  }
+
+  Widget _buildSummaryRow(String label, String value, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: AcadexTypography.caption(
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+              ).copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: AcadexTypography.caption(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ).copyWith(fontWeight: FontWeight.w600),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // =========================================================================

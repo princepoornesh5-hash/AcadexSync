@@ -9,12 +9,17 @@ enum TimetableViewMode {
   list,
 }
 
-final timetableViewModeProvider = StateProvider<TimetableViewMode>((ref) => TimetableViewMode.week);
+final timetableViewModeProvider = StateProvider<TimetableViewMode>((ref) => TimetableViewMode.day);
+
+final timetableSelectedDateProvider = StateProvider<DateTime>((ref) {
+  final now = DateTime.now();
+  return DateTime(now.year, now.month, now.day);
+});
 
 final timetableSelectedDayProvider = StateProvider<TimetableDay>((ref) {
-  final now = DateTime.now();
+  final date = ref.watch(timetableSelectedDateProvider);
   // Monday = 1 (index 0) ... Sunday = 7 (index 6)
-  return TimetableDay.values[now.weekday - 1];
+  return TimetableDay.values[date.weekday - 1];
 });
 
 final timetableSubjectMapProvider = Provider<Map<String, Subject>>((ref) {

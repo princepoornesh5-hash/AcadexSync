@@ -77,6 +77,16 @@ class CollegeNotifier extends AutoDisposeAsyncNotifier<List<College>> {
     ref.invalidate(collegeAdminStatsProvider);
     ref.invalidate(roleDashboardReportProvider);
   }
+  Future<void> deleteCollegePermanently(String id) async {
+    final repo = ref.read(academicRepositoryProvider);
+    await repo.deleteCollegePermanently(id);
+    ref.invalidateSelf();
+    ref.invalidate(collegeByIdProvider(id));
+    ref.invalidate(collegeSummaryProvider(id));
+    ref.invalidate(superAdminStatsProvider);
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(roleDashboardReportProvider);
+  }
 }
 final collegesProvider = AsyncNotifierProvider.autoDispose<CollegeNotifier, List<College>>(CollegeNotifier.new);
 
@@ -813,6 +823,12 @@ class FacultyAssignmentsNotifier extends AutoDisposeAsyncNotifier<List<FacultyAs
     ref.invalidateSelf();
     ref.invalidate(facultyProvider(null));
   }
+
+  Future<void> deactivateAssignment(String assignmentId) async {
+    await ref.read(academicRepositoryProvider).updateFacultyAssignment(assignmentId, isActive: false);
+    ref.invalidateSelf();
+    ref.invalidate(facultyProvider(null));
+  }
 }
 
 final facultyAssignmentsProvider = AsyncNotifierProvider.autoDispose<FacultyAssignmentsNotifier, List<FacultyAssignment>>(FacultyAssignmentsNotifier.new);
@@ -1095,5 +1111,52 @@ final departmentFacultyCountsProvider = FutureProvider.autoDispose<Map<String, i
 
 final facultyWorkloadSummariesProvider = FutureProvider.autoDispose.family<List<FacultyWorkloadSummary>, String?>((ref, departmentId) async {
   return ref.watch(academicRepositoryProvider).getFacultyWorkloadSummaries(departmentId: departmentId);
+});
+
+// --- Student Enrollment Providers ---
+class StudentEnrollmentsNotifier extends AutoDisposeFamilyAsyncNotifier<List<StudentEnrollment>, String> {
+  @override
+  Future<List<StudentEnrollment>> build(String sectionId) async {
+    return ref.watch(academicRepositoryProvider).getEnrollments(sectionId: sectionId, status: 'active');
+  }
+
+  Future<void> enrollStudent({
+    required String studentId,
+    required String courseId,
+    required String academicYearId,
+    required String semesterId,
+    required String sectionId,
+  }) async {
+    await ref.read(academicRepositoryProvider).enrollStudent(
+      studentId: studentId,
+      courseId: courseId,
+      academicYearId: academicYearId,
+      semesterId: semesterId,
+      sectionId: sectionId,
+    );
+    ref.invalidateSelf();
+    ref.invalidate(sectionsProvider);
+  }
+
+  Future<void> withdrawStudent(String enrollmentId) async {
+    await ref.read(academicRepositoryProvider).deleteEnrollment(enrollmentId);
+    ref.invalidateSelf();
+    ref.invalidate(sectionsProvider);
+  }
+}
+
+final sectionEnrollmentsNotifierProvider = AsyncNotifierProvider.autoDispose.family<StudentEnrollmentsNotifier, List<StudentEnrollment>, String>(StudentEnrollmentsNotifier.new);
+
+final sectionActiveEnrollmentCountProvider = Provider.autoDispose.family<int, String>((ref, sectionId) {
+  final enrollments = ref.watch(sectionEnrollmentsNotifierProvider(sectionId)).valueOrNull ?? [];
+  return enrollments.where((e) => e.isActive).length;
+});
+
+// --- Unassigned Subjects for Section ---
+final unassignedSubjectsForSectionProvider = Provider.autoDispose.family<List<Subject>, ({String semesterId, String sectionId})>((ref, args) {
+  final subjects = ref.watch(subjectsForSemesterProvider(args.semesterId));
+  final assignments = ref.watch(facultyAssignmentsBySectionProvider(args.sectionId));
+  final assignedSubjectIds = assignments.where((a) => a.isActive).map((a) => a.subjectId).toSet();
+  return subjects.where((s) => !assignedSubjectIds.contains(s.id)).toList();
 });
 

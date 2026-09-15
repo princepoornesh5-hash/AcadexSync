@@ -101,6 +101,7 @@ void main() {
           timetableSectionMapProvider.overrideWithValue({}),
           timetableDepartmentMapProvider.overrideWithValue({}),
           timetableCourseMapProvider.overrideWithValue({}),
+          managementContainersProvider.overrideWith((ref) async => []),
           ...overrides,
         ],
         child: MaterialApp(
@@ -220,6 +221,10 @@ void main() {
     });
 
     testWidgets('4. TimetableManagementScreen renders filters, search and "+ Add Schedule"', (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       await tester.pumpWidget(
         createTestableWidget(
           const TimetableManagementScreen(),
@@ -239,6 +244,10 @@ void main() {
     });
 
     testWidgets('5. TimetableFormScreen renders all 5 sections with animated conflict support', (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       await tester.pumpWidget(
         createTestableWidget(
           const TimetableFormScreen(),
@@ -248,7 +257,8 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Create Timetable Schedule'), findsOneWidget);
       expect(find.text('1. Academic Information'), findsOneWidget);

@@ -167,4 +167,10 @@ class MockUserRepository implements UserRepository {
       _users[index] = _users[index].copyWith(status: UserStatus.active);
     }
   }
+
+  @override
+  Future<void> deleteUserPermanently(String id) async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    _users.removeWhere((u) => u.id == id);
+  }
 }

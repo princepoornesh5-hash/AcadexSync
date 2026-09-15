@@ -25,4 +25,6 @@ abstract class UserRepository {
   Future<void> deleteUser(String id); // Deactivate/Suspend
 
   Future<void> reactivateUser(String id);
+
+  Future<void> deleteUserPermanently(String id);
 }

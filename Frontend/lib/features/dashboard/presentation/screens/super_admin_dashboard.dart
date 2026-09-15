@@ -52,7 +52,7 @@ class SuperAdminDashboard extends ConsumerWidget {
               children: [
                 // ── 1. Unboxed Greeting (Adaptive Gradient Text) ──────────
                 _buildGreeting(context, isDark, isMobile, firstName),
-                const SizedBox(height: 20),
+                SizedBox(height: isMobile ? 14 : 20),
 
                 // ── 2. Platform Status Hero Card (Solid White Surface) ────
                 AcadexHeroCard(
@@ -70,7 +70,7 @@ class SuperAdminDashboard extends ConsumerWidget {
                   secondaryActionLabel: 'Global Analytics',
                   onSecondaryAction: () => context.go('/analytics'),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: isMobile ? 18 : 24),
 
                 // ── 3. Platform Overview Header (Adaptive Gradient Text) ──
                 SectionHeader(
@@ -95,13 +95,13 @@ class SuperAdminDashboard extends ConsumerWidget {
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                       childAspectRatio: isMobile
-                          ? (width >= 375 ? 0.95 : 0.9)
+                          ? (width >= 375 ? 1.05 : 0.98)
                           : (width > 600 ? 1.25 : 1.1),
                     ),
                     itemBuilder: (_, i) => StatCard(stat: data[i]),
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: isMobile ? 18 : 24),
 
                 // ── 4. Quick Operations Header (Adaptive Gradient Text) ───
                 SectionHeader(

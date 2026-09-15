@@ -1,7 +1,9 @@
 class AssignedClass {
   final String id;
+  final String? timetableId;
   final String? timetableEntryId;
   final String? facultyId;
+  final String? facultyAssignmentId;
   final String subjectId;
   final String subjectName;
   final String sectionId;
@@ -17,8 +19,10 @@ class AssignedClass {
 
   AssignedClass({
     required this.id,
+    this.timetableId,
     this.timetableEntryId,
     this.facultyId,
+    this.facultyAssignmentId,
     required this.subjectId,
     required this.subjectName,
     required this.sectionId,
@@ -38,8 +42,10 @@ class AssignedClass {
 
   AssignedClass copyWith({
     String? id,
+    String? timetableId,
     String? timetableEntryId,
     String? facultyId,
+    String? facultyAssignmentId,
     String? subjectId,
     String? subjectName,
     String? sectionId,
@@ -55,8 +61,10 @@ class AssignedClass {
   }) {
     return AssignedClass(
       id: id ?? this.id,
+      timetableId: timetableId ?? this.timetableId,
       timetableEntryId: timetableEntryId ?? this.timetableEntryId,
       facultyId: facultyId ?? this.facultyId,
+      facultyAssignmentId: facultyAssignmentId ?? this.facultyAssignmentId,
       subjectId: subjectId ?? this.subjectId,
       subjectName: subjectName ?? this.subjectName,
       sectionId: sectionId ?? this.sectionId,
@@ -75,8 +83,10 @@ class AssignedClass {
   factory AssignedClass.fromJson(Map<String, dynamic> json) {
     return AssignedClass(
       id: json['id'] as String? ?? '',
+      timetableId: json['timetableId'] as String?,
       timetableEntryId: json['timetableEntryId'] as String?,
       facultyId: json['facultyId'] as String?,
+      facultyAssignmentId: json['facultyAssignmentId'] as String?,
       subjectId: json['subjectId'] as String? ?? '',
       subjectName: json['subjectName'] as String? ?? '',
       sectionId: json['sectionId'] as String? ?? '',
@@ -95,8 +105,10 @@ class AssignedClass {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      if (timetableId != null) 'timetableId': timetableId,
       if (timetableEntryId != null) 'timetableEntryId': timetableEntryId,
       if (facultyId != null) 'facultyId': facultyId,
+      if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
       'subjectId': subjectId,
       'subjectName': subjectName,
       'sectionId': sectionId,

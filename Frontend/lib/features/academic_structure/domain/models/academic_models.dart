@@ -1774,3 +1774,118 @@ class FacultyWorkloadSummary {
     this.isActive = true,
   });
 }
+
+class StudentEnrollment {
+  final String id;
+  final String collegeId;
+  final String departmentId;
+  final String studentId;
+  final String courseId;
+  final String academicYearId;
+  final String semesterId;
+  final String sectionId;
+  final String status;
+  final DateTime? enrollmentDate;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final Map<String, dynamic>? student;
+
+  StudentEnrollment({
+    required this.id,
+    required this.collegeId,
+    required this.departmentId,
+    required this.studentId,
+    required this.courseId,
+    required this.academicYearId,
+    required this.semesterId,
+    required this.sectionId,
+    this.status = 'active',
+    this.enrollmentDate,
+    this.createdAt,
+    this.updatedAt,
+    this.student,
+  });
+
+  bool get isActive => status == 'active';
+
+  String get studentName => student?['name'] as String? ?? 'Student';
+  String get studentRollNumber =>
+      student?['rollNumber'] as String? ??
+      student?['admissionNumber'] as String? ??
+      '';
+  String get studentEmail => student?['email'] as String? ?? '';
+
+  factory StudentEnrollment.fromJson(Map<String, dynamic> json) {
+    return StudentEnrollment(
+      id: json['id'] as String? ?? '',
+      collegeId: json['collegeId'] as String? ?? '',
+      departmentId: json['departmentId'] as String? ?? '',
+      studentId: json['studentId'] as String? ?? '',
+      courseId: json['courseId'] as String? ?? '',
+      academicYearId: json['academicYearId'] as String? ?? '',
+      semesterId: json['semesterId'] as String? ?? '',
+      sectionId: json['sectionId'] as String? ?? '',
+      status: json['status'] as String? ?? 'active',
+      enrollmentDate: json['enrollmentDate'] != null
+          ? DateTime.tryParse(json['enrollmentDate'] as String)
+          : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'] as String)
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'] as String)
+          : null,
+      student: json['student'] as Map<String, dynamic>?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'collegeId': collegeId,
+      'departmentId': departmentId,
+      'studentId': studentId,
+      'courseId': courseId,
+      'academicYearId': academicYearId,
+      'semesterId': semesterId,
+      'sectionId': sectionId,
+      'status': status,
+      if (enrollmentDate != null) 'enrollmentDate': enrollmentDate!.toIso8601String(),
+      if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+      if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
+      if (student != null) 'student': student,
+    };
+  }
+
+  StudentEnrollment copyWith({
+    String? id,
+    String? collegeId,
+    String? departmentId,
+    String? studentId,
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? sectionId,
+    String? status,
+    DateTime? enrollmentDate,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Map<String, dynamic>? student,
+  }) {
+    return StudentEnrollment(
+      id: id ?? this.id,
+      collegeId: collegeId ?? this.collegeId,
+      departmentId: departmentId ?? this.departmentId,
+      studentId: studentId ?? this.studentId,
+      courseId: courseId ?? this.courseId,
+      academicYearId: academicYearId ?? this.academicYearId,
+      semesterId: semesterId ?? this.semesterId,
+      sectionId: sectionId ?? this.sectionId,
+      status: status ?? this.status,
+      enrollmentDate: enrollmentDate ?? this.enrollmentDate,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      student: student ?? this.student,
+    );
+  }
+}

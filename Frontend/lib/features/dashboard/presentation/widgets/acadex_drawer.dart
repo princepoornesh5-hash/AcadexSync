@@ -63,7 +63,6 @@ List<_NavItem> _getNavItemsForRole(AppRole role, String dashboardRoute) {
         const _NavItem(label: 'Faculty Assignments', icon: LucideIcons.briefcase, route: '/faculty-assignments'),
         const _NavItem(label: 'Department Students', icon: LucideIcons.graduationCap, route: '/academics/students'),
         const _NavItem(label: 'Timetable', icon: LucideIcons.calendarDays, route: '/timetable/manage'),
-        const _NavItem(label: 'Department Attendance', icon: LucideIcons.clipboardCheck, route: '/attendance'),
         const _NavItem(label: 'Lesson Notes', icon: LucideIcons.fileText, route: '/notes'),
         const _NavItem(label: 'Department Analytics', icon: LucideIcons.barChart3, route: '/analytics'),
         const _NavItem(label: 'Notifications', icon: LucideIcons.bell, route: '/notifications'),

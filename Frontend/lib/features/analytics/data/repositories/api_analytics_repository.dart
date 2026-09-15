@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../domain/models/analytics_models.dart';
+import '../../domain/models/department_analytics_models.dart';
 import '../../domain/repositories/analytics_repository.dart';
 
 class ApiAnalyticsRepository implements AnalyticsRepository {
@@ -204,5 +205,70 @@ class ApiAnalyticsRepository implements AnalyticsRepository {
   @override
   Future<List<AttendanceReport>> getRecentReports(AppRole role) async {
     return [];
+  }
+
+  // =========================================================================
+  // DEPARTMENT ANALYTICS (Prompt 6 of 6)
+  // =========================================================================
+
+  Future<DepartmentOverviewModel> getDepartmentOverview({DepartmentAnalyticsFilter? filter}) async {
+    final response = await _client.dio.get(
+      '/analytics/department/overview',
+      queryParameters: filter?.toQueryParameters(),
+    );
+    final body = response.data;
+    final data = body is Map<String, dynamic> ? (body['data'] ?? body) : <String, dynamic>{};
+    return DepartmentOverviewModel.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<List<CourseAnalyticsModel>> getDepartmentCourses({DepartmentAnalyticsFilter? filter}) async {
+    final response = await _client.dio.get(
+      '/analytics/department/courses',
+      queryParameters: filter?.toQueryParameters(),
+    );
+    final body = response.data;
+    final list = body is Map<String, dynamic> && body['data'] is List ? (body['data'] as List) : (body is List ? body : []);
+    return list.map((e) => CourseAnalyticsModel.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<SectionAnalyticsModel>> getDepartmentSections({DepartmentAnalyticsFilter? filter}) async {
+    final response = await _client.dio.get(
+      '/analytics/department/sections',
+      queryParameters: filter?.toQueryParameters(),
+    );
+    final body = response.data;
+    final list = body is Map<String, dynamic> && body['data'] is List ? (body['data'] as List) : (body is List ? body : []);
+    return list.map((e) => SectionAnalyticsModel.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<SubjectAnalyticsModel>> getDepartmentSubjects({DepartmentAnalyticsFilter? filter}) async {
+    final response = await _client.dio.get(
+      '/analytics/department/subjects',
+      queryParameters: filter?.toQueryParameters(),
+    );
+    final body = response.data;
+    final list = body is Map<String, dynamic> && body['data'] is List ? (body['data'] as List) : (body is List ? body : []);
+    return list.map((e) => SubjectAnalyticsModel.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<DepartmentStudentsResult> getDepartmentStudents({DepartmentAnalyticsFilter? filter}) async {
+    final response = await _client.dio.get(
+      '/analytics/department/students',
+      queryParameters: filter?.toQueryParameters(),
+    );
+    final body = response.data;
+    final data = body is Map<String, dynamic> ? (body['data'] ?? body) : <String, dynamic>{};
+    return DepartmentStudentsResult.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<List<TrendAnalyticsModel>> getDepartmentTrends({DepartmentAnalyticsFilter? filter}) async {
+    final response = await _client.dio.get(
+      '/analytics/department/trends',
+      queryParameters: filter?.toQueryParameters(),
+    );
+    final body = response.data;
+    final data = body is Map<String, dynamic> ? (body['data'] ?? body) : null;
+    final list = data is Map<String, dynamic> && data['trends'] is List ? (data['trends'] as List) : (data is List ? data : []);
+    return list.map((e) => TrendAnalyticsModel.fromJson(e as Map<String, dynamic>)).toList();
   }
 }

@@ -128,6 +128,9 @@ class TimetableModel {
   final String startTime;
   /// Format: "HH:mm" (24-hour)
   final String endTime;
+  final String? timetableId;
+  final String? facultyAssignmentId;
+  final String? roomId;
   final String roomNumber;
   final String? building;
   final TimetableSessionType sessionType;
@@ -136,6 +139,7 @@ class TimetableModel {
 
   TimetableModel({
     required this.id,
+    this.timetableId,
     required this.collegeId,
     required this.departmentId,
     required this.courseId,
@@ -144,6 +148,8 @@ class TimetableModel {
     required this.sectionId,
     required this.subjectId,
     required this.facultyId,
+    this.facultyAssignmentId,
+    this.roomId,
     required this.dayOfWeek,
     required this.startTime,
     required this.endTime,
@@ -156,6 +162,7 @@ class TimetableModel {
 
   TimetableModel copyWith({
     String? id,
+    String? timetableId,
     String? collegeId,
     String? departmentId,
     String? courseId,
@@ -164,6 +171,8 @@ class TimetableModel {
     String? sectionId,
     String? subjectId,
     String? facultyId,
+    String? facultyAssignmentId,
+    String? roomId,
     TimetableDay? dayOfWeek,
     String? startTime,
     String? endTime,
@@ -175,6 +184,7 @@ class TimetableModel {
   }) {
     return TimetableModel(
       id: id ?? this.id,
+      timetableId: timetableId ?? this.timetableId,
       collegeId: collegeId ?? this.collegeId,
       departmentId: departmentId ?? this.departmentId,
       courseId: courseId ?? this.courseId,
@@ -183,6 +193,8 @@ class TimetableModel {
       sectionId: sectionId ?? this.sectionId,
       subjectId: subjectId ?? this.subjectId,
       facultyId: facultyId ?? this.facultyId,
+      facultyAssignmentId: facultyAssignmentId ?? this.facultyAssignmentId,
+      roomId: roomId ?? this.roomId,
       dayOfWeek: dayOfWeek ?? this.dayOfWeek,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
@@ -196,7 +208,8 @@ class TimetableModel {
 
   factory TimetableModel.fromJson(Map<String, dynamic> json) {
     return TimetableModel(
-      id: json['id'] as String? ?? '',
+      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      timetableId: json['timetableId'] as String?,
       collegeId: json['collegeId'] as String? ?? '',
       departmentId: json['departmentId'] as String? ?? '',
       courseId: json['courseId'] as String? ?? '',
@@ -205,6 +218,8 @@ class TimetableModel {
       sectionId: json['sectionId'] as String? ?? '',
       subjectId: json['subjectId'] as String? ?? '',
       facultyId: json['facultyId'] as String? ?? '',
+      facultyAssignmentId: json['facultyAssignmentId'] as String?,
+      roomId: json['roomId'] as String?,
       dayOfWeek: TimetableDay.values.firstWhere(
         (e) => e.name == json['dayOfWeek'],
         orElse: () => TimetableDay.monday,
@@ -225,6 +240,7 @@ class TimetableModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      if (timetableId != null) 'timetableId': timetableId,
       'collegeId': collegeId,
       'departmentId': departmentId,
       'courseId': courseId,
@@ -233,6 +249,8 @@ class TimetableModel {
       'sectionId': sectionId,
       'subjectId': subjectId,
       'facultyId': facultyId,
+      if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
+      if (roomId != null) 'roomId': roomId,
       'dayOfWeek': dayOfWeek.name,
       'startTime': startTime,
       'endTime': endTime,
@@ -635,6 +653,8 @@ class TimetableGridEntryModel {
   final String endTime;
   final String subjectId;
   final String facultyId;
+  final String? facultyAssignmentId;
+  final String? roomId;
   final String roomNumber;
   final String? building;
   final TimetableSessionType sessionType;
@@ -648,6 +668,8 @@ class TimetableGridEntryModel {
     required this.endTime,
     required this.subjectId,
     required this.facultyId,
+    this.facultyAssignmentId,
+    this.roomId,
     required this.roomNumber,
     this.building,
     required this.sessionType,
@@ -696,6 +718,8 @@ class TimetableGridEntryModel {
     String? endTime,
     String? subjectId,
     String? facultyId,
+    String? facultyAssignmentId,
+    String? roomId,
     String? roomNumber,
     String? building,
     TimetableSessionType? sessionType,
@@ -709,6 +733,8 @@ class TimetableGridEntryModel {
       endTime: endTime ?? this.endTime,
       subjectId: subjectId ?? this.subjectId,
       facultyId: facultyId ?? this.facultyId,
+      facultyAssignmentId: facultyAssignmentId ?? this.facultyAssignmentId,
+      roomId: roomId ?? this.roomId,
       roomNumber: roomNumber ?? this.roomNumber,
       building: building ?? this.building,
       sessionType: sessionType ?? this.sessionType,
@@ -717,7 +743,7 @@ class TimetableGridEntryModel {
 
   factory TimetableGridEntryModel.fromJson(Map<String, dynamic> json) {
     return TimetableGridEntryModel(
-      id: json['id'] as String? ?? '',
+      id: json['id'] as String? ?? json['_id'] as String? ?? '',
       dayOfWeek: TimetableDay.values.firstWhere(
         (e) => e.name == json['dayOfWeek'],
         orElse: () => TimetableDay.monday,
@@ -728,6 +754,8 @@ class TimetableGridEntryModel {
       endTime: json['endTime'] as String? ?? '00:00',
       subjectId: json['subjectId'] as String? ?? '',
       facultyId: json['facultyId'] as String? ?? '',
+      facultyAssignmentId: json['facultyAssignmentId'] as String?,
+      roomId: json['roomId'] as String?,
       roomNumber: json['roomNumber'] as String? ?? '',
       building: json['building'] as String?,
       sessionType: TimetableSessionType.values.firstWhere(
@@ -747,6 +775,8 @@ class TimetableGridEntryModel {
       'endTime': endTime,
       'subjectId': subjectId,
       'facultyId': facultyId,
+      if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
+      if (roomId != null) 'roomId': roomId,
       'roomNumber': roomNumber,
       if (building != null) 'building': building,
       'sessionType': sessionType.name,

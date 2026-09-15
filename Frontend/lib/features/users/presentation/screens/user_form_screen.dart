@@ -265,7 +265,6 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                               dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                               value: _selectedRole,
                               decoration: const InputDecoration(
-                                labelText: 'System Role',
                                 hintText: 'Select System Role',
                                 prefixIcon: Icon(LucideIcons.shieldCheck, size: 18),
                               ),
@@ -298,7 +297,6 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                               controller: _nameCtrl,
                               style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
                               decoration: const InputDecoration(
-                                labelText: 'Full Name',
                                 hintText: 'e.g. Dr. Jane Smith',
                                 prefixIcon: Icon(LucideIcons.user, size: 18),
                               ),
@@ -313,7 +311,6 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                               keyboardType: TextInputType.emailAddress,
                               style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
                               decoration: const InputDecoration(
-                                labelText: 'Email Address',
                                 hintText: 'e.g. janesmith@acadex.edu',
                                 prefixIcon: Icon(LucideIcons.mail, size: 18),
                               ),
@@ -332,7 +329,6 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                               keyboardType: TextInputType.phone,
                               style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
                               decoration: const InputDecoration(
-                                labelText: 'Phone Number',
                                 hintText: 'e.g. +91 9876543210',
                                 prefixIcon: Icon(LucideIcons.phone, size: 18),
                               ),
@@ -362,7 +358,6 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                                   dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                                   value: collegeDropdownValue,
                                   decoration: const InputDecoration(
-                                    labelText: 'Assigned College',
                                     hintText: 'Select College',
                                     prefixIcon: Icon(LucideIcons.building, size: 18),
                                   ),
@@ -387,7 +382,6 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                                 controller: _instituteIdCtrl,
                                 style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
                                 decoration: const InputDecoration(
-                                  labelText: 'Employee / Institutional ID',
                                   hintText: 'e.g. FAC-2026-001',
                                   prefixIcon: Icon(LucideIcons.idCard, size: 18),
                                 ),
@@ -403,7 +397,6 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                                 controller: _rollNoCtrl,
                                 style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
                                 decoration: const InputDecoration(
-                                  labelText: 'Student Roll Number / Registration ID',
                                   hintText: 'e.g. 2026-CSE-042',
                                   prefixIcon: Icon(LucideIcons.hash, size: 18),
                                 ),
@@ -422,7 +415,6 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                                 dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                                 value: deptDropdownValue,
                                 decoration: const InputDecoration(
-                                  labelText: 'Assigned Department',
                                   hintText: 'Select Department',
                                   prefixIcon: Icon(LucideIcons.layers, size: 18),
                                 ),

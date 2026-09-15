@@ -126,26 +126,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       body: AnimatedParticleSphereBackground(
         variant: ParticleSphereVariant.login,
         sphereAlignment: isDesktop ? const Alignment(-0.35, 0.0) : Alignment.center,
+        intensityMultiplier: 0.88,
         child: SafeArea(
           child: isDesktop
               ? Row(
                   children: [
-                    // Left Hero Showcase Section
+                    // Left Hero Showcase Section (Solid & Confident Blue Visual Field)
                     Expanded(
                       flex: 5,
                       child: Container(
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              const Color(0xFF0F172A).withValues(alpha: 0.55),
-                              const Color(0xFF1E1B4B).withValues(alpha: 0.35),
+                              Color(0xFF0F172A), // Slate 900 — Solid foundation
+                              Color(0xFF1E1B4B), // Deep Indigo 950 — Solid foundation
                             ],
                           ),
                           border: Border(
                             right: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.08),
+                              color: Color(0xFF334155), // Crisp Slate 700 boundary
                               width: 1,
                             ),
                           ),
@@ -160,12 +161,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    // Brand Header
+                                    // 1. ACADEX Brand Header
                                     Row(
                                       children: [
                                         Container(
-                                          width: 44,
-                                          height: 44,
+                                          width: 42,
+                                          height: 42,
                                           decoration: BoxDecoration(
                                             gradient: const LinearGradient(
                                               colors: [AcadexColors.primary, Color(0xFF6366F1)],
@@ -175,13 +176,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                             borderRadius: AcadexRadius.borderRadiusMd,
                                             boxShadow: [
                                               BoxShadow(
-                                                color: AcadexColors.primary.withValues(alpha: 0.3),
+                                                color: AcadexColors.primary.withValues(alpha: 0.35),
                                                 blurRadius: 12,
                                                 offset: const Offset(0, 4),
                                               ),
                                             ],
                                           ),
-                                          child: const Icon(LucideIcons.graduationCap, color: Colors.white, size: 24),
+                                          child: const Icon(LucideIcons.graduationCap, color: Colors.white, size: 22),
                                         ),
                                         const SizedBox(width: 14),
                                         Text(
@@ -191,11 +192,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       ],
                                     ),
 
-                                    // Hero Value Proposition
+                                    // 2 & 3. Hero Value Proposition & Supporting Description
                                     Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const SizedBox(height: 24),
+                                        const SizedBox(height: 28),
                                         const AcadexBadge(
                                           label: 'CAMPUS OPERATING SYSTEM',
                                           variant: AcadexBadgeVariant.primary,
@@ -203,30 +204,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         const SizedBox(height: 18),
                                         Text(
                                           'The complete platform for academic institutions.',
-                                          style: AcadexTypography.display2(color: Colors.white),
+                                          style: AcadexTypography.display2(color: Colors.white).copyWith(
+                                            letterSpacing: -0.8,
+                                            height: 1.2,
+                                          ),
                                         ),
                                         const SizedBox(height: 16),
                                         Text(
                                           'Unified attendance tracking, intelligent timetable scheduling, faculty management, notes distribution, and institutional analytics.',
                                           style: AcadexTypography.body(
-                                            color: Colors.white.withValues(alpha: 0.8),
-                                          ),
+                                            color: Colors.white.withValues(alpha: 0.85),
+                                          ).copyWith(height: 1.5),
                                         ),
-                                        const SizedBox(height: 28),
+                                        const SizedBox(height: 24),
 
-                                        // Feature Highlights
+                                        // 4 & 5. Compact Feature Highlights
                                         const _FeaturePill(
                                           icon: LucideIcons.clipboardCheck,
                                           title: 'Verified Attendance',
                                           subtitle: 'Role-scoped session logging and instant verification',
                                         ),
-                                        const SizedBox(height: 12),
+                                        const SizedBox(height: 8),
                                         const _FeaturePill(
                                           icon: LucideIcons.calendar,
                                           title: 'Authoritative Timetables',
                                           subtitle: 'Conflict-free schedules for sections, faculty, and rooms',
                                         ),
-                                        const SizedBox(height: 12),
+                                        const SizedBox(height: 8),
                                         const _FeaturePill(
                                           icon: LucideIcons.bookOpen,
                                           title: 'Curriculum & Notes Hub',
@@ -252,14 +256,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
 
-                    // Right Form Area
+                    // Right Form Area (Anchored & Cohesive Card)
                     Expanded(
                       flex: 4,
                       child: Center(
                         child: SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
+                          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
                           child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 440),
+                            constraints: const BoxConstraints(maxWidth: 420),
                             child: _buildFormCard(context, isDark, isLoading, loadingLabel),
                           ),
                         ),
@@ -270,18 +274,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               : Center(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.symmetric(
-                      horizontal: isTablet ? 48.0 : 20.0,
+                      horizontal: isTablet ? 48.0 : 16.0,
                       vertical: 24.0,
                     ),
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 440),
+                      constraints: const BoxConstraints(maxWidth: 420),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           // Mobile / Tablet Header
                           Container(
-                            width: 52,
-                            height: 52,
+                            width: 48,
+                            height: 48,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 colors: [AcadexColors.primary, Color(0xFF6366F1)],
@@ -297,9 +301,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 ),
                               ],
                             ),
-                            child: const Icon(LucideIcons.graduationCap, color: Colors.white, size: 28),
+                            child: const Icon(LucideIcons.graduationCap, color: Colors.white, size: 24),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 14),
                           Text(
                             'Acadex',
                             style: AcadexTypography.heading1(
@@ -313,7 +317,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 20),
                           _buildFormCard(context, isDark, isLoading, loadingLabel),
                         ],
                       ),
@@ -331,21 +335,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     bool isLoading,
     String loadingLabel,
   ) {
+    final isMobile = AcadexBreakpoints.isMobile(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Solid White / Dark Surface Card with Refined Elevation
         AcadexCard(
-          padding: const EdgeInsets.all(28),
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 20 : 28,
+            vertical: isMobile ? 24 : 30,
+          ),
+          backgroundColor: isDark ? AcadexColors.darkSurface : Colors.white,
+          borderColor: isDark ? AcadexColors.darkHairline : const Color(0xFFE2E8F0),
+          borderRadius: AcadexRadius.borderRadiusLg,
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // 6. Login Heading (Dominates the card)
                 Text(
                   'Welcome Back',
                   style: AcadexTypography.heading2(
                     color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                  ),
+                  ).copyWith(letterSpacing: -0.4),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -356,9 +369,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Identifier Field
+                // 7. Form Labels & 8. Input Controls: Identifier Field
                 Text(
-                  'PIN Number or Email',
+                  'Email or Phone Number',
                   style: AcadexTypography.caption(
                     color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
                   ).copyWith(fontWeight: FontWeight.w600),
@@ -372,7 +385,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'e.g. 26CSE042 or user@acadex.edu',
+                    hintText: 'e.g. user@acadex.edu, 26CSE042, or phone',
                     prefixIcon: Icon(
                       LucideIcons.user,
                       size: 18,
@@ -381,7 +394,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {
-                      return "Please enter your PIN Number or Email";
+                      return "Please enter your email or phone number";
                     }
                     return null;
                   },
@@ -392,12 +405,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Password',
-                      style: AcadexTypography.caption(
-                        color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                      ).copyWith(fontWeight: FontWeight.w600),
+                    Flexible(
+                      child: Text(
+                        'Password',
+                        style: AcadexTypography.caption(
+                          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     InkWell(
                       onTap: isLoading ? null : () => context.go('/forgot-password'),
                       child: Text(
@@ -446,7 +463,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Submit Button
+                // Submit Primary Button
                 AcadexButton(
                   label: isLoading ? loadingLabel : 'Sign In',
                   icon: LucideIcons.logIn,
@@ -459,24 +476,43 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 16),
 
-        // Account Activation Navigation Link
+        // 5. Strengthened "Activate Account" Secondary CTA
         Center(
           child: TextButton(
             onPressed: () => context.go('/activate'),
-            child: Text(
-              'New student or faculty? Activate Account',
-              style: AcadexTypography.bodySmall(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              minimumSize: const Size(0, 44),
+            ),
+            child: Text.rich(
+              TextSpan(
+                text: 'New student or faculty? ',
+                style: AcadexTypography.bodySmall(
+                  color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                ),
+                children: [
+                  TextSpan(
+                    text: 'Activate Account',
+                    style: AcadexTypography.bodySmall(
+                      color: AcadexColors.primary,
+                    ).copyWith(
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.underline,
+                      decorationColor: AcadexColors.primary.withValues(alpha: 0.4),
+                    ),
+                  ),
+                ],
               ),
+              textAlign: TextAlign.center,
             ),
           ),
         ),
 
-        // Development Sandbox (Debug Only — Collapsible)
+        // 11. Development Role Quick-Login (Clearly secondary, collapsed by default)
         if (kDebugMode) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Theme(
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
@@ -485,21 +521,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               tilePadding: EdgeInsets.zero,
               title: Row(
                 children: [
-                  const Icon(LucideIcons.code2, size: 14, color: AcadexColors.warning),
-                  const SizedBox(width: 8),
-                  Text(
-                    'DEVELOPMENT ROLE QUICK-LOGIN',
-                    style: AcadexTypography.eyebrow(color: AcadexColors.warning),
+                  const Icon(LucideIcons.code2, size: 13, color: AcadexColors.warning),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'DEVELOPMENT ROLE QUICK-LOGIN',
+                      style: AcadexTypography.eyebrow(color: AcadexColors.warning).copyWith(fontSize: 10),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
               children: [
                 AcadexCard(
                   backgroundColor: isDark
-                      ? AcadexColors.warningDarkContainer.withValues(alpha: 0.25)
-                      : AcadexColors.warningLight,
-                  borderColor: isDark ? AcadexColors.warningDark : AcadexColors.warning.withValues(alpha: 0.3),
-                  padding: const EdgeInsets.all(14),
+                      ? AcadexColors.warningDarkContainer.withValues(alpha: 0.20)
+                      : AcadexColors.warningLight.withValues(alpha: 0.60),
+                  borderColor: isDark ? AcadexColors.warningDark : AcadexColors.warning.withValues(alpha: 0.25),
+                  padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -543,11 +582,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           });
                         },
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       AcadexButton(
                         label: _selectedDevRole == null ? "Sign In as Role..." : "Sign In as $_selectedDevRole",
                         variant: AcadexButtonVariant.secondary,
                         icon: LucideIcons.play,
+                        size: AcadexButtonSize.sm,
                         onPressed: (isLoading || _selectedDevRole == null)
                             ? null
                             : () {
@@ -568,6 +608,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
+/// Compact supporting feature pill row with tight spacing and clean alignment.
 class _FeaturePill extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -582,37 +623,49 @@ class _FeaturePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: AcadexRadius.borderRadiusLg,
+        color: const Color(0xFF1E293B).withValues(alpha: 0.65),
+        borderRadius: AcadexRadius.borderRadiusMd,
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.12),
+          color: const Color(0xFF334155).withValues(alpha: 0.60),
           width: 1,
         ),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            width: 32,
+            height: 32,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: AcadexRadius.borderRadiusMd,
+              color: Colors.white.withValues(alpha: 0.12),
+              borderRadius: AcadexRadius.borderRadiusSm,
             ),
-            child: Icon(icon, color: Colors.white, size: 18),
+            child: Icon(icon, color: Colors.white, size: 16),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   title,
-                  style: AcadexTypography.body(color: Colors.white).copyWith(fontWeight: FontWeight.w600),
+                  style: AcadexTypography.body(color: Colors.white).copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13.5,
+                  ),
                 ),
+                const SizedBox(height: 1),
                 Text(
                   subtitle,
-                  style: AcadexTypography.caption(color: Colors.white.withValues(alpha: 0.7)),
+                  style: AcadexTypography.caption(
+                    color: Colors.white.withValues(alpha: 0.72),
+                  ).copyWith(
+                    fontSize: 11.5,
+                    height: 1.3,
+                  ),
                 ),
               ],
             ),

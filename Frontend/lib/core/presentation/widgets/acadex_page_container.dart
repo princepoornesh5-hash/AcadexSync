@@ -143,14 +143,6 @@ class AcadexPageContainer extends ConsumerWidget {
       );
     }
 
-    final hasScaffold = Scaffold.maybeOf(context) != null;
-    if (!hasScaffold) {
-      return Scaffold(
-        backgroundColor: bgColor,
-        body: result,
-      );
-    }
-
     return result;
   }
 

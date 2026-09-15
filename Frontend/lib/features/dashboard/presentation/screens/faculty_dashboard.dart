@@ -6,6 +6,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_adaptive_gradient_text.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/user_model.dart';
@@ -43,6 +44,16 @@ class FacultyDashboard extends ConsumerWidget {
           final statCols = AcadexLayout.statGridColumns(context);
           final isMobile = AcadexBreakpoints.isMobile(context);
 
+          final nextClassAsync = ref.watch(nextClassProvider);
+          final nextClass = nextClassAsync.valueOrNull;
+          final subMap = ref.watch(subjectMapProvider);
+          final secMap = ref.watch(sectionMapProvider);
+
+          final nextSub = nextClass != null ? subMap[nextClass.subjectId] : null;
+          final nextSec = nextClass != null ? secMap[nextClass.sectionId] : null;
+          final nextSubName = nextSub?.name ?? (nextClass != null && nextClass.subjectId.isNotEmpty ? nextClass.subjectId : null);
+          final nextSecName = nextSec?.name ?? (nextClass != null && nextClass.sectionId.isNotEmpty ? nextClass.sectionId : null);
+
           return AcadexPageContainer(
             backgroundColor: Colors.transparent,
             topPadding: isMobile ? 16 : 24,
@@ -50,6 +61,7 @@ class FacultyDashboard extends ConsumerWidget {
               ref.invalidate(facultyStatsProvider);
               ref.invalidate(facultyActivityProvider);
               ref.invalidate(myFacultyAssignmentsProvider);
+              ref.invalidate(todayScheduleProvider);
             },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,7 +89,9 @@ class FacultyDashboard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   AcadexAdaptiveGradientText(
-                    'Manage your classes, student attendance, and schedule.',
+                    nextClass != null
+                        ? 'Next class: ${nextSubName ?? "Lecture"} at ${nextClass.startTime}'
+                        : 'Manage your classes, student attendance, and schedule.',
                     style: AcadexTypography.caption(),
                     isSecondary: true,
                   ),
@@ -94,7 +108,9 @@ class FacultyDashboard extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             AcadexAdaptiveGradientText(
-                              'Manage your allocated classes, student attendance, lesson notes, and teaching schedule.',
+                              nextClass != null
+                                  ? 'Next scheduled class: ${nextSubName ?? "Lecture"} at ${nextClass.startTime} in Room ${nextClass.roomNumber}.'
+                                  : 'Manage your allocated classes, student attendance, lesson notes, and teaching schedule.',
                               style: AcadexTypography.body(),
                               isSecondary: true,
                             ),
@@ -108,42 +124,52 @@ class FacultyDashboard extends ConsumerWidget {
                     ],
                   ),
                 ],
-                const SizedBox(height: 20),
+                SizedBox(height: isMobile ? 14 : 20),
 
-                // Teaching Operations Hero Card
-                AcadexHeroCard(
-                  eyebrow: 'Teaching Operations Workspace',
-                  badge: const AcadexBadge(
-                    label: 'FACULTY ON DUTY',
-                    variant: AcadexBadgeVariant.primary,
+                // Teaching Operations Hero Card (Dynamic Next Class Action)
+                if (nextClass != null)
+                  AcadexHeroCard(
+                    eyebrow: 'Next Scheduled Session',
+                    badge: AcadexBadge(
+                      label: '${nextClass.startTime} – ${nextClass.endTime}',
+
+                      variant: AcadexBadgeVariant.success,
+                    ),
+                    icon: LucideIcons.sparkles,
+                    title: nextSubName ?? 'Scheduled Lecture',
+                    subtitle: '${nextClass.sessionType.displayName} • Section ${nextSecName ?? "—"}${nextClass.roomNumber.isNotEmpty ? " • Room ${nextClass.roomNumber}" : ""}',
+                    primaryActionLabel: 'Mark Attendance',
+                    primaryActionIcon: LucideIcons.clipboardCheck,
+                    onPrimaryAction: () => context.go('/attendance'),
+                    secondaryActionLabel: 'View Timetable',
+                    onSecondaryAction: () => context.go('/timetable'),
+                  )
+                else
+                  AcadexHeroCard(
+                    eyebrow: 'Teaching Operations Workspace',
+                    badge: const AcadexBadge(
+                      label: 'FACULTY ON DUTY',
+                      variant: AcadexBadgeVariant.primary,
+                    ),
+                    icon: LucideIcons.calendarCheck,
+                    title: 'Daily Teaching & Attendance Portal',
+                    subtitle: 'Quickly mark student attendance, review allocated sections, and manage study notes.',
+                    primaryActionLabel: 'Mark Attendance',
+                    primaryActionIcon: LucideIcons.clipboardCheck,
+                    onPrimaryAction: () => context.go('/attendance'),
+                    secondaryActionLabel: 'View Timetable',
+                    onSecondaryAction: () => context.go('/timetable'),
                   ),
-                  icon: LucideIcons.calendarCheck,
-                  title: 'Daily Teaching & Attendance Portal',
-                  subtitle: 'Quickly mark student attendance, review allocated sections, and manage study notes.',
-                  primaryActionLabel: 'Mark Attendance',
-                  primaryActionIcon: LucideIcons.clipboardCheck,
-                  onPrimaryAction: () => context.go('/attendance'),
-                  secondaryActionLabel: 'View Timetable',
-                  onSecondaryAction: () => context.go('/timetable'),
-                ),
                 AcadexLayout.sectionSpacer,
 
                 // Overview Stat Cards
                 const SectionHeader(title: 'Teaching Overview'),
                 AcadexLayout.headerGap,
                 stats.when(
-                  loading: () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(28),
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-                  error: (err, _) => AcadexCard(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'Failed to load teaching metrics: $err',
-                      style: AcadexTypography.caption(color: AcadexColors.error),
-                    ),
+                  loading: () => const AcadexLoadingState(message: 'Loading teaching metrics...'),
+                  error: (err, _) => AcadexErrorState(
+                    message: 'Failed to load teaching metrics: $err',
+                    onRetry: () => ref.refresh(facultyStatsProvider),
                   ),
                   data: (data) => GridView.builder(
                     physics: const NeverScrollableScrollPhysics(),
@@ -151,9 +177,11 @@ class FacultyDashboard extends ConsumerWidget {
                     itemCount: data.length,
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: statCols,
-                      crossAxisSpacing: AcadexLayout.gridSpacing,
-                      mainAxisSpacing: AcadexLayout.gridSpacing,
-                      childAspectRatio: isMobile ? (width >= 375 ? 0.95 : 0.88) : (width > 600 ? 1.25 : 1.15),
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: isMobile
+                          ? (width >= 375 ? 1.05 : 0.98)
+                          : (width > 600 ? 1.25 : 1.15),
                     ),
                     itemBuilder: (_, i) => StatCard(stat: data[i]),
                   ),
@@ -167,8 +195,11 @@ class FacultyDashboard extends ConsumerWidget {
                   builder: (context, ref, _) {
                     final todayAsync = ref.watch(todayScheduleProvider);
                     return todayAsync.when(
-                      loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (err, _) => Text('Error loading schedule: $err'),
+                      loading: () => const AcadexLoadingState(message: "Loading today's teaching schedule..."),
+                      error: (err, _) => AcadexErrorState(
+                        message: 'Error loading schedule: $err',
+                        onRetry: () => ref.refresh(todayScheduleProvider),
+                      ),
                       data: (data) => TodayScheduleWidget(todayEntries: data),
                     );
                   },
@@ -191,14 +222,10 @@ class FacultyDashboard extends ConsumerWidget {
                     final semMap = ref.watch(semesterMapProvider);
 
                     if (myAssignments.isEmpty) {
-                      return AcadexCard(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(
-                          'No assigned subjects allocated to your account yet.',
-                          style: AcadexTypography.bodySmall(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                          ),
-                        ),
+                      return const AcadexEmptyState(
+                        title: 'No Assigned Subjects',
+                        subtitle: 'No teaching assignments have been allocated to your profile yet.',
+                        icon: LucideIcons.bookOpen,
                       );
                     }
 
@@ -448,18 +475,10 @@ class FacultyDashboard extends ConsumerWidget {
                 ),
                 AcadexLayout.headerGap,
                 activity.when(
-                  loading: () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-                  error: (err, _) => AcadexCard(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'Failed to load activity: $err',
-                      style: AcadexTypography.caption(color: AcadexColors.error),
-                    ),
+                  loading: () => const AcadexLoadingState(message: 'Loading recent updates...'),
+                  error: (err, _) => AcadexErrorState(
+                    message: 'Failed to load activity: $err',
+                    onRetry: () => ref.refresh(facultyActivityProvider),
                   ),
                   data: (data) => ActivityFeed(items: data),
                 ),

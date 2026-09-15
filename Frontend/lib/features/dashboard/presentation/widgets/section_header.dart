@@ -82,9 +82,9 @@ class SectionHeader extends ConsumerWidget {
             onPressed: onAction,
             style: TextButton.styleFrom(
               foregroundColor: standardActionColor,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              minimumSize: const Size(48, 44),
+              tapTargetSize: MaterialTapTargetSize.padded,
             ),
             child: isGradientRole && actionColor == null
                 ? AcadexAdaptiveGradientText(

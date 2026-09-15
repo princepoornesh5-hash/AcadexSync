@@ -18,6 +18,14 @@ analyzer:
     prefer_initializing_formals: ignore
     prefer_interpolation_to_compose_strings: ignore
     use_null_aware_elements: ignore
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   rules:

@@ -32,6 +32,34 @@ class ApiAttendanceRepository implements AttendanceRepository {
   ApiAttendanceRepository([ApiClient? client]) : _client = client ?? apiClient;
 
   Exception _extractError(DioException e, String fallback) {
+    if (e.response?.statusCode == 403) {
+      final data = e.response?.data;
+      String? backendMsg;
+      if (data is Map) {
+        final err = data['error'];
+        if (err is Map) {
+          backendMsg = err['message']?.toString();
+        } else if (err is String) {
+          backendMsg = err;
+        }
+        backendMsg ??= data['message']?.toString();
+      }
+      return Exception(backendMsg ?? 'You are not authorized to mark attendance for this class.');
+    }
+    if (e.response?.statusCode == 409) {
+      final data = e.response?.data;
+      String? backendMsg;
+      if (data is Map) {
+        final err = data['error'];
+        if (err is Map) {
+          backendMsg = err['message']?.toString();
+        } else if (err is String) {
+          backendMsg = err;
+        }
+        backendMsg ??= data['message']?.toString();
+      }
+      return Exception(backendMsg ?? 'An active attendance session already exists for this class.');
+    }
     String? message;
     final data = e.response?.data;
     if (data is Map) {
@@ -52,7 +80,8 @@ class ApiAttendanceRepository implements AttendanceRepository {
   @override
   Future<List<AssignedClass>> getAssignedClasses(String facultyId, DateTime date) async {
     try {
-      final response = await _client.dio.get('/timetables/faculty/$facultyId');
+      final target = (facultyId.isEmpty || facultyId == 'me') ? 'me' : facultyId;
+      final response = await _client.dio.get('/timetables/faculty/$target');
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       final list = data is List ? data : (data is Map && data['entries'] is List ? data['entries'] as List : null);
@@ -65,16 +94,31 @@ class ApiAttendanceRepository implements AttendanceRepository {
           final subjectId = (item['subjectId'] ?? item['subject']?['_id'] ?? '').toString();
           final sectionId = (item['sectionId'] ?? item['section']?['_id'] ?? '').toString();
           final timeSlot = (item['timeSlot'] ?? '${item['startTime'] ?? '09:00'} - ${item['endTime'] ?? '10:00'}').toString();
+          final entryId = (item['id'] ?? item['_id'] ?? 'class_$idx').toString();
+          final timetableId = (item['timetableId'] ?? item['timetable']?['_id'])?.toString();
+          final facultyAssignmentId = (item['facultyAssignmentId'] ?? item['facultyAssignment']?['_id'])?.toString();
+          final facultyIdVal = (item['facultyId'] ?? item['faculty']?['_id'])?.toString();
+          final startTime = item['startTime']?.toString();
+          final endTime = item['endTime']?.toString();
+          final roomNumber = (item['roomNumber'] ?? item['room'] ?? '101').toString();
+          final building = item['building']?.toString();
 
           return AssignedClass(
-            id: (item['id'] ?? item['_id'] ?? 'class_$idx').toString(),
+            id: entryId,
+            timetableId: timetableId,
+            timetableEntryId: entryId,
+            facultyId: facultyIdVal,
+            facultyAssignmentId: facultyAssignmentId,
             subjectName: subjectName,
             subjectId: subjectId,
             sectionName: sectionName,
             sectionId: sectionId,
             semester: (item['semester'] ?? item['semesterId'] ?? 'Semester 1').toString(),
             timeSlot: timeSlot,
-            roomNumber: (item['roomNumber'] ?? item['room'] ?? '101').toString(),
+            startTime: startTime,
+            endTime: endTime,
+            roomNumber: roomNumber,
+            building: building,
             date: date,
             isAttendanceMarked: item['isAttendanceMarked'] == true,
           );
@@ -226,70 +270,96 @@ class ApiAttendanceRepository implements AttendanceRepository {
     String? timetableEntryId,
   }) async {
     try {
-      // 1. Fetch active enrollments for this section if any exist
-      final Set<String> enrolledStudentIds = {};
+      // 1. Fetch real active enrollments for this section directly
+      final enrollResponse = await _client.dio.get(
+        '/academics/enrollments',
+        queryParameters: {'sectionId': sectionId, 'status': 'active', 'limit': 100},
+      );
+      final enrollBody = enrollResponse.data;
+      final enrollData = enrollBody is Map<String, dynamic> ? (enrollBody['data'] ?? enrollBody) : enrollBody;
+      final enrollList = enrollData is List ? enrollData : (enrollData is Map && enrollData['items'] is List ? enrollData['items'] as List : null);
+
+      if (enrollList == null || enrollList.isEmpty) {
+        return [];
+      }
+
+      // 2. Check if an existing session already exists for this class and date
+      final Map<String, AttendanceStatus> existingStatusMap = {};
       try {
-        final enrollResponse = await _client.dio.get(
-          '/academics/enrollments',
-          queryParameters: {'sectionId': sectionId, 'status': 'active'},
+        final fromDate = DateTime(date.year, date.month, date.day);
+        final toDate = DateTime(date.year, date.month, date.day, 23, 59, 59);
+        final sessionResp = await _client.dio.get(
+          '/attendance/sessions',
+          queryParameters: {
+            'sectionId': sectionId,
+            'subjectId': subjectId,
+            'from': fromDate.toIso8601String(),
+            'to': toDate.toIso8601String(),
+            'limit': 1,
+          },
         );
-        final enrollBody = enrollResponse.data;
-        final enrollData = enrollBody is Map<String, dynamic> ? (enrollBody['data'] ?? enrollBody) : enrollBody;
-        final enrollList = enrollData is List ? enrollData : (enrollData is Map && enrollData['items'] is List ? enrollData['items'] as List : null);
-        if (enrollList != null) {
-          for (final item in enrollList) {
-            if (item is Map) {
-              final sid = (item['studentId'] ?? item['id'] ?? '').toString();
-              if (sid.isNotEmpty) enrolledStudentIds.add(sid);
+        final sessionBody = sessionResp.data;
+        final sData = sessionBody is Map<String, dynamic> ? (sessionBody['data'] ?? sessionBody) : sessionBody;
+        final sItems = sData is List ? sData : (sData is Map && sData['items'] is List ? sData['items'] as List : null);
+        if (sItems != null && sItems.isNotEmpty) {
+          final firstSession = sItems[0] as Map<String, dynamic>;
+          final recs = firstSession['records'] as List?;
+          if (recs != null) {
+            for (final r in recs) {
+              if (r is Map) {
+                final sId = (r['studentId'] ?? '').toString();
+                final stStr = (r['status'] ?? '').toString().toLowerCase();
+                if (stStr.contains('present')) {
+                  existingStatusMap[sId] = AttendanceStatus.present;
+                } else if (stStr.contains('absent')) {
+                  existingStatusMap[sId] = AttendanceStatus.absent;
+                } else if (stStr.contains('late')) {
+                  existingStatusMap[sId] = AttendanceStatus.late;
+                } else if (stStr.contains('excused')) {
+                  existingStatusMap[sId] = AttendanceStatus.excused;
+                }
+              }
             }
           }
         }
       } catch (_) {
-        // Fallback to student list directly if enrollments lookup fails
+        // Fallback: continue with fresh unmarked roster
       }
 
-      // 2. Fetch students
-      final response = await _client.dio.get(
-        '/academics/students',
-        queryParameters: {'limit': 100},
-      );
-      final body = response.data;
-      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
-      final list = data is List ? data : (data is Map && data['items'] is List ? data['items'] as List : null);
+      // 3. Build real AttendanceRecords directly from active student enrollments
+      final List<AttendanceRecord> records = [];
+      for (final item in enrollList) {
+        if (item is! Map) continue;
+        final stuMap = item['student'] is Map
+            ? item['student'] as Map
+            : (item['studentId'] is Map
+                ? item['studentId'] as Map
+                : null);
 
-      if (list != null) {
-        final List<AttendanceRecord> records = [];
-        for (final item in list) {
-          final m = item as Map<String, dynamic>;
-          final userMap = m['user'] as Map<String, dynamic>?;
-          final stuMap = m['student'] as Map<String, dynamic>?;
+        final studentId = (stuMap?['_id'] ?? stuMap?['id'] ?? item['studentId'] ?? '').toString();
+        if (studentId.isEmpty) continue;
 
-          final studentDocId = (stuMap?['id'] ?? stuMap?['_id'] ?? '').toString();
-          final userDocId = (userMap?['id'] ?? userMap?['_id'] ?? m['id'] ?? m['_id'] ?? '').toString();
-          final effectiveStudentId = studentDocId.isNotEmpty ? studentDocId : userDocId;
+        final studentName = (stuMap?['name'] ?? 'Student').toString();
+        final rollNumber = (stuMap?['rollNumber'] ?? stuMap?['admissionNumber'] ?? 'N/A').toString();
 
-          // If active enrollments are found for this section, filter by enrolled IDs
-          if (enrolledStudentIds.isNotEmpty &&
-              !enrolledStudentIds.contains(studentDocId) &&
-              !enrolledStudentIds.contains(userDocId)) {
-            continue;
-          }
-
-          final sName = (userMap?['name'] ?? stuMap?['name'] ?? m['name'] ?? 'Student').toString();
-          final roll = (stuMap?['rollNumber'] ?? m['rollNumber'] ?? userMap?['instituteId'] ?? 'N/A').toString();
-
-          records.add(AttendanceRecord(
-            id: 'rec_$effectiveStudentId',
-            studentId: effectiveStudentId,
-            studentName: sName,
-            rollNumber: roll,
-            sectionId: sectionId,
-            status: null,
-          ));
-        }
-        return records;
+        records.add(AttendanceRecord(
+          id: 'rec_$studentId',
+          studentId: studentId,
+          studentName: studentName,
+          rollNumber: rollNumber,
+          sectionId: sectionId,
+          status: existingStatusMap[studentId],
+        ));
       }
-      return [];
+
+      // 4. Stable ordering: roll number, then student name
+      records.sort((a, b) {
+        final rollCmp = a.rollNumber.compareTo(b.rollNumber);
+        if (rollCmp != 0) return rollCmp;
+        return a.studentName.compareTo(b.studentName);
+      });
+
+      return records;
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return [];
       throw _extractError(e, 'Failed to fetch students for section');
@@ -301,14 +371,11 @@ class ApiAttendanceRepository implements AttendanceRepository {
   @override
   Future<bool> saveSession(AttendanceSession session) async {
     try {
-      final response = await _client.dio.post('/attendance/sessions', data: {
-        'collegeId': session.collegeId,
-        'departmentId': session.departmentId,
+      final payload = <String, dynamic>{
         'sectionId': session.sectionId,
         'sectionName': session.sectionName,
         'subjectId': session.subjectId,
         'subjectName': session.subjectName,
-        'facultyId': session.facultyId,
         'timeSlot': session.timeSlot,
         'date': session.date.toIso8601String().substring(0, 10),
         'records': session.records.map((r) => {
@@ -317,9 +384,55 @@ class ApiAttendanceRepository implements AttendanceRepository {
           'rollNumber': r.rollNumber,
           'status': (r.status?.name ?? 'present').toLowerCase(),
         }).toList(),
-      });
+      };
+      if (session.timetableId != null && session.timetableId!.isNotEmpty) {
+        payload['timetableId'] = session.timetableId;
+      }
+      if (session.timetableEntryId != null && session.timetableEntryId!.isNotEmpty) {
+        payload['timetableEntryId'] = session.timetableEntryId;
+      }
+      if (session.facultyAssignmentId != null && session.facultyAssignmentId!.isNotEmpty) {
+        payload['facultyAssignmentId'] = session.facultyAssignmentId;
+      }
+      final response = await _client.dio.post('/attendance/sessions', data: payload);
       return response.statusCode == 200 || response.statusCode == 201;
     } on DioException catch (e) {
+      if (e.response?.statusCode == 409) {
+        // If session already exists, update records on existing session
+        try {
+          final fromDate = DateTime(session.date.year, session.date.month, session.date.day);
+          final toDate = DateTime(session.date.year, session.date.month, session.date.day, 23, 59, 59);
+          final existingResp = await _client.dio.get(
+            '/attendance/sessions',
+            queryParameters: {
+              'sectionId': session.sectionId,
+              'subjectId': session.subjectId,
+              'from': fromDate.toIso8601String(),
+              'to': toDate.toIso8601String(),
+              'limit': 1,
+            },
+          );
+          final eBody = existingResp.data;
+          final eData = eBody is Map<String, dynamic> ? (eBody['data'] ?? eBody) : eBody;
+          final eItems = eData is List ? eData : (eData is Map && eData['items'] is List ? eData['items'] as List : null);
+          if (eItems != null && eItems.isNotEmpty) {
+            final existingSessionId = (eItems[0]['id'] ?? eItems[0]['_id']).toString();
+            final updateResp = await _client.dio.post(
+              '/attendance/sessions/$existingSessionId/records',
+              data: {
+                'records': session.records.map((r) => {
+                  'studentId': r.studentId,
+                  'status': (r.status?.name ?? 'present').toLowerCase(),
+                  'remarks': r.remarks,
+                }).toList(),
+              },
+            );
+            return updateResp.statusCode == 200 || updateResp.statusCode == 201;
+          }
+        } catch (_) {
+          // Fall through to throw original 409 error
+        }
+      }
       throw _extractError(e, 'Failed to submit attendance session');
     }
   }
@@ -599,6 +712,9 @@ class ApiAttendanceRepository implements AttendanceRepository {
           totalFaculty: (metrics['totalFaculty'] as num?)?.toInt() ??
               (metrics['facultyCount'] as num?)?.toInt() ??
               0,
+          totalCollegeAdmins: (metrics['totalCollegeAdmins'] as num?)?.toInt() ??
+              (metrics['collegeAdminsCount'] as num?)?.toInt() ??
+              0,
           todayAttendancePercentage: (metrics['systemAttendancePercentage'] as num?)?.toDouble() ??
               (metrics['avgAttendance'] as num?)?.toDouble() ??
               0.0,
@@ -610,6 +726,7 @@ class ApiAttendanceRepository implements AttendanceRepository {
         totalDepartments: 0,
         totalStudents: 0,
         totalFaculty: 0,
+        totalCollegeAdmins: 0,
         todayAttendancePercentage: 0.0,
         pendingColleges: 0,
       );

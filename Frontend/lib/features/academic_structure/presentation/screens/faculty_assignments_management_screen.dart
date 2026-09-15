@@ -41,8 +41,6 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     final authState = ref.watch(authProvider);
     final currentUser = authState is AuthAuthenticated ? authState.user : null;
     final isHod = currentUser?.role == AppRole.hod;
@@ -95,10 +93,6 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
       return true;
     }).toList();
 
-    final isGradientRole = currentUser?.role == AppRole.superAdmin ||
-        currentUser?.role == AppRole.collegeAdmin ||
-        currentUser?.role == AppRole.hod;
-
     return AcadexPageContainer(
         backgroundColor: Colors.transparent,
         maxWidth: 1600,
@@ -146,11 +140,12 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                 if (!isHod) ...[
                                   Expanded(
                                     child: DropdownButtonFormField<String?>(
+                                      isExpanded: true,
                                       key: ValueKey('filter_dept_$_filterDepartmentId'),
                                       decoration: const InputDecoration(labelText: "Department", isDense: true),
                                       initialValue: _filterDepartmentId,
                                       items: [
-                                        const DropdownMenuItem(value: null, child: Text("All Depts")),
+                                        const DropdownMenuItem(value: null, child: Text("All Depts", overflow: TextOverflow.ellipsis)),
                                         ...departments.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name, overflow: TextOverflow.ellipsis))),
                                       ],
                                       onChanged: (val) {
@@ -169,12 +164,13 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                 ],
                                 Expanded(
                                   child: DropdownButtonFormField<String?>(
+                                    isExpanded: true,
                                     key: ValueKey('filter_course_${_filterDepartmentId}_$_filterCourseId'),
                                     decoration: const InputDecoration(labelText: "Course", isDense: true),
                                     initialValue: _filterCourseId,
                                     items: [
-                                      const DropdownMenuItem(value: null, child: Text("All Courses")),
-                                      ...filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.code))),
+                                      const DropdownMenuItem(value: null, child: Text("All Courses", overflow: TextOverflow.ellipsis)),
+                                      ...filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.code, overflow: TextOverflow.ellipsis))),
                                     ],
                                     onChanged: (val) {
                                       setState(() {
@@ -193,12 +189,13 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                               children: [
                                 Expanded(
                                   child: DropdownButtonFormField<String?>(
+                                    isExpanded: true,
                                     key: ValueKey('filter_sem_${_filterCourseId}_$_filterSemesterId'),
                                     decoration: const InputDecoration(labelText: "Semester", isDense: true),
                                     initialValue: _filterSemesterId,
                                     items: [
-                                      const DropdownMenuItem(value: null, child: Text("All Sems")),
-                                      ...filteredSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
+                                      const DropdownMenuItem(value: null, child: Text("All Sems", overflow: TextOverflow.ellipsis)),
+                                      ...filteredSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))),
                                     ],
                                     onChanged: (val) {
                                       setState(() {
@@ -212,12 +209,13 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: DropdownButtonFormField<String?>(
+                                    isExpanded: true,
                                     key: ValueKey('filter_sec_${_filterSemesterId}_$_filterSectionId'),
                                     decoration: const InputDecoration(labelText: "Section", isDense: true),
                                     initialValue: _filterSectionId,
                                     items: [
-                                      const DropdownMenuItem(value: null, child: Text("All Secs")),
-                                      ...filteredSections.map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name))),
+                                      const DropdownMenuItem(value: null, child: Text("All Secs", overflow: TextOverflow.ellipsis)),
+                                      ...filteredSections.map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name, overflow: TextOverflow.ellipsis))),
                                     ],
                                     onChanged: (val) => setState(() => _filterSectionId = val),
                                   ),
@@ -229,11 +227,12 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                               children: [
                                 Expanded(
                                   child: DropdownButtonFormField<String?>(
+                                    isExpanded: true,
                                     key: ValueKey('filter_fac_${_filterDepartmentId}_$_filterFacultyId'),
                                     decoration: const InputDecoration(labelText: "Faculty", isDense: true),
                                     initialValue: _filterFacultyId,
                                     items: [
-                                      const DropdownMenuItem(value: null, child: Text("All Faculty")),
+                                      const DropdownMenuItem(value: null, child: Text("All Faculty", overflow: TextOverflow.ellipsis)),
                                       ...filteredFaculty.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name, overflow: TextOverflow.ellipsis))),
                                     ],
                                     onChanged: (val) => setState(() => _filterFacultyId = val),
@@ -265,12 +264,13 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                 Expanded(
                                   flex: 2,
                                   child: DropdownButtonFormField<String?>(
+                                    isExpanded: true,
                                     key: ValueKey('filter_dept_$_filterDepartmentId'),
                                     decoration: const InputDecoration(labelText: "Department", hintText: "All Depts"),
                                     initialValue: _filterDepartmentId,
                                     items: [
-                                      const DropdownMenuItem(value: null, child: Text("All Departments")),
-                                      ...departments.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name))),
+                                      const DropdownMenuItem(value: null, child: Text("All Departments", overflow: TextOverflow.ellipsis)),
+                                      ...departments.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name, overflow: TextOverflow.ellipsis))),
                                     ],
                                     onChanged: (val) {
                                       setState(() {
@@ -289,12 +289,13 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                               Expanded(
                                 flex: 2,
                                 child: DropdownButtonFormField<String?>(
+                                  isExpanded: true,
                                   key: ValueKey('filter_course_${_filterDepartmentId}_$_filterCourseId'),
                                   decoration: const InputDecoration(labelText: "Course", hintText: "All Courses"),
                                   initialValue: _filterCourseId,
                                   items: [
-                                    const DropdownMenuItem(value: null, child: Text("All Courses")),
-                                    ...filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.code))),
+                                    const DropdownMenuItem(value: null, child: Text("All Courses", overflow: TextOverflow.ellipsis)),
+                                    ...filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.code, overflow: TextOverflow.ellipsis))),
                                   ],
                                   onChanged: (val) {
                                     setState(() {
@@ -310,12 +311,13 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                               Expanded(
                                 flex: 2,
                                 child: DropdownButtonFormField<String?>(
+                                  isExpanded: true,
                                   key: ValueKey('filter_sem_${_filterCourseId}_$_filterSemesterId'),
                                   decoration: const InputDecoration(labelText: "Semester", hintText: "All Semesters"),
                                   initialValue: _filterSemesterId,
                                   items: [
-                                    const DropdownMenuItem(value: null, child: Text("All Semesters")),
-                                    ...filteredSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
+                                    const DropdownMenuItem(value: null, child: Text("All Semesters", overflow: TextOverflow.ellipsis)),
+                                    ...filteredSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))),
                                   ],
                                   onChanged: (val) {
                                     setState(() {
@@ -330,12 +332,13 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                               Expanded(
                                 flex: 2,
                                 child: DropdownButtonFormField<String?>(
+                                  isExpanded: true,
                                   key: ValueKey('filter_sec_${_filterSemesterId}_$_filterSectionId'),
                                   decoration: const InputDecoration(labelText: "Section", hintText: "All Sections"),
                                   initialValue: _filterSectionId,
                                   items: [
-                                    const DropdownMenuItem(value: null, child: Text("All Sections")),
-                                    ...filteredSections.map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name))),
+                                    const DropdownMenuItem(value: null, child: Text("All Sections", overflow: TextOverflow.ellipsis)),
+                                    ...filteredSections.map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name, overflow: TextOverflow.ellipsis))),
                                   ],
                                   onChanged: (val) => setState(() => _filterSectionId = val),
                                 ),
@@ -348,12 +351,13 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                               Expanded(
                                 flex: 2,
                                 child: DropdownButtonFormField<String?>(
+                                  isExpanded: true,
                                   key: ValueKey('filter_fac_${_filterDepartmentId}_$_filterFacultyId'),
                                   decoration: const InputDecoration(labelText: "Faculty", hintText: "All Faculty"),
                                   initialValue: _filterFacultyId,
                                   items: [
-                                    const DropdownMenuItem(value: null, child: Text("All Faculty")),
-                                    ...filteredFaculty.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name))),
+                                    const DropdownMenuItem(value: null, child: Text("All Faculty", overflow: TextOverflow.ellipsis)),
+                                    ...filteredFaculty.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name, overflow: TextOverflow.ellipsis))),
                                   ],
                                   onChanged: (val) => setState(() => _filterFacultyId = val),
                                 ),
@@ -362,12 +366,13 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                               Expanded(
                                 flex: 2,
                                 child: DropdownButtonFormField<String?>(
+                                  isExpanded: true,
                                   key: ValueKey('filter_sub_${_filterSemesterId}_$_filterSubjectId'),
                                   decoration: const InputDecoration(labelText: "Subject", hintText: "All Subjects"),
                                   initialValue: _filterSubjectId,
                                   items: [
-                                    const DropdownMenuItem(value: null, child: Text("All Subjects")),
-                                    ...filteredSubjects.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.code} - ${s.name}'))),
+                                    const DropdownMenuItem(value: null, child: Text("All Subjects", overflow: TextOverflow.ellipsis)),
+                                    ...filteredSubjects.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.code} - ${s.name}', overflow: TextOverflow.ellipsis))),
                                   ],
                                   onChanged: (val) => setState(() => _filterSubjectId = val),
                                 ),
@@ -376,12 +381,13 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                               Expanded(
                                 flex: 2,
                                 child: DropdownButtonFormField<String?>(
+                                  isExpanded: true,
                                   key: ValueKey('filter_ay_$_filterAcademicYearId'),
                                   decoration: const InputDecoration(labelText: "Academic Year", hintText: "All Years"),
                                   initialValue: _filterAcademicYearId,
                                   items: [
-                                    const DropdownMenuItem(value: null, child: Text("All Academic Years")),
-                                    ...academicYears.map((y) => DropdownMenuItem(value: y.id, child: Text(y.name))),
+                                    const DropdownMenuItem(value: null, child: Text("All Academic Years", overflow: TextOverflow.ellipsis)),
+                                    ...academicYears.map((y) => DropdownMenuItem(value: y.id, child: Text(y.name, overflow: TextOverflow.ellipsis))),
                                   ],
                                   onChanged: (val) => setState(() => _filterAcademicYearId = val),
                                 ),
@@ -405,7 +411,54 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+
+            // Unassigned Subjects Indicator Banner
+            Builder(
+              builder: (context) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                final activeAssignments = (assignmentsAsync.valueOrNull ?? []).where((a) {
+                  if (!a.isActive) return false;
+                  if (_filterSemesterId != null && a.semesterId != _filterSemesterId) return false;
+                  if (_filterSectionId != null && a.sectionId != _filterSectionId) return false;
+                  return true;
+                }).toList();
+                final assignedSubjectIds = activeAssignments.map((a) => a.subjectId).toSet();
+                final unassigned = filteredSubjects.where((s) => !assignedSubjectIds.contains(s.id)).toList();
+
+                if (unassigned.isEmpty) return const SizedBox.shrink();
+
+                return Container(
+                  key: const Key('unassigned_subjects_banner'),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AcadexColors.warning.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AcadexRadius.md),
+                    border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(LucideIcons.alertTriangle, size: 18, color: AcadexColors.warning),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Unassigned Subjects (${unassigned.length}): ${unassigned.map((s) => "${s.code} ${s.name}").join(", ")}',
+                          style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: () => _openAssignmentDialog(),
+                        child: const Text('Assign Now', style: TextStyle(fontWeight: FontWeight.w700, color: AcadexColors.primary)),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
 
             // Content Area
             Expanded(
@@ -413,9 +466,10 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                 loading: () => const Center(child: AcadexLoadingState(message: "Loading faculty assignments...")),
                 error: (err, _) => Center(
                   child: AcadexErrorState(
-                    title: "Failed to load assignments",
+                    title: "Failed to load faculty assignments",
                     message: err.toString(),
                     onRetry: () => ref.invalidate(facultyAssignmentsProvider),
+                    retryLabel: "Retry",
                   ),
                 ),
                 data: (allAssignments) {

@@ -15,6 +15,7 @@ class UserListItem extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onToggleStatus;
+  final VoidCallback? onDelete;
 
   const UserListItem({
     super.key,
@@ -24,6 +25,7 @@ class UserListItem extends StatelessWidget {
     this.onTap,
     this.onEdit,
     this.onToggleStatus,
+    this.onDelete,
   });
 
   @override
@@ -129,7 +131,14 @@ class UserListItem extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: AcadexSpacing.sm),
+          if (onDelete != null) ...[
+            IconButton(
+              icon: const Icon(Icons.delete_forever, color: AcadexColors.error, size: 20),
+              tooltip: 'Delete Permanently',
+              onPressed: onDelete,
+            ),
+          ],
+          const SizedBox(width: AcadexSpacing.xs),
           const Icon(
             Icons.chevron_right,
             color: AcadexColors.textSecondary,

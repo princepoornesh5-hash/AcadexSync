@@ -22,7 +22,9 @@ class AttendanceSession {
   final String? lastModifiedBy;
   final int version;
 
+  final String? timetableId;
   final String? timetableEntryId;
+  final String? facultyAssignmentId;
   final String? roomNumber;
   final String? building;
 
@@ -39,7 +41,9 @@ class AttendanceSession {
     required this.date,
     required this.records,
     this.status = 'open',
+    this.timetableId,
     this.timetableEntryId,
+    this.facultyAssignmentId,
     this.roomNumber,
     this.building,
     this.isSubmitted = false,
@@ -81,7 +85,9 @@ class AttendanceSession {
     DateTime? date,
     List<AttendanceRecord>? records,
     String? status,
+    String? timetableId,
     String? timetableEntryId,
+    String? facultyAssignmentId,
     String? roomNumber,
     String? building,
     bool? isSubmitted,
@@ -105,7 +111,9 @@ class AttendanceSession {
       date: date ?? this.date,
       records: records ?? this.records,
       status: status ?? this.status,
+      timetableId: timetableId ?? this.timetableId,
       timetableEntryId: timetableEntryId ?? this.timetableEntryId,
+      facultyAssignmentId: facultyAssignmentId ?? this.facultyAssignmentId,
       roomNumber: roomNumber ?? this.roomNumber,
       building: building ?? this.building,
       isSubmitted: isSubmitted ?? this.isSubmitted,
@@ -137,7 +145,9 @@ class AttendanceSession {
               .toList() ??
           [],
       status: statusStr,
-      timetableEntryId: json['timetableEntryId'] as String?,
+      timetableId: (json['timetableId'] ?? json['timetable']?['_id'])?.toString(),
+      timetableEntryId: (json['timetableEntryId'] ?? json['entry']?['_id'])?.toString(),
+      facultyAssignmentId: (json['facultyAssignmentId'] ?? json['facultyAssignment']?['_id'])?.toString(),
       roomNumber: json['roomNumber'] as String?,
       building: json['building'] as String?,
       isSubmitted: json['isSubmitted'] as bool? ?? false,
@@ -164,7 +174,9 @@ class AttendanceSession {
       'date': date.toIso8601String(),
       'records': records.map((r) => r.toJson()).toList(),
       'status': status,
+      if (timetableId != null) 'timetableId': timetableId,
       if (timetableEntryId != null) 'timetableEntryId': timetableEntryId,
+      if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
       if (roomNumber != null) 'roomNumber': roomNumber,
       if (building != null) 'building': building,
       'isSubmitted': isSubmitted,

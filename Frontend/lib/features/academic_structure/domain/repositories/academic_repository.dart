@@ -38,6 +38,7 @@ abstract class AcademicRepository {
   Future<void> updateCollege(College college);
   Future<void> deactivateCollege(String id);
   Future<void> updateCollegeStatus(String id, String status);
+  Future<void> deleteCollegePermanently(String id);
   Future<ProvisionAdminResult> provisionCollegeAdmin(String collegeId, Map<String, dynamic> data);
 
   Future<void> addDepartment(Department department);
@@ -110,6 +111,13 @@ abstract class AcademicRepository {
     String? academicYearId,
   });
   Future<void> createFacultyAssignment(FacultyAssignment assignment);
+  Future<void> updateFacultyAssignment(
+    String assignmentId, {
+    String? roomId,
+    int? maxStudents,
+    String? assignmentType,
+    bool? isActive,
+  });
   Future<void> removeFacultyAssignment(String assignmentId);
 
   Future<void> addStudent(Student student);
@@ -118,6 +126,14 @@ abstract class AcademicRepository {
   Future<void> deactivateStudent(String id);
   Future<void> transferStudentDepartment(String studentId, String newDepartmentId);
   Future<Map<String, dynamic>> getStudentSummary(String studentId);
+  Future<List<StudentEnrollment>> getEnrollments({
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? sectionId,
+    String? studentId,
+    String? status,
+  });
   Future<void> enrollStudent({
     required String studentId,
     required String courseId,
@@ -126,6 +142,8 @@ abstract class AcademicRepository {
     required String sectionId,
     String? enrollmentDate,
   });
+  Future<void> updateEnrollment(String id, {String? sectionId, String? status});
+  Future<void> deleteEnrollment(String id);
   Future<void> bulkPromoteStudents(List<String> studentIds, String newSemesterId, String newSectionId);
   Future<void> bulkTransferStudents(List<String> studentIds, String newSectionId);
 

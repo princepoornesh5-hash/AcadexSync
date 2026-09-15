@@ -10,6 +10,7 @@ import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../providers/academic_providers.dart';
 import '../../domain/models/academic_models.dart';
+import '../widgets/enroll_student_dialog.dart';
 
 class SectionDetailScreen extends ConsumerWidget {
   final String sectionId;
@@ -112,7 +113,11 @@ class SectionDetailScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Hero Header Card ──────────────────────────────────────
-              _buildHeroCard(context, ref, isDark, isMobile, section),
+              _buildHeroCard(context, ref, isDark, isMobile, section, course, semester, academicYear),
+              const SizedBox(height: 20),
+
+              // ── Section Student Roster (Authoritative) ────────────────
+              _buildStudentRosterCard(context, ref, isDark, section, course, semester, academicYear),
               const SizedBox(height: 20),
 
               // ── Academic Hierarchy Card ───────────────────────────────
@@ -158,7 +163,12 @@ class SectionDetailScreen extends ConsumerWidget {
     bool isDark,
     bool isMobile,
     Section section,
+    Course? course,
+    Semester? semester,
+    AcademicYear? academicYear,
   ) {
+    final activeStudentCount = ref.watch(sectionActiveEnrollmentCountProvider(section.id));
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -198,16 +208,19 @@ class SectionDetailScreen extends ConsumerWidget {
                       ).copyWith(fontSize: 20, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 6),
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
                       children: [
                         Container(
+                          key: const Key('section_students_count_badge'),
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: AcadexColors.primary.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            "${section.capacity} Seats",
+                            "Students: $activeStudentCount",
                             style: const TextStyle(
                               color: AcadexColors.primary,
                               fontSize: 11,
@@ -215,7 +228,21 @@ class SectionDetailScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AcadexColors.infoLight,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            "${section.capacity} Seats",
+                            style: const TextStyle(
+                              color: AcadexColors.info,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
@@ -247,9 +274,22 @@ class SectionDetailScreen extends ConsumerWidget {
             runSpacing: 8,
             children: [
               AcadexButton(
+                key: const Key('enroll_student_hero_button'),
+                label: 'Enroll Student',
+                icon: LucideIcons.userPlus,
+                variant: AcadexButtonVariant.primary,
+                onPressed: () => EnrollStudentDialog.show(
+                  context,
+                  section: section,
+                  course: course,
+                  semester: semester,
+                  academicYear: academicYear,
+                ),
+              ),
+              AcadexButton(
                 label: 'Edit Section',
                 icon: LucideIcons.edit,
-                variant: AcadexButtonVariant.primary,
+                variant: AcadexButtonVariant.secondary,
                 onPressed: () => context.push('/academics/sections/edit/$sectionId'),
               ),
               AcadexButton(
@@ -259,6 +299,226 @@ class SectionDetailScreen extends ConsumerWidget {
                 onPressed: () => _confirmStatusToggle(context, ref, section.name, section.isActive),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStudentRosterCard(
+    BuildContext context,
+    WidgetRef ref,
+    bool isDark,
+    Section section,
+    Course? course,
+    Semester? semester,
+    AcademicYear? academicYear,
+  ) {
+    final enrollmentsAsync = ref.watch(sectionEnrollmentsNotifierProvider(section.id));
+
+    return AcadexCard(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 420;
+              if (isNarrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(LucideIcons.graduationCap, size: 18, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Section Student Roster',
+                            style: AcadexTypography.body(
+                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            ).copyWith(fontWeight: FontWeight.w700, fontSize: 16),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    AcadexButton(
+                      key: const Key('roster_enroll_student_button'),
+                      label: 'Enroll Student',
+                      icon: LucideIcons.userPlus,
+                      variant: AcadexButtonVariant.secondary,
+                      onPressed: () => EnrollStudentDialog.show(
+                        context,
+                        section: section,
+                        course: course,
+                        semester: semester,
+                        academicYear: academicYear,
+                      ),
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(LucideIcons.graduationCap, size: 18, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Section Student Roster',
+                        style: AcadexTypography.body(
+                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                        ).copyWith(fontWeight: FontWeight.w700, fontSize: 16),
+                      ),
+                    ],
+                  ),
+                  AcadexButton(
+                    key: const Key('roster_enroll_student_button'),
+                    label: 'Enroll Student',
+                    icon: LucideIcons.userPlus,
+                    variant: AcadexButtonVariant.secondary,
+                    onPressed: () => EnrollStudentDialog.show(
+                      context,
+                      section: section,
+                      course: course,
+                      semester: semester,
+                      academicYear: academicYear,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 14),
+          const Divider(height: 1),
+          const SizedBox(height: 14),
+          enrollmentsAsync.when(
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24.0),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            error: (err, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Text('Failed to load roster: $err', style: const TextStyle(color: AcadexColors.error)),
+                    const SizedBox(height: 8),
+                    AcadexButton(
+                      label: 'Retry',
+                      onPressed: () => ref.invalidate(sectionEnrollmentsNotifierProvider(section.id)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            data: (enrollments) {
+              final activeEnrollments = enrollments.where((e) => e.isActive).toList();
+
+              if (activeEnrollments.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(LucideIcons.users, size: 36, color: AcadexColors.inkMuted),
+                        const SizedBox(height: 10),
+                        Text(
+                          'No students enrolled in Section ${section.name} yet',
+                          style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tap "Enroll Student" to attach active department students to this section.',
+                          style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                key: const Key('section_roster_list'),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: activeEnrollments.length,
+                separatorBuilder: (_, __) => const Divider(height: 12),
+                itemBuilder: (context, index) {
+                  final enrollment = activeEnrollments[index];
+
+                  return Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: AcadexColors.primary.withValues(alpha: 0.12),
+                        child: Text(
+                          enrollment.studentName.isNotEmpty ? enrollment.studentName[0].toUpperCase() : 'S',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AcadexColors.primary),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              enrollment.studentName,
+                              style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
+                            ),
+                            Text(
+                              'Roll: ${enrollment.studentRollNumber.isNotEmpty ? enrollment.studentRollNumber : "N/A"} • ${enrollment.studentEmail.isNotEmpty ? enrollment.studentEmail : enrollment.status}',
+                              style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted).copyWith(fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AcadexColors.successLight,
+                          borderRadius: AcadexRadius.borderRadiusFull,
+                        ),
+                        child: const Text(
+                          'Active',
+                          style: TextStyle(color: AcadexColors.success, fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        tooltip: 'Withdraw from Section',
+                        icon: const Icon(LucideIcons.userMinus, size: 16, color: AcadexColors.error),
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Withdraw Student?'),
+                              content: Text('Withdraw ${enrollment.studentName} from Section ${section.name}?'),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.error, foregroundColor: Colors.white),
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: const Text('Withdraw'),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            await ref.read(sectionEnrollmentsNotifierProvider(section.id).notifier).withdrawStudent(enrollment.id);
+                          }
+                        },
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
           ),
         ],
       ),
@@ -281,11 +541,13 @@ class SectionDetailScreen extends ConsumerWidget {
             children: [
               Icon(LucideIcons.graduationCap, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
               const SizedBox(width: 8),
-              Text(
-                'Academic Hierarchy & Affiliation',
-                style: AcadexTypography.body(
-                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                ).copyWith(fontWeight: FontWeight.w700),
+              Expanded(
+                child: Text(
+                  'Academic Hierarchy & Affiliation',
+                  style: AcadexTypography.body(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ).copyWith(fontWeight: FontWeight.w700),
+                ),
               ),
             ],
           ),
@@ -340,11 +602,13 @@ class SectionDetailScreen extends ConsumerWidget {
             children: [
               Icon(LucideIcons.armchair, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
               const SizedBox(width: 8),
-              Text(
-                'Seating & Metadata',
-                style: AcadexTypography.body(
-                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                ).copyWith(fontWeight: FontWeight.w700),
+              Expanded(
+                child: Text(
+                  'Seating & Metadata',
+                  style: AcadexTypography.body(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ).copyWith(fontWeight: FontWeight.w700),
+                ),
               ),
             ],
           ),

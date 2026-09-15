@@ -103,4 +103,9 @@ class FirebaseUserRepository implements UserRepository {
       await updateUser(updated);
     }
   }
+
+  @override
+  Future<void> deleteUserPermanently(String id) async {
+    await _firestoreService.deleteDocument('users', id);
+  }
 }

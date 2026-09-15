@@ -125,21 +125,23 @@ class NotificationCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             notification.title,
-                            style: AcadexTypography.body(color: isUnread ? Theme.of(context).colorScheme.onSurface : (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)).copyWith(
-                              fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
+                            style: AcadexTypography.body(
+                              color: isUnread ? AcadexColors.ink : AcadexColors.inkSecondary,
+                            ).copyWith(
+                              fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
                             ),
                           ),
                         ),
                         Text(
                           _formatRelativeTime(notification.timestamp),
-                          style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                          style: AcadexTypography.caption(color: AcadexColors.inkMuted),
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
                     Text(
                       notification.message,
-                      style: AcadexTypography.bodySmall(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                      style: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
                     ),
                     if (notification.navigationTarget != null)
                       Padding(
@@ -148,10 +150,10 @@ class NotificationCard extends StatelessWidget {
                           children: [
                             Text(
                               'View details',
-                              style: AcadexTypography.caption(color: Theme.of(context).primaryColor).copyWith(fontWeight: FontWeight.w600),
+                              style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(width: 4),
-                            Icon(LucideIcons.chevronRight, size: 14, color: Theme.of(context).primaryColor),
+                            const Icon(LucideIcons.chevronRight, size: 14, color: AcadexColors.primary),
                           ],
                         ),
                       ),

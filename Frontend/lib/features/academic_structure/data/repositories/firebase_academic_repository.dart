@@ -386,6 +386,14 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<void> deleteCollegePermanently(String id) async {
+    if (_currentUser != null && _currentUser.role != AppRole.superAdmin) {
+      throw const BackendPermissionException("Only Super Admin can delete colleges");
+    }
+    await _firestoreService.deleteDocument('colleges', id);
+  }
+
+  @override
   Future<College> getCollegeById(String id) async {
     final doc = await _firestoreService.getDocument('colleges', id);
     if (doc == null) throw Exception('College not found');
@@ -1913,5 +1921,58 @@ class FirebaseAcademicRepository implements AcademicRepository {
       }
     }
     return map;
+  }
+
+  @override
+  Future<void> updateFacultyAssignment(
+    String assignmentId, {
+    String? roomId,
+    int? maxStudents,
+    String? assignmentType,
+    bool? isActive,
+  }) async {
+    final doc = await _firestoreService.getDocument('facultyAssignments', assignmentId);
+    if (doc != null) {
+      final updated = Map<String, dynamic>.from(doc);
+      if (roomId != null) updated['roomId'] = roomId;
+      if (maxStudents != null) updated['maxStudents'] = maxStudents;
+      if (assignmentType != null) updated['assignmentType'] = assignmentType;
+      if (isActive != null) updated['isActive'] = isActive;
+      updated['updatedAt'] = DateTime.now().toIso8601String();
+      await _firestoreService.setDocument('facultyAssignments', assignmentId, updated);
+    }
+  }
+
+  @override
+  Future<List<StudentEnrollment>> getEnrollments({
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? sectionId,
+    String? studentId,
+    String? status,
+  }) async {
+    final docs = await _firestoreService.queryCollection('studentEnrollments', {
+      if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
+      if (studentId != null && studentId.isNotEmpty) 'studentId': studentId,
+    });
+    return docs.map((d) => StudentEnrollment.fromJson(d)).toList();
+  }
+
+  @override
+  Future<void> updateEnrollment(String id, {String? sectionId, String? status}) async {
+    final doc = await _firestoreService.getDocument('studentEnrollments', id);
+    if (doc != null) {
+      final updated = Map<String, dynamic>.from(doc);
+      if (sectionId != null) updated['sectionId'] = sectionId;
+      if (status != null) updated['status'] = status;
+      updated['updatedAt'] = DateTime.now().toIso8601String();
+      await _firestoreService.setDocument('studentEnrollments', id, updated);
+    }
+  }
+
+  @override
+  Future<void> deleteEnrollment(String id) async {
+    await updateEnrollment(id, status: 'withdrawn');
   }
 }

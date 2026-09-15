@@ -3,6 +3,7 @@ import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/notifications/presentation/providers/notification_providers.dart';
 import '../../../../features/dashboard/presentation/providers/dashboard_providers.dart';
 import '../../../../features/reports/presentation/providers/reports_providers.dart';
+import '../../../timetable/presentation/providers/timetable_providers.dart';
 import '../../../../core/firebase/firebase_services.dart';
 import '../../domain/models/attendance_record.dart';
 import '../../domain/models/attendance_session.dart';
@@ -173,7 +174,9 @@ final saveSessionProvider = FutureProvider.family<bool, String>((ref, activeClas
     timeSlot: activeClass.timeSlot,
     date: activeClass.date,
     records: records,
+    timetableId: activeClass.timetableId,
     timetableEntryId: activeClass.effectiveTimetableEntryId,
+    facultyAssignmentId: activeClass.facultyAssignmentId,
     roomNumber: activeClass.roomNumber,
     building: activeClass.building,
   );
@@ -183,6 +186,8 @@ final saveSessionProvider = FutureProvider.family<bool, String>((ref, activeClas
     // Invalidate assigned classes, sessions, dashboard stats, and reports in real time
     ref.invalidate(assignedClassesProvider);
     ref.invalidate(facultySessionsProvider);
+    ref.invalidate(weeklyTimetableProvider);
+    ref.invalidate(todayScheduleProvider);
     ref.invalidate(studentStatsProvider);
     ref.invalidate(facultyStatsProvider);
     ref.invalidate(hodStatsProvider);

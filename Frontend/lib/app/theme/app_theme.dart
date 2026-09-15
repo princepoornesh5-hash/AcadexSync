@@ -545,6 +545,7 @@ class AppTheme {
       dialogTheme: DialogThemeData(
         backgroundColor: AcadexColors.surface,
         elevation: 4,
+        constraints: const BoxConstraints(maxWidth: 480),
         shape: RoundedRectangleBorder(
           borderRadius: AcadexRadius.borderRadiusXl,
           side: const BorderSide(color: AcadexColors.hairline, width: 1),
@@ -781,6 +782,7 @@ class AppTheme {
       dialogTheme: DialogThemeData(
         backgroundColor: AcadexColors.darkSurface,
         elevation: 4,
+        constraints: const BoxConstraints(maxWidth: 480),
         shape: RoundedRectangleBorder(
           borderRadius: AcadexRadius.borderRadiusXl,
           side: const BorderSide(color: AcadexColors.darkHairline, width: 1),

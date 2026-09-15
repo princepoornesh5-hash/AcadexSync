@@ -208,7 +208,6 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
                               color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                             ),
                             decoration: const InputDecoration(
-                              labelText: 'Full Name *',
                               hintText: 'e.g. Dr. Rajesh Kumar',
                               prefixIcon: Icon(LucideIcons.user, size: 18),
                             ),
@@ -230,7 +229,6 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
                               color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                             ),
                             decoration: const InputDecoration(
-                              labelText: 'PIN Number *',
                               hintText: 'e.g. GIT-ADMIN-01',
                               prefixIcon: Icon(LucideIcons.idCard, size: 18),
                               helperText: 'Official institutional PIN Number used by administrator to log in.',
@@ -258,7 +256,6 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
                               color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                             ),
                             decoration: const InputDecoration(
-                              labelText: 'Email (Optional)',
                               hintText: 'e.g. admin@git.edu',
                               prefixIcon: Icon(LucideIcons.mail, size: 18),
                             ),
@@ -282,7 +279,6 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
                               color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                             ),
                             decoration: const InputDecoration(
-                              labelText: 'Phone (Optional)',
                               hintText: 'e.g. 9876543210',
                               prefixIcon: Icon(LucideIcons.phone, size: 18),
                             ),

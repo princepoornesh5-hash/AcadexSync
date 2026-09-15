@@ -19,10 +19,17 @@ class ApiTimetableRepository implements TimetableRepository {
   ApiTimetableRepository([ApiClient? client]) : _client = client ?? apiClient;
 
   Exception _extractError(DioException e, String fallback) {
-    final message = e.response?.data?['error']?['message'] ??
-        e.response?.data?['message'] ??
-        e.message ??
-        fallback;
+    final errData = e.response?.data;
+    String? message;
+    if (errData is Map) {
+      if (errData['error'] is Map) {
+        message = errData['error']['message']?.toString();
+      } else if (errData['error'] is String) {
+        message = errData['error'] as String;
+      }
+      message ??= errData['message']?.toString();
+    }
+    message ??= e.message ?? fallback;
     return Exception(message);
   }
 
@@ -42,7 +49,7 @@ class ApiTimetableRepository implements TimetableRepository {
       collegeId: collegeId ?? '',
       departmentId: departmentId,
       sectionId: sectionId,
-      facultyId: role == AppRole.faculty ? userId : null,
+      facultyId: role == AppRole.faculty ? 'me' : null,
     );
     yield list;
   }
@@ -114,6 +121,7 @@ class ApiTimetableRepository implements TimetableRepository {
 
       return TimetableModel(
         id: (m['id'] ?? m['_id'] ?? '').toString(),
+        timetableId: m['timetableId']?.toString() ?? m['parentTimetableId']?.toString(),
         collegeId: (m['collegeId'] ?? collegeId).toString(),
         departmentId: (m['departmentId'] ?? departmentId ?? '').toString(),
         courseId: (m['courseId'] ?? '').toString(),
@@ -122,6 +130,8 @@ class ApiTimetableRepository implements TimetableRepository {
         sectionId: (m['sectionId'] ?? sectionId ?? '').toString(),
         subjectId: (m['subjectId'] ?? m['subject']?['_id'] ?? '').toString(),
         facultyId: (m['facultyId'] ?? m['faculty']?['_id'] ?? facultyId ?? '').toString(),
+        facultyAssignmentId: m['facultyAssignmentId']?.toString(),
+        roomId: m['roomId']?.toString(),
         dayOfWeek: day,
         startTime: (m['startTime'] ?? '09:00').toString(),
         endTime: (m['endTime'] ?? '10:00').toString(),

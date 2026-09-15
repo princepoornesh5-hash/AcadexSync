@@ -104,6 +104,37 @@ void main() {
       ),
     ];
 
+    final testAssignments = [
+      FacultyAssignment(
+        id: 'asgn-ds',
+        collegeId: 'col-1',
+        departmentId: 'dept-cse',
+        courseId: 'crs-btech',
+        academicYearId: 'ay-2026',
+        semesterId: 'sem-4',
+        sectionId: 'sec-4a',
+        subjectId: 'sub-ds',
+        facultyId: 'fac-1',
+        facultyName: 'Dr. Alan Turing',
+        assignmentType: 'Theory',
+        isActive: true,
+      ),
+      FacultyAssignment(
+        id: 'asgn-algo',
+        collegeId: 'col-1',
+        departmentId: 'dept-cse',
+        courseId: 'crs-btech',
+        academicYearId: 'ay-2026',
+        semesterId: 'sem-4',
+        sectionId: 'sec-4a',
+        subjectId: 'sub-algo',
+        facultyId: 'fac-2',
+        facultyName: 'Prof. Grace Hopper',
+        assignmentType: 'Practical',
+        isActive: true,
+      ),
+    ];
+
     final testPeriods = [
       TimetablePeriodModel(
         id: 'p-1',
@@ -221,6 +252,7 @@ void main() {
           timetableDepartmentMapProvider.overrideWithValue(deptMap),
           timetableCourseMapProvider.overrideWithValue(courseMap),
           timetableSectionMapProvider.overrideWithValue(sectionMap),
+          facultyAssignmentsBySectionProvider('sec-4a').overrideWithValue(testAssignments),
         ],
         child: MaterialApp(
           theme: isDark ? ThemeData.dark() : ThemeData.light(),
@@ -267,22 +299,15 @@ void main() {
       expect(find.textContaining('Computer Science • B.Tech CSE • Sem sem-4 • Sec Section A'), findsOneWidget);
 
       // Verify Form fields are present
-      expect(find.text('Subject *'), findsOneWidget);
-      expect(find.text('Faculty *'), findsOneWidget);
+      expect(find.text('Faculty Assignment *'), findsOneWidget);
       expect(find.text('Session Type'), findsOneWidget);
       expect(find.text('Duration (Consecutive Periods)'), findsOneWidget);
       expect(find.text('Room Number'), findsOneWidget);
 
-      // Select Subject
-      await tester.tap(find.text('Select subject'));
+      // Select Faculty Assignment
+      await tester.tap(find.text('Select Faculty Assignment'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Data Structures (CS201)').last);
-      await tester.pumpAndSettle();
-
-      // Select Faculty
-      await tester.tap(find.text('Select faculty member'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Dr. Alan Turing').last);
+      await tester.tap(find.textContaining('Data Structures (CS201) — Dr. Alan Turing').last);
       await tester.pumpAndSettle();
 
       // Enter Room Number
@@ -317,6 +342,7 @@ void main() {
         periodSpan: 1,
         startTime: '09:00',
         endTime: '10:00',
+        facultyAssignmentId: 'asgn-ds',
         subjectId: 'sub-ds',
         facultyId: 'fac-1',
         roomNumber: 'LH-101',
@@ -346,8 +372,8 @@ void main() {
 
       // Verify Header & Mode
       expect(find.text('Edit Class'), findsOneWidget);
-      expect(find.text('Data Structures (CS201)'), findsOneWidget);
-      expect(find.text('Dr. Alan Turing'), findsOneWidget);
+      expect(find.textContaining('Data Structures'), findsWidgets);
+      expect(find.textContaining('Dr. Alan Turing'), findsWidgets);
       expect(find.text('LH-101'), findsOneWidget);
       expect(find.text('Main Block'), findsOneWidget);
       expect(find.text('Delete Class'), findsOneWidget);
@@ -497,15 +523,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Select Subject & Faculty
-      await tester.tap(find.text('Select subject'));
+      // Select Faculty Assignment
+      await tester.tap(find.text('Select Faculty Assignment'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Data Structures (CS201)').last);
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Select faculty member'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Dr. Alan Turing').last);
+      await tester.tap(find.textContaining('Data Structures (CS201) — Dr. Alan Turing').last);
       await tester.pumpAndSettle();
 
       // Expand to 2 periods (12:00 - 15:00) -> overlaps with 13:00-14:00 Lunch break
@@ -565,15 +586,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Select Subject & Faculty
-      await tester.tap(find.text('Select subject'));
+      // Select Faculty Assignment
+      await tester.tap(find.text('Select Faculty Assignment'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Data Structures (CS201)').last);
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Select faculty member'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Dr. Alan Turing').last);
+      await tester.tap(find.textContaining('Data Structures (CS201) — Dr. Alan Turing').last);
       await tester.pumpAndSettle();
 
       // Set Span to 2 Periods (09:00 - 11:00) which collides with existingMondayP2 (10:00-11:00)
@@ -636,14 +652,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Select subject'), warnIfMissed: false);
+      await tester.tap(find.text('Select Faculty Assignment'), warnIfMissed: false);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Data Structures (CS201)').last, warnIfMissed: false);
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Select faculty member'), warnIfMissed: false);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Dr. Alan Turing').last, warnIfMissed: false);
+      await tester.tap(find.textContaining('Data Structures (CS201) — Dr. Alan Turing').last, warnIfMissed: false);
       await tester.pumpAndSettle();
 
       // Enter Room LH-101

@@ -451,6 +451,7 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
     ThemeData theme,
   ) {
     return AcadexDataTable(
+      showCheckboxColumn: true,
       columns: const ["PIN Number", "Roll No", "Student Name", "Department", "Semester", "Section", "Status", "Actions"],
       rows: filteredStudents.map((s) {
         final deptName = deptMap[s.departmentId]?.name ?? (s.departmentId.isNotEmpty ? s.departmentId : '—');

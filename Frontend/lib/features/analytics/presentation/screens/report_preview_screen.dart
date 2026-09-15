@@ -127,7 +127,6 @@ class ReportPreviewScreen extends ConsumerWidget {
               ),
             ),
           ],
-        ),
       ),
     );
 

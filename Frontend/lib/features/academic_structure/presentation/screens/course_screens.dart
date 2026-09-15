@@ -13,6 +13,8 @@ import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../features/auth/domain/models/auth_state.dart';
 import '../../../../features/auth/domain/models/role_enum.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../widgets/fresh_department_setup_card.dart';
 import '../providers/academic_providers.dart';
 import '../../domain/models/academic_models.dart';
 
@@ -100,11 +102,18 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                 }).toList();
 
                 if (filtered.isEmpty) {
+                  if (_searchQuery.isEmpty) {
+                    return FreshDepartmentSetupCard(
+                      currentStep: AcademicSetupStep.course,
+                      actionLabel: "Add First Course",
+                      customMessage:
+                          "Step 1 of 3: Establish your department's initial degree course (e.g. Diploma in Computer Engineering), then select an Academic Year and configure Semesters.",
+                      onAction: () => context.push('/academics/courses/new'),
+                    );
+                  }
                   return AcadexEmptyState(
                     title: "No Courses Found",
-                    subtitle: _searchQuery.isNotEmpty
-                        ? "No courses match '$_searchQuery'."
-                        : "Get started by adding your first degree program or course.",
+                    subtitle: "No courses match '$_searchQuery'.",
                     icon: LucideIcons.bookOpen,
                     actionLabel: "Add Course",
                     onActionTap: () => context.push('/academics/courses/new'),
@@ -400,9 +409,21 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
     final authState = ref.watch(authProvider);
     final user = authState is AuthAuthenticated ? authState.user : null;
     final isSuperAdmin = user?.role == AppRole.superAdmin;
+    final isHod = user?.role == AppRole.hod;
     final userCollegeId = user?.collegeId;
+    final userDepartmentId = user?.departmentId ?? '';
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final departmentsAsync = ref.watch(departmentsProvider);
+    final deptMap = ref.watch(departmentMapProvider);
+
+    // If HOD, lock and derive department from user identity
+    if (isHod && userDepartmentId.isNotEmpty) {
+      _selectedDepartmentId ??= userDepartmentId;
+    }
+
+    final effectiveDeptId = _selectedDepartmentId ?? userDepartmentId;
+    final effectiveDeptName = deptMap[effectiveDeptId]?.name ??
+        (effectiveDeptId.isNotEmpty ? effectiveDeptId : 'Assigned Department');
 
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
@@ -432,50 +453,76 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
                   onSave: () => _save(userCollegeId, isSuperAdmin),
                   child: Column(
                     children: [
-                      // Department Selector (Scoped to College)
-                      AcadexFormField(
-                        label: "Department *",
-                        child: departmentsAsync.when(
-                          loading: () => const CircularProgressIndicator(),
-                          error: (e, _) => Text('Error loading departments: $e', style: const TextStyle(color: AcadexColors.error)),
-                          data: (depts) {
-                            if (depts.isEmpty) {
-                              return Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
-                                  borderRadius: AcadexRadius.borderRadiusMd,
+                      // Department Selector (Scoped to College or Derived for HOD)
+                      if (isHod)
+                        AcadexFormField(
+                          label: "Department",
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                              borderRadius: AcadexRadius.borderRadiusMd,
+                              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(LucideIcons.building, size: 16, color: AcadexColors.primary),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    effectiveDeptName,
+                                    style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                                  ),
                                 ),
-                                child: Row(
-                                  children: [
-                                    const Icon(LucideIcons.triangleAlert, color: AcadexColors.warning, size: 18),
-                                    const SizedBox(width: 10),
-                                    const Expanded(
-                                      child: Text(
-                                        'No departments found. Create a department first.',
-                                        style: TextStyle(fontSize: 12),
+                                const AcadexBadge(label: "YOUR DEPARTMENT", variant: AcadexBadgeVariant.primary),
+                              ],
+                            ),
+                          ),
+                        )
+                      else
+                        AcadexFormField(
+                          label: "Department *",
+                          child: departmentsAsync.when(
+                            loading: () => const CircularProgressIndicator(),
+                            error: (e, _) => Text('Error loading departments: $e', style: const TextStyle(color: AcadexColors.error)),
+                            data: (depts) {
+                              if (depts.isEmpty) {
+                                return Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? AcadexColors.warningDarkContainer : AcadexColors.warningLight,
+                                    borderRadius: AcadexRadius.borderRadiusMd,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(LucideIcons.triangleAlert, color: AcadexColors.warning, size: 18),
+                                      const SizedBox(width: 10),
+                                      const Expanded(
+                                        child: Text(
+                                          'No departments found. Create a department first.',
+                                          style: TextStyle(fontSize: 12),
+                                        ),
                                       ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => context.push('/academics/departments/new'),
-                                      child: const Text('Add Dept'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
+                                      TextButton(
+                                        onPressed: () => context.push('/academics/departments/new'),
+                                        child: const Text('Add Dept'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
 
-                            return DropdownButtonFormField<String>(
-                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                              initialValue: _selectedDepartmentId,
-                              decoration: const InputDecoration(hintText: "Select Department"),
-                              validator: (v) => v == null || v.isEmpty ? 'Department is required' : null,
-                              items: depts.map((d) => DropdownMenuItem(value: d.id, child: Text("${d.name} (${d.code})"))).toList(),
-                              onChanged: isEdit ? null : (v) => setState(() => _selectedDepartmentId = v),
-                            );
-                          },
+                              return DropdownButtonFormField<String>(
+                                dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                initialValue: _selectedDepartmentId,
+                                decoration: const InputDecoration(hintText: "Select Department"),
+                                validator: (v) => v == null || v.isEmpty ? 'Department is required' : null,
+                                items: depts.map((d) => DropdownMenuItem(value: d.id, child: Text("${d.name} (${d.code})"))).toList(),
+                                onChanged: isEdit ? null : (v) => setState(() => _selectedDepartmentId = v),
+                              );
+                            },
+                          ),
                         ),
-                      ),
                       const SizedBox(height: 14),
 
                       AcadexFormField(

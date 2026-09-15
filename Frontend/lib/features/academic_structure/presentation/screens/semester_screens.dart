@@ -12,6 +12,7 @@ import '../../../../core/presentation/widgets/acadex_empty_state.dart';
 import '../../../../core/presentation/widgets/acadex_form_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../widgets/fresh_department_setup_card.dart';
 import '../providers/academic_providers.dart';
 import '../../domain/models/academic_models.dart';
 
@@ -25,6 +26,8 @@ class SemesterListScreen extends ConsumerStatefulWidget {
 class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
   String _searchQuery = '';
   String _statusFilter = 'all'; // 'all' | 'current' | 'active' | 'upcoming' | 'completed'
+  String? _selectedCourseId;
+  String? _selectedAcademicYearId;
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +37,10 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = AcadexBreakpoints.isMobile(context);
 
-    final coursesMap = {for (final c in coursesAsync.valueOrNull ?? <Course>[]) c.id: c.name};
-    final yearsMap = {for (final y in yearsAsync.valueOrNull ?? <AcademicYear>[]) y.id: y.name};
+    final coursesList = coursesAsync.valueOrNull ?? <Course>[];
+    final yearsList = yearsAsync.valueOrNull ?? <AcademicYear>[];
+    final coursesMap = {for (final c in coursesList) c.id: c.name};
+    final yearsMap = {for (final y in yearsList) y.id: y.name};
 
     return AcadexPageContainer(
       scrollable: false,
@@ -53,7 +58,85 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
             actionLabel: "Add Semester",
           ),
           const SizedBox(height: 10),
-          // Filter Chips
+
+          // Contextual Filtering Row: Course + Academic Year
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.zero,
+            child: Row(
+              children: [
+                // Course Context Selector
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                    border: Border.all(
+                      color: _selectedCourseId != null ? AcadexColors.primary : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                    ),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedCourseId ?? 'all',
+                      isDense: true,
+                      dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                      items: [
+                        const DropdownMenuItem(value: 'all', child: Text('All Courses', style: TextStyle(fontSize: 12))),
+                        for (final c in coursesList)
+                          DropdownMenuItem(value: c.id, child: Text("${c.name} (${c.code})", style: const TextStyle(fontSize: 12))),
+                      ],
+                      onChanged: (v) => setState(() => _selectedCourseId = v == 'all' ? null : v),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+
+                // Academic Year Context Selector
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                    border: Border.all(
+                      color: _selectedAcademicYearId != null ? AcadexColors.primary : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                    ),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedAcademicYearId ?? 'all',
+                      isDense: true,
+                      dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                      items: [
+                        const DropdownMenuItem(value: 'all', child: Text('All Academic Years', style: TextStyle(fontSize: 12))),
+                        for (final y in yearsList)
+                          DropdownMenuItem(value: y.id, child: Text(y.name, style: const TextStyle(fontSize: 12))),
+                      ],
+                      onChanged: (v) => setState(() => _selectedAcademicYearId = v == 'all' ? null : v),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+
+                // Clear Context Button
+                if (_selectedCourseId != null || _selectedAcademicYearId != null)
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                    icon: const Icon(LucideIcons.x, size: 14),
+                    label: const Text("Reset Context", style: TextStyle(fontSize: 12)),
+                    onPressed: () => setState(() {
+                      _selectedCourseId = null;
+                      _selectedAcademicYearId = null;
+                    }),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Status Filter Chips
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.zero,
@@ -96,6 +179,10 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
               ),
               data: (semesters) {
                 final filtered = semesters.where((s) {
+                  // Contextual filter
+                  if (_selectedCourseId != null && s.courseId != _selectedCourseId) return false;
+                  if (_selectedAcademicYearId != null && s.academicYearId != _selectedAcademicYearId) return false;
+
                   if (_statusFilter == 'current' && !s.isCurrent) return false;
                   if (_statusFilter == 'active' && (!s.isActive || s.status == 'completed' || s.status == 'archived')) return false;
                   if (_statusFilter == 'upcoming' && s.status != 'upcoming') return false;
@@ -113,11 +200,39 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                 }).toList();
 
                 if (filtered.isEmpty) {
+                  if (_searchQuery.isEmpty && _selectedCourseId == null && _selectedAcademicYearId == null) {
+                    if (coursesList.isEmpty) {
+                      return FreshDepartmentSetupCard(
+                        currentStep: AcademicSetupStep.course,
+                        customMessage:
+                            "Step 1 Pending: Create a Course (Degree Program) first. Semesters cannot be added without a Course.",
+                        actionLabel: "Create Course",
+                        onAction: () => context.push('/academics/courses/new'),
+                      );
+                    }
+                    if (yearsList.isEmpty) {
+                      return FreshDepartmentSetupCard(
+                        currentStep: AcademicSetupStep.academicYear,
+                        customMessage:
+                            "Step 2 Pending: Academic Year required. Establish an Academic Year session before defining semesters.",
+                        actionLabel: "View Academic Years",
+                        onAction: () => context.push('/academics/academic_years'),
+                      );
+                    }
+                    return FreshDepartmentSetupCard(
+                      currentStep: AcademicSetupStep.semester,
+                      customMessage:
+                          "Step 3 of 3: Establish semester cycles (e.g. Semester 1 to 6) for your courses and academic years.",
+                      actionLabel: "Add First Semester",
+                      onAction: () => context.push('/academics/semesters/new'),
+                    );
+                  }
+
                   return AcadexEmptyState(
                     title: "No Semesters Found",
                     subtitle: _searchQuery.isNotEmpty
                         ? "No semesters match '$_searchQuery'."
-                        : "Create semester cycles for your degree programs and academic years.",
+                        : "No semesters found matching the selected context.",
                     icon: LucideIcons.calendarClock,
                     actionLabel: "Add Semester",
                     onActionTap: () => context.push('/academics/semesters/new'),

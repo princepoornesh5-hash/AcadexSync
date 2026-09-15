@@ -143,6 +143,7 @@ class AcadexButton extends ConsumerWidget {
       shadowColor: Colors.transparent,
       padding: padding ?? defaultPadding,
       minimumSize: Size(isFullWidth ? double.infinity : 0, height),
+      tapTargetSize: MaterialTapTargetSize.padded,
       shape: RoundedRectangleBorder(
         borderRadius: AcadexRadius.borderRadiusMd,
         side: border,
@@ -218,7 +219,7 @@ class AcadexIconButton extends StatelessWidget {
         onTap: onPressed,
         borderRadius: AcadexRadius.borderRadiusSm,
         child: Container(
-          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
           alignment: Alignment.center,
           padding: const EdgeInsets.all(8.0),
           child: Icon(

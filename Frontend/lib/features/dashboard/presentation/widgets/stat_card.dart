@@ -51,106 +51,112 @@ class _StatCardState extends State<StatCard> with SingleTickerProviderStateMixin
     final isPrimaryMetric = widget.stat.iconColor == DashboardColors.primary ||
         widget.stat.iconColor == AcadexColors.primary;
 
-    return FadeTransition(
-      opacity: _fadeAnim,
-      child: SlideTransition(
-        position: _slideAnim,
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 8 : 12,
-            vertical: isMobile ? 10 : 12,
-          ),
-          decoration: BoxDecoration(
-            color: isPrimaryMetric
-                ? AcadexColors.primaryTint
-                : AcadexColors.surface,
-            borderRadius: AcadexRadius.borderRadiusLg,
-            border: Border.all(
-              color: isPrimaryMetric
-                  ? const Color(0xFFDBEAFE)
-                  : AcadexColors.hairline,
-              width: 1,
+    final textScaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.2);
+
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+      child: FadeTransition(
+        opacity: _fadeAnim,
+        child: SlideTransition(
+          position: _slideAnim,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 8 : 12,
+              vertical: isMobile ? 8 : 12,
             ),
-            boxShadow: AcadexShadows.lightSm,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // 1. Centered Icon
-              Container(
-                width: isMobile ? 36 : 40,
-                height: isMobile ? 36 : 40,
-                decoration: BoxDecoration(
-                  color: widget.stat.iconBackground,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(
-                  child: Icon(
-                    widget.stat.icon,
-                    color: widget.stat.iconColor,
-                    size: isMobile ? 18 : 20,
+            decoration: BoxDecoration(
+              color: isPrimaryMetric
+                  ? AcadexColors.primaryTint
+                  : AcadexColors.surface,
+              borderRadius: AcadexRadius.borderRadiusLg,
+              border: Border.all(
+                color: isPrimaryMetric
+                    ? const Color(0xFFDBEAFE)
+                    : AcadexColors.hairline,
+                width: 1,
+              ),
+              boxShadow: AcadexShadows.lightSm,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 1. Centered Icon
+                Container(
+                  width: isMobile ? 34 : 40,
+                  height: isMobile ? 34 : 40,
+                  decoration: BoxDecoration(
+                    color: widget.stat.iconBackground,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      widget.stat.icon,
+                      color: widget.stat.iconColor,
+                      size: isMobile ? 18 : 20,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
+                SizedBox(height: isMobile ? 6 : 8),
 
-              // 2. Large Centered Number
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.center,
-                child: Text(
-                  widget.stat.value,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: isSmallMobile ? 20 : (isMobile ? 22 : 26),
-                    fontWeight: FontWeight.w800,
-                    color: isPrimaryMetric
-                        ? const Color(0xFF003366)
-                        : const Color(0xFF0F172A),
-                    letterSpacing: -0.5,
+                // 2. Large Centered Number
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.center,
+                  child: Text(
+                    widget.stat.value,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: isSmallMobile ? 19 : (isMobile ? 21 : 26),
+                      fontWeight: FontWeight.w800,
+                      color: isPrimaryMetric
+                          ? const Color(0xFF003366)
+                          : const Color(0xFF0F172A),
+                      letterSpacing: -0.5,
+                    ),
+                    maxLines: 1,
                   ),
-                  maxLines: 1,
                 ),
-              ),
-              const SizedBox(height: 4),
-
-              // 3. Centered Label
-              Text(
-                widget.stat.title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: isMobile ? 11.5 : 13,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF475569),
-                  height: 1.2,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-
-              // 4. Centered Supporting Description
-              if (widget.stat.subtitle != null && widget.stat.subtitle!.isNotEmpty) ...[
                 const SizedBox(height: 2),
+
+                // 3. Centered Label
                 Text(
-                  widget.stat.subtitle!,
+                  widget.stat.title,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: isMobile ? 9.5 : 11,
-                    fontWeight: FontWeight.w400,
-                    color: const Color(0xFF64748B),
+                    fontSize: isMobile ? 11 : 13,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF475569),
                     height: 1.2,
                   ),
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-              ],
 
-              if (widget.stat.changePercent != null) ...[
-                const SizedBox(height: 4),
-                _buildChangePill(widget.stat.changePercent!, false),
+                // 4. Centered Supporting Description
+                if (widget.stat.subtitle != null && widget.stat.subtitle!.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.stat.subtitle!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: isMobile ? 9 : 11,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFF64748B),
+                      height: 1.15,
+                    ),
+                    maxLines: isSmallMobile ? 1 : 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+
+                if (widget.stat.changePercent != null) ...[
+                  SizedBox(height: isMobile ? 2 : 4),
+                  _buildChangePill(widget.stat.changePercent!, false),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

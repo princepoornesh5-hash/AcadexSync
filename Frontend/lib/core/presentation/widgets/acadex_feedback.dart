@@ -94,11 +94,13 @@ class AcadexEmptyState extends ConsumerWidget {
     if (isSuperAdmin) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
         child: Center(
-          child: AcadexReadableSurface(
-            padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 28),
-            child: content,
+          child: SingleChildScrollView(
+            child: AcadexReadableSurface(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+              child: content,
+            ),
           ),
         ),
       );
@@ -106,8 +108,12 @@ class AcadexEmptyState extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-      child: Center(child: content),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+      child: Center(
+        child: SingleChildScrollView(
+          child: content,
+        ),
+      ),
     );
   }
 }
@@ -187,11 +193,13 @@ class AcadexErrorState extends ConsumerWidget {
     if (isSuperAdmin) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
         child: Center(
-          child: AcadexReadableSurface(
-            padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 28),
-            child: content,
+          child: SingleChildScrollView(
+            child: AcadexReadableSurface(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+              child: content,
+            ),
           ),
         ),
       );
@@ -199,8 +207,12 @@ class AcadexErrorState extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-      child: Center(child: content),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+      child: Center(
+        child: SingleChildScrollView(
+          child: content,
+        ),
+      ),
     );
   }
 }
@@ -245,20 +257,24 @@ class AcadexLoadingState extends ConsumerWidget {
 
     if (isSuperAdmin) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: AcadexReadableSurface(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 32),
-            child: content,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: AcadexReadableSurface(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+              child: content,
+            ),
           ),
         ),
       );
     }
 
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: content,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: content,
+        ),
       ),
     );
   }

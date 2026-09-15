@@ -505,7 +505,7 @@ class FirebaseStorageService {
     try {
       final ref = _storage.ref().child(path);
       final uploadTask = await ref.putData(bytes, metadata);
-      return uploadTask.ref.getMetadata();
+      return await uploadTask.ref.getMetadata();
     } on FirebaseException catch (e) {
       throw FirebaseErrorMapper.map(e);
     } catch (e) {

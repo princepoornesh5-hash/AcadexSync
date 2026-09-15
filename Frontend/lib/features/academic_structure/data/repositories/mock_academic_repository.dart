@@ -404,6 +404,23 @@ class MockAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<void> deleteCollegePermanently(String id) async {
+    await _delay();
+    if (currentUser != null && currentUser!.role != AppRole.superAdmin) {
+      throw const BackendPermissionException("Only Super Admin can permanently delete colleges");
+    }
+    _colleges.removeWhere((e) => e.id == id);
+    _departments.removeWhere((e) => e.collegeId == id);
+    _courses.removeWhere((e) => e.collegeId == id);
+    _academicYears.removeWhere((e) => e.collegeId == id);
+    _semesters.removeWhere((e) => e.collegeId == id);
+    _sections.removeWhere((e) => e.collegeId == id);
+    _subjects.removeWhere((e) => e.collegeId == id);
+    _faculty.removeWhere((e) => e.collegeId == id);
+    _students.removeWhere((e) => e.collegeId == id);
+  }
+
+  @override
   Future<College> getCollegeById(String id) async {
     await _delay();
     return _colleges.firstWhere((e) => e.id == id, orElse: () => throw Exception('College not found'));
@@ -1061,6 +1078,21 @@ class MockAcademicRepository implements AcademicRepository {
         sectionId: sectionId,
       );
     }
+    final student = index != -1 ? _students[index] : null;
+    _enrollments.removeWhere((e) => e.studentId == studentId && e.semesterId == semesterId && e.status == 'active');
+    _enrollments.add(StudentEnrollment(
+      id: 'enr-${_enrollments.length + 1}',
+      collegeId: student?.collegeId ?? 'c1',
+      departmentId: student?.departmentId ?? 'd1',
+      courseId: courseId,
+      academicYearId: academicYearId,
+      semesterId: semesterId,
+      sectionId: sectionId,
+      studentId: studentId,
+      status: 'active',
+      enrollmentDate: enrollmentDate != null ? DateTime.tryParse(enrollmentDate) ?? DateTime.now() : DateTime.now(),
+      student: student != null ? {'id': student.id, 'name': student.name, 'rollNumber': student.rollNumber, 'email': student.email} : null,
+    ));
   }
   @override
   Future<void> updateStudent(Student student) async {
@@ -1738,6 +1770,105 @@ class MockAcademicRepository implements AcademicRepository {
       }
     }
     return map;
+  }
+
+  final List<StudentEnrollment> _enrollments = [
+    StudentEnrollment(
+      id: 'enr-s1',
+      collegeId: 'c1',
+      departmentId: 'd1',
+      courseId: 'cr1',
+      academicYearId: 'ay1',
+      semesterId: 'sem1',
+      sectionId: 'sec1',
+      studentId: 's1',
+      status: 'active',
+      enrollmentDate: DateTime(2025, 8, 1),
+      student: {'id': 's1', 'name': 'John Doe', 'rollNumber': 'CS2025001', 'email': 'john@student.git.edu'},
+    ),
+    StudentEnrollment(
+      id: 'enr-s2',
+      collegeId: 'c1',
+      departmentId: 'd1',
+      courseId: 'cr1',
+      academicYearId: 'ay1',
+      semesterId: 'sem1',
+      sectionId: 'sec1',
+      studentId: 's2',
+      status: 'active',
+      enrollmentDate: DateTime(2025, 8, 1),
+      student: {'id': 's2', 'name': 'Jane Smith', 'rollNumber': 'CS2025002', 'email': 'jane@student.git.edu'},
+    ),
+    StudentEnrollment(
+      id: 'enr-s3',
+      collegeId: 'c1',
+      departmentId: 'd1',
+      courseId: 'cr1',
+      academicYearId: 'ay1',
+      semesterId: 'sem1',
+      sectionId: 'sec2',
+      studentId: 's3',
+      status: 'active',
+      enrollmentDate: DateTime(2025, 8, 1),
+      student: {'id': 's3', 'name': 'Alice Bob', 'rollNumber': 'CS2025003', 'email': 'alice@student.git.edu'},
+    ),
+  ];
+
+  @override
+  Future<void> updateFacultyAssignment(
+    String assignmentId, {
+    String? roomId,
+    int? maxStudents,
+    String? assignmentType,
+    bool? isActive,
+  }) async {
+    await _delay();
+    final idx = _facultyAssignments.indexWhere((a) => a.id == assignmentId);
+    if (idx != -1) {
+      _facultyAssignments[idx] = _facultyAssignments[idx].copyWith(
+        roomId: roomId,
+        maxStudents: maxStudents,
+        assignmentType: assignmentType,
+        isActive: isActive,
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<List<StudentEnrollment>> getEnrollments({
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? sectionId,
+    String? studentId,
+    String? status,
+  }) async {
+    await _delay();
+    return _enrollments.where((e) {
+      if (sectionId != null && e.sectionId != sectionId) return false;
+      if (studentId != null && e.studentId != studentId) return false;
+      if (status != null && e.status != status) return false;
+      return true;
+    }).toList();
+  }
+
+  @override
+  Future<void> updateEnrollment(String id, {String? sectionId, String? status}) async {
+    await _delay();
+    final idx = _enrollments.indexWhere((e) => e.id == id);
+    if (idx != -1) {
+      _enrollments[idx] = _enrollments[idx].copyWith(
+        sectionId: sectionId,
+        status: status,
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<void> deleteEnrollment(String id) async {
+    await updateEnrollment(id, status: 'withdrawn');
   }
 }
 

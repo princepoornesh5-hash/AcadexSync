@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_adaptive_gradient_text.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/user_model.dart';
@@ -118,7 +118,7 @@ class StudentDashboard extends ConsumerWidget {
                     ],
                   ),
                 ],
-                const SizedBox(height: 20),
+                SizedBox(height: isMobile ? 14 : 20),
 
                 // Student Academic Portal Hero Card
                 AcadexHeroCard(
@@ -151,18 +151,10 @@ class StudentDashboard extends ConsumerWidget {
                 const SectionHeader(title: 'My Academic Overview'),
                 AcadexLayout.headerGap,
                 stats.when(
-                  loading: () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(28),
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-                  error: (err, _) => AcadexCard(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'Failed to load student metrics: $err',
-                      style: AcadexTypography.caption(color: AcadexColors.error),
-                    ),
+                  loading: () => const AcadexLoadingState(message: 'Loading academic metrics...'),
+                  error: (err, _) => AcadexErrorState(
+                    message: 'Failed to load student metrics: $err',
+                    onRetry: () => ref.refresh(studentStatsProvider),
                   ),
                   data: (data) => GridView.builder(
                     physics: const NeverScrollableScrollPhysics(),
@@ -170,9 +162,11 @@ class StudentDashboard extends ConsumerWidget {
                     itemCount: data.length,
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: statCols,
-                      crossAxisSpacing: AcadexLayout.gridSpacing,
-                      mainAxisSpacing: AcadexLayout.gridSpacing,
-                      childAspectRatio: isMobile ? (width >= 375 ? 1.05 : 0.95) : (width > 600 ? 1.25 : 1.15),
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: isMobile
+                          ? (width >= 375 ? 1.05 : 0.98)
+                          : (width > 600 ? 1.25 : 1.15),
                     ),
                     itemBuilder: (_, i) => StatCard(stat: data[i]),
                   ),
@@ -186,8 +180,11 @@ class StudentDashboard extends ConsumerWidget {
                   builder: (context, ref, _) {
                     final todayAsync = ref.watch(todayScheduleProvider);
                     return todayAsync.when(
-                      loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (err, _) => Text('Error loading schedule: $err'),
+                      loading: () => const AcadexLoadingState(message: "Loading today's classes..."),
+                      error: (err, _) => AcadexErrorState(
+                        message: 'Error loading schedule: $err',
+                        onRetry: () => ref.refresh(todayScheduleProvider),
+                      ),
                       data: (data) => TodayScheduleWidget(todayEntries: data),
                     );
                   },
@@ -212,18 +209,10 @@ class StudentDashboard extends ConsumerWidget {
                 ),
                 AcadexLayout.headerGap,
                 activity.when(
-                  loading: () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-                  error: (err, _) => AcadexCard(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'Failed to load activity: $err',
-                      style: AcadexTypography.caption(color: AcadexColors.error),
-                    ),
+                  loading: () => const AcadexLoadingState(message: 'Loading announcements...'),
+                  error: (err, _) => AcadexErrorState(
+                    message: 'Failed to load activity: $err',
+                    onRetry: () => ref.refresh(studentActivityProvider),
                   ),
                   data: (data) => ActivityFeed(items: data),
                 ),

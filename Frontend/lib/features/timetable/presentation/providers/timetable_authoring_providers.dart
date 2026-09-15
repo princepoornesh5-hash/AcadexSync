@@ -110,6 +110,7 @@ final isFacultyTimetableCoordinatorProvider = Provider<bool>((ref) {
 class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> {
   final TimetableRepository repository;
   final UserModel? currentUser;
+  final Ref? ref;
 
   final List<TimetableAuthoringState> _undoStack = [];
   final List<TimetableAuthoringState> _redoStack = [];
@@ -120,7 +121,13 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
   TimetableAuthoringNotifier({
     required this.repository,
     this.currentUser,
+    this.ref,
   }) : super(const TimetableAuthoringState());
+
+  void _invalidateConsumerProviders() {
+    if (ref == null) return;
+    ref!.invalidate(weeklyTimetableProvider);
+  }
 
   void _recordHistory() {
     _undoStack.add(state);
@@ -786,6 +793,7 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
         isPublishing: false,
         isDirty: false,
       );
+      _invalidateConsumerProviders();
       return true;
     } catch (e, st) {
       developer.log('[TimetableAuthoring] publish error: $e\n$st', name: 'Acadex.Timetable');
@@ -812,6 +820,7 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
         isLoading: false,
         isDirty: false,
       );
+      _invalidateConsumerProviders();
       return true;
     } catch (e, st) {
       developer.log('[TimetableAuthoring] unpublish error: $e\n$st', name: 'Acadex.Timetable');
@@ -841,6 +850,7 @@ final timetableAuthoringProvider = StateNotifierProvider.autoDispose.family<Time
   final notifier = TimetableAuthoringNotifier(
     repository: repository,
     currentUser: currentUser,
+    ref: ref,
   );
 
   // Trigger initial load

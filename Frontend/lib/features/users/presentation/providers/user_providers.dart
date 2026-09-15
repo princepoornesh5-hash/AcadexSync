@@ -145,6 +145,21 @@ class UserManagementNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
+  Future<void> deleteUserPermanently(String id) async {
+    state = const AsyncLoading();
+    try {
+      await _ref.read(userRepositoryProvider).deleteUserPermanently(id);
+      _ref.invalidate(usersListProvider);
+      _ref.invalidate(userDetailProvider(id));
+      _ref.invalidate(superAdminStatsProvider);
+      _ref.invalidate(collegeAdminStatsProvider);
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+
   Future<String> generateActivationCode(UserProfileModel user) async {
     final apiRepo = _ref.read(apiUserRepositoryProvider);
     return await apiRepo.reissueActivationCodeForUser(user.id);

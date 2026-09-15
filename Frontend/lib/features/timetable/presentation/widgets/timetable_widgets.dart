@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../auth/domain/models/auth_state.dart';
+import '../../../auth/domain/models/role_enum.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../attendance/domain/models/assigned_class.dart';
+import '../../../attendance/presentation/providers/attendance_providers.dart';
 import '../../domain/models/timetable_models.dart';
 import '../providers/timetable_lookup_providers.dart';
-import '../providers/timetable_providers.dart';
-import 'next_class_card.dart';
+import 'acadex_timetable_calendar.dart';
+import 'daily_timeline_view.dart';
 
 // Helper to determine active/upcoming status
 enum TimetableEntryStatus { now, upNext, completed, none }
@@ -200,6 +206,10 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
     final sessionColor = getSessionTypeColor(entry.sessionType);
     final status = getEntryStatus(entry);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final authState = ref.watch(authProvider);
+    final user = authState is AuthAuthenticated ? authState.user : null;
+    final isFaculty = user?.role == AppRole.faculty;
 
     final isLive = status == TimetableEntryStatus.now;
     final isUpNext = status == TimetableEntryStatus.upNext;
@@ -444,6 +454,60 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
                           ),
                       ],
                     ),
+                    if (isFaculty) ...[
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: InkWell(
+                          onTap: () {
+                            final selectedDate = ref.read(timetableSelectedDateProvider);
+                            final assignedClass = AssignedClass(
+                              id: entry.id,
+                              timetableId: entry.timetableId,
+                              timetableEntryId: entry.id,
+                              facultyId: entry.facultyId,
+                              facultyAssignmentId: entry.facultyAssignmentId,
+                              subjectId: entry.subjectId,
+                              subjectName: subjectName,
+                              sectionId: entry.sectionId,
+                              sectionName: sectionName ?? entry.sectionId,
+                              semester: entry.semesterId,
+                              timeSlot: '${entry.startTime} – ${entry.endTime}',
+                              startTime: entry.startTime,
+                              endTime: entry.endTime,
+                              roomNumber: entry.roomNumber,
+                              building: entry.building,
+                              date: selectedDate,
+                            );
+                            ref.read(activeClassProvider.notifier).state = assignedClass;
+                            context.push('/attendance/mark');
+                          },
+                          borderRadius: AcadexRadius.borderRadiusSm,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: AcadexColors.primary.withValues(alpha: 0.1),
+                              borderRadius: AcadexRadius.borderRadiusSm,
+                              border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(LucideIcons.clipboardCheck, size: 13, color: AcadexColors.primary),
+                                const SizedBox(width: 5),
+                                Text(
+                                  'Mark Attendance',
+                                  style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -848,129 +912,30 @@ class TimetableDayView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDay = ref.watch(timetableSelectedDayProvider);
+    final selectedDate = ref.watch(timetableSelectedDateProvider);
     final entries = weeklyData[selectedDay] ?? [];
-    final currentIndex = selectedDay.index;
-    final now = DateTime.now();
-    final isToday = selectedDay == TimetableDay.values[now.weekday - 1];
-    final nextClassAsync = ref.watch(nextClassProvider);
-    final nextClass = nextClassAsync.valueOrNull;
+    final authState = ref.watch(authProvider);
+    final user = authState is AuthAuthenticated ? authState.user : null;
 
-    return Column(
-      children: [
-        // Previous / Next day navigator bar
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 12,
+        bottom: MediaQuery.paddingOf(context).bottom + 80,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AcadexTimetableCalendar(role: user?.role),
+          const SizedBox(height: 16),
+          DailyTimelineView(
+            entries: entries,
+            selectedDate: selectedDate,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton.outlined(
-                icon: const Icon(LucideIcons.chevronLeft, size: 18),
-                tooltip: 'Previous Day',
-                onPressed: currentIndex > 0
-                    ? () => ref.read(timetableSelectedDayProvider.notifier).state = TimetableDay.values[currentIndex - 1]
-                    : null,
-              ),
-              Column(
-                children: [
-                  Text(
-                    selectedDay.displayName,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${entries.length} ${entries.length == 1 ? 'class' : 'classes'} scheduled',
-                    style: AcadexTypography.caption(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      final n = DateTime.now();
-                      ref.read(timetableSelectedDayProvider.notifier).state = TimetableDay.values[n.weekday - 1];
-                    },
-                    child: const Text('Today'),
-                  ),
-                  IconButton.outlined(
-                    icon: const Icon(LucideIcons.chevronRight, size: 18),
-                    tooltip: 'Next Day',
-                    onPressed: currentIndex < TimetableDay.values.length - 1
-                        ? () => ref.read(timetableSelectedDayProvider.notifier).state = TimetableDay.values[currentIndex + 1]
-                        : null,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        // Day's schedule list with smooth AnimatedSwitcher transition
-        Expanded(
-          child: AnimatedSwitcher(
-            duration: AcadexMotion.resolveDuration(context, AcadexMotion.fast),
-            switchInCurve: AcadexMotion.curveStandard,
-            switchOutCurve: AcadexMotion.curveStandard,
-            transitionBuilder: (child, animation) {
-              return FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0.0, 0.02),
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: child,
-                ),
-              );
-            },
-            child: entries.isEmpty
-                ? Center(
-                    key: ValueKey('empty_${selectedDay.name}'),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          LucideIcons.coffee,
-                          size: 56,
-                          color: (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted).withValues(alpha: 0.3),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No classes scheduled for ${selectedDay.displayName}',
-                          style: AcadexTypography.heading3(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    key: ValueKey('list_${selectedDay.name}'),
-                    padding: const EdgeInsets.all(20),
-                    itemCount: isToday && nextClass != null ? entries.length + 1 : entries.length,
-                    itemBuilder: (context, index) {
-                      if (isToday && nextClass != null) {
-                        if (index == 0) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16.0),
-                            child: NextClassCard(nextClass: nextClass),
-                          );
-                        }
-                        return TimetableCard(entry: entries[index - 1]);
-                      }
-                      return TimetableCard(entry: entries[index]);
-                    },
-                  ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -1068,24 +1033,41 @@ class TodayScheduleWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     if (todayEntries.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(24),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: AcadexColors.surface,
           borderRadius: AcadexRadius.borderRadiusLg,
-          border: Border.all(color: Theme.of(context).dividerColor),
+          border: Border.all(color: AcadexColors.hairline),
+          boxShadow: AcadexShadows.lightSm,
         ),
         child: Center(
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                LucideIcons.calendarCheck,
-                size: 40,
-                color: Theme.of(context).disabledColor.withValues(alpha: 0.5),
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AcadexColors.primaryLight.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  LucideIcons.calendarCheck,
+                  size: 22,
+                  color: AcadexColors.primary,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 'No classes scheduled for today',
-                style: AcadexTypography.bodySmall(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+                style: AcadexTypography.title().copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'There are no active timetable sessions or lectures planned for today.',
+                textAlign: TextAlign.center,
+                style: AcadexTypography.caption(),
               ),
             ],
           ),
@@ -1093,10 +1075,11 @@ class TodayScheduleWidget extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
+    return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: todayEntries.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) => TimetableCard(entry: todayEntries[index], isCompact: true),
     );
   }

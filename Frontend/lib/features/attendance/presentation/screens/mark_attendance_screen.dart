@@ -36,6 +36,21 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
     final activeClass = ref.read(activeClassProvider);
     if (activeClass == null) return;
 
+    final records = ref.read(markingSessionProvider);
+    if (records.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Cannot submit attendance: No students are enrolled in this section.",
+            style: AcadexTypography.bodySmall(color: Colors.white),
+          ),
+          backgroundColor: AcadexColors.warning,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     final notifier = ref.read(markingSessionProvider.notifier);
     if (notifier.remainingCount > 0) {
       final shouldProceed = await showDialog<bool>(
@@ -68,7 +83,6 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
       if (shouldProceed != true) return;
     }
 
-    final records = ref.read(markingSessionProvider);
     final isConfirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -167,10 +181,16 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
+        final errStr = e.toString();
+        final cleanMsg = errStr.contains('authorized') || errStr.contains('403')
+            ? 'You are not authorized to mark attendance for this class.'
+            : (errStr.contains('already exists') || errStr.contains('409')
+                ? 'An active attendance session already exists for this class.'
+                : errStr.replaceAll('Exception: ', ''));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Error saving attendance: $e',
+              cleanMsg,
               style: AcadexTypography.bodySmall(color: Colors.white),
             ),
             backgroundColor: AcadexColors.error,
@@ -307,7 +327,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          "${activeClass.sectionName} • ${activeClass.timeSlot}${activeClass.roomNumber != null && activeClass.roomNumber!.isNotEmpty ? ' • Room ${activeClass.roomNumber}' : ''}",
+                          "${activeClass.sectionName} • ${records.length} Students • ${activeClass.timeSlot}${activeClass.roomNumber != null && activeClass.roomNumber!.isNotEmpty ? ' • Room ${activeClass.roomNumber}' : ''}",
                           style: AcadexTypography.caption(
                             color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                           ),
@@ -358,7 +378,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
             ),
             const SizedBox(height: 1),
             Text(
-              "${activeClass.sectionName} • ${activeClass.timeSlot}${activeClass.roomNumber != null && activeClass.roomNumber!.isNotEmpty ? ' • Room ${activeClass.roomNumber}' : ''}",
+              "${activeClass.sectionName} • ${records.length} Students • ${activeClass.timeSlot}${activeClass.roomNumber != null && activeClass.roomNumber!.isNotEmpty ? ' • Room ${activeClass.roomNumber}' : ''}",
               style: AcadexTypography.caption(
                 color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
               ),
@@ -414,7 +434,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
                     _buildFilterChips(isDark),
                     const SizedBox(height: 16),
                     Expanded(
-                      child: _buildStudentList(filteredRecords, notifier, isDark),
+                      child: _buildStudentList(records, filteredRecords, notifier, isDark),
                     ),
                   ],
                 ),
@@ -439,6 +459,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
                       const SizedBox(height: 20),
                       SaveAttendanceButton(
                         remainingCount: notifier.remainingCount,
+                        totalStudents: records.length,
                         isLoading: _isSaving,
                         isFullWidth: true,
                         onSave: _handleSave,
@@ -492,7 +513,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _buildStudentList(filteredRecords, notifier, isDark),
+            child: _buildStudentList(records, filteredRecords, notifier, isDark),
           ),
         ),
 
@@ -511,6 +532,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
             top: false,
             child: SaveAttendanceButton(
               remainingCount: notifier.remainingCount,
+              totalStudents: records.length,
               isLoading: _isSaving,
               isFullWidth: true,
               onSave: _handleSave,
@@ -669,11 +691,21 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
   }
 
   Widget _buildStudentList(
+    List<dynamic> records,
     List<dynamic> filteredRecords,
     MarkingSessionNotifier notifier,
     bool isDark,
   ) {
     if (filteredRecords.isEmpty) {
+      if (records.isEmpty) {
+        return Center(
+          child: AcadexEmptyState(
+            title: "No Enrolled Students",
+            subtitle: "No students are currently enrolled in this section.",
+            icon: LucideIcons.users,
+          ),
+        );
+      }
       return Center(
         child: AcadexEmptyState(
           title: "No Matching Students",

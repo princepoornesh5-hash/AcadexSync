@@ -12,6 +12,9 @@ import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../providers/academic_providers.dart';
 import '../../domain/models/academic_models.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/domain/models/auth_state.dart';
+import '../../../auth/domain/models/role_enum.dart';
 
 class CollegeListScreen extends ConsumerStatefulWidget {
   const CollegeListScreen({super.key});
@@ -24,9 +27,62 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
   String _searchQuery = '';
   String _statusFilter = 'all'; // 'all' | 'active' | 'inactive'
 
+  void _confirmDeleteCollege(BuildContext context, College college) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        constraints: const BoxConstraints(maxWidth: 440),
+        title: const Text('Permanently Delete College?'),
+        content: Text(
+          'Are you sure you want to permanently delete "${college.name}" (${college.code})? '
+          'This will permanently delete all departments, courses, academic data, and users associated with this college. '
+          'This action CANNOT be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              try {
+                await ref.read(collegesProvider.notifier).deleteCollegePermanently(college.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('College "${college.name}" deleted permanently'),
+                      backgroundColor: AcadexColors.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to delete college: $e'),
+                      backgroundColor: AcadexColors.error,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Delete Permanently'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final collegesAsync = ref.watch(collegesProvider);
+    final authState = ref.watch(authProvider);
+    final isSuperAdmin = authState is AuthAuthenticated && authState.user.role == AppRole.superAdmin;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = AcadexBreakpoints.isMobile(context);
 
@@ -202,6 +258,16 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
                                   ),
+                                  if (isSuperAdmin) ...[
+                                    const SizedBox(width: 12),
+                                    IconButton(
+                                      icon: const Icon(LucideIcons.trash2, size: 18, color: AcadexColors.error),
+                                      tooltip: "Delete College",
+                                      onPressed: () => _confirmDeleteCollege(context, c),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ],
@@ -215,7 +281,6 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
                 return AcadexDataTable(
                   columns: const ["Code", "Name", "Principal", "Email", "Phone", "Status", "Actions"],
                   rows: filtered.map((c) => DataRow(
-                    onSelectChanged: (_) => context.push('/academics/colleges/${c.id}'),
                     cells: [
                       DataCell(Text(c.code, style: const TextStyle(fontWeight: FontWeight.bold))),
                       DataCell(Text(c.name)),
@@ -252,6 +317,12 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
                               tooltip: "Edit College",
                               onPressed: () => context.push('/academics/colleges/edit/${c.id}'),
                             ),
+                            if (isSuperAdmin)
+                              IconButton(
+                                icon: const Icon(LucideIcons.trash2, size: 18, color: AcadexColors.error),
+                                tooltip: "Delete College",
+                                onPressed: () => _confirmDeleteCollege(context, c),
+                              ),
                           ],
                         ),
                       ),

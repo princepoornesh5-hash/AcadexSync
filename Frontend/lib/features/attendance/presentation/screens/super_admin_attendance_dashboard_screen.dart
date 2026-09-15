@@ -10,6 +10,7 @@ import '../widgets/super_admin/super_admin_shortage_card.dart';
 import '../widgets/super_admin/super_admin_insight_card.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_page_header.dart';
 
 class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
   const SuperAdminAttendanceDashboardScreen({super.key});
@@ -20,40 +21,58 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
 
     return DefaultTabController(
       length: 6,
-      child: Scaffold(
-        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-        appBar: AppBar(
-          title: Text(
-            "Multi-Campus Attendance",
-            style: AcadexTypography.title(
-              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-            ),
-          ),
-          bottom: TabBar(
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            labelColor: AcadexColors.primary,
-            unselectedLabelColor: AcadexColors.inkMuted,
-            indicatorColor: AcadexColors.primary,
-            indicatorWeight: 2.5,
-            tabs: const [
-              Tab(text: "Overview"),
-              Tab(text: "Colleges"),
-              Tab(text: "Faculty"),
-              Tab(text: "Students"),
-              Tab(text: "Insights"),
-              Tab(text: "Health"),
-            ],
-          ),
-        ),
-        body: TabBarView(
+      child: AcadexPageContainer(
+        backgroundColor: Colors.transparent,
+        scrollable: true,
+        maxWidth: AcadexLayout.contentMaxWidth,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildOverviewTab(ref),
-            _buildCollegesTab(ref),
-            _buildFacultyTab(ref),
-            _buildShortagesTab(ref),
-            _buildInsightsTab(ref),
-            _buildHealthTab(ref),
+            const AcadexPageHeader(
+              title: "Multi-Campus Attendance",
+              subtitle: "Platform-wide attendance monitoring, college comparisons, and system health oversight.",
+            ),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                borderRadius: AcadexRadius.borderRadiusLg,
+                border: Border.all(
+                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                ),
+                boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+              ),
+              child: TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                labelColor: AcadexColors.primary,
+                unselectedLabelColor: AcadexColors.inkMuted,
+                indicatorColor: AcadexColors.primary,
+                indicatorWeight: 3,
+                tabs: const [
+                  Tab(text: "Overview"),
+                  Tab(text: "Colleges"),
+                  Tab(text: "Faculty"),
+                  Tab(text: "Students"),
+                  Tab(text: "Insights"),
+                  Tab(text: "Health"),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 700,
+              child: TabBarView(
+                children: [
+                  _buildOverviewTab(ref),
+                  _buildCollegesTab(ref),
+                  _buildFacultyTab(ref),
+                  _buildShortagesTab(ref),
+                  _buildInsightsTab(ref),
+                  _buildHealthTab(ref),
+                ],
+              ),
+            ),
           ],
         ),
       ),

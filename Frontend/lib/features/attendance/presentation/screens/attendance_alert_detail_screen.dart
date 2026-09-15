@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:campus_management/app/theme/app_theme.dart';
 import 'package:campus_management/core/presentation/utils/navigation_extensions.dart';

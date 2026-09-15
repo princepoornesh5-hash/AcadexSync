@@ -93,6 +93,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
         userRole == AppRole.faculty ||
         userRole == AppRole.student;
     final primaryActionColor = isGradientRole ? AcadexColors.superAdminDeepAction : Theme.of(context).primaryColor;
+    final isMobile = AcadexBreakpoints.isMobile(context);
 
     // Auto-scroll when new messages arrive
     ref.listen(aiChatProvider, (previous, next) {
@@ -129,11 +130,70 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                   ],
                 ),
               ),
-            // Chat History
-            Expanded(
+            // Chat History or Welcome State
+            if (chatState.messages.isEmpty)
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: isGradientRole ? const Color(0xFFE6F2FF) : AcadexColors.primaryLight,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            LucideIcons.bot,
+                            size: 28,
+                            color: Color(0xFF003366),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Welcome to Acadex AI',
+                          style: AcadexTypography.heading2(
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Ask questions about attendance, schedules, courses, or college operations.',
+                          textAlign: TextAlign.center,
+                          style: AcadexTypography.body(
+                            color: const Color(0xFF475569),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.center,
+                          children: _getSuggestedPrompts(userRole).map((prompt) {
+                            return ActionChip(
+                              label: Text(prompt),
+                              labelStyle: AcadexTypography.caption(
+                                color: const Color(0xFF003366),
+                              ).copyWith(fontWeight: FontWeight.w600),
+                              backgroundColor: const Color(0xFFE6F2FF),
+                              side: const BorderSide(color: Color(0xFFCCE6FF)),
+                              onPressed: chatState.isLoading ? null : () => _submitQuery(prompt),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            else
+              Expanded(
                 child: ListView.builder(
                   controller: _scrollController,
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(isMobile ? 16 : 24),
                   itemCount: chatState.messages.length,
                   itemBuilder: (context, index) {
                     final msg = chatState.messages[index];
@@ -143,7 +203,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                       alignment: isAi ? Alignment.centerLeft : Alignment.centerRight,
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                         constraints: const BoxConstraints(maxWidth: 600),
                         decoration: BoxDecoration(
                           color: isAi ? Colors.white : primaryActionColor,
@@ -158,7 +218,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                         ),
                         child: Text(
                           msg.text,
-                          style: AcadexTypography.body(color: isAi ? const Color(0xFF0F172A) : Colors.white).copyWith(height: 1.5, fontSize: 15),
+                          style: AcadexTypography.body(color: isAi ? const Color(0xFF0F172A) : Colors.white).copyWith(height: 1.5, fontSize: 14.5),
                         ),
                       ),
                     );
@@ -234,8 +294,8 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                   ),
                 ),
 
-              // Suggested Prompts
-              if (chatState.messages.length <= 1)
+              // Suggested Prompts when 1 message exists
+              if (chatState.messages.length == 1)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                   child: Wrap(
@@ -257,7 +317,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
 
               // Input Bar
               Container(
-                padding: const EdgeInsets.all(24).copyWith(top: 16),
+                padding: EdgeInsets.symmetric(horizontal: isMobile ? 14 : 24, vertical: isMobile ? 12 : 16),
                 decoration: BoxDecoration(
                   color: isGradientRole ? Colors.transparent : Theme.of(context).scaffoldBackgroundColor,
                 ),
@@ -284,18 +344,19 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                             borderRadius: AcadexRadius.borderRadiusLg,
                             borderSide: BorderSide(color: primaryActionColor, width: 2),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         ),
                         onSubmitted: chatState.isLoading ? null : _submitQuery,
                         enabled: !chatState.isLoading,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryActionColor,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(14),
+                        minimumSize: const Size(48, 48),
                         shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusLg),
                         elevation: 0,
                       ),

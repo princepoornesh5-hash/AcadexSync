@@ -30,7 +30,7 @@ final superAdminStatsProvider = FutureProvider.autoDispose<List<DashboardStatMod
     ),
     DashboardStatModel(
       title: 'College Admins',
-      value: '${summary.totalColleges}',
+      value: '${summary.totalCollegeAdmins > 0 ? summary.totalCollegeAdmins : summary.totalColleges}',
       subtitle: 'Active administrators',
       icon: LucideIcons.userCheck,
       iconColor: DashboardColors.purple,

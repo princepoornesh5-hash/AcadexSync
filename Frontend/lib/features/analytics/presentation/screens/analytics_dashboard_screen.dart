@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../auth/domain/models/auth_state.dart';
-import '../../../auth/domain/models/role_enum.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/analytics_providers.dart';
 import '../widgets/analytics_cards.dart';
 import '../widgets/charts/trend_line_chart.dart';
@@ -11,6 +8,10 @@ import '../widgets/charts/comparison_bar_chart.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/domain/models/auth_state.dart';
+import '../../../auth/domain/models/role_enum.dart';
+import 'department_analytics_screen.dart';
 
 class AnalyticsDashboardScreen extends ConsumerWidget {
   const AnalyticsDashboardScreen({super.key});
@@ -18,18 +19,15 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final isGradientRole = authState is AuthAuthenticated &&
-        (authState.user.role == AppRole.superAdmin ||
-            authState.user.role == AppRole.collegeAdmin ||
-            authState.user.role == AppRole.hod ||
-            authState.user.role == AppRole.faculty ||
-            authState.user.role == AppRole.student);
+    if (authState is AuthAuthenticated && authState.user.role == AppRole.hod) {
+      return const DepartmentAnalyticsScreen();
+    }
+
     final summaryAsync = ref.watch(analyticsSummaryProvider);
     final trendAsync = ref.watch(trendChartProvider);
     final comparisonAsync = ref.watch(comparisonChartProvider);
     final insightsAsync = ref.watch(insightsProvider);
     final projection = ref.watch(studentProjectionProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),

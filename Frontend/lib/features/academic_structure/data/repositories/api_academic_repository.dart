@@ -167,6 +167,15 @@ class ApiAcademicRepository implements AcademicRepository {
     }
   }
 
+  @override
+  Future<void> deleteCollegePermanently(String id) async {
+    try {
+      await _client.dio.delete('/colleges/$id');
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to permanently delete college');
+    }
+  }
+
   // ===========================================================================
   // ===========================================================================
   // 2. DEPARTMENTS
@@ -1242,6 +1251,27 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<void> updateFacultyAssignment(
+    String assignmentId, {
+    String? roomId,
+    int? maxStudents,
+    String? assignmentType,
+    bool? isActive,
+  }) async {
+    try {
+      final payload = <String, dynamic>{
+        if (roomId != null) 'roomId': roomId,
+        if (maxStudents != null) 'maxStudents': maxStudents,
+        if (assignmentType != null) 'assignmentType': assignmentType,
+        if (isActive != null) 'isActive': isActive,
+      };
+      await _client.dio.put('/academics/faculty-assignments/$assignmentId', data: payload);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to update faculty assignment');
+    }
+  }
+
+  @override
   Future<void> transferFacultyDepartment(String facultyId, String newDepartmentId) async {
     try {
       await _client.dio.patch('/academics/faculty/$facultyId/department', data: {
@@ -1408,6 +1438,69 @@ class ApiAcademicRepository implements AcademicRepository {
       });
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to enroll student in section');
+    }
+  }
+
+  @override
+  Future<List<StudentEnrollment>> getEnrollments({
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? sectionId,
+    String? studentId,
+    String? status,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'limit': 100,
+        if (courseId != null && courseId.isNotEmpty) 'courseId': courseId,
+        if (academicYearId != null && academicYearId.isNotEmpty) 'academicYearId': academicYearId,
+        if (semesterId != null && semesterId.isNotEmpty) 'semesterId': semesterId,
+        if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
+        if (studentId != null && studentId.isNotEmpty) 'studentId': studentId,
+        if (status != null && status.isNotEmpty) 'status': status,
+      };
+      final response = await _client.dio.get('/academics/enrollments', queryParameters: queryParams);
+      final body = response.data;
+      List raw = [];
+      if (body is Map<String, dynamic>) {
+        final data = body['data'];
+        if (data is Map<String, dynamic> && data['items'] is List) {
+          raw = data['items'] as List;
+        } else if (data is List) {
+          raw = data;
+        }
+      } else if (body is List) {
+        raw = body;
+      }
+      return raw.map((e) => StudentEnrollment.fromJson(e as Map<String, dynamic>)).toList();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
+        return [];
+      }
+      throw _extractError(e, 'Failed to fetch enrollments');
+    }
+  }
+
+  @override
+  Future<void> updateEnrollment(String id, {String? sectionId, String? status}) async {
+    try {
+      final payload = <String, dynamic>{
+        if (sectionId != null) 'sectionId': sectionId,
+        if (status != null) 'status': status,
+      };
+      await _client.dio.patch('/academics/enrollments/$id', data: payload);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to update enrollment');
+    }
+  }
+
+  @override
+  Future<void> deleteEnrollment(String id) async {
+    try {
+      await _client.dio.delete('/academics/enrollments/$id');
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to deactivate enrollment');
     }
   }
 

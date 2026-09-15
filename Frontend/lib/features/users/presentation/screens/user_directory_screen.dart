@@ -37,6 +37,59 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
     super.dispose();
   }
 
+  Future<void> _confirmDeleteUser(BuildContext context, UserProfileModel user) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        constraints: const BoxConstraints(maxWidth: 440),
+        title: const Text('Permanently Delete User?'),
+        content: Text(
+          'Are you sure you want to permanently delete "${user.name}" (${user.email.isNotEmpty ? user.email : user.id})? '
+          'This will permanently remove the user, their credentials, sessions, and all associated records. '
+          'This action CANNOT be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete Permanently'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await ref.read(userManagementProvider.notifier).deleteUserPermanently(user.id);
+        ref.invalidate(usersListProvider);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('User "${user.name}" permanently deleted.'),
+              backgroundColor: AcadexColors.success,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to permanently delete user: $e'),
+              backgroundColor: AcadexColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -91,7 +144,7 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
         ref.invalidate(usersListProvider);
       },
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AcadexPageHeader(
             title: 'Users & Roles',
@@ -230,7 +283,7 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
               };
 
               return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   AcadexSectionHeader(
                     title: 'Directory Records',
@@ -240,7 +293,7 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
 
                   // Desktop Table View
                   if (isDesktop)
-                    _buildDesktopTable(context, users, deptMap)
+                    _buildDesktopTable(context, users, deptMap, isSuperAdmin, currentUser.id)
                   else
                     // Mobile & Tablet List
                     ListView.separated(
@@ -254,6 +307,9 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
                           user: u,
                           departmentName: u.departmentId != null ? deptMap[u.departmentId] : null,
                           onTap: () => context.go('/users/${u.id}'),
+                          onDelete: (isSuperAdmin && u.id != currentUser.id)
+                              ? () => _confirmDeleteUser(context, u)
+                              : null,
                         );
                       },
                     ),
@@ -270,64 +326,91 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
     BuildContext context,
     List<UserProfileModel> users,
     Map<String, String> deptMap,
+    bool isSuperAdmin,
+    String currentUserId,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.surfaceDark : AcadexColors.surface,
         borderRadius: BorderRadius.circular(AcadexRadius.md),
-        side: BorderSide(
+        border: Border.all(
           color: isDark ? AcadexColors.darkBorder : AcadexColors.border,
         ),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AcadexRadius.md),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            dataRowMinHeight: 64,
-            dataRowMaxHeight: 72,
-            headingRowColor: WidgetStateProperty.all(
-              isDark ? AcadexColors.darkSurfaceElevated : AcadexColors.surfaceMuted,
-            ),
-            columns: const [
-              DataColumn(label: Text('Name & ID', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Email', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Department', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
-            ],
-            rows: users.map((u) {
-              final idLabel = u.employeeId ?? u.rollNumber ?? '';
-              final deptName = u.departmentId != null ? (deptMap[u.departmentId] ?? '') : '—';
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: constraints.maxWidth,
+                ),
+                child: DataTable(
+                  showCheckboxColumn: false,
+                  dataRowMinHeight: 64,
+                  dataRowMaxHeight: 72,
+                  horizontalMargin: 24,
+                  columnSpacing: 28,
+                  headingRowColor: WidgetStateProperty.all(
+                    isDark ? AcadexColors.surfaceDarkElevated : AcadexColors.surfaceLightMuted,
+                  ),
+                  columns: const [
+                    DataColumn(label: Text('Name & ID', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Email', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Department', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                  ],
+                  rows: users.map((u) {
+                    final idLabel = u.employeeId ?? u.rollNumber ?? '';
+                    final deptName = u.departmentId != null ? (deptMap[u.departmentId] ?? '') : '—';
 
-              return DataRow(
-                cells: [
-                  DataCell(
-                    InkWell(
-                      onTap: () => context.go('/users/${u.id}'),
-                      child: Text(
-                        idLabel.isNotEmpty ? '${u.name}\n$idLabel' : u.name,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                      ),
-                    ),
-                  ),
-                  DataCell(UserRoleBadge(role: u.role)),
-                  DataCell(Text(u.email.isNotEmpty ? u.email : '—')),
-                  DataCell(Text(deptName)),
-                  DataCell(UserStatusBadge(status: u.accountStatus)),
-                  DataCell(
-                    IconButton(
-                      icon: const Icon(Icons.arrow_forward, size: 18),
-                      onPressed: () => context.go('/users/${u.id}'),
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
-          ),
+                    return DataRow(
+                      cells: [
+                        DataCell(
+                          InkWell(
+                            onTap: () => context.go('/users/${u.id}'),
+                            child: Text(
+                              idLabel.isNotEmpty ? '${u.name}\n$idLabel' : u.name,
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                            ),
+                          ),
+                        ),
+                        DataCell(UserRoleBadge(role: u.role)),
+                        DataCell(Text(u.email.isNotEmpty ? u.email : '—')),
+                        DataCell(Text(deptName)),
+                        DataCell(UserStatusBadge(status: u.accountStatus)),
+                        DataCell(
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.arrow_forward, size: 18),
+                                tooltip: 'View Profile',
+                                onPressed: () => context.go('/users/${u.id}'),
+                              ),
+                              if (isSuperAdmin && u.id != currentUserId)
+                                IconButton(
+                                  icon: const Icon(Icons.delete_forever, size: 18, color: AcadexColors.error),
+                                  tooltip: 'Delete Permanently',
+                                  onPressed: () => _confirmDeleteUser(context, u),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

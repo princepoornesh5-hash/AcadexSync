@@ -55,7 +55,7 @@ class CollegeAdminDashboard extends ConsumerWidget {
               children: [
                 // ── 1. Top Greeting (Unboxed Adaptive Gradient Text) ──────
                 _buildGreeting(context, isMobile, firstName),
-                const SizedBox(height: 20),
+                SizedBox(height: isMobile ? 14 : 20),
 
                 // ── 2. College Status Hero Card (Solid White Surface) ─────
                 AcadexHeroCard(
@@ -73,7 +73,7 @@ class CollegeAdminDashboard extends ConsumerWidget {
                   secondaryActionLabel: 'Manage Timetable',
                   onSecondaryAction: () => context.go('/timetable/manage'),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: isMobile ? 18 : 24),
 
                 // ── 3. Key Institutional Stat Cards ───────────────────────
                 SectionHeader(
@@ -98,13 +98,13 @@ class CollegeAdminDashboard extends ConsumerWidget {
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                       childAspectRatio: isMobile
-                          ? (width >= 375 ? 0.95 : 0.9)
+                          ? (width >= 375 ? 1.05 : 0.98)
                           : (width > 600 ? 1.25 : 1.1),
                     ),
                     itemBuilder: (_, i) => StatCard(stat: data[i]),
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: isMobile ? 18 : 24),
 
                 // ── 4. Today's Campus Timetable Schedule ───────────────────
                 const SectionHeader(

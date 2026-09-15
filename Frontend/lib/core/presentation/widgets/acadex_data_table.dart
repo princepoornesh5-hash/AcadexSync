@@ -9,6 +9,7 @@ class AcadexDataTable extends StatelessWidget {
   final Widget? emptyState;
   final String? emptyTitle;
   final String? emptySubtitle;
+  final bool showCheckboxColumn;
 
   const AcadexDataTable({
     super.key,
@@ -18,6 +19,7 @@ class AcadexDataTable extends StatelessWidget {
     this.emptyState,
     this.emptyTitle,
     this.emptySubtitle,
+    this.showCheckboxColumn = false,
   });
 
   @override
@@ -49,31 +51,38 @@ class AcadexDataTable extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: AcadexRadius.borderRadiusLg,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 600),
-            child: DataTable(
-              headingRowColor: WidgetStateProperty.all(
-                isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: constraints.maxWidth,
+                ),
+                child: DataTable(
+                  showCheckboxColumn: showCheckboxColumn,
+                  headingRowColor: WidgetStateProperty.all(
+                    isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+                  ),
+                  headingTextStyle: AcadexTypography.eyebrow(
+                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                  ),
+                  dataTextStyle: AcadexTypography.body(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ),
+                  horizontalMargin: 20,
+                  columnSpacing: 28,
+                  dividerThickness: 1,
+                  columns: columns
+                      .map((col) => DataColumn(
+                            label: Text(col),
+                          ))
+                      .toList(),
+                  rows: rows,
+                ),
               ),
-              headingTextStyle: AcadexTypography.eyebrow(
-                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-              ),
-              dataTextStyle: AcadexTypography.body(
-                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-              ),
-              horizontalMargin: 20,
-              columnSpacing: 28,
-              dividerThickness: 1,
-              columns: columns
-                  .map((col) => DataColumn(
-                        label: Text(col),
-                      ))
-                  .toList(),
-              rows: rows,
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

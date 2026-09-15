@@ -148,8 +148,29 @@ enum AcadexAdaptiveTextMode {
   dark,  // Dark navy typography for light regions
 }
 
+/// Inherited scope indicating that content is rendered directly over
+/// the authoritative Acadex gradient background.
+class AcadexGradientScope extends InheritedWidget {
+  final GlobalKey gradientKey;
+
+  const AcadexGradientScope({
+    super.key,
+    required this.gradientKey,
+    required super.child,
+  });
+
+  static AcadexGradientScope? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<AcadexGradientScope>();
+  }
+
+  @override
+  bool updateShouldNotify(AcadexGradientScope oldWidget) {
+    return gradientKey != oldWidget.gradientKey;
+  }
+}
+
 /// Reusable gradient background component for the Super Admin unified surface.
-class SuperAdminGradientBackground extends StatelessWidget {
+class SuperAdminGradientBackground extends StatefulWidget {
   final Widget child;
 
   const SuperAdminGradientBackground({
@@ -161,14 +182,26 @@ class SuperAdminGradientBackground extends StatelessWidget {
   static const LinearGradient gradient = AcadexSuperAdminGradient.gradient;
 
   @override
+  State<SuperAdminGradientBackground> createState() => _SuperAdminGradientBackgroundState();
+}
+
+class _SuperAdminGradientBackgroundState extends State<SuperAdminGradientBackground> {
+  final GlobalKey _gradientKey = GlobalKey();
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: AcadexSuperAdminGradient.gradient,
+    return AcadexGradientScope(
+      gradientKey: _gradientKey,
+      child: Container(
+        key: _gradientKey,
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: AcadexSuperAdminGradient.gradient,
+        ),
+        child: widget.child,
       ),
-      child: child,
     );
   }
 }
+

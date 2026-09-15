@@ -95,7 +95,7 @@ class _AnimatedParticleSphereBackgroundState
       case ParticleSphereVariant.splash:
         return 28.0;
       case ParticleSphereVariant.login:
-        return 32.0;
+        return 34.0; // Smooth, subtle ambient rotation for login
     }
   }
 
@@ -109,7 +109,7 @@ class _AnimatedParticleSphereBackgroundState
       case ParticleSphereVariant.splash:
         return 1.0;
       case ParticleSphereVariant.login:
-        return 1.0;
+        return 0.88; // Refined atmospheric backdrop, perfectly balanced behind content
     }
   }
 
@@ -435,6 +435,7 @@ class _ParticleSpherePainter extends CustomPainter {
 
     final pointPaint = Paint()..isAntiAlias = true;
     final glowPaint = Paint()..isAntiAlias = true;
+    final specularPaint = Paint()..isAntiAlias = true;
 
     // 3. Transform, Project, and Render Particles
     for (final p in particles) {
@@ -557,6 +558,16 @@ class _ParticleSpherePainter extends CustomPainter {
 
       pointPaint.color = finalColor.withValues(alpha: dynamicOpacity);
       canvas.drawCircle(Offset(screenX, screenY), renderRadius, pointPaint);
+
+      // Subtle physical specular highlight on upper-left to give authentic 3D sphericity
+      if (renderRadius >= 1.05 && frontBoost > 0.35) {
+        final specRadius = renderRadius * 0.34;
+        final specX = screenX - renderRadius * 0.28;
+        final specY = screenY - renderRadius * 0.28;
+        final specAlpha = (dynamicOpacity * (0.35 + 0.35 * frontBoost * diffuseLight)).clamp(0.0, 0.85);
+        specularPaint.color = Colors.white.withValues(alpha: specAlpha);
+        canvas.drawCircle(Offset(specX, specY), specRadius, specularPaint);
+      }
     }
   }
 

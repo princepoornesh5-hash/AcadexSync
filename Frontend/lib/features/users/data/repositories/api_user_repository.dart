@@ -233,6 +233,18 @@ class ApiUserRepository implements UserRepository {
     }
   }
 
+  @override
+  Future<void> deleteUserPermanently(String id) async {
+    try {
+      await _client.dio.delete('/users/$id');
+    } on DioException catch (e) {
+      final message = e.response?.data?['error']?['message'] ??
+          e.response?.data?['message'] ??
+          'Failed to permanently delete user';
+      throw Exception(message);
+    }
+  }
+
   /// Reissue activation code via backend invitation management
   @override
   Future<String> reissueActivationCodeForUser(String userId) async {

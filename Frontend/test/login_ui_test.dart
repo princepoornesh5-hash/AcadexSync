@@ -2,17 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:campus_management/features/auth/presentation/screens/login_screen.dart';
+import 'package:campus_management/features/auth/presentation/providers/auth_provider.dart';
+import 'package:campus_management/features/auth/domain/models/auth_state.dart';
+
+class _FakeAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
+  _FakeAuthNotifier() : super(const AuthUnauthenticated());
+
+  @override
+  Future<void> login(String identifier, String password) async {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 void main() {
   group('Login UI Tests', () {
     testWidgets('Empty fields show validation errors', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
+        ProviderScope(
+          overrides: [
+            authProvider.overrideWith((ref) => _FakeAuthNotifier()),
+          ],
+          child: const MaterialApp(
             home: LoginScreen(),
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       // Find login button and tap it
       final loginButton = find.text('Sign In');
@@ -27,12 +43,16 @@ void main() {
 
     testWidgets('Empty password with identifier entered shows password validation error', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
+        ProviderScope(
+          overrides: [
+            authProvider.overrideWith((ref) => _FakeAuthNotifier()),
+          ],
+          child: const MaterialApp(
             home: LoginScreen(),
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       // Find identifier field and enter identifier
       final identifierField = find.byType(TextFormField).first;
