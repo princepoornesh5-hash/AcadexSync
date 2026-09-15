@@ -24,6 +24,6 @@
     "sourceMap": true,
     "types": ["jest", "node", "supertest", "express"]
   },
-  "include": ["src/**/*", "tests/**/*"],
+  "include": ["src/**/*", "tests/**/*", "api/**/*"],
   "exclude": ["node_modules", "dist"]
 }
