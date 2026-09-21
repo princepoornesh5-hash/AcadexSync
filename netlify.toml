@@ -1,6 +1,13 @@
+[[plugins]]
+  package = "netlify-plugin-flutter"
+
+  [plugins.inputs]
+  channel = "stable"
+
 [build]
   base = "Frontend"
   publish = "build/web"
+  command = "flutter build web --release --dart-define=API_BASE_URL=https://acadex-backend-main.onrender.com/api/v1"
 
 [[redirects]]
   from = "/*"
