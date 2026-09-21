@@ -14,12 +14,21 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FRONTEND_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-API_URL="${1:-http://localhost:5050/api/v1}"
+API_URL="${1:-https://acadex-backend-main.onrender.com/api/v1}"
+BUILD_MODE="${2:-release}"
+
+# Enforce no-localhost check for staging release builds
+if [[ "${API_URL}" == *"localhost"* ]] || [[ "${API_URL}" == *"127.0.0.1"* ]]; then
+  echo "⚠️  WARNING: Localhost detected in API_BASE_URL: ${API_URL}"
+else
+  echo "🔒 VERIFIED: Staging target is a remote cloud URL (no localhost)."
+fi
 
 echo "============================================================"
 echo "  ACADEX Android Staging APK Builder"
 echo "============================================================"
 echo "  Target API Base URL: ${API_URL}"
+echo "  Build Mode:          --${BUILD_MODE}"
 echo "  Working Directory:   ${FRONTEND_DIR}"
 echo "============================================================"
 
@@ -35,10 +44,10 @@ flutter analyze
 
 echo ""
 echo "📦 [3/3] Building staging Android APK with compile-time API_BASE_URL..."
-flutter build apk --debug \
+flutter build apk --${BUILD_MODE} \
   --dart-define=API_BASE_URL="${API_URL}"
 
-APK_PATH="${FRONTEND_DIR}/build/app/outputs/flutter-apk/app-debug.apk"
+APK_PATH="${FRONTEND_DIR}/build/app/outputs/flutter-apk/app-${BUILD_MODE}.apk"
 
 echo ""
 echo "============================================================"
