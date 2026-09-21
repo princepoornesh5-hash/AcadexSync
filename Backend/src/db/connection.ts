@@ -1,12 +1,7 @@
-import dns from 'dns';
 import mongoose, { Connection } from 'mongoose';
 import { env } from '../config/env';
 import { Logger } from '../utils/logger';
 
-// Ensure MongoDB Atlas SRV records resolve reliably across cellular hotspots/ISPs
-try {
-  dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
-} catch (_) {}
 
 export interface DatabaseStatus {
   connected: boolean;
