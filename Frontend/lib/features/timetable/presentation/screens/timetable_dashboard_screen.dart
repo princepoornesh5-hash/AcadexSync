@@ -10,7 +10,6 @@ import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/timetable_lookup_providers.dart';
 import '../providers/timetable_providers.dart';
-import '../../domain/models/timetable_models.dart';
 import '../widgets/acadex_timetable_calendar.dart';
 import '../widgets/daily_timeline_view.dart';
 import '../widgets/student_attendance_summary.dart';
