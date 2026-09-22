@@ -1,5 +1,7 @@
 import '../../../auth/domain/models/role_enum.dart';
 import '../../domain/models/timetable_models.dart';
+import '../../domain/models/calendar_override.dart';
+import '../../domain/models/teacher_substitution.dart';
 
 class TimetableConflictException implements Exception {
   final String message;
@@ -20,6 +22,7 @@ abstract class TimetableRepository {
     String? collegeId,
     String? departmentId,
     String? sectionId,
+    String? date,
   });
 
   /// Fetches timetable entries for a specific college/department (used by management screens).
@@ -30,6 +33,7 @@ abstract class TimetableRepository {
     String? semesterId,
     String? sectionId,
     String? facultyId,
+    String? date,
   });
 
   /// Creates a new timetable entry. Validates for conflicts before creating.
@@ -49,14 +53,17 @@ abstract class TimetableRepository {
   // AUTHORING ARCHITECTURE: CONTAINERS & SPREADSHEET PLANE
   // =========================================================
 
-  /// Creates a new timetable container in draft status.
-  Future<void> createTimetableContainer(TimetableContainerModel container);
+  /// Creates a new timetable container in draft status and returns the server-generated timetable ID.
+  Future<String> createTimetableContainer(TimetableContainerModel container);
 
   /// Updates an existing timetable container metadata.
   Future<void> updateTimetableContainer(TimetableContainerModel container);
 
   /// Deletes a timetable container and its associated projections.
   Future<void> deleteTimetableContainer(String timetableId);
+
+  /// Archives a timetable container (soft archive preserving historical attendance).
+  Future<void> archiveTimetableContainer(String timetableId);
 
   /// Fetches a single timetable container by ID.
   Future<TimetableContainerModel?> getTimetableContainer(String timetableId);
@@ -145,4 +152,31 @@ abstract class TimetableRepository {
 
   /// Reverts a published timetable back to draft and removes legacy `/timetable` projection.
   Future<void> unpublishTimetable(String timetableId);
+
+  // --- Calendar Overrides & Exceptions ---
+
+  /// Fetches active calendar overrides (holidays / cancellations).
+  Future<List<CalendarOverride>> getCalendarOverrides({String? date, String? from, String? to});
+
+  /// Creates a calendar override.
+  Future<CalendarOverride> createCalendarOverride(CalendarOverride override);
+
+  /// Deletes a calendar override.
+  Future<void> deleteCalendarOverride(String id);
+
+  // --- Teacher Substitutions ---
+
+  /// Fetches date-specific teacher substitutions.
+  Future<List<TeacherSubstitution>> getTeacherSubstitutions({
+    String? date,
+    String? timetableId,
+    String? departmentId,
+  });
+
+  /// Creates a date-specific teacher substitution.
+  Future<TeacherSubstitution> createTeacherSubstitution(TeacherSubstitution substitution);
+
+  /// Deletes a teacher substitution, restoring the operational teacher to original faculty.
+  Future<void> deleteTeacherSubstitution(String id);
 }
+

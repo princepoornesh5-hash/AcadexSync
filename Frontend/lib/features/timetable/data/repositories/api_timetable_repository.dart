@@ -3,6 +3,8 @@ import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../domain/models/timetable_models.dart';
+import '../../domain/models/calendar_override.dart';
+import '../../domain/models/teacher_substitution.dart';
 import 'timetable_repository.dart';
 
 class ApiTimetableRepository implements TimetableRepository {
@@ -44,12 +46,14 @@ class ApiTimetableRepository implements TimetableRepository {
     String? collegeId,
     String? departmentId,
     String? sectionId,
+    String? date,
   }) async* {
     final list = await getTimetable(
       collegeId: collegeId ?? '',
       departmentId: departmentId,
       sectionId: sectionId,
       facultyId: role == AppRole.faculty ? 'me' : null,
+      date: date,
     );
     yield list;
   }
@@ -62,10 +66,19 @@ class ApiTimetableRepository implements TimetableRepository {
     String? semesterId,
     String? sectionId,
     String? facultyId,
+    String? date,
   }) async {
     try {
+      final queryParams = <String, dynamic>{};
+      if (date != null && date.isNotEmpty) {
+        queryParams['date'] = date;
+      }
+
       if (facultyId != null && facultyId.isNotEmpty) {
-        final response = await _client.dio.get('/timetables/faculty/$facultyId');
+        final response = await _client.dio.get(
+          '/timetables/faculty/$facultyId',
+          queryParameters: queryParams.isNotEmpty ? queryParams : null,
+        );
         final body = response.data;
         final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
         final list = data is List ? data : (data is Map && data['entries'] is List ? data['entries'] as List : null);
@@ -73,7 +86,10 @@ class ApiTimetableRepository implements TimetableRepository {
           return _parseEntries(list, collegeId, departmentId, sectionId, facultyId);
         }
       } else if (sectionId != null && sectionId.isNotEmpty) {
-        final response = await _client.dio.get('/timetables/sections/$sectionId');
+        final response = await _client.dio.get(
+          '/timetables/sections/$sectionId',
+          queryParameters: queryParams.isNotEmpty ? queryParams : null,
+        );
         final body = response.data;
         final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
         final list = data is List ? data : (data is Map && data['entries'] is List ? data['entries'] as List : null);
@@ -81,7 +97,10 @@ class ApiTimetableRepository implements TimetableRepository {
           return _parseEntries(list, collegeId, departmentId, sectionId, null);
         }
       } else {
-        final response = await _client.dio.get('/timetables/students/me');
+        final response = await _client.dio.get(
+          '/timetables/students/me',
+          queryParameters: queryParams.isNotEmpty ? queryParams : null,
+        );
         final body = response.data;
         final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
         final list = data is List ? data : (data is Map && data['entries'] is List ? data['entries'] as List : null);
@@ -138,6 +157,7 @@ class ApiTimetableRepository implements TimetableRepository {
         roomNumber: (m['roomNumber'] ?? m['room'] ?? 'Room 101').toString(),
         building: m['building']?.toString(),
         sessionType: sessionType,
+        isSubstituted: m['isSubstituted'] == true,
         createdAt: m['createdAt'] != null ? DateTime.tryParse(m['createdAt'].toString()) ?? DateTime.now() : DateTime.now(),
         updatedAt: m['updatedAt'] != null ? DateTime.tryParse(m['updatedAt'].toString()) ?? DateTime.now() : DateTime.now(),
       );
@@ -149,9 +169,9 @@ class ApiTimetableRepository implements TimetableRepository {
   // =========================================================================
 
   @override
-  Future<void> createTimetableContainer(TimetableContainerModel container) async {
+  Future<String> createTimetableContainer(TimetableContainerModel container) async {
     try {
-      await _client.dio.post('/timetables', data: {
+      final response = await _client.dio.post('/timetables', data: {
         'collegeId': container.collegeId,
         'departmentId': container.departmentId,
         'courseId': container.courseId,
@@ -163,6 +183,15 @@ class ApiTimetableRepository implements TimetableRepository {
         'timingMode': container.timingMode.name,
         'activeDays': container.activeDays.map((d) => d.name.toLowerCase()).toList(),
       });
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      final serverId = (data is Map<String, dynamic>)
+          ? (data['id'] ?? data['_id'])?.toString()
+          : null;
+      if (serverId == null || serverId.trim().isEmpty) {
+        throw Exception('Failed to create timetable: Server returned an invalid or missing timetable ID.');
+      }
+      return serverId.trim();
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to create timetable');
     }
@@ -191,10 +220,19 @@ class ApiTimetableRepository implements TimetableRepository {
   @override
   Future<void> deleteTimetableContainer(String timetableId) async {
     try {
-      await _client.dio.post('/timetables/$timetableId/archive');
+      await _client.dio.delete('/timetables/$timetableId');
       _periods.remove(timetableId);
       _breaks.remove(timetableId);
       _gridEntries.remove(timetableId);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to delete timetable');
+    }
+  }
+
+  @override
+  Future<void> archiveTimetableContainer(String timetableId) async {
+    try {
+      await _client.dio.post('/timetables/$timetableId/archive');
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to archive timetable');
     }
@@ -417,18 +455,21 @@ class ApiTimetableRepository implements TimetableRepository {
 
   @override
   Future<void> saveGridEntry(String timetableId, TimetableGridEntryModel entry) async {
+    if (!_gridEntries.containsKey(timetableId)) {
+      await getTimetableContainer(timetableId);
+    }
     final current = _gridEntries[timetableId] ?? [];
     final updated = [
       for (final e in current)
         if (e.id == entry.id) entry else e,
       if (!current.any((e) => e.id == entry.id)) entry,
     ];
-    _gridEntries[timetableId] = updated;
-    _gridEntriesStreamController.add(_gridEntries);
     try {
       await _client.dio.put('/timetables/$timetableId', data: {
         'entries': updated.map((e) => e.toJson()).toList(),
       });
+      _gridEntries[timetableId] = updated;
+      _gridEntriesStreamController.add(_gridEntries);
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to save timetable grid entry');
     }
@@ -436,12 +477,12 @@ class ApiTimetableRepository implements TimetableRepository {
 
   @override
   Future<void> saveGridEntriesBatch(String timetableId, List<TimetableGridEntryModel> entries) async {
-    _gridEntries[timetableId] = entries;
-    _gridEntriesStreamController.add(_gridEntries);
     try {
       await _client.dio.put('/timetables/$timetableId', data: {
         'entries': entries.map((e) => e.toJson()).toList(),
       });
+      _gridEntries[timetableId] = entries;
+      _gridEntriesStreamController.add(_gridEntries);
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to save timetable grid entries');
     }
@@ -449,16 +490,30 @@ class ApiTimetableRepository implements TimetableRepository {
 
   @override
   Future<void> deleteGridEntry(String timetableId, String entryId) async {
+    // 1. Load existing timetable container to enforce draft rule and populate entries
+    final container = await getTimetableContainer(timetableId);
+    if (container == null) {
+      throw Exception('Timetable container not found: $timetableId');
+    }
+    if (container.status == TimetableStatus.published) {
+      throw StateError('Cannot modify entries in a published timetable. Please unpublish or revise first.');
+    }
+
     final current = _gridEntries[timetableId] ?? [];
+    // 2. Remove ONLY the target entry, preserving every other entry
     final updated = current.where((e) => e.id != entryId).toList();
-    _gridEntries[timetableId] = updated;
-    _gridEntriesStreamController.add(_gridEntries);
+
+    // 3. Submit updated container through the existing PUT /timetables/:id endpoint
     try {
       await _client.dio.put('/timetables/$timetableId', data: {
         'entries': updated.map((e) => e.toJson()).toList(),
       });
+      // 4. Update frontend state ONLY after successful server response
+      _gridEntries[timetableId] = updated;
+      _gridEntriesStreamController.add(_gridEntries);
     } on DioException catch (e) {
-      throw _extractError(e, 'Failed to delete timetable grid entry');
+      // 5. Keep previous authoritative state intact on failure
+      throw _extractError(e, 'Failed to delete timetable entry');
     }
   }
 
@@ -523,4 +578,91 @@ class ApiTimetableRepository implements TimetableRepository {
   Future<void> checkConflicts(TimetableModel entry) async {
     // Conflict checking is executed authoritatively during backend publication
   }
+
+  @override
+  Future<List<CalendarOverride>> getCalendarOverrides({String? date, String? from, String? to}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (date != null) queryParams['date'] = date;
+      if (from != null) queryParams['from'] = from;
+      if (to != null) queryParams['to'] = to;
+      final response = await _client.dio.get('/calendar-overrides', queryParameters: queryParams);
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      final items = data is List ? data : (data is Map && data['items'] is List ? data['items'] as List : null);
+      if (items != null) {
+        return items.map((json) => CalendarOverride.fromJson(json as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch calendar overrides');
+    }
+  }
+
+  @override
+  Future<CalendarOverride> createCalendarOverride(CalendarOverride override) async {
+    try {
+      final response = await _client.dio.post('/calendar-overrides', data: override.toJson());
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      return CalendarOverride.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to create calendar override');
+    }
+  }
+
+  @override
+  Future<void> deleteCalendarOverride(String id) async {
+    try {
+      await _client.dio.delete('/calendar-overrides/$id');
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to delete calendar override');
+    }
+  }
+
+  // --- Teacher Substitutions ---
+
+  @override
+  Future<List<TeacherSubstitution>> getTeacherSubstitutions({
+    String? date,
+    String? timetableId,
+    String? departmentId,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (date != null && date.isNotEmpty) queryParams['date'] = date;
+      if (timetableId != null && timetableId.isNotEmpty) queryParams['timetableId'] = timetableId;
+      if (departmentId != null && departmentId.isNotEmpty) queryParams['departmentId'] = departmentId;
+
+      final response = await _client.dio.get('/teacher-substitutions', queryParameters: queryParams);
+      final data = response.data['data'];
+      if (data is List) {
+        return data.map((json) => TeacherSubstitution.fromJson(json as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch teacher substitutions');
+    }
+  }
+
+  @override
+  Future<TeacherSubstitution> createTeacherSubstitution(TeacherSubstitution substitution) async {
+    try {
+      final response = await _client.dio.post('/teacher-substitutions', data: substitution.toJson());
+      final data = response.data['data'] as Map<String, dynamic>;
+      return TeacherSubstitution.fromJson(data);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to create teacher substitution');
+    }
+  }
+
+  @override
+  Future<void> deleteTeacherSubstitution(String id) async {
+    try {
+      await _client.dio.delete('/teacher-substitutions/$id');
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to delete teacher substitution');
+    }
+  }
 }
+

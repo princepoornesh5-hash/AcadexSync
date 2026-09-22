@@ -81,7 +81,11 @@ class ApiAttendanceRepository implements AttendanceRepository {
   Future<List<AssignedClass>> getAssignedClasses(String facultyId, DateTime date) async {
     try {
       final target = (facultyId.isEmpty || facultyId == 'me') ? 'me' : facultyId;
-      final response = await _client.dio.get('/timetables/faculty/$target');
+      final dateStr = '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final response = await _client.dio.get(
+        '/timetables/faculty/$target',
+        queryParameters: {'date': dateStr},
+      );
       final body = response.data;
       final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
       final list = data is List ? data : (data is Map && data['entries'] is List ? data['entries'] as List : null);

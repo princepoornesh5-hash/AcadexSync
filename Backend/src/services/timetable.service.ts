@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
-import { Timetable, ITimetable, ITimetableGridEntry } from '../models/timetable.model';
+import { Timetable, ITimetable, ITimetableGridEntry, ITimetableBreak } from '../models/timetable.model';
+import { AttendanceSession } from '../models/attendanceSession.model';
 import { Room, IRoom } from '../models/room.model';
 import { Section } from '../models/section.model';
 import { Subject } from '../models/subject.model';
@@ -17,12 +18,16 @@ import { AppRole } from '../constants/roles';
 import { TimetableStatus, TimetableDay, CollegeStatus } from '../constants/status';
 import { NotificationService } from './notification.service';
 import { NotificationType, NotificationCategory } from '../constants/notification.constants';
+import { CalendarOverrideService } from './calendarOverride.service';
+import { TeacherSubstitution, TeacherSubstitutionStatus } from '../models/teacherSubstitution.model';
+import { TeacherSubstitutionService } from './teacherSubstitution.service';
+import { DEFAULT_INSTITUTION_TIMEZONE, formatDateToCalendarString, getTimetableDayFromDate, isTimeOverlapping as isTimeOverlappingUtil } from '../utils/dateTime';
 import { logger } from '../utils/logger';
 import { ApiError } from '../utils/apiError';
 import { AuthenticatedUser } from '../types/auth.types';
 
 export function isTimeOverlapping(s1: string, e1: string, s2: string, e2: string): boolean {
-  return s1 < e2 && e1 > s2;
+  return isTimeOverlappingUtil(s1, e1, s2, e2);
 }
 
 export function normalizeDay(day?: string): TimetableDay | undefined {
@@ -254,7 +259,8 @@ export class TimetableService {
     section: InstanceType<typeof Section>,
     entries: ITimetableGridEntry[],
     currentTimetableId?: string,
-    academicYearId?: string
+    academicYearId?: string,
+    breaks: ITimetableBreak[] = []
   ): Promise<void> {
     const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -279,7 +285,21 @@ export class TimetableService {
       }
     }
 
-    // 2. Validate Subject, Faculty, Room, Faculty Assignment and External Conflicts
+    // 2. Break Overlap Checks (against configured breaks)
+    if (breaks && breaks.length > 0) {
+      for (const entry of entries) {
+        for (const brk of breaks) {
+          const applies = !brk.appliesToDays || brk.appliesToDays.length === 0 || brk.appliesToDays.includes(entry.dayOfWeek);
+          if (applies && isTimeOverlapping(entry.startTime, entry.endTime, brk.startTime, brk.endTime)) {
+            throw ApiError.conflict(
+              `Break conflict: Class on ${entry.dayOfWeek} (${entry.startTime}-${entry.endTime}) overlaps with break "${brk.name}" (${brk.startTime}-${brk.endTime})`
+            );
+          }
+        }
+      }
+    }
+
+    // 3. Validate Subject, Faculty, Room, Faculty Assignment and External Conflicts
     for (const entry of entries) {
       // Validate Faculty Assignment (authoritative linkage) first
       if (entry.facultyAssignmentId) {
@@ -454,6 +474,10 @@ export class TimetableService {
       throw ApiError.forbidden('Cross-college timetable creation is strictly prohibited');
     }
 
+    if (requester?.role === AppRole.HOD && data.departmentId && requester.departmentId !== data.departmentId.toString()) {
+      throw ApiError.forbidden('HOD can only create timetables within their assigned department');
+    }
+
     // Hierarchy validation
     if (data.departmentId && data.courseId && data.academicYearId && data.semesterId && data.sectionId) {
       const deptExists = await Department.findById(data.departmentId);
@@ -466,10 +490,6 @@ export class TimetableService {
           sectionId: data.sectionId.toString(),
         });
 
-        if (requester?.role === AppRole.HOD && requester.departmentId !== data.departmentId.toString()) {
-          throw ApiError.forbidden('HOD can only create timetables within their assigned department');
-        }
-
         // Validate entries if provided
         if (data.entries && data.entries.length > 0) {
           await this.validateTimetableEntries(
@@ -479,7 +499,8 @@ export class TimetableService {
             section,
             data.entries,
             undefined,
-            data.academicYearId.toString()
+            data.academicYearId.toString(),
+            data.breaks || []
           );
         }
       }
@@ -508,7 +529,12 @@ export class TimetableService {
     return timetable;
   }
 
-  static async getTimetableById(id: string, collegeId?: string, isSuperAdmin = false): Promise<ITimetable> {
+  static async getTimetableById(
+    id: string,
+    collegeId?: string,
+    isSuperAdmin = false,
+    requester?: AuthenticatedUser
+  ): Promise<ITimetable> {
     if (!mongoose.Types.ObjectId.isValid(id)) throw ApiError.badRequest('Invalid Timetable ID');
     const query: Record<string, unknown> = { _id: id };
     if (!isSuperAdmin && collegeId) {
@@ -518,6 +544,19 @@ export class TimetableService {
     if (!timetable) {
       throw ApiError.notFound(`Timetable with ID "${id}" not found`);
     }
+
+    if (requester) {
+      if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
+        throw ApiError.forbidden(`Access denied. Role "${requester.role}" does not have permission to perform this action.`);
+      }
+      if (requester.role !== AppRole.SUPER_ADMIN && timetable.collegeId.toString() !== requester.collegeId) {
+        throw ApiError.forbidden('Cross-college timetable access is strictly prohibited');
+      }
+      if (requester.role === AppRole.HOD && timetable.departmentId.toString() !== requester.departmentId) {
+        throw ApiError.forbidden('Cross-department timetable access is prohibited');
+      }
+    }
+
     return timetable;
   }
 
@@ -543,6 +582,9 @@ export class TimetableService {
       if (!requester.collegeId) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
       if (requester.role === AppRole.HOD && requester.departmentId) {
+        if (query.departmentId && query.departmentId !== requester.departmentId) {
+          throw ApiError.forbidden('HOD can only query timetables for their own department');
+        }
         mongoQuery.departmentId = new mongoose.Types.ObjectId(requester.departmentId);
       }
       if (requester.role === AppRole.FACULTY) {
@@ -562,7 +604,7 @@ export class TimetableService {
       mongoQuery.collegeId = new mongoose.Types.ObjectId(query.collegeId);
     }
 
-    if (query.departmentId) mongoQuery.departmentId = new mongoose.Types.ObjectId(query.departmentId);
+    if (query.departmentId && requester?.role !== AppRole.HOD) mongoQuery.departmentId = new mongoose.Types.ObjectId(query.departmentId);
     if (query.courseId) mongoQuery.courseId = new mongoose.Types.ObjectId(query.courseId);
     if (query.academicYearId) mongoQuery.academicYearId = new mongoose.Types.ObjectId(query.academicYearId);
     if (query.semesterId) mongoQuery.semesterId = new mongoose.Types.ObjectId(query.semesterId);
@@ -627,7 +669,9 @@ export class TimetableService {
     if (update.periods) timetable.periods = update.periods;
     if (update.breaks) timetable.breaks = update.breaks;
 
-    if (update.entries) {
+    const effectiveBreaks = update.breaks !== undefined ? update.breaks : timetable.breaks;
+
+    if (update.entries !== undefined) {
       const section = await Section.findById(timetable.sectionId);
       if (!section) throw ApiError.notFound('Section not found');
 
@@ -638,10 +682,26 @@ export class TimetableService {
         section,
         update.entries,
         timetable.id,
-        timetable.academicYearId.toString()
+        timetable.academicYearId.toString(),
+        effectiveBreaks
       );
 
       timetable.entries = update.entries;
+    } else if (update.breaks !== undefined && timetable.entries && timetable.entries.length > 0) {
+      // Validate existing entries against newly updated breaks
+      const section = await Section.findById(timetable.sectionId);
+      if (section) {
+        await this.validateTimetableEntries(
+          timetable.collegeId.toString(),
+          timetable.semesterId.toString(),
+          timetable.courseId.toString(),
+          section,
+          timetable.entries,
+          timetable.id,
+          timetable.academicYearId.toString(),
+          update.breaks
+        );
+      }
     }
 
     timetable.updatedBy = requester.id;
@@ -704,7 +764,8 @@ export class TimetableService {
           section,
           timetable.entries,
           timetable.id,
-          timetable.academicYearId.toString()
+          timetable.academicYearId.toString(),
+          timetable.breaks || []
         );
       }
     }
@@ -827,7 +888,8 @@ export class TimetableService {
     const timetable = await this.getTimetableById(
       id,
       requester.collegeId,
-      requester.role === AppRole.SUPER_ADMIN
+      requester.role === AppRole.SUPER_ADMIN,
+      requester
     );
 
     if (requester.role !== AppRole.SUPER_ADMIN && timetable.collegeId.toString() !== requester.collegeId) {
@@ -836,6 +898,14 @@ export class TimetableService {
 
     if (requester.role === AppRole.HOD && timetable.departmentId.toString() !== requester.departmentId) {
       throw ApiError.forbidden('Cross-department timetable deletion is prohibited');
+    }
+
+    // Safety check: Prevent hard deletion if attendance sessions exist
+    const hasAttendance = await AttendanceSession.exists({ timetableId: timetable._id });
+    if (hasAttendance) {
+      throw ApiError.conflict(
+        'Cannot delete timetable with existing attendance sessions. Please archive the timetable instead to preserve historical attendance records.'
+      );
     }
 
     await Timetable.findByIdAndDelete(timetable._id);
@@ -857,7 +927,8 @@ export class TimetableService {
   static async getSectionTimetable(
     sectionId: string,
     day?: string,
-    requester?: AuthenticatedUser
+    requester?: AuthenticatedUser,
+    date?: string
   ): Promise<ITimetableGridEntry[]> {
     if (!mongoose.Types.ObjectId.isValid(sectionId)) throw ApiError.badRequest('Invalid sectionId');
 
@@ -882,19 +953,66 @@ export class TimetableService {
 
     if (!timetable) return [];
 
+    let targetDay = normalizeDay(day);
+    let calendarDateStr: string | undefined;
+
+    if (date) {
+      const collegeDoc = await College.findById(section.collegeId);
+      const tz = collegeDoc?.timezone || DEFAULT_INSTITUTION_TIMEZONE;
+      calendarDateStr = formatDateToCalendarString(date, tz);
+      targetDay = getTimetableDayFromDate(date, tz);
+    }
+
     let entries = timetable.entries;
-    const targetDay = normalizeDay(day);
     if (targetDay) {
       entries = entries.filter((e) => e.dayOfWeek === targetDay);
     }
 
-    return entries.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    const operationalEntries: ITimetableGridEntry[] = [];
+    for (const e of entries) {
+      let facultyId = e.facultyId;
+      let isSubstituted = false;
+
+      if (calendarDateStr) {
+        const activeOverride = await CalendarOverrideService.resolveActiveOverride({
+          collegeId: timetable.collegeId,
+          departmentId: timetable.departmentId,
+          sectionId: timetable.sectionId,
+          timetableEntryId: e._id,
+          date: calendarDateStr,
+        });
+        if (activeOverride) {
+          // Holiday or Cancelled classes are not operational on this date
+          continue;
+        }
+
+        const activeSub = await TeacherSubstitutionService.resolveActiveSubstitution({
+          timetableId: timetable._id,
+          timetableEntryId: e._id,
+          date: calendarDateStr,
+        });
+        if (activeSub) {
+          facultyId = activeSub.substituteFacultyId;
+          isSubstituted = true;
+        }
+      }
+
+      const entryObj = (e as any).toObject ? (e as any).toObject() : { ...(e as any) };
+      entryObj.facultyId = facultyId;
+      if (isSubstituted) {
+        (entryObj as any).isSubstituted = true;
+      }
+      operationalEntries.push(entryObj as ITimetableGridEntry);
+    }
+
+    return operationalEntries.sort((a, b) => a.startTime.localeCompare(b.startTime));
   }
 
   static async getFacultyTimetable(
     facultyId: string,
     day?: string,
-    requester?: AuthenticatedUser
+    requester?: AuthenticatedUser,
+    date?: string
   ): Promise<ITimetableGridEntry[]> {
     let facultyDoc: InstanceType<typeof Faculty> | null = null;
     const targetId = (facultyId === 'me' && requester) ? requester.id : facultyId;
@@ -943,12 +1061,45 @@ export class TimetableService {
       'entries.facultyId': actualFacultyId,
     });
 
-    const targetDay = normalizeDay(day);
+    let targetDay = normalizeDay(day);
+    let calendarDateStr: string | undefined;
+
+    if (date) {
+      const collegeDoc = await College.findById(facultyDoc.collegeId);
+      const tz = collegeDoc?.timezone || DEFAULT_INSTITUTION_TIMEZONE;
+      calendarDateStr = formatDateToCalendarString(date, tz);
+      targetDay = getTimetableDayFromDate(date, tz);
+    }
+
     const entries: ITimetableGridEntry[] = [];
     for (const t of timetables) {
       for (const e of t.entries) {
         if (e.facultyId.toString() === actualFacultyId.toString()) {
           if (!targetDay || e.dayOfWeek === targetDay) {
+            if (calendarDateStr) {
+              const activeOverride = await CalendarOverrideService.resolveActiveOverride({
+                collegeId: t.collegeId,
+                departmentId: t.departmentId,
+                sectionId: t.sectionId,
+                timetableEntryId: e._id,
+                date: calendarDateStr,
+              });
+              if (activeOverride) {
+                // Holiday or Cancelled classes are not operational on this date
+                continue;
+              }
+
+              // Teacher substitution check: If original faculty was replaced on this date, exclude it!
+              const activeSub = await TeacherSubstitutionService.resolveActiveSubstitution({
+                timetableId: t._id,
+                timetableEntryId: e._id,
+                date: calendarDateStr,
+              });
+              if (activeSub && activeSub.substituteFacultyId.toString() !== actualFacultyId.toString()) {
+                continue;
+              }
+            }
+
             const entryObj = (e as any).toObject ? (e as any).toObject() : { ...(e as any) };
             entryObj.timetableId = t._id;
             entryObj.sectionId = t.sectionId;
@@ -963,12 +1114,55 @@ export class TimetableService {
       }
     }
 
+    // If a calendar date is specified, include classes where this faculty is acting as substitute
+    if (calendarDateStr) {
+      const substitutionsAsSubstitute = await TeacherSubstitution.find({
+        collegeId: facultyDoc.collegeId,
+        substituteFacultyId: actualFacultyId,
+        date: calendarDateStr,
+        status: TeacherSubstitutionStatus.ACTIVE,
+      });
+
+      for (const sub of substitutionsAsSubstitute) {
+        const subTimetable = await Timetable.findById(sub.timetableId);
+        if (!subTimetable || subTimetable.status !== TimetableStatus.PUBLISHED) continue;
+
+        const subEntry = subTimetable.entries.find(
+          (e) => e._id?.toString() === sub.timetableEntryId.toString()
+        );
+        if (!subEntry) continue;
+
+        // Check if holiday or cancelled
+        const activeOverride = await CalendarOverrideService.resolveActiveOverride({
+          collegeId: subTimetable.collegeId,
+          departmentId: subTimetable.departmentId,
+          sectionId: subTimetable.sectionId,
+          timetableEntryId: subEntry._id,
+          date: calendarDateStr,
+        });
+        if (activeOverride) continue;
+
+        const entryObj = (subEntry as any).toObject ? (subEntry as any).toObject() : { ...(subEntry as any) };
+        entryObj.timetableId = subTimetable._id;
+        entryObj.sectionId = subTimetable.sectionId;
+        entryObj.courseId = subTimetable.courseId;
+        entryObj.semesterId = subTimetable.semesterId;
+        entryObj.academicYearId = subTimetable.academicYearId;
+        entryObj.departmentId = subTimetable.departmentId;
+        entryObj.collegeId = subTimetable.collegeId;
+        entryObj.facultyId = actualFacultyId;
+        (entryObj as any).isSubstituted = true;
+        entries.push(entryObj as ITimetableGridEntry);
+      }
+    }
+
     return entries.sort((a, b) => a.startTime.localeCompare(b.startTime));
   }
 
   static async getStudentTimetable(
     requester: AuthenticatedUser,
-    day?: string
+    day?: string,
+    date?: string
   ): Promise<ITimetableGridEntry[]> {
     if (requester.role !== AppRole.STUDENT) {
       throw ApiError.forbidden('Only students can access this endpoint');
@@ -988,7 +1182,7 @@ export class TimetableService {
       return [];
     }
 
-    return this.getSectionTimetable(sectionId.toString(), day, requester);
+    return this.getSectionTimetable(sectionId.toString(), day, requester, date);
   }
 
   private static async notifyTimetableRecipients(

@@ -168,6 +168,7 @@ const TimetableSchema = new Schema<ITimetable>(
 );
 
 TimetableSchema.index({ collegeId: 1, sectionId: 1, status: 1 });
+TimetableSchema.index({ collegeId: 1, status: 1, 'entries.dayOfWeek': 1 });
 TimetableSchema.index({ collegeId: 1, departmentId: 1 });
 TimetableSchema.index({ 'entries.facultyId': 1 });
 TimetableSchema.index({ 'entries.facultyAssignmentId': 1 });

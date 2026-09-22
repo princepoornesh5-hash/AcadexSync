@@ -524,6 +524,7 @@ class TimetableManagementCard extends ConsumerStatefulWidget {
   final TimetableModel entry;
   final VoidCallback onEdit;
   final VoidCallback? onDuplicate;
+  final VoidCallback? onSubstitute;
   final VoidCallback onDelete;
 
   const TimetableManagementCard({
@@ -531,6 +532,7 @@ class TimetableManagementCard extends ConsumerStatefulWidget {
     required this.entry,
     required this.onEdit,
     this.onDuplicate,
+    this.onSubstitute,
     required this.onDelete,
   });
 
@@ -729,6 +731,12 @@ class _TimetableManagementCardState extends ConsumerState<TimetableManagementCar
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (widget.onSubstitute != null)
+                    IconButton(
+                      icon: Icon(Icons.swap_horiz_rounded, size: 20, color: Theme.of(context).primaryColor),
+                      tooltip: 'Assign Substitute',
+                      onPressed: widget.onSubstitute,
+                    ),
                   IconButton(
                     icon: Icon(LucideIcons.edit2, size: 18, color: Theme.of(context).primaryColor),
                     tooltip: 'Edit Schedule',

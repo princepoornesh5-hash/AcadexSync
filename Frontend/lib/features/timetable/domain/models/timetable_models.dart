@@ -134,6 +134,7 @@ class TimetableModel {
   final String roomNumber;
   final String? building;
   final TimetableSessionType sessionType;
+  final bool isSubstituted;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -156,6 +157,7 @@ class TimetableModel {
     required this.roomNumber,
     this.building,
     required this.sessionType,
+    this.isSubstituted = false,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -179,6 +181,7 @@ class TimetableModel {
     String? roomNumber,
     String? building,
     TimetableSessionType? sessionType,
+    bool? isSubstituted,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -201,6 +204,7 @@ class TimetableModel {
       roomNumber: roomNumber ?? this.roomNumber,
       building: building ?? this.building,
       sessionType: sessionType ?? this.sessionType,
+      isSubstituted: isSubstituted ?? this.isSubstituted,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -232,6 +236,7 @@ class TimetableModel {
         (e) => e.name == json['sessionType'],
         orElse: () => TimetableSessionType.lecture,
       ),
+      isSubstituted: json['isSubstituted'] == true,
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'] as String) : DateTime.now(),
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt'] as String) : DateTime.now(),
     );
@@ -257,6 +262,7 @@ class TimetableModel {
       'roomNumber': roomNumber,
       if (building != null) 'building': building,
       'sessionType': sessionType.name,
+      'isSubstituted': isSubstituted,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -658,6 +664,7 @@ class TimetableGridEntryModel {
   final String roomNumber;
   final String? building;
   final TimetableSessionType sessionType;
+  final bool isSubstituted;
 
   TimetableGridEntryModel({
     required this.id,
@@ -673,6 +680,7 @@ class TimetableGridEntryModel {
     required this.roomNumber,
     this.building,
     required this.sessionType,
+    this.isSubstituted = false,
   });
 
   /// Whether this entry merges across multiple consecutive horizontal periods
@@ -723,6 +731,7 @@ class TimetableGridEntryModel {
     String? roomNumber,
     String? building,
     TimetableSessionType? sessionType,
+    bool? isSubstituted,
   }) {
     return TimetableGridEntryModel(
       id: id ?? this.id,
@@ -738,6 +747,7 @@ class TimetableGridEntryModel {
       roomNumber: roomNumber ?? this.roomNumber,
       building: building ?? this.building,
       sessionType: sessionType ?? this.sessionType,
+      isSubstituted: isSubstituted ?? this.isSubstituted,
     );
   }
 
@@ -762,6 +772,7 @@ class TimetableGridEntryModel {
         (e) => e.name == json['sessionType'],
         orElse: () => TimetableSessionType.lecture,
       ),
+      isSubstituted: json['isSubstituted'] == true,
     );
   }
 

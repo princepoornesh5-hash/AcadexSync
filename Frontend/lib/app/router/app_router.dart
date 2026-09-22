@@ -85,10 +85,8 @@ import '../../features/notifications/presentation/screens/create_announcement_sc
 
 import '../../features/timetable/presentation/screens/timetable_dashboard_screen.dart';
 import '../../features/timetable/presentation/screens/timetable_management_screen.dart';
-import '../../features/timetable/presentation/screens/timetable_form_screen.dart';
 import '../../features/timetable/presentation/screens/timetable_setup_screen.dart';
 import '../../features/timetable/presentation/screens/timetable_designer_screen.dart';
-import '../../features/timetable/domain/models/timetable_models.dart';
 
 import '../../features/analytics/presentation/screens/analytics_dashboard_screen.dart';
 import '../../features/analytics/presentation/screens/reports_list_screen.dart';
@@ -1072,22 +1070,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: 'new',
-            pageBuilder: (context, state) => fadeTransitionPage(
-              context: context,
-              state: state,
-              child: const TimetableFormScreen(),
-            ),
+            redirect: (context, state) => '/timetable/setup',
           ),
           GoRoute(
             path: 'edit/:id',
-            pageBuilder: (context, state) {
-              final entry = state.extra as TimetableModel?;
-              return fadeTransitionPage(
-                context: context,
-                state: state,
-                child: TimetableFormScreen(existingEntry: entry),
-              );
-            },
+            redirect: (context, state) => '/timetable/manage',
           ),
         ],
       ),

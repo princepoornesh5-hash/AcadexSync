@@ -175,6 +175,13 @@ class TodayScheduleTimeline extends ConsumerWidget {
                               label: entry.sessionType.displayName,
                               variant: AcadexBadgeVariant.neutral,
                             ),
+                            if (entry.isSubstituted) ...[
+                              const SizedBox(width: 6),
+                              AcadexBadge(
+                                label: isFaculty ? 'Substitute Duty' : 'Substitute Teacher',
+                                variant: AcadexBadgeVariant.warning,
+                              ),
+                            ],
                           ],
                         ),
                         const SizedBox(height: 8),

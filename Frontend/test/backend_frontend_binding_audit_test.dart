@@ -220,6 +220,7 @@ class AuditTimetableRepository implements TimetableRepository {
     String? collegeId,
     String? departmentId,
     String? sectionId,
+    String? date,
   }) async* {
     yield [
       TimetableModel(

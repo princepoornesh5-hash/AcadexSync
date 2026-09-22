@@ -1331,10 +1331,9 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
 
     try {
       final repo = ref.read(timetableRepositoryProvider);
-      final newId = const Uuid().v4();
 
       final container = TimetableContainerModel(
-        id: newId,
+        id: '',
         collegeId: user.collegeId ?? '',
         departmentId: _selectedDepartmentId!,
         courseId: _selectedCourseId!,
@@ -1350,22 +1349,26 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
         updatedAt: DateTime.now(),
       );
 
-      // 1. Persist Container
-      await repo.createTimetableContainer(container);
+      // 1. Persist Container & obtain real server timetable ID
+      final serverTimetableId = await repo.createTimetableContainer(container);
 
-      // 2. Persist Periods
-      await repo.savePeriodsBatch(newId, _periods);
+      if (serverTimetableId.trim().isEmpty) {
+        throw Exception('Server returned an empty or invalid timetable ID.');
+      }
 
-      // 3. Persist Breaks
+      // 2. Persist Periods using real server ID
+      await repo.savePeriodsBatch(serverTimetableId, _periods);
+
+      // 3. Persist Breaks using real server ID
       if (_breaks.isNotEmpty) {
-        await repo.saveBreaksBatch(newId, _breaks);
+        await repo.saveBreaksBatch(serverTimetableId, _breaks);
       }
 
       if (mounted) {
-        // Navigate to Designer
+        // Navigate to Designer using real server ID
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => TimetableDesignerScreen(timetableId: newId),
+            builder: (_) => TimetableDesignerScreen(timetableId: serverTimetableId),
           ),
         );
       }

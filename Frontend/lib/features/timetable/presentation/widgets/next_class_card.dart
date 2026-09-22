@@ -164,6 +164,13 @@ class NextClassCard extends ConsumerWidget {
                     label: entry.sessionType.displayName,
                     variant: AcadexBadgeVariant.info,
                   ),
+                if (entry.isSubstituted) ...[
+                  const SizedBox(width: 6),
+                  AcadexBadge(
+                    label: isFaculty ? 'Substitute Duty' : 'Substitute Teacher',
+                    variant: AcadexBadgeVariant.warning,
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 14),

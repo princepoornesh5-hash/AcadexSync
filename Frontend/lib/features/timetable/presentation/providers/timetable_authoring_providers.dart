@@ -183,6 +183,7 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       _undoStack.clear();
       _redoStack.clear();
 
+      if (!mounted) return;
       state = TimetableAuthoringState(
         container: container,
         periods: periods,
@@ -196,6 +197,7 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       );
     } catch (e, st) {
       developer.log('[TimetableAuthoring] loadTimetable failed: $e\n$st', name: 'Acadex.Timetable');
+      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Failed to load timetable: $e',
@@ -294,6 +296,44 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       isDirty: true,
     );
     validateLocalState();
+  }
+
+  /// Authoritatively deletes a single entry from the container on the server via container PUT,
+  /// updating local state only upon a successful server response.
+  Future<void> deleteEntryAuthoritatively(String entryId) async {
+    final container = state.container;
+    if (container == null) {
+      throw StateError('Cannot delete entry: No timetable container loaded.');
+    }
+    if (container.status == TimetableStatus.published) {
+      throw StateError('Cannot modify entries in a published timetable. Please unpublish or revise first.');
+    }
+
+    state = state.copyWith(isSaving: true, clearErrorMessage: true);
+    try {
+      await repository.deleteGridEntry(container.id, entryId);
+
+      _recordHistory();
+      final updated = List<TimetableGridEntryModel>.from(state.entries)
+        ..removeWhere((e) => e.id == entryId);
+
+      state = state.copyWith(
+        entries: updated,
+        clearSelectedEntryId: state.selectedEntryId == entryId,
+        isSaving: false,
+        isDirty: false,
+        canUndo: canUndo,
+        canRedo: canRedo,
+      );
+      validateLocalState();
+    } catch (e) {
+      if (!mounted) rethrow;
+      state = state.copyWith(
+        isSaving: false,
+        errorMessage: e.toString(),
+      );
+      rethrow;
+    }
   }
 
   /// Merges an existing entry into the next consecutive period to its right.

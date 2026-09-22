@@ -21,7 +21,7 @@ router.get('/faculty/:facultyId', TimetableController.getFacultyTimetable);
 
 // Timetable CRUD & Lifecycle
 router.get('/', TimetableController.list);
-router.get('/:id', TimetableController.getById);
+router.get('/:id', requireHodOrAbove, TimetableController.getById);
 router.post('/', requireHodOrAbove, TimetableController.create);
 router.put('/:id', requireHodOrAbove, TimetableController.update);
 router.post('/:id/publish', requireHodOrAbove, TimetableController.publish);

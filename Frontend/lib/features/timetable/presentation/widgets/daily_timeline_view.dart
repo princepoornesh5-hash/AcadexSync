@@ -336,6 +336,32 @@ class DailyTimelineView extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Subject Title
+                        if (entry.isSubstituted) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AcadexColors.warning.withValues(alpha: 0.15),
+                              borderRadius: AcadexRadius.borderRadiusSm,
+                              border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.swap_horiz_rounded, size: 14, color: AcadexColors.warning),
+                                const SizedBox(width: 4),
+                                Text(
+                                  isFaculty ? 'Substitute Duty' : 'Substitute: $facultyName',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: AcadexColors.warning,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         Text(
                           subjectName,
                           style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface).copyWith(

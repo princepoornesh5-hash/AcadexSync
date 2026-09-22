@@ -1327,10 +1327,8 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
 
     try {
       final repo = ref.read(timetableRepositoryProvider);
-      final containerId = const Uuid().v4();
-
       final newContainer = TimetableContainerModel(
-        id: containerId,
+        id: '',
         collegeId: user.collegeId ?? '',
         departmentId: _selectedDepartmentId!,
         courseId: _selectedCourseId!,
@@ -1346,18 +1344,21 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
         updatedAt: DateTime.now(),
       );
 
-      await repo.createTimetableContainer(newContainer);
+      final serverId = await repo.createTimetableContainer(newContainer);
+      if (serverId.trim().isEmpty) {
+        throw Exception('Server returned an empty or invalid timetable ID.');
+      }
       if (_periods.isNotEmpty) {
-        await repo.savePeriodsBatch(containerId, _periods);
+        await repo.savePeriodsBatch(serverId, _periods);
       }
       if (_breaks.isNotEmpty) {
-        await repo.saveBreaksBatch(containerId, _breaks);
+        await repo.saveBreaksBatch(serverId, _breaks);
       }
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => TimetableDesignerScreen(timetableId: containerId),
+            builder: (_) => TimetableDesignerScreen(timetableId: serverId),
           ),
         );
       }

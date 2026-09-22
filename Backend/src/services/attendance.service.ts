@@ -12,6 +12,7 @@ import { Faculty } from '../models/faculty.model';
 import { FacultyAssignment } from '../models/facultyAssignment.model';
 import { Student } from '../models/student.model';
 import { StudentEnrollment } from '../models/studentEnrollment.model';
+import { College } from '../models/college.model';
 import { AuditLog } from '../models/auditLog.model';
 import { AppRole } from '../constants/roles';
 import {
@@ -22,33 +23,30 @@ import {
 } from '../constants/status';
 import { NotificationService } from './notification.service';
 import { NotificationType, NotificationCategory } from '../constants/notification.constants';
+import { CalendarOverrideService } from './calendarOverride.service';
+import { CalendarOverrideType } from '../models/calendarOverride.model';
+import { TeacherSubstitutionService } from './teacherSubstitution.service';
 import { logger } from '../utils/logger';
 import { ApiError } from '../utils/apiError';
 import { AuthenticatedUser } from '../types/auth.types';
+import {
+  DEFAULT_INSTITUTION_TIMEZONE,
+  formatDateToCalendarString,
+  getTimetableDayFromDate as getTimetableDayFromDateUtil,
+  startOfCalendarDay,
+  endOfCalendarDay,
+} from '../utils/dateTime';
 
-export function getTimetableDayFromDate(date: Date): TimetableDay {
-  const days = [
-    TimetableDay.SUNDAY,
-    TimetableDay.MONDAY,
-    TimetableDay.TUESDAY,
-    TimetableDay.WEDNESDAY,
-    TimetableDay.THURSDAY,
-    TimetableDay.FRIDAY,
-    TimetableDay.SATURDAY,
-  ];
-  return days[date.getUTCDay()];
+export function getTimetableDayFromDate(date: Date | string, timeZone: string = DEFAULT_INSTITUTION_TIMEZONE): TimetableDay {
+  return getTimetableDayFromDateUtil(date, timeZone);
 }
 
-export function startOfDay(date: Date): Date {
-  const d = new Date(date);
-  d.setUTCHours(0, 0, 0, 0);
-  return d;
+export function startOfDay(date: Date, timeZone: string = DEFAULT_INSTITUTION_TIMEZONE): Date {
+  return startOfCalendarDay(date, timeZone);
 }
 
-export function endOfDay(date: Date): Date {
-  const d = new Date(date);
-  d.setUTCHours(23, 59, 59, 999);
-  return d;
+export function endOfDay(date: Date, timeZone: string = DEFAULT_INSTITUTION_TIMEZONE): Date {
+  return endOfCalendarDay(date, timeZone);
 }
 
 export class AttendanceService {
@@ -90,7 +88,10 @@ export class AttendanceService {
       throw ApiError.forbidden('Cross-college attendance creation is strictly prohibited');
     }
 
+    const collegeDoc = await College.findById(collegeId);
+    const collegeTimezone = collegeDoc?.timezone || DEFAULT_INSTITUTION_TIMEZONE;
     const sessionDate = data.date ? new Date(data.date) : new Date();
+    const calendarDateStr = formatDateToCalendarString(data.date || sessionDate, collegeTimezone);
 
     let sectionDoc: InstanceType<typeof Section> | null = null;
     let subjectDoc: InstanceType<typeof Subject> | null = null;
@@ -190,16 +191,48 @@ export class AttendanceService {
         }
 
         const scheduledDay = entry.dayOfWeek;
-        const dateDay = getTimetableDayFromDate(sessionDate);
+        const dateDay = getTimetableDayFromDate(data.date || sessionDate, collegeTimezone);
         if (scheduledDay !== dateDay) {
           throw ApiError.badRequest(
             `Scheduled day mismatch: Timetable entry is for ${scheduledDay}, but date is ${dateDay}`
           );
         }
 
+        // Calendar Override check (HOLIDAY or CANCELLED)
+        const activeOverride = await CalendarOverrideService.resolveActiveOverride({
+          collegeId: timetable.collegeId,
+          departmentId: timetable.departmentId,
+          sectionId: timetable.sectionId,
+          timetableEntryId: entry._id,
+          date: calendarDateStr,
+        });
+
+        if (activeOverride) {
+          if (activeOverride.type === CalendarOverrideType.HOLIDAY) {
+            throw ApiError.badRequest(
+              `Cannot mark attendance: The selected date is a declared holiday (${activeOverride.reason})`
+            );
+          } else if (activeOverride.type === CalendarOverrideType.CANCELLED) {
+            throw ApiError.badRequest(
+              `Cannot mark attendance: Class has been cancelled for this date (${activeOverride.reason})`
+            );
+          }
+        }
+
+        // Teacher Substitution Check
+        const activeSubstitution = await TeacherSubstitutionService.resolveActiveSubstitution({
+          timetableId: timetable._id,
+          timetableEntryId: entry._id,
+          date: calendarDateStr,
+        });
+
+        const operationalFacultyId = activeSubstitution
+          ? activeSubstitution.substituteFacultyId
+          : entry.facultyId;
+
         // Exact Faculty Ownership Check
         if (authenticatedFacultyDoc) {
-          if (entry.facultyId.toString() !== authenticatedFacultyDoc._id.toString()) {
+          if (operationalFacultyId.toString() !== authenticatedFacultyDoc._id.toString()) {
             throw ApiError.forbidden('Faculty is not authorized to mark attendance for this class (assigned to another faculty)');
           }
 
@@ -209,7 +242,7 @@ export class AttendanceService {
             if (!assignment || !assignment.isActive) {
               throw ApiError.forbidden('Faculty assignment is inactive or invalid');
             }
-            if (assignment.facultyId.toString() !== authenticatedFacultyDoc._id.toString()) {
+            if (!activeSubstitution && assignment.facultyId.toString() !== authenticatedFacultyDoc._id.toString()) {
               throw ApiError.forbidden('Faculty assignment belongs to another faculty member');
             }
             if (assignment.collegeId.toString() !== collegeId) {
@@ -231,7 +264,7 @@ export class AttendanceService {
               throw ApiError.badRequest('Academic year mismatch with faculty assignment');
             }
             data.facultyAssignmentId = assignment._id as mongoose.Types.ObjectId;
-          } else {
+          } else if (!activeSubstitution) {
             const assignmentQuery: Record<string, unknown> = {
               collegeId: timetable.collegeId,
               facultyId: authenticatedFacultyDoc._id,
@@ -244,6 +277,17 @@ export class AttendanceService {
               throw ApiError.forbidden('Faculty assignment does not match this subject and section');
             }
             data.facultyAssignmentId = activeAssignment._id as mongoose.Types.ObjectId;
+          } else {
+            const origAssignment = await FacultyAssignment.findOne({
+              collegeId: timetable.collegeId,
+              facultyId: entry.facultyId,
+              subjectId: entry.subjectId,
+              sectionId: timetable.sectionId,
+              isActive: true,
+            });
+            if (origAssignment) {
+              data.facultyAssignmentId = origAssignment._id as mongoose.Types.ObjectId;
+            }
           }
         }
 
@@ -253,11 +297,12 @@ export class AttendanceService {
         if (data.sectionId && timetable.sectionId.toString() !== data.sectionId.toString()) {
           throw ApiError.badRequest('Section mismatch with timetable entry');
         }
-        if (data.facultyId && entry.facultyId.toString() !== data.facultyId.toString()) {
+        if (data.facultyId && operationalFacultyId.toString() !== data.facultyId.toString()) {
           throw ApiError.badRequest('Faculty mismatch with timetable entry');
         }
 
         // Authoritative overrides from the stored timetable entry
+        data.facultyId = operationalFacultyId;
         data.subjectId = entry.subjectId;
         data.sectionId = timetable.sectionId;
         data.departmentId = timetable.departmentId;
@@ -284,8 +329,28 @@ export class AttendanceService {
       }
       data.facultyAssignmentId = activeAssignment._id as mongoose.Types.ObjectId;
 
+      // Calendar Override check (HOLIDAY or CANCELLED)
+      const activeOverride = await CalendarOverrideService.resolveActiveOverride({
+        collegeId,
+        departmentId: sectionDoc ? (sectionDoc as any).departmentId : undefined,
+        sectionId: data.sectionId,
+        date: calendarDateStr,
+      });
+
+      if (activeOverride) {
+        if (activeOverride.type === CalendarOverrideType.HOLIDAY) {
+          throw ApiError.badRequest(
+            `Cannot mark attendance: The selected date is a declared holiday (${activeOverride.reason})`
+          );
+        } else if (activeOverride.type === CalendarOverrideType.CANCELLED) {
+          throw ApiError.badRequest(
+            `Cannot mark attendance: Class has been cancelled for this date (${activeOverride.reason})`
+          );
+        }
+      }
+
       // Check if another faculty is scheduled in a published timetable for this section on this day/timeslot
-      const dateDay = getTimetableDayFromDate(sessionDate);
+      const dateDay = getTimetableDayFromDate(data.date || sessionDate, collegeTimezone);
       const publishedTt = await Timetable.findOne({
         collegeId: new mongoose.Types.ObjectId(collegeId),
         sectionId: new mongoose.Types.ObjectId(data.sectionId),

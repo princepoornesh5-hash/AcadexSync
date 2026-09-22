@@ -6,6 +6,8 @@ import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../../features/auth/domain/models/role_enum.dart';
 import '../../../../features/auth/domain/models/user_model.dart';
 import '../../domain/models/timetable_models.dart';
+import '../../domain/models/calendar_override.dart';
+import '../../domain/models/teacher_substitution.dart';
 import 'timetable_repository.dart';
 import '../../../../features/notifications/domain/services/notification_service.dart';
 
@@ -37,6 +39,7 @@ class FirebaseTimetableRepository implements TimetableRepository {
     String? collegeId,
     String? departmentId,
     String? sectionId,
+    String? date,
   }) {
     final userCollegeId = (collegeId != null && collegeId.isNotEmpty)
         ? collegeId
@@ -108,6 +111,7 @@ class FirebaseTimetableRepository implements TimetableRepository {
     String? semesterId,
     String? sectionId,
     String? facultyId,
+    String? date,
   }) async {
     final effectiveCollegeId = collegeId.isNotEmpty 
         ? collegeId 
@@ -367,7 +371,7 @@ class FirebaseTimetableRepository implements TimetableRepository {
   // =========================================================
 
   @override
-  Future<void> createTimetableContainer(TimetableContainerModel container) async {
+  Future<String> createTimetableContainer(TimetableContainerModel container) async {
     await _checkManagePermission(container.collegeId, container.departmentId);
     container.validate();
 
@@ -380,6 +384,7 @@ class FirebaseTimetableRepository implements TimetableRepository {
 
     _debugLog('createTimetableContainer', {'id': id, 'collegeId': toSave.collegeId, 'sectionId': toSave.sectionId});
     await _firestoreService.setDocument('timetables', id, toSave.toJson());
+    return id;
   }
 
   @override
@@ -410,6 +415,19 @@ class FirebaseTimetableRepository implements TimetableRepository {
       }
     } catch (e) {
       developer.log('[Timetable] Clean legacy projections on delete failed: $e', name: 'Acadex.Timetable');
+    }
+  }
+
+  @override
+  Future<void> archiveTimetableContainer(String timetableId) async {
+    final container = await getTimetableContainer(timetableId);
+    if (container != null) {
+      await _checkManagePermission(container.collegeId, container.departmentId);
+      final updated = container.copyWith(
+        status: TimetableStatus.archived,
+        updatedAt: DateTime.now(),
+      );
+      await _firestoreService.setDocument('timetables', timetableId, updated.toJson());
     }
   }
 
@@ -579,6 +597,10 @@ class FirebaseTimetableRepository implements TimetableRepository {
 
   @override
   Future<void> deleteGridEntry(String timetableId, String entryId) async {
+    final container = await getTimetableContainer(timetableId);
+    if (container != null && container.status == TimetableStatus.published) {
+      throw StateError('Cannot modify entries in a published timetable. Please unpublish or revise first.');
+    }
     await _firestoreService.deleteDocument('timetables/$timetableId/entries', entryId);
   }
 
@@ -787,5 +809,36 @@ class FirebaseTimetableRepository implements TimetableRepository {
       }
     }
   }
+
+  @override
+  Future<List<CalendarOverride>> getCalendarOverrides({String? date, String? from, String? to}) async {
+    return [];
+  }
+
+  @override
+  Future<CalendarOverride> createCalendarOverride(CalendarOverride override) async {
+    return override;
+  }
+
+  @override
+  Future<void> deleteCalendarOverride(String id) async {}
+
+  @override
+  Future<List<TeacherSubstitution>> getTeacherSubstitutions({
+    String? date,
+    String? timetableId,
+    String? departmentId,
+  }) async {
+    return [];
+  }
+
+  @override
+  Future<TeacherSubstitution> createTeacherSubstitution(TeacherSubstitution substitution) async {
+    return substitution;
+  }
+
+  @override
+  Future<void> deleteTeacherSubstitution(String id) async {}
 }
+
 

@@ -80,7 +80,8 @@ export class TimetableController {
     const timetable = await TimetableService.getTimetableById(
       req.params.id,
       req.user?.collegeId || req.collegeId,
-      isSuperAdmin
+      isSuperAdmin,
+      req.user
     );
     return ApiResponse.success(res, timetable);
   });
@@ -142,21 +143,24 @@ export class TimetableController {
 
   static getSectionTimetable = asyncHandler(async (req: Request, res: Response) => {
     const day = req.query.day as TimetableDay | undefined;
-    const entries = await TimetableService.getSectionTimetable(req.params.sectionId, day, req.user);
+    const date = req.query.date as string | undefined;
+    const entries = await TimetableService.getSectionTimetable(req.params.sectionId, day, req.user, date);
     return ApiResponse.success(res, entries);
   });
 
   static getFacultyTimetable = asyncHandler(async (req: Request, res: Response) => {
     const facultyId = req.params.facultyId || 'me';
     const day = req.query.day as TimetableDay | undefined;
-    const entries = await TimetableService.getFacultyTimetable(facultyId, day, req.user);
+    const date = req.query.date as string | undefined;
+    const entries = await TimetableService.getFacultyTimetable(facultyId, day, req.user, date);
     return ApiResponse.success(res, entries);
   });
 
   static getStudentTimetable = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user) throw ApiError.unauthorized('User not authenticated');
     const day = req.query.day as TimetableDay | undefined;
-    const entries = await TimetableService.getStudentTimetable(req.user, day);
+    const date = req.query.date as string | undefined;
+    const entries = await TimetableService.getStudentTimetable(req.user, day, date);
     return ApiResponse.success(res, entries);
   });
 }

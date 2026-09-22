@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../app/theme/app_theme.dart';
@@ -18,6 +17,7 @@ import '../providers/timetable_providers.dart';
 import '../providers/timetable_lookup_providers.dart';
 import '../widgets/timetable_widgets.dart';
 import '../widgets/timetable_class_editor_dialog.dart';
+import '../widgets/teacher_substitution_dialog.dart';
 import 'timetable_setup_screen.dart';
 import 'timetable_designer_screen.dart';
 
@@ -178,11 +178,12 @@ class TimetableManagementScreen extends ConsumerStatefulWidget {
 class _TimetableManagementScreenState extends ConsumerState<TimetableManagementScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  DateTime _substitutionSelectedDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -230,6 +231,20 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                     actions: [
                       if (canCreate) ...[
                         AcadexButton(
+                          label: 'Add Schedule',
+                          icon: LucideIcons.calendarPlus,
+                          variant: AcadexButtonVariant.secondary,
+                          size: isMobile ? AcadexButtonSize.sm : AcadexButtonSize.md,
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const TimetableSetupScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        AcadexButton(
                           label: 'Create Timetable',
                           icon: LucideIcons.sparkles,
                           variant: AcadexButtonVariant.primary,
@@ -241,13 +256,6 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                               ),
                             );
                           },
-                        ),
-                        AcadexButton(
-                          label: 'Add Schedule',
-                          icon: LucideIcons.plus,
-                          variant: AcadexButtonVariant.secondary,
-                          size: isMobile ? AcadexButtonSize.sm : AcadexButtonSize.md,
-                          onPressed: () => context.go('/timetable/new'),
                         ),
                       ],
                     ],
@@ -295,6 +303,16 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                             ],
                           ),
                         ),
+                        Tab(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.swap_horiz_rounded, size: 16),
+                              SizedBox(width: 8),
+                              Text('Substitutions'),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -325,6 +343,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
 
                             // TAB 2: INDIVIDUAL CLASS SLOTS
                             _buildLegacySlotsTab(context, ref, isDark, isMobile, filters),
+
+                            // TAB 3: TEACHER SUBSTITUTIONS
+                            _buildSubstitutionsTab(context, ref, isDark, isMobile, user),
                           ],
                         ),
                 ),
@@ -656,9 +677,8 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     }
 
     // Clone into new draft version
-    final newVersionId = const Uuid().v4();
     final newDraft = container.copyWith(
-      id: newVersionId,
+      id: '',
       version: container.version + 1,
       status: TimetableStatus.draft,
       name: '${container.name} (v${container.version + 1} Draft)',
@@ -666,21 +686,24 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
       updatedAt: DateTime.now(),
     );
 
-    await repo.createTimetableContainer(newDraft);
+    final newServerId = await repo.createTimetableContainer(newDraft);
+    if (newServerId.trim().isEmpty) {
+      throw Exception('Server returned an empty or invalid timetable ID.');
+    }
 
     final periods = await repo.getPeriods(container.id);
     if (periods.isNotEmpty) {
-      await repo.savePeriodsBatch(newVersionId, periods.map((p) => p.copyWith(id: const Uuid().v4())).toList());
+      await repo.savePeriodsBatch(newServerId, periods.map((p) => p.copyWith(id: const Uuid().v4())).toList());
     }
 
     final breaks = await repo.getBreaks(container.id);
     if (breaks.isNotEmpty) {
-      await repo.saveBreaksBatch(newVersionId, breaks.map((b) => b.copyWith(id: const Uuid().v4())).toList());
+      await repo.saveBreaksBatch(newServerId, breaks.map((b) => b.copyWith(id: const Uuid().v4())).toList());
     }
 
     final entries = await repo.getGridEntries(container.id);
     if (entries.isNotEmpty) {
-      await repo.saveGridEntriesBatch(newVersionId, entries.map((e) => e.copyWith(id: const Uuid().v4())).toList());
+      await repo.saveGridEntriesBatch(newServerId, entries.map((e) => e.copyWith(id: const Uuid().v4())).toList());
     }
 
     ref.invalidate(managementContainersProvider);
@@ -688,7 +711,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     if (context.mounted) {
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => TimetableDesignerScreen(timetableId: newVersionId),
+          builder: (_) => TimetableDesignerScreen(timetableId: newServerId),
         ),
       );
     }
@@ -711,12 +734,71 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
             onPressed: () async {
               Navigator.of(ctx).pop();
               final repo = ref.read(timetableRepositoryProvider);
-              await repo.deleteTimetableContainer(container.id);
-              ref.invalidate(managementContainersProvider);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Timetable draft deleted.'), backgroundColor: AcadexColors.error),
-                );
+              try {
+                await repo.deleteTimetableContainer(container.id);
+                ref.invalidate(managementContainersProvider);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Timetable draft deleted.'), backgroundColor: AcadexColors.error),
+                  );
+                }
+              } catch (e) {
+                final errorMsg = e.toString().replaceFirst('Exception: ', '');
+                if (errorMsg.contains('attendance') || errorMsg.contains('archive') || errorMsg.contains('Cannot delete timetable with existing attendance')) {
+                  if (context.mounted) {
+                    showDialog<void>(
+                      context: context,
+                      builder: (alertCtx) => AlertDialog(
+                        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusLg),
+                        title: const Row(
+                          children: [
+                            Icon(LucideIcons.alertTriangle, color: AcadexColors.warning, size: 22),
+                            SizedBox(width: 8),
+                            Text('Cannot Delete Timetable'),
+                          ],
+                        ),
+                        content: const Text(
+                          'Attendance history exists for this timetable. It cannot be permanently deleted. Please archive the timetable instead.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(alertCtx).pop(),
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton.icon(
+                            icon: const Icon(LucideIcons.archive, size: 16),
+                            label: const Text('Archive Timetable'),
+                            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary, foregroundColor: Colors.white),
+                            onPressed: () async {
+                              Navigator.of(alertCtx).pop();
+                              try {
+                                await repo.archiveTimetableContainer(container.id);
+                                ref.invalidate(managementContainersProvider);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Timetable successfully archived.'), backgroundColor: AcadexColors.success),
+                                  );
+                                }
+                              } catch (archiveErr) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(archiveErr.toString().replaceFirst('Exception: ', '')), backgroundColor: AcadexColors.error),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                } else {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(errorMsg), backgroundColor: AcadexColors.error),
+                    );
+                  }
+                }
               }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.white)),
@@ -768,6 +850,10 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
             );
           }
 
+          final authState = ref.watch(authProvider);
+          final userRole = authState is AuthAuthenticated ? authState.user.role : null;
+          final isHodOrAdmin = userRole == AppRole.hod || userRole == AppRole.collegeAdmin || userRole == AppRole.superAdmin;
+
           return ListView.builder(
             key: ValueKey('mgt_list_${entries.length}_${filters.day?.name ?? 'all'}'),
             padding: const EdgeInsets.all(20),
@@ -776,16 +862,215 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
               final entry = entries[index];
               return TimetableManagementCard(
                 entry: entry,
-                onEdit: () => context.go('/timetable/edit/${entry.id}', extra: entry),
-                onDuplicate: () {
-                  context.go('/timetable/new', extra: entry.copyWith(id: ''));
+                onEdit: () {
+                  if (entry.timetableId != null && entry.timetableId!.isNotEmpty) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => TimetableDesignerScreen(timetableId: entry.timetableId!),
+                      ),
+                    );
+                  } else {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const TimetableSetupScreen(),
+                      ),
+                    );
+                  }
                 },
+                onDuplicate: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const TimetableSetupScreen(),
+                    ),
+                  );
+                },
+                onSubstitute: isHodOrAdmin && entry.timetableId != null && entry.timetableId!.isNotEmpty
+                    ? () {
+                        TeacherSubstitutionDialog.show(
+                          context,
+                          timetableId: entry.timetableId!,
+                          timetableEntryId: entry.id,
+                          dayOfWeek: entry.dayOfWeek,
+                          startTime: entry.startTime,
+                          endTime: entry.endTime,
+                          subjectId: entry.subjectId,
+                          originalFacultyId: entry.facultyId,
+                          sectionId: entry.sectionId,
+                          roomNumber: entry.roomNumber,
+                        );
+                      }
+                    : null,
                 onDelete: () => _confirmDeleteSlot(context, ref, entry),
               );
             },
           );
         },
       ),
+    );
+  }
+
+  // =========================================================================
+  // TAB 3: TEACHER SUBSTITUTIONS
+  // =========================================================================
+  Widget _buildSubstitutionsTab(
+    BuildContext context,
+    WidgetRef ref,
+    bool isDark,
+    bool isMobile,
+    dynamic user,
+  ) {
+    final y = _substitutionSelectedDate.year.toString().padLeft(4, '0');
+    final m = _substitutionSelectedDate.month.toString().padLeft(2, '0');
+    final d = _substitutionSelectedDate.day.toString().padLeft(2, '0');
+    final dateStr = '$y-$m-$d';
+
+    final deptId = user.role == AppRole.hod ? user.departmentId as String? : null;
+    final query = TeacherSubstitutionsQuery(date: dateStr, departmentId: deptId);
+    final subsAsync = ref.watch(teacherSubstitutionsProvider(query));
+
+    final facultyMap = ref.watch(timetableFacultyMapProvider);
+    final sectionMap = ref.watch(timetableSectionMapProvider);
+
+    return Column(
+      children: [
+        // Date Selector Bar
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: AcadexRadius.borderRadiusMd,
+            border: Border.all(color: Theme.of(context).dividerColor),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.event, size: 18, color: AcadexColors.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Active Substitutions for $dateStr',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ],
+              ),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.calendar_today, size: 14),
+                label: const Text('Change Date'),
+                style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact),
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _substitutionSelectedDate,
+                    firstDate: DateTime.now().subtract(const Duration(days: 60)),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _substitutionSelectedDate = picked;
+                    });
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+
+        // List or Empty
+        Expanded(
+          child: subsAsync.when(
+            loading: () => const AcadexLoadingState(key: ValueKey('subs_loading'), message: 'Loading substitutions...'),
+            error: (e, _) => AcadexErrorState(
+              key: const ValueKey('subs_error'),
+              message: 'Failed to load substitutions: $e',
+              onRetry: () => ref.refresh(teacherSubstitutionsProvider(query)),
+            ),
+            data: (subs) {
+              if (subs.isEmpty) {
+                return Center(
+                  key: const ValueKey('subs_empty'),
+                  child: AcadexEmptyState(
+                    title: 'No substitutions on this date',
+                    subtitle: 'To assign a teacher substitute, go to the "Class Slots" tab and click the Substitute icon on any class slot.',
+                    icon: Icons.swap_horiz_rounded,
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                itemCount: subs.length,
+                itemBuilder: (ctx, index) {
+                  final sub = subs[index];
+                  final origFac = facultyMap[sub.originalFacultyId];
+                  final subFac = facultyMap[sub.substituteFacultyId];
+                  final section = sectionMap[sub.sectionId];
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AcadexColors.primary.withValues(alpha: 0.1),
+                                  borderRadius: AcadexRadius.borderRadiusSm,
+                                ),
+                                child: Text(
+                                  sub.date,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AcadexColors.primary),
+                                ),
+                              ),
+                              if (section != null)
+                                Text('Section ${section.name}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Original Faculty', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                    const SizedBox(height: 2),
+                                    Text(origFac?.name ?? sub.originalFacultyId, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.grey),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    const Text('Substitute Faculty', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                    const SizedBox(height: 2),
+                                    Text(subFac?.name ?? sub.substituteFacultyId, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AcadexColors.primary)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text('Reason: ${sub.reason}', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -1513,7 +1798,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                                                 icon: const Icon(LucideIcons.trash2, size: 16, color: AcadexColors.error),
                                                 tooltip: 'Delete Class',
                                                 onPressed: () {
-                                                  ref.read(timetableAuthoringProvider(sectionContainer.id).notifier).deleteEntry(e.id);
+                                                  _confirmDeleteSectionEntry(context, ref, sectionContainer, e);
                                                 },
                                               ),
                                             ],
@@ -1641,7 +1926,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Are you sure you want to remove this timetable slot?'),
+            const Text('Are you sure you want to remove this timetable slot? This will update the timetable container on the server.'),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
@@ -1667,8 +1952,112 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
             style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.error, foregroundColor: Colors.white),
             onPressed: () async {
               Navigator.pop(ctx);
-              await ref.read(timetableManagementProvider.notifier).deleteEntry(entry.id);
-              ref.invalidate(managementTimetableProvider);
+              final repo = ref.read(timetableRepositoryProvider);
+              try {
+                String? targetTimetableId = entry.timetableId;
+                if (targetTimetableId == null || targetTimetableId.isEmpty) {
+                  final containers = await repo.getTimetableContainers(
+                    collegeId: entry.collegeId,
+                    sectionId: entry.sectionId,
+                  );
+                  final draft = containers.where((c) => c.status == TimetableStatus.draft).firstOrNull;
+                  final published = containers.where((c) => c.status == TimetableStatus.published).firstOrNull;
+                  if (draft != null) {
+                    targetTimetableId = draft.id;
+                  } else if (published != null) {
+                    throw StateError('Published timetables cannot be modified directly. Please unpublish or create a revision first.');
+                  } else if (containers.isNotEmpty) {
+                    targetTimetableId = containers.first.id;
+                  }
+                }
+
+                if (targetTimetableId == null || targetTimetableId.isEmpty) {
+                  throw Exception('No associated timetable container found for this entry.');
+                }
+
+                final container = await repo.getTimetableContainer(targetTimetableId);
+                if (container != null && container.status == TimetableStatus.published) {
+                  throw StateError('Published timetables cannot be modified directly. Please unpublish or create a revision first.');
+                }
+
+                await repo.deleteGridEntry(targetTimetableId, entry.id);
+
+                ref.invalidate(managementTimetableProvider);
+                ref.invalidate(managementContainersProvider);
+                ref.invalidate(timetableGridEntriesStreamProvider(targetTimetableId));
+                ref.invalidate(timetableContainerStreamProvider(targetTimetableId));
+
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Timetable entry deleted successfully.'),
+                      backgroundColor: AcadexColors.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to delete entry: $e'),
+                      backgroundColor: AcadexColors.error,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteSectionEntry(
+    BuildContext context,
+    WidgetRef ref,
+    TimetableContainerModel container,
+    TimetableGridEntryModel entry,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusXl),
+        title: const Row(
+          children: [
+            Icon(LucideIcons.alertTriangle, color: AcadexColors.error, size: 20),
+            SizedBox(width: 8),
+            Text('Delete Class Entry?'),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to remove this class from the draft timetable? This will update the timetable container on the server.',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.error, foregroundColor: Colors.white),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ref.read(timetableAuthoringProvider(container.id).notifier).deleteEntryAuthoritatively(entry.id);
+                ref.invalidate(timetableGridEntriesStreamProvider(container.id));
+                ref.invalidate(timetableContainerStreamProvider(container.id));
+                ref.invalidate(managementContainersProvider);
+                ref.invalidate(managementTimetableProvider);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Class entry removed successfully.'), backgroundColor: AcadexColors.success),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to delete entry: $e'), backgroundColor: AcadexColors.error),
+                  );
+                }
+              }
             },
             child: const Text('Delete'),
           ),

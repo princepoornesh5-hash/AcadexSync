@@ -10,6 +10,7 @@ export interface ICollege extends Document {
   principal: string;
   status: CollegeStatus;
   isActive: boolean;
+  timezone?: string;
   logoUrl?: string;
   createdBy?: string;
   updatedBy?: string;
@@ -26,6 +27,7 @@ const CollegeSchema = new Schema<ICollege>(
     email: { type: String, required: true, lowercase: true, trim: true },
     phone: { type: String, required: true, trim: true },
     principal: { type: String, required: true, trim: true },
+    timezone: { type: String, default: 'Asia/Kolkata', trim: true },
     status: {
       type: String,
       enum: Object.values(CollegeStatus),

@@ -3,6 +3,7 @@ import '../../../../core/firebase/firebase_services.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/timetable_models.dart';
+import '../../domain/models/teacher_substitution.dart';
 import '../../data/repositories/timetable_repository.dart';
 import '../../data/repositories/mock_timetable_repository.dart';
 import '../../data/repositories/firebase_timetable_repository.dart';
@@ -87,17 +88,88 @@ final weeklyTimetableProvider = StreamProvider<Map<TimetableDay, List<TimetableM
   }
 });
 
+final dateScheduleProvider = FutureProvider.family<List<TimetableModel>, DateTime>((ref, date) async {
+  final authState = ref.watch(authProvider);
+  if (authState is! AuthAuthenticated) return [];
+
+  final user = authState.user;
+  if ((user.collegeId == null || user.collegeId!.isEmpty) && user.role != AppRole.superAdmin) {
+    return [];
+  }
+
+  final repository = ref.watch(timetableRepositoryProvider);
+  final y = date.year.toString().padLeft(4, '0');
+  final m = date.month.toString().padLeft(2, '0');
+  final d = date.day.toString().padLeft(2, '0');
+  final dateStr = '$y-$m-$d';
+
+  String? sectionId;
+  if (user.role == AppRole.student) {
+    sectionId = user.sectionId;
+    if (sectionId == null || sectionId.isEmpty) return [];
+  }
+
+  final list = await repository.getTimetable(
+    collegeId: user.collegeId ?? '',
+    departmentId: user.departmentId,
+    sectionId: sectionId,
+    facultyId: user.role == AppRole.faculty ? 'me' : null,
+    date: dateStr,
+  );
+
+  final sorted = List<TimetableModel>.from(list)
+    ..sort((a, b) => a.startTime.compareTo(b.startTime));
+  return sorted;
+});
+
 final todayScheduleProvider = Provider<AsyncValue<List<TimetableModel>>>((ref) {
-  final weeklyData = ref.watch(weeklyTimetableProvider);
-  
-  return weeklyData.whenData((weekly) {
-    final now = DateTime.now();
-    // In Dart, DateTime.weekday is 1..7 (Monday=1, Sunday=7)
-    // Our TimetableDay enum indices are 0..6
-    final currentDay = TimetableDay.values[now.weekday - 1];
-    
-    return weekly[currentDay] ?? [];
+  final now = DateTime.now();
+  final dateAsync = ref.watch(dateScheduleProvider(DateTime(now.year, now.month, now.day)));
+
+  return dateAsync.when(
+    data: (data) => AsyncValue.data(data),
+    loading: () {
+      final weeklyData = ref.watch(weeklyTimetableProvider);
+      return weeklyData.whenData((weekly) {
+        final currentDay = TimetableDay.values[now.weekday - 1];
+        return weekly[currentDay] ?? [];
+      });
+    },
+    error: (e, st) => AsyncValue.error(e, st),
+  );
+});
+
+class TeacherSubstitutionsQuery {
+  final String? date;
+  final String? timetableId;
+  final String? departmentId;
+
+  const TeacherSubstitutionsQuery({
+    this.date,
+    this.timetableId,
+    this.departmentId,
   });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TeacherSubstitutionsQuery &&
+          runtimeType == other.runtimeType &&
+          date == other.date &&
+          timetableId == other.timetableId &&
+          departmentId == other.departmentId;
+
+  @override
+  int get hashCode => date.hashCode ^ timetableId.hashCode ^ departmentId.hashCode;
+}
+
+final teacherSubstitutionsProvider = FutureProvider.family<List<TeacherSubstitution>, TeacherSubstitutionsQuery>((ref, query) async {
+  final repository = ref.watch(timetableRepositoryProvider);
+  return repository.getTeacherSubstitutions(
+    date: query.date,
+    timetableId: query.timetableId,
+    departmentId: query.departmentId,
+  );
 });
 
 final nextClassProvider = Provider<AsyncValue<TimetableModel?>>((ref) {
@@ -144,14 +216,20 @@ class TimetableManagementNotifier extends AsyncNotifier<void> {
     });
   }
 
-  Future<void> deleteEntry(String id) async {
+  /// Deletes a grid entry through its parent container via PUT /timetables/:id.
+  Future<void> deleteGridEntry({required String timetableId, required String entryId}) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final repository = ref.read(timetableRepositoryProvider);
-      await repository.deleteEntry(id);
+      await repository.deleteGridEntry(timetableId, entryId);
       ref.invalidate(weeklyTimetableProvider);
       ref.invalidate(studentStatsProvider);
     });
+  }
+
+  @Deprecated('Use deleteGridEntry with timetableId for container authoring')
+  Future<void> deleteEntry(String id) async {
+    throw UnsupportedError('Individual entry deletion without container is deprecated. Use deleteGridEntry.');
   }
 }
 
