@@ -514,7 +514,9 @@ class _SubjectListScreenState extends ConsumerState<SubjectListScreen> {
 
 class SubjectFormScreen extends ConsumerStatefulWidget {
   final String? id;
-  const SubjectFormScreen({super.key, this.id});
+  final String? initialCourseId;
+  final String? initialSemesterId;
+  const SubjectFormScreen({super.key, this.id, this.initialCourseId, this.initialSemesterId});
 
   @override
   ConsumerState<SubjectFormScreen> createState() => _SubjectFormScreenState();
@@ -538,6 +540,8 @@ class _SubjectFormScreenState extends ConsumerState<SubjectFormScreen> {
     _nameCtrl = TextEditingController();
     _codeCtrl = TextEditingController();
     _creditsCtrl = TextEditingController(text: '3');
+    _selectedCourseId = widget.initialCourseId;
+    _selectedSemesterId = widget.initialSemesterId;
 
     if (widget.id != null) {
       _loadExisting();

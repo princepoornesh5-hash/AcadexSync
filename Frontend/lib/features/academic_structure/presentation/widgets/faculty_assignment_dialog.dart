@@ -173,8 +173,9 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
     final academicYears = ref.watch(academicYearsProvider).valueOrNull ?? [];
     final assignmentsAsync = ref.watch(facultyAssignmentsProvider);
 
-    // Filter faculty based on selected department or HOD scope
+    // Filter faculty based on selected department or HOD scope (Strictly Active only)
     final availableFaculty = facultyState.items.where((f) {
+      if (!f.isActive || f.accountStatus != AccountStatus.active) return false;
       if (isHod && hodDeptId != null && hodDeptId.isNotEmpty) {
         return f.departmentId == hodDeptId;
       }
@@ -184,22 +185,22 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
       return true;
     }).toList();
 
-    // Cascading filters
+    // Cascading filters (Strict dependencies: Dept -> Course -> Semester -> Section / Subject)
     final filteredCourses = _selectedDepartmentId == null
-        ? courses
-        : courses.where((c) => c.departmentId == _selectedDepartmentId).toList();
+        ? <Course>[]
+        : courses.where((c) => c.departmentId == _selectedDepartmentId && c.isActive).toList();
 
     final filteredSemesters = _selectedCourseId == null
-        ? semesters
-        : semesters.where((s) => s.courseId == _selectedCourseId).toList();
+        ? <Semester>[]
+        : semesters.where((s) => s.courseId == _selectedCourseId && s.isActive).toList();
 
     final filteredSections = _selectedSemesterId == null
-        ? sections
-        : sections.where((sec) => sec.semesterId == _selectedSemesterId).toList();
+        ? <Section>[]
+        : sections.where((sec) => sec.semesterId == _selectedSemesterId && sec.isActive).toList();
 
-    final filteredSubjects = _selectedSemesterId == null
-        ? (_selectedDepartmentId == null ? subjects : subjects.where((sub) => sub.departmentId == _selectedDepartmentId).toList())
-        : subjects.where((sub) => sub.semesterId == _selectedSemesterId).toList();
+    final filteredSubjects = (_selectedCourseId == null || _selectedSemesterId == null)
+        ? <Subject>[]
+        : subjects.where((sub) => sub.courseId == _selectedCourseId && sub.semesterId == _selectedSemesterId && sub.isActive).toList();
 
     final facultyAssignments = (assignmentsAsync.valueOrNull ?? []).where((a) {
       if (isHod && hodDeptId != null && hodDeptId.isNotEmpty && a.departmentId != hodDeptId) {
@@ -224,31 +225,37 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AcadexColors.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AcadexRadius.md),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AcadexColors.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(AcadexRadius.md),
+                        ),
+                        child: const Icon(LucideIcons.userCheck, color: AcadexColors.primary, size: 20),
                       ),
-                      child: const Icon(LucideIcons.userCheck, color: AcadexColors.primary, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Faculty Subject & Class Assignment',
-                          style: AcadexTypography.heading3(color: theme.colorScheme.onSurface),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Faculty Subject & Class Assignment',
+                              style: AcadexTypography.heading3(color: theme.colorScheme.onSurface),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              isHod ? 'Manage teaching allocations for your department' : 'Map faculty members to courses, semesters, sections & subjects',
+                              style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                        Text(
-                          isHod ? 'Manage teaching allocations for your department' : 'Map faculty members to courses, semesters, sections & subjects',
-                          style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(LucideIcons.x, size: 20),
@@ -304,16 +311,21 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
                             key: ValueKey('course_${_selectedDepartmentId}_$_selectedCourseId'),
                             dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
                             initialValue: _selectedCourseId,
-                            decoration: const InputDecoration(labelText: 'Course *', hintText: 'Choose course'),
+                            decoration: InputDecoration(
+                              labelText: 'Course *',
+                              hintText: _selectedDepartmentId == null ? 'Select Department first' : 'Choose course',
+                            ),
                             items: filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name, overflow: TextOverflow.ellipsis))).toList(),
-                            onChanged: (val) {
-                              setState(() {
-                                _selectedCourseId = val;
-                                _selectedSemesterId = null;
-                                _selectedSectionId = null;
-                                _selectedSubjectId = null;
-                              });
-                            },
+                            onChanged: _selectedDepartmentId == null
+                                ? null
+                                : (val) {
+                                    setState(() {
+                                      _selectedCourseId = val;
+                                      _selectedSemesterId = null;
+                                      _selectedSectionId = null;
+                                      _selectedSubjectId = null;
+                                    });
+                                  },
                           ),
                         ),
                       ],
@@ -345,15 +357,20 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
                             key: ValueKey('sem_${_selectedCourseId}_$_selectedSemesterId'),
                             dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
                             initialValue: _selectedSemesterId,
-                            decoration: const InputDecoration(labelText: 'Semester *', hintText: 'Choose semester'),
+                            decoration: InputDecoration(
+                              labelText: 'Semester *',
+                              hintText: _selectedCourseId == null ? 'Select Course first' : 'Choose semester',
+                            ),
                             items: filteredSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))).toList(),
-                            onChanged: (val) {
-                              setState(() {
-                                _selectedSemesterId = val;
-                                _selectedSectionId = null;
-                                _selectedSubjectId = null;
-                              });
-                            },
+                            onChanged: _selectedCourseId == null
+                                ? null
+                                : (val) {
+                                    setState(() {
+                                      _selectedSemesterId = val;
+                                      _selectedSectionId = null;
+                                      _selectedSubjectId = null;
+                                    });
+                                  },
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -364,9 +381,14 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
                             key: ValueKey('sec_${_selectedSemesterId}_$_selectedSectionId'),
                             dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
                             initialValue: _selectedSectionId,
-                            decoration: const InputDecoration(labelText: 'Section *', hintText: 'Choose section'),
+                            decoration: InputDecoration(
+                              labelText: 'Section *',
+                              hintText: _selectedSemesterId == null ? 'Select Semester first' : 'Choose section',
+                            ),
                             items: filteredSections.map((sec) => DropdownMenuItem(value: sec.id, child: Text('Section ${sec.name}', overflow: TextOverflow.ellipsis))).toList(),
-                            onChanged: (val) => setState(() => _selectedSectionId = val),
+                            onChanged: _selectedSemesterId == null
+                                ? null
+                                : (val) => setState(() => _selectedSectionId = val),
                           ),
                         ),
                       ],
@@ -379,12 +401,21 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
                         Expanded(
                           child: DropdownButtonFormField<String>(
                             isExpanded: true,
-                            key: ValueKey('sub_${_selectedSemesterId}_$_selectedSubjectId'),
+                            key: ValueKey('sub_${_selectedCourseId}_${_selectedSemesterId}_$_selectedSubjectId'),
                             dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
                             initialValue: _selectedSubjectId,
-                            decoration: const InputDecoration(labelText: 'Subject *', hintText: 'Choose subject'),
+                            decoration: InputDecoration(
+                              labelText: 'Subject *',
+                              hintText: _selectedCourseId == null
+                                  ? 'Select Course first'
+                                  : (_selectedSemesterId == null
+                                      ? 'Select Semester first'
+                                      : (filteredSubjects.isEmpty ? 'No subjects in this semester' : 'Choose subject')),
+                            ),
                             items: filteredSubjects.map((sub) => DropdownMenuItem(value: sub.id, child: Text('${sub.code} - ${sub.name}', overflow: TextOverflow.ellipsis))).toList(),
-                            onChanged: (val) => setState(() => _selectedSubjectId = val),
+                            onChanged: (_selectedCourseId == null || _selectedSemesterId == null || filteredSubjects.isEmpty)
+                                ? null
+                                : (val) => setState(() => _selectedSubjectId = val),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -394,13 +425,18 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
                             key: ValueKey('fac_${_selectedDepartmentId}_$_selectedFacultyId'),
                             dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
                             initialValue: _selectedFacultyId,
-                            decoration: const InputDecoration(labelText: 'Faculty Member *', hintText: 'Choose faculty'),
+                            decoration: InputDecoration(
+                              labelText: 'Faculty Member *',
+                              hintText: availableFaculty.isEmpty ? 'No active faculty available' : 'Choose faculty',
+                            ),
                             items: availableFaculty.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name, overflow: TextOverflow.ellipsis))).toList(),
-                            onChanged: (val) {
-                              setState(() {
-                                _selectedFacultyId = val;
-                              });
-                            },
+                            onChanged: availableFaculty.isEmpty
+                                ? null
+                                : (val) {
+                                    setState(() {
+                                      _selectedFacultyId = val;
+                                    });
+                                  },
                           ),
                         ),
                       ],

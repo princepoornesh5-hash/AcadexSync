@@ -13,6 +13,7 @@ import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../providers/academic_providers.dart';
 import '../../domain/models/academic_models.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
 import 'activation_result_screen.dart';
 
 class HodListScreen extends ConsumerStatefulWidget {
@@ -25,6 +26,121 @@ class HodListScreen extends ConsumerStatefulWidget {
 class _HodListScreenState extends ConsumerState<HodListScreen> {
   String _searchQuery = '';
   String _filter = 'all'; // 'all' | 'active' | 'pending'
+
+  void _showAssignExistingUserDialog(BuildContext context) {
+    final depts = (ref.read(departmentsProvider).valueOrNull ?? <Department>[])
+        .where((d) => d.isActive)
+        .toList();
+    final facultyList = ref.read(facultyProvider(null)).items
+        .where((f) => f.isActive && f.accountStatus == AccountStatus.active)
+        .toList();
+
+    if (depts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No active departments available to assign an HOD to.'),
+          backgroundColor: AcadexColors.warning,
+        ),
+      );
+      return;
+    }
+
+    if (facultyList.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No active faculty members available to promote to HOD.'),
+          backgroundColor: AcadexColors.warning,
+        ),
+      );
+      return;
+    }
+
+    String? selectedFacultyId = facultyList.first.id;
+    String? selectedDeptId = depts.first.id;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          title: const Text('Assign Existing User as HOD'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Promote an existing faculty member to Head of Department. Their account role will become HOD with administrative authority over the selected department.',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: selectedFacultyId,
+                decoration: const InputDecoration(labelText: 'Select Faculty Member'),
+                items: facultyList
+                    .map((f) => DropdownMenuItem(
+                          value: f.id,
+                          child: Text('${f.name} (${f.employeeId})', overflow: TextOverflow.ellipsis),
+                        ))
+                    .toList(),
+                onChanged: (v) => setDialogState(() => selectedFacultyId = v),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: selectedDeptId,
+                decoration: const InputDecoration(labelText: 'Assign to Department'),
+                items: depts
+                    .map((d) => DropdownMenuItem(
+                          value: d.id,
+                          child: Text('${d.name} (${d.code})', overflow: TextOverflow.ellipsis),
+                        ))
+                    .toList(),
+                onChanged: (v) => setDialogState(() => selectedDeptId = v),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AcadexColors.primary,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                if (selectedFacultyId == null || selectedDeptId == null) return;
+                Navigator.of(ctx).pop();
+                try {
+                  await ref.read(hodsProvider.notifier).assignExistingUser(
+                        userId: selectedFacultyId!,
+                        departmentId: selectedDeptId!,
+                      );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Faculty successfully promoted to Department Head!'),
+                        backgroundColor: AcadexColors.success,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(e.toString().replaceFirst('Exception: ', '')),
+                        backgroundColor: AcadexColors.error,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Assign HOD'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,37 +167,51 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
             actionLabel: "Provision HOD",
           ),
           const SizedBox(height: 10),
-          // Filter Chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.zero,
-            child: Row(
-              children: [
-                for (final f in [
-                  ('all', 'All HODs'),
-                  ('active', 'Active Leaders'),
-                  ('pending', 'Pending Activation'),
-                ])
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: FilterChip(
-                      label: Text(f.$2),
-                      selected: _filter == f.$1,
-                      onSelected: (_) => setState(() => _filter = f.$1),
-                      selectedColor: AcadexColors.primary.withValues(alpha: 0.15),
-                      checkmarkColor: AcadexColors.primary,
-                      labelStyle: TextStyle(
-                        color: _filter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                        fontWeight: _filter == f.$1 ? FontWeight.w600 : FontWeight.w400,
-                        fontSize: 12,
-                      ),
-                      side: BorderSide(
-                        color: _filter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                      ),
-                    ),
+          // Filter Chips & Assign Existing Action
+          Row(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.zero,
+                  child: Row(
+                    children: [
+                      for (final f in [
+                        ('all', 'All HODs'),
+                        ('active', 'Active Leaders'),
+                        ('pending', 'Pending Activation'),
+                      ])
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: FilterChip(
+                            label: Text(f.$2),
+                            selected: _filter == f.$1,
+                            onSelected: (_) => setState(() => _filter = f.$1),
+                            selectedColor: AcadexColors.primary.withValues(alpha: 0.15),
+                            checkmarkColor: AcadexColors.primary,
+                            labelStyle: TextStyle(
+                              color: _filter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                              fontWeight: _filter == f.$1 ? FontWeight.w600 : FontWeight.w400,
+                              fontSize: 12,
+                            ),
+                            side: BorderSide(
+                              color: _filter == f.$1 ? AcadexColors.primary : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-              ],
-            ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              AcadexButton(
+                label: "Assign Existing",
+                icon: LucideIcons.userPlus,
+                size: AcadexButtonSize.sm,
+                variant: AcadexButtonVariant.secondary,
+                onPressed: () => _showAssignExistingUserDialog(context),
+              ),
+            ],
           ),
           const SizedBox(height: 10),
           Expanded(

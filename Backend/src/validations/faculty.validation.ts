@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { AccountStatus } from '../constants/status';
 
 export const provisionFacultySchema = z.object({
   departmentId: z.string().min(1, 'departmentId is required'),
@@ -45,7 +44,7 @@ export const facultyQuerySchema = z.object({
   search: z.string().optional(),
   collegeId: z.string().optional(),
   departmentId: z.string().optional(),
-  status: z.nativeEnum(AccountStatus).optional(),
+  status: z.string().optional(),
   sortBy: z.enum(['name', 'instituteId', 'employeeId', 'createdAt']).optional().default('name'),
   sortOrder: z.enum(['asc', 'desc']).optional().default('asc'),
 });

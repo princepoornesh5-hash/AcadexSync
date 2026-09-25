@@ -7,6 +7,14 @@ import {
 import { Timetable } from '../models/timetable.model';
 import { Faculty } from '../models/faculty.model';
 import { College } from '../models/college.model';
+import { Student } from '../models/student.model';
+import { StudentEnrollment } from '../models/studentEnrollment.model';
+import { NotificationService, CreateNotificationInput } from './notification.service';
+import {
+  NotificationType,
+  NotificationCategory,
+  NotificationPriority,
+} from '../constants/notification.constants';
 import { CalendarOverrideService } from './calendarOverride.service';
 import { CalendarOverrideType } from '../models/calendarOverride.model';
 import { AppRole } from '../constants/roles';
@@ -19,6 +27,7 @@ import {
   getTimetableDayFromDate,
   isTimeOverlapping,
 } from '../utils/dateTime';
+import { logger } from '../utils/logger';
 
 export class TeacherSubstitutionService {
   /**
@@ -291,7 +300,73 @@ export class TeacherSubstitutionService {
       createdBy: new mongoose.Types.ObjectId(requester.id),
     });
 
+    try {
+      await this.dispatchSubstitutionNotifications(substitution, timetable, entry, substituteFaculty);
+    } catch (err) {
+      logger.warn(`Failed to dispatch substitution notifications: ${(err as Error).message}`);
+    }
+
     return substitution;
+  }
+
+  private static async dispatchSubstitutionNotifications(
+    substitution: ITeacherSubstitution,
+    _timetable: any,
+    entry: any,
+    substituteFaculty: any
+  ): Promise<void> {
+    try {
+      const recipientUserIds = new Set<string>();
+
+      // 1. Substitute faculty user
+      if (substituteFaculty.userId) {
+        recipientUserIds.add(substituteFaculty.userId.toString());
+      }
+
+      // 2. Original faculty user
+      const originalFaculty = await Faculty.findById(substitution.originalFacultyId);
+      if (originalFaculty?.userId) {
+        recipientUserIds.add(originalFaculty.userId.toString());
+      }
+
+      // 3. Enrolled students in section
+      if (substitution.sectionId) {
+        const enrollments = await StudentEnrollment.find({
+          sectionId: substitution.sectionId,
+          status: 'active',
+        }).select('studentId');
+        const studentIds = enrollments.map((e) => e.studentId);
+        if (studentIds.length > 0) {
+          const students = await Student.find({ _id: { $in: studentIds } }).select('userId');
+          students.forEach((s) => recipientUserIds.add(s.userId.toString()));
+        }
+      }
+
+      if (recipientUserIds.size === 0) return;
+
+      const subjectName = entry.subjectName || 'Class';
+      const title = 'Teacher Substitution Scheduled';
+      const body = `Substitution assigned for ${subjectName} on ${substitution.date} (${entry.startTime} - ${entry.endTime}).`;
+
+      const notifInputs: CreateNotificationInput[] = Array.from(recipientUserIds).map((userId) => ({
+        collegeId: substitution.collegeId.toString(),
+        departmentId: substitution.departmentId?.toString(),
+        recipientUserId: userId,
+        title,
+        body,
+        notificationType: NotificationType.TEACHER_SUBSTITUTION,
+        category: NotificationCategory.TIMETABLE,
+        priority: NotificationPriority.NORMAL,
+        entityType: 'TeacherSubstitution',
+        entityId: substitution.id,
+        deepLink: '/timetable',
+        idempotencyKey: `sub_${substitution.id}_${userId}`,
+      }));
+
+      await NotificationService.createBatchNotifications(notifInputs);
+    } catch (err) {
+      logger.warn(`Failed to dispatch substitution notifications: ${(err as Error).message}`);
+    }
   }
 
   /**

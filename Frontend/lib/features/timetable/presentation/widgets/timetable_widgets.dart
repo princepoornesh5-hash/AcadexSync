@@ -1034,8 +1034,19 @@ class TimetableListView extends StatelessWidget {
 // Today Schedule Widget for Dashboard Integration
 class TodayScheduleWidget extends StatelessWidget {
   final List<TimetableModel> todayEntries;
+  final String? emptyTitle;
+  final String? emptySubtitle;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
-  const TodayScheduleWidget({super.key, required this.todayEntries});
+  const TodayScheduleWidget({
+    super.key,
+    required this.todayEntries,
+    this.emptyTitle,
+    this.emptySubtitle,
+    this.actionLabel,
+    this.onAction,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1068,15 +1079,30 @@ class TodayScheduleWidget extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'No classes scheduled for today',
+                emptyTitle ?? 'No classes scheduled for today',
                 style: AcadexTypography.title().copyWith(fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
               Text(
-                'There are no active timetable sessions or lectures planned for today.',
+                emptySubtitle ?? 'There are no active timetable sessions or lectures planned for today.',
                 textAlign: TextAlign.center,
                 style: AcadexTypography.caption(),
               ),
+              if (actionLabel != null && onAction != null) ...[
+                const SizedBox(height: 14),
+                ElevatedButton.icon(
+                  onPressed: onAction,
+                  icon: const Icon(LucideIcons.calendarDays, size: 16),
+                  label: Text(actionLabel!),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AcadexColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

@@ -88,7 +88,7 @@ final weeklyTimetableProvider = StreamProvider<Map<TimetableDay, List<TimetableM
   }
 });
 
-final dateScheduleProvider = FutureProvider.family<List<TimetableModel>, DateTime>((ref, date) async {
+final dateScheduleProvider = FutureProvider.autoDispose.family<List<TimetableModel>, DateTime>((ref, date) async {
   final authState = ref.watch(authProvider);
   if (authState is! AuthAuthenticated) return [];
 
@@ -115,6 +115,7 @@ final dateScheduleProvider = FutureProvider.family<List<TimetableModel>, DateTim
     sectionId: sectionId,
     facultyId: user.role == AppRole.faculty ? 'me' : null,
     date: dateStr,
+    role: user.role,
   );
 
   final sorted = List<TimetableModel>.from(list)
@@ -122,7 +123,7 @@ final dateScheduleProvider = FutureProvider.family<List<TimetableModel>, DateTim
   return sorted;
 });
 
-final todayScheduleProvider = Provider<AsyncValue<List<TimetableModel>>>((ref) {
+final todayScheduleProvider = Provider.autoDispose<AsyncValue<List<TimetableModel>>>((ref) {
   final now = DateTime.now();
   final dateAsync = ref.watch(dateScheduleProvider(DateTime(now.year, now.month, now.day)));
 

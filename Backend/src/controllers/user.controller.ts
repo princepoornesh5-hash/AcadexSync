@@ -64,6 +64,17 @@ export class UserController {
     return ApiResponse.success(res, user, 'Profile image updated successfully');
   });
 
+  static deactivate = asyncHandler(async (req: Request, res: Response) => {
+    const reason = req.body.reason as string | undefined;
+    const user = await UserService.deactivateUserSafely(req.params.id, req.user as any, reason);
+    return ApiResponse.success(res, user, 'User deactivated successfully');
+  });
+
+  static reactivate = asyncHandler(async (req: Request, res: Response) => {
+    const user = await UserService.reactivateUserSafely(req.params.id, req.user as any);
+    return ApiResponse.success(res, user, 'User reactivated successfully');
+  });
+
   static deletePermanently = asyncHandler(async (req: Request, res: Response) => {
     await UserService.deleteUserPermanently(req.params.id, req.user as any);
     return ApiResponse.success(res, null, 'User permanently deleted successfully');

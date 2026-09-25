@@ -8,6 +8,7 @@ class AcadexFormCard extends StatelessWidget {
   final VoidCallback? onSave;
   final VoidCallback? onCancel;
   final bool isSaving;
+  final String? saveLabel;
 
   const AcadexFormCard({
     super.key,
@@ -17,6 +18,7 @@ class AcadexFormCard extends StatelessWidget {
     this.onSave,
     this.onCancel,
     this.isSaving = false,
+    this.saveLabel,
   });
 
   @override
@@ -32,7 +34,7 @@ class AcadexFormCard extends StatelessWidget {
         children: [
           // Header
           Padding(
-            padding: EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(24.0),
             child: Row(
               children: [
                 if (icon != null) ...[
@@ -77,7 +79,7 @@ class AcadexFormCard extends StatelessWidget {
                               width: 20,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                             )
-                          : const Text("Save Changes"),
+                          : Text(saveLabel ?? "Save Changes"),
                     ),
                 ],
               ),
@@ -101,12 +103,18 @@ class AcadexFormField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: AcadexTypography.eyebrow(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.1,
+            color: isDark ? AcadexColors.darkInk : const Color(0xFF07111F),
+          ),
         ),
         const SizedBox(height: 8),
         child,

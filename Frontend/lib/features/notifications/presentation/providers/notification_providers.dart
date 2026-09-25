@@ -6,6 +6,7 @@ import '../../../dashboard/presentation/providers/dashboard_providers.dart';
 import '../../../settings/domain/models/settings_models.dart';
 import '../../../settings/presentation/providers/settings_providers.dart';
 import '../../domain/models/notification_models.dart';
+import '../../domain/models/announcement_model.dart';
 import '../../domain/services/notification_service.dart';
 import '../../../attendance/domain/services/attendance_notification_dispatcher.dart';
 import '../../data/repositories/notification_repository.dart';
@@ -33,7 +34,7 @@ final attendanceNotificationDispatcherProvider = Provider<AttendanceNotification
 
 
 // --- Filter Providers ---
-enum NotificationFilter { all, unread, read, attendance, academic, notes, timetable, system, security }
+enum NotificationFilter { all, unread, read, announcements, attendance, academic, notes, timetable, system, security }
 
 final notificationFilterProvider = StateProvider<NotificationFilter>((ref) => NotificationFilter.all);
 
@@ -127,6 +128,8 @@ final filteredNotificationsProvider = Provider.autoDispose<List<NotificationMode
           return notifications.where((n) => n.isRead).toList();
         case NotificationFilter.attendance:
           return notifications.where((n) => n.category == NotificationCategory.attendance).toList();
+        case NotificationFilter.announcements:
+          return notifications.where((n) => n.category == NotificationCategory.announcement).toList();
         case NotificationFilter.academic:
           return notifications.where((n) => n.category == NotificationCategory.academic).toList();
         case NotificationFilter.notes:
@@ -143,15 +146,50 @@ final filteredNotificationsProvider = Provider.autoDispose<List<NotificationMode
   );
 });
 
+// --- Announcements Providers ---
+final announcementsProvider = FutureProvider.autoDispose<List<AnnouncementModel>>((ref) async {
+  final repo = ref.watch(apiNotificationRepositoryProvider);
+  return repo.fetchAnnouncements(manage: false);
+});
+
+final announcementByIdProvider = FutureProvider.autoDispose.family<AnnouncementModel?, String>((ref, id) async {
+  final repo = ref.watch(apiNotificationRepositoryProvider);
+  return repo.getAnnouncementById(id);
+});
+
+class AdminAnnouncementFilter {
+  final AnnouncementStatus? status;
+  final AnnouncementAudienceScope? audienceScope;
+  final String? departmentId;
+
+  const AdminAnnouncementFilter({this.status, this.audienceScope, this.departmentId});
+}
+
+final adminAnnouncementFilterProvider = StateProvider<AdminAnnouncementFilter>((ref) => const AdminAnnouncementFilter());
+
+final adminAnnouncementsProvider = FutureProvider.autoDispose<List<AnnouncementModel>>((ref) async {
+  final repo = ref.watch(apiNotificationRepositoryProvider);
+  final filter = ref.watch(adminAnnouncementFilterProvider);
+  return repo.fetchAnnouncements(
+    manage: true,
+    status: filter.status?.apiValue,
+    audienceScope: filter.audienceScope?.apiValue,
+    departmentId: filter.departmentId,
+  );
+});
+
 // --- Announcement Creation State ---
 class AnnouncementCreationNotifier extends StateNotifier<AsyncValue<void>> {
   final Ref _ref;
   AnnouncementCreationNotifier(this._ref) : super(const AsyncData(null));
 
-  Future<void> createAnnouncement(NotificationModel model) async {
+  Future<AnnouncementModel> createAnnouncement(Map<String, dynamic> payload) async {
     state = const AsyncLoading();
     try {
-      await _ref.read(notificationRepositoryProvider).createAnnouncement(model);
+      final repo = _ref.read(apiNotificationRepositoryProvider);
+      final created = await repo.createAnnouncementApi(payload);
+      _ref.invalidate(announcementsProvider);
+      _ref.invalidate(adminAnnouncementsProvider);
       _ref.invalidate(notificationsProvider);
       _ref.invalidate(unreadNotificationCountProvider);
       _ref.invalidate(superAdminActivityProvider);
@@ -159,6 +197,51 @@ class AnnouncementCreationNotifier extends StateNotifier<AsyncValue<void>> {
       _ref.invalidate(hodActivityProvider);
       _ref.invalidate(facultyActivityProvider);
       _ref.invalidate(studentActivityProvider);
+      state = const AsyncData(null);
+      return created;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+
+  Future<void> publishAnnouncement(String id) async {
+    state = const AsyncLoading();
+    try {
+      final repo = _ref.read(apiNotificationRepositoryProvider);
+      await repo.publishAnnouncement(id);
+      _ref.invalidate(announcementsProvider);
+      _ref.invalidate(adminAnnouncementsProvider);
+      _ref.invalidate(notificationsProvider);
+      _ref.invalidate(unreadNotificationCountProvider);
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+
+  Future<void> archiveAnnouncement(String id) async {
+    state = const AsyncLoading();
+    try {
+      final repo = _ref.read(apiNotificationRepositoryProvider);
+      await repo.archiveAnnouncement(id);
+      _ref.invalidate(announcementsProvider);
+      _ref.invalidate(adminAnnouncementsProvider);
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+
+  Future<void> deleteAnnouncement(String id) async {
+    state = const AsyncLoading();
+    try {
+      final repo = _ref.read(apiNotificationRepositoryProvider);
+      await repo.deleteAnnouncement(id);
+      _ref.invalidate(announcementsProvider);
+      _ref.invalidate(adminAnnouncementsProvider);
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);

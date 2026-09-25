@@ -7,14 +7,31 @@ import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../../core/presentation/widgets/acadex_empty_state.dart';
+import '../../../../features/auth/domain/models/auth_state.dart';
+import '../../../../features/auth/domain/models/role_enum.dart';
+import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../providers/academic_providers.dart';
+import '../../domain/models/academic_models.dart';
 
-class CourseDetailScreen extends ConsumerWidget {
+class CourseDetailScreen extends ConsumerStatefulWidget {
   final String courseId;
 
   const CourseDetailScreen({super.key, required this.courseId});
 
-  void _confirmStatusToggle(BuildContext context, WidgetRef ref, String courseName, bool isCurrentlyActive) {
+  @override
+  ConsumerState<CourseDetailScreen> createState() => _CourseDetailScreenState();
+}
+
+class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
+  int _selectedTabIndex = 0; // 0: Semesters, 1: Sections, 2: Subjects
+
+  void _confirmStatusToggle(
+    BuildContext context,
+    String courseName,
+    bool isCurrentlyActive,
+  ) {
     final action = isCurrentlyActive ? 'Deactivate' : 'Activate';
     showDialog(
       context: context,
@@ -38,8 +55,8 @@ class CourseDetailScreen extends ConsumerWidget {
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
-                await ref.read(coursesProvider.notifier).toggleCourseStatus(courseId, !isCurrentlyActive);
-                ref.invalidate(courseByIdProvider(courseId));
+                await ref.read(coursesProvider.notifier).toggleCourseStatus(widget.courseId, !isCurrentlyActive);
+                ref.invalidate(courseByIdProvider(widget.courseId));
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -67,12 +84,22 @@ class CourseDetailScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = AcadexBreakpoints.isMobile(context);
-    final courseAsync = ref.watch(courseByIdProvider(courseId));
+    final courseAsync = ref.watch(courseByIdProvider(widget.courseId));
     final deptMap = ref.watch(departmentMapProvider);
+    final semesterMap = ref.watch(semesterMapProvider);
+    final semesters = ref.watch(semestersByCourseProvider(widget.courseId));
+    final sections = ref.watch(sectionsByCourseProvider(widget.courseId));
+    final subjects = ref.watch(subjectsByCourseProvider(widget.courseId));
     final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
+
+    final authState = ref.watch(authProvider);
+    final user = authState is AuthAuthenticated ? authState.user : null;
+    final canManage = user?.role == AppRole.superAdmin ||
+        user?.role == AppRole.collegeAdmin ||
+        user?.role == AppRole.hod;
 
     final bodyContent = courseAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -86,7 +113,7 @@ class CourseDetailScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             AcadexButton(
               label: 'Retry',
-              onPressed: () => ref.invalidate(courseByIdProvider(courseId)),
+              onPressed: () => ref.invalidate(courseByIdProvider(widget.courseId)),
             ),
           ],
         ),
@@ -103,7 +130,7 @@ class CourseDetailScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Hero Header Card ──────────────────────────────────────
-              _buildHeroCard(context, ref, isDark, isMobile, course),
+              _buildHeroCard(context, isDark, isMobile, course, canManage),
               const SizedBox(height: 20),
 
               // ── Course & Department Cards ─────────────────────────────
@@ -121,6 +148,14 @@ class CourseDetailScreen extends ConsumerWidget {
                   ],
                 ),
               ],
+              const SizedBox(height: 24),
+
+              // ── Summary Metrics ───────────────────────────────────────
+              _buildSummaryMetrics(isDark, isMobile, semesters.length, sections.length, subjects.length),
+              const SizedBox(height: 24),
+
+              // ── Downstream Curriculum Tabs ────────────────────────────
+              _buildCurriculumTabs(context, isDark, isMobile, canManage, semesters, sections, subjects, semesterMap),
               const SizedBox(height: 32),
             ],
           ),
@@ -154,10 +189,10 @@ class CourseDetailScreen extends ConsumerWidget {
 
   Widget _buildHeroCard(
     BuildContext context,
-    WidgetRef ref,
     bool isDark,
     bool isMobile,
-    dynamic course,
+    Course course,
+    bool canManage,
   ) {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -238,28 +273,29 @@ class CourseDetailScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          const Divider(height: 1),
-          const SizedBox(height: 12),
-          // Action Buttons
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              AcadexButton(
-                label: 'Edit Course',
-                icon: LucideIcons.edit,
-                variant: AcadexButtonVariant.primary,
-                onPressed: () => context.push('/academics/courses/edit/$courseId'),
-              ),
-              AcadexButton(
-                label: course.isActive ? 'Deactivate' : 'Activate',
-                icon: course.isActive ? LucideIcons.powerOff : LucideIcons.power,
-                variant: AcadexButtonVariant.secondary,
-                onPressed: () => _confirmStatusToggle(context, ref, course.name, course.isActive),
-              ),
-            ],
-          ),
+          if (canManage) ...[
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                AcadexButton(
+                  label: 'Edit Course',
+                  icon: LucideIcons.edit,
+                  variant: AcadexButtonVariant.primary,
+                  onPressed: () => context.push('/academics/courses/edit/${widget.courseId}'),
+                ),
+                AcadexButton(
+                  label: course.isActive ? 'Deactivate' : 'Activate',
+                  icon: course.isActive ? LucideIcons.powerOff : LucideIcons.power,
+                  variant: AcadexButtonVariant.secondary,
+                  onPressed: () => _confirmStatusToggle(context, course.name, course.isActive),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -268,7 +304,7 @@ class CourseDetailScreen extends ConsumerWidget {
   Widget _buildDetailsCard(
     BuildContext context,
     bool isDark,
-    dynamic course,
+    Course course,
   ) {
     return AcadexCard(
       padding: const EdgeInsets.all(18),
@@ -387,6 +423,542 @@ class CourseDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSummaryMetrics(
+    bool isDark,
+    bool isMobile,
+    int semesterCount,
+    int sectionCount,
+    int subjectCount,
+  ) {
+    final metrics = [
+      (
+        label: 'Semesters',
+        count: semesterCount,
+        icon: LucideIcons.calendarDays,
+        tabIndex: 0,
+        color: AcadexColors.primary,
+      ),
+      (
+        label: 'Sections',
+        count: sectionCount,
+        icon: LucideIcons.users,
+        tabIndex: 1,
+        color: AcadexColors.info,
+      ),
+      (
+        label: 'Subjects',
+        count: subjectCount,
+        icon: LucideIcons.bookCheck,
+        tabIndex: 2,
+        color: AcadexColors.success,
+      ),
+    ];
+
+    return Row(
+      children: metrics.map((m) {
+        final isSelected = _selectedTabIndex == m.tabIndex;
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: InkWell(
+              onTap: () => setState(() => _selectedTabIndex = m.tabIndex),
+              borderRadius: AcadexRadius.borderRadiusMd,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? (isDark ? m.color.withValues(alpha: 0.18) : m.color.withValues(alpha: 0.08))
+                      : (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface),
+                  borderRadius: AcadexRadius.borderRadiusMd,
+                  border: Border.all(
+                    color: isSelected ? m.color : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: m.color.withValues(alpha: 0.12),
+                        borderRadius: AcadexRadius.borderRadiusSm,
+                      ),
+                      child: Icon(m.icon, color: m.color, size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            m.count.toString(),
+                            style: AcadexTypography.heading2(
+                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            ).copyWith(fontSize: 18, fontWeight: FontWeight.w700),
+                          ),
+                          Text(
+                            m.label,
+                            style: AcadexTypography.caption(
+                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildCurriculumTabs(
+    BuildContext context,
+    bool isDark,
+    bool isMobile,
+    bool canManage,
+    List<Semester> semesters,
+    List<Section> sections,
+    List<Subject> subjects,
+    Map<String, Semester> semesterMap,
+  ) {
+    return AcadexCard(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Tab selector bar ──────────────────────────────────────
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _tabChip('Semesters (${semesters.length})', 0, LucideIcons.calendarDays, isDark),
+                const SizedBox(width: 8),
+                _tabChip('Sections (${sections.length})', 1, LucideIcons.users, isDark),
+                const SizedBox(width: 8),
+                _tabChip('Subjects (${subjects.length})', 2, LucideIcons.bookCheck, isDark),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 16),
+
+          // ── Tab Content ───────────────────────────────────────────
+          if (_selectedTabIndex == 0)
+            _buildSemestersTab(context, isDark, canManage, semesters)
+          else if (_selectedTabIndex == 1)
+            _buildSectionsTab(context, isDark, canManage, sections, semesterMap)
+          else
+            _buildSubjectsTab(context, isDark, canManage, subjects, semesterMap),
+        ],
+      ),
+    );
+  }
+
+  Widget _tabChip(String title, int index, IconData icon, bool isDark) {
+    final isSelected = _selectedTabIndex == index;
+    return InkWell(
+      onTap: () => setState(() => _selectedTabIndex = index),
+      borderRadius: AcadexRadius.borderRadiusFull,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AcadexColors.primary.withValues(alpha: 0.12)
+              : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+          borderRadius: AcadexRadius.borderRadiusFull,
+          border: Border.all(
+            color: isSelected ? AcadexColors.primary : Colors.transparent,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 15,
+              color: isSelected ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? AcadexColors.primary : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSemestersTab(
+    BuildContext context,
+    bool isDark,
+    bool canManage,
+    List<Semester> semesters,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Configured Semesters',
+              style: AcadexTypography.body(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ).copyWith(fontWeight: FontWeight.w700),
+            ),
+            if (canManage)
+              AcadexButton(
+                label: 'Add Semester',
+                icon: LucideIcons.plus,
+                size: AcadexButtonSize.sm,
+                variant: AcadexButtonVariant.primary,
+                onPressed: () => context.push('/academics/semesters/new?courseId=${widget.courseId}'),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (semesters.isEmpty)
+          AcadexEmptyState(
+            title: 'No Semesters Configured',
+            subtitle: 'Establish semesters for this degree program to organize academic terms.',
+            icon: LucideIcons.calendarDays,
+            actionLabel: canManage ? 'Add First Semester' : null,
+            onActionTap: canManage ? () => context.push('/academics/semesters/new?courseId=${widget.courseId}') : null,
+          )
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: semesters.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (context, i) {
+              final s = semesters[i];
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                  borderRadius: AcadexRadius.borderRadiusMd,
+                  border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AcadexColors.primary.withValues(alpha: 0.12),
+                        borderRadius: AcadexRadius.borderRadiusSm,
+                      ),
+                      child: Center(
+                        child: Text(
+                          'S${s.number}',
+                          style: const TextStyle(fontWeight: FontWeight.w700, color: AcadexColors.primary),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                s.name,
+                                style: AcadexTypography.body(
+                                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                ).copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              if (s.isCurrent) ...[
+                                const SizedBox(width: 8),
+                                const AcadexBadge(label: 'CURRENT', variant: AcadexBadgeVariant.success),
+                              ],
+                            ],
+                          ),
+                          if (s.startDate != null && s.endDate != null)
+                            Text(
+                              'Term: ${s.startDate} → ${s.endDate}',
+                              style: AcadexTypography.caption(
+                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(LucideIcons.arrowRight, size: 16),
+                      tooltip: 'View Semester',
+                      onPressed: () => context.push('/academics/semesters/${s.id}'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSectionsTab(
+    BuildContext context,
+    bool isDark,
+    bool canManage,
+    List<Section> sections,
+    Map<String, Semester> semesterMap,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Course Sections',
+              style: AcadexTypography.body(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ).copyWith(fontWeight: FontWeight.w700),
+            ),
+            if (canManage)
+              AcadexButton(
+                label: 'Add Section',
+                icon: LucideIcons.plus,
+                size: AcadexButtonSize.sm,
+                variant: AcadexButtonVariant.primary,
+                onPressed: () => context.push('/academics/sections/new?courseId=${widget.courseId}'),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (sections.isEmpty)
+          AcadexEmptyState(
+            title: 'No Sections Established',
+            subtitle: 'Create cohorts and batch divisions under this course for timetable scheduling.',
+            icon: LucideIcons.users,
+            actionLabel: canManage ? 'Add First Section' : null,
+            onActionTap: canManage ? () => context.push('/academics/sections/new?courseId=${widget.courseId}') : null,
+          )
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: sections.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (context, i) {
+              final sec = sections[i];
+              final sem = semesterMap[sec.semesterId];
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                  borderRadius: AcadexRadius.borderRadiusMd,
+                  border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AcadexColors.info.withValues(alpha: 0.12),
+                        borderRadius: AcadexRadius.borderRadiusSm,
+                      ),
+                      child: const Center(
+                        child: Icon(LucideIcons.users, size: 18, color: AcadexColors.info),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            sec.name,
+                            style: AcadexTypography.body(
+                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            ).copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                'Capacity: ${sec.capacity} students',
+                                style: AcadexTypography.caption(
+                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                ),
+                              ),
+                              if (sem != null) ...[
+                                const SizedBox(width: 8),
+                                Text(
+                                  '•  ${sem.name}',
+                                  style: AcadexTypography.caption(
+                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(LucideIcons.arrowRight, size: 16),
+                      tooltip: 'View Section',
+                      onPressed: () => context.push('/academics/sections/${sec.id}'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSubjectsTab(
+    BuildContext context,
+    bool isDark,
+    bool canManage,
+    List<Subject> subjects,
+    Map<String, Semester> semesterMap,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Curriculum Subjects',
+              style: AcadexTypography.body(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ).copyWith(fontWeight: FontWeight.w700),
+            ),
+            if (canManage)
+              AcadexButton(
+                label: 'Add Subject',
+                icon: LucideIcons.plus,
+                size: AcadexButtonSize.sm,
+                variant: AcadexButtonVariant.primary,
+                onPressed: () => context.push('/academics/subjects/new?courseId=${widget.courseId}'),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (subjects.isEmpty)
+          AcadexEmptyState(
+            title: 'No Subjects Added',
+            subtitle: 'Add syllabus subjects with course credits and types (Theory/Lab).',
+            icon: LucideIcons.bookCheck,
+            actionLabel: canManage ? 'Add First Subject' : null,
+            onActionTap: canManage ? () => context.push('/academics/subjects/new?courseId=${widget.courseId}') : null,
+          )
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: subjects.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (context, i) {
+              final sub = subjects[i];
+              final sem = semesterMap[sub.semesterId];
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                  borderRadius: AcadexRadius.borderRadiusMd,
+                  border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AcadexColors.success.withValues(alpha: 0.12),
+                        borderRadius: AcadexRadius.borderRadiusSm,
+                      ),
+                      child: const Center(
+                        child: Icon(LucideIcons.bookCheck, size: 18, color: AcadexColors.success),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                sub.name,
+                                style: AcadexTypography.body(
+                                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                ).copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+                                  borderRadius: AcadexRadius.borderRadiusSm,
+                                  border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                                ),
+                                child: Text(
+                                  sub.code,
+                                  style: const TextStyle(
+                                    fontFamily: 'monospace',
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                '${sub.credits} Credits • ${sub.type}',
+                                style: AcadexTypography.caption(
+                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                ),
+                              ),
+                              if (sem != null) ...[
+                                const SizedBox(width: 8),
+                                Text(
+                                  '•  ${sem.name}',
+                                  style: AcadexTypography.caption(
+                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(LucideIcons.arrowRight, size: 16),
+                      tooltip: 'View Subject',
+                      onPressed: () => context.push('/academics/subjects/${sub.id}'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+      ],
     );
   }
 

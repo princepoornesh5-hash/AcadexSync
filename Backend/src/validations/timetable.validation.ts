@@ -15,14 +15,19 @@ export const createRoomSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
   code: z.string().trim().min(1, 'Code is required').max(30).toUpperCase(),
   capacity: z.number().int().min(1, 'Capacity must be at least 1').max(1000).default(60),
-  type: z.enum(['lecture', 'lab', 'seminar', 'other']).optional().default('lecture'),
+  type: z
+    .preprocess((val) => (typeof val === 'string' ? val.toLowerCase() : val), z.enum(['lecture', 'lab', 'seminar', 'other']))
+    .optional()
+    .default('lecture'),
 });
 
 export const updateRoomSchema = z.object({
   name: z.string().trim().min(2).max(100).optional(),
   code: z.string().trim().min(1).max(30).toUpperCase().optional(),
   capacity: z.number().int().min(1).max(1000).optional(),
-  type: z.enum(['lecture', 'lab', 'seminar', 'other']).optional(),
+  type: z
+    .preprocess((val) => (typeof val === 'string' ? val.toLowerCase() : val), z.enum(['lecture', 'lab', 'seminar', 'other']))
+    .optional(),
   isActive: z.boolean().optional(),
 });
 

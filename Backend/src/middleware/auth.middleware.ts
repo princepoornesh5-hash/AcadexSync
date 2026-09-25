@@ -4,6 +4,7 @@ import { AppRole, normalizeRole } from '../constants/roles';
 import { AccountStatus, TokenType } from '../constants/status';
 import { verifyJwtToken } from '../utils/token';
 import { User } from '../models/user.model';
+import { AuthSession } from '../models/authSession.model';
 import mongoose from 'mongoose';
 
 /**
@@ -33,52 +34,66 @@ export async function authenticateRequest(
     const payload = verifyJwtToken(token, TokenType.ACCESS);
     const role = normalizeRole(payload.role);
 
+    // If sessionId is present in token, verify it has not been revoked
+    if (payload.sessionId && mongoose.Types.ObjectId.isValid(payload.sessionId)) {
+      const session = await AuthSession.findById(payload.sessionId);
+      if (session && (session.revokedAt != null || session.isExpired())) {
+        return next(
+          ApiError.unauthorized('Authentication session has been revoked. Please log in again.')
+        );
+      }
+    }
+
     // If userId is a valid Mongo ObjectId, verify user exists in database and is ACTIVE
     if (mongoose.Types.ObjectId.isValid(payload.userId)) {
       const dbUser = await User.findById(payload.userId);
-      if (dbUser) {
-        if (dbUser.accountStatus === AccountStatus.DEACTIVATED) {
-          return next(
-            ApiError.forbidden('Account has been deactivated. Please contact your administrator.')
-          );
-        }
-        if (dbUser.accountStatus === AccountStatus.PENDING_ACTIVATION) {
-          return next(
-            ApiError.forbidden('Account is pending activation. Please activate your account first.')
-          );
-        }
-        if (dbUser.accountStatus !== AccountStatus.ACTIVE) {
-          return next(ApiError.forbidden('Account is currently not active.'));
-        }
-
-        req.user = {
-          id: dbUser.id,
-          instituteId: dbUser.instituteId,
-          email: dbUser.email || undefined,
-          phone: dbUser.phone || undefined,
-          name: dbUser.name,
-          role: dbUser.role,
-          collegeId: dbUser.collegeId?.toString(),
-          departmentId: dbUser.departmentId?.toString(),
-          courseId: dbUser.courseId?.toString(),
-          sectionId: dbUser.sectionId?.toString(),
-          semesterId: dbUser.semesterId?.toString(),
-          firebaseUid: dbUser.firebaseUid || undefined,
-          accountStatus: dbUser.accountStatus,
-          activationStatus: dbUser.activationStatus,
-          sessionId: payload.sessionId,
-        };
-
-        req.collegeId = dbUser.collegeId?.toString();
-        req.tenant = {
-          collegeId: dbUser.collegeId?.toString(),
-          isSuperAdmin: dbUser.role === AppRole.SUPER_ADMIN,
-          userRole: dbUser.role,
-          userId: dbUser.id,
-        };
-
-        return next();
+      if (!dbUser) {
+        return next(
+          ApiError.unauthorized('User account no longer exists or has been deleted.')
+        );
       }
+
+      if (dbUser.accountStatus === AccountStatus.DEACTIVATED) {
+        return next(
+          ApiError.forbidden('Account has been deactivated. Please contact your administrator.')
+        );
+      }
+      if (dbUser.accountStatus === AccountStatus.PENDING_ACTIVATION) {
+        return next(
+          ApiError.forbidden('Account is pending activation. Please activate your account first.')
+        );
+      }
+      if (dbUser.accountStatus !== AccountStatus.ACTIVE) {
+        return next(ApiError.forbidden('Account is currently not active.'));
+      }
+
+      req.user = {
+        id: dbUser.id,
+        instituteId: dbUser.instituteId,
+        email: dbUser.email || undefined,
+        phone: dbUser.phone || undefined,
+        name: dbUser.name,
+        role: dbUser.role,
+        collegeId: dbUser.collegeId?.toString(),
+        departmentId: dbUser.departmentId?.toString(),
+        courseId: dbUser.courseId?.toString(),
+        sectionId: dbUser.sectionId?.toString(),
+        semesterId: dbUser.semesterId?.toString(),
+        firebaseUid: dbUser.firebaseUid || undefined,
+        accountStatus: dbUser.accountStatus,
+        activationStatus: dbUser.activationStatus,
+        sessionId: payload.sessionId,
+      };
+
+      req.collegeId = dbUser.collegeId?.toString();
+      req.tenant = {
+        collegeId: dbUser.collegeId?.toString(),
+        isSuperAdmin: dbUser.role === AppRole.SUPER_ADMIN,
+        userRole: dbUser.role,
+        userId: dbUser.id,
+      };
+
+      return next();
     }
 
     // Fallback context from verified token payload

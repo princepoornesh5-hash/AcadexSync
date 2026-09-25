@@ -49,6 +49,7 @@ class NotificationCard extends StatelessWidget {
       case NotificationCategory.notes: return LucideIcons.fileText;
       case NotificationCategory.certificates: return LucideIcons.award;
       case NotificationCategory.timetable: return LucideIcons.calendarDays;
+      case NotificationCategory.announcement: return LucideIcons.megaphone;
       case NotificationCategory.general: return LucideIcons.bell;
     }
   }

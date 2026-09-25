@@ -254,7 +254,7 @@ final coursesProvider = AsyncNotifierProvider.autoDispose<CourseNotifier, List<C
 
 // --- Course Detail by ID ---
 final courseByIdProvider = FutureProvider.autoDispose.family<Course, String>((ref, id) async {
-  final repo = ref.watch(apiAcademicRepositoryProvider);
+  final repo = ref.watch(academicRepositoryProvider);
   return repo.getCourseById(id);
 });
 
@@ -306,7 +306,7 @@ final academicYearsProvider = AsyncNotifierProvider.autoDispose<AcademicYearNoti
 
 // --- AcademicYear Detail by ID ---
 final academicYearByIdProvider = FutureProvider.autoDispose.family<AcademicYear, String>((ref, id) async {
-  final repo = ref.watch(apiAcademicRepositoryProvider);
+  final repo = ref.watch(academicRepositoryProvider);
   return repo.getAcademicYearById(id);
 });
 
@@ -357,7 +357,7 @@ final semestersProvider = AsyncNotifierProvider.autoDispose<SemesterNotifier, Li
 
 // --- Semester Detail by ID ---
 final semesterByIdProvider = FutureProvider.autoDispose.family<Semester, String>((ref, id) async {
-  final repo = ref.watch(apiAcademicRepositoryProvider);
+  final repo = ref.watch(academicRepositoryProvider);
   return repo.getSemesterById(id);
 });
 
@@ -409,7 +409,7 @@ final sectionsProvider = AsyncNotifierProvider.autoDispose<SectionNotifier, List
 
 // --- Section Detail by ID ---
 final sectionByIdProvider = FutureProvider.autoDispose.family<Section, String>((ref, id) async {
-  final repo = ref.watch(apiAcademicRepositoryProvider);
+  final repo = ref.watch(academicRepositoryProvider);
   return repo.getSectionById(id);
 });
 
@@ -452,7 +452,7 @@ final subjectsProvider = AsyncNotifierProvider.autoDispose<SubjectNotifier, List
 
 // --- Subject Detail by ID ---
 final subjectByIdProvider = FutureProvider.autoDispose.family<Subject, String>((ref, id) async {
-  final repo = ref.watch(apiAcademicRepositoryProvider);
+  final repo = ref.watch(academicRepositoryProvider);
   return repo.getSubjectById(id);
 });
 
@@ -495,6 +495,35 @@ class HodNotifier extends AutoDisposeAsyncNotifier<List<UserModel>> {
 
   Future<void> transferDepartment(String id, String targetDepartmentId) async {
     await ref.read(academicRepositoryProvider).transferHodDepartment(id, targetDepartmentId);
+    ref.invalidateSelf();
+    ref.invalidate(hodByIdProvider(id));
+    ref.invalidate(hodSummaryProvider(id));
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(departmentsProvider);
+  }
+
+  Future<void> assignExistingUser({required String userId, required String departmentId}) async {
+    await ref.read(academicRepositoryProvider).assignExistingUserToHod(userId, departmentId);
+    ref.invalidateSelf();
+    ref.invalidate(departmentHodProvider(departmentId));
+    ref.invalidate(departmentByIdProvider(departmentId));
+    ref.invalidate(departmentsProvider);
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(collegeAdminStatsProvider);
+  }
+
+  Future<void> unassignHod(String id, {String? newRole}) async {
+    await ref.read(academicRepositoryProvider).unassignHod(id, newRole: newRole);
+    ref.invalidateSelf();
+    ref.invalidate(hodByIdProvider(id));
+    ref.invalidate(hodSummaryProvider(id));
+    ref.invalidate(departmentsProvider);
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(collegeAdminStatsProvider);
+  }
+
+  Future<void> updateStatus(String id, String status, {String? reason}) async {
+    await ref.read(academicRepositoryProvider).updateHodStatus(id, status, reason: reason);
     ref.invalidateSelf();
     ref.invalidate(hodByIdProvider(id));
     ref.invalidate(hodSummaryProvider(id));
@@ -1049,6 +1078,14 @@ final sectionsByCourseProvider = Provider.autoDispose.family<List<Section>, Stri
   return sections.where((s) => s.courseId == courseId).toList();
 });
 
+// --- Subjects by Course ID ---
+final subjectsByCourseProvider = Provider.autoDispose.family<List<Subject>, String>((ref, courseId) {
+  final subjects = ref.watch(subjectsProvider).valueOrNull ?? [];
+  final courseSemesters = ref.watch(semestersByCourseProvider(courseId));
+  final semIds = courseSemesters.map((s) => s.id).toSet();
+  return subjects.where((s) => s.courseId == courseId || semIds.contains(s.semesterId)).toList();
+});
+
 // --- Section Student Count Provider ---
 final sectionStudentCountProvider = FutureProvider.autoDispose.family<int, String>((ref, sectionId) async {
   final repo = ref.watch(academicRepositoryProvider);
@@ -1159,4 +1196,21 @@ final unassignedSubjectsForSectionProvider = Provider.autoDispose.family<List<Su
   final assignedSubjectIds = assignments.where((a) => a.isActive).map((a) => a.subjectId).toSet();
   return subjects.where((s) => !assignedSubjectIds.contains(s.id)).toList();
 });
+
+// --- Rooms Provider ---
+class RoomNotifier extends AutoDisposeAsyncNotifier<List<Room>> {
+  @override
+  Future<List<Room>> build() async {
+    return ref.watch(academicRepositoryProvider).getRooms();
+  }
+
+  Future<Room> addRoom(Room room) async {
+    final created = await ref.read(academicRepositoryProvider).addRoom(room);
+    ref.invalidateSelf();
+    return created;
+  }
+}
+
+final roomsProvider = AsyncNotifierProvider.autoDispose<RoomNotifier, List<Room>>(RoomNotifier.new);
+
 

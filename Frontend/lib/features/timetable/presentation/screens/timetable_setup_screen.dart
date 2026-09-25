@@ -7,7 +7,9 @@ import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../academic_structure/domain/models/academic_models.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
+import '../../../academic_structure/presentation/utils/academic_prerequisite_guard.dart';
 import '../../domain/models/timetable_models.dart';
 import '../providers/timetable_providers.dart';
 import '../providers/timetable_lookup_providers.dart';
@@ -393,26 +395,51 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
     final academicYearsAsync = ref.watch(academicYearsProvider);
     final semestersAsync = ref.watch(semestersProvider);
     final sectionsAsync = ref.watch(sectionsProvider);
+    final subjectsAsync = ref.watch(subjectsProvider);
+    final assignmentsAsync = ref.watch(facultyAssignmentsProvider);
+    final roomsAsync = ref.watch(roomsProvider);
 
     final isHod = user.role == AppRole.hod;
+    if (isHod && _selectedDepartmentId == null && user.departmentId != null && user.departmentId!.isNotEmpty) {
+      _selectedDepartmentId = user.departmentId;
+    }
+
+    final allCourses = coursesAsync.valueOrNull ?? [];
+    final allYears = academicYearsAsync.valueOrNull ?? [];
+    final allSemesters = semestersAsync.valueOrNull ?? [];
+    final allSections = sectionsAsync.valueOrNull ?? [];
+    final allSubjects = subjectsAsync.valueOrNull ?? [];
+    final allAssignments = assignmentsAsync.valueOrNull ?? [];
+    final allRooms = roomsAsync.valueOrNull ?? [];
+
+    final prereqResult = AcademicPrerequisiteGuard.checkTimetablePrerequisites(
+      courses: allCourses,
+      academicYears: allYears,
+      semesters: allSemesters,
+      sections: allSections,
+      subjects: allSubjects,
+      facultyAssignments: allAssignments,
+      rooms: allRooms,
+    );
 
     final availableDepts = (deptsAsync.valueOrNull ?? []).where((d) {
       if (isHod) return d.id == user.departmentId;
       return true;
     }).toList();
 
-    final availableCourses = (coursesAsync.valueOrNull ?? []).where((c) {
-      if (_selectedDepartmentId != null) return c.departmentId == _selectedDepartmentId;
-      return true;
-    }).toList();
+    final availableCourses = _selectedDepartmentId != null
+        ? allCourses.where((c) => c.departmentId == _selectedDepartmentId).toList()
+        : <Course>[];
 
-    final availableYears = academicYearsAsync.valueOrNull ?? [];
-    final availableSemesters = semestersAsync.valueOrNull ?? [];
-    final availableSections = (sectionsAsync.valueOrNull ?? []).where((s) {
-      if (_selectedDepartmentId != null && s.departmentId != _selectedDepartmentId) return false;
-      if (_selectedSemesterId != null && s.semesterId != _selectedSemesterId) return false;
-      return true;
-    }).toList();
+    final availableYears = allYears;
+
+    final availableSemesters = _selectedCourseId != null
+        ? allSemesters.where((s) => s.courseId == _selectedCourseId).toList()
+        : <Semester>[];
+
+    final availableSections = _selectedSemesterId != null
+        ? allSections.where((s) => s.semesterId == _selectedSemesterId && (_selectedCourseId == null || s.courseId == _selectedCourseId)).toList()
+        : <Section>[];
 
     return Container(
       padding: EdgeInsets.all(isMobile ? 16 : 24),
@@ -451,6 +478,14 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
             ],
           ),
 
+          if (!prereqResult.isAllowed) ...[
+            const SizedBox(height: 18),
+            AcademicPrerequisiteGuard.buildWarningCard(
+              context: context,
+              result: prereqResult,
+            ),
+          ],
+
           const SizedBox(height: 24),
 
           // Department Dropdown
@@ -466,6 +501,7 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                     setState(() {
                       _selectedDepartmentId = val;
                       _selectedCourseId = null;
+                      _selectedSemesterId = null;
                       _selectedSectionId = null;
                     });
                     _autoGenerateName();
@@ -475,29 +511,42 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
 
           const SizedBox(height: 16),
 
-          // Course Dropdown
+          // Course Dropdown (Dependent on Department)
           DropdownButtonFormField<String>(
-            value: _selectedCourseId,
-            decoration: const InputDecoration(labelText: 'Course / Degree Program *'),
+            value: _selectedCourseId != null && availableCourses.any((c) => c.id == _selectedCourseId)
+                ? _selectedCourseId
+                : null,
+            decoration: InputDecoration(
+              labelText: 'Course / Degree Program *',
+              hintText: _selectedDepartmentId == null ? 'Select Department first' : 'Select Degree Program / Course',
+            ),
             items: availableCourses.map((c) {
               return DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.code})'));
             }).toList(),
-            onChanged: (val) {
-              setState(() {
-                _selectedCourseId = val;
-                _selectedSectionId = null;
-              });
-              _autoGenerateName();
-              _checkExistingContainers();
-            },
+            onChanged: _selectedDepartmentId == null
+                ? null
+                : (val) {
+                    setState(() {
+                      _selectedCourseId = val;
+                      _selectedSemesterId = null;
+                      _selectedSectionId = null;
+                    });
+                    _autoGenerateName();
+                    _checkExistingContainers();
+                  },
           ),
 
           const SizedBox(height: 16),
 
           // Academic Year Dropdown
           DropdownButtonFormField<String>(
-            value: _selectedAcademicYearId,
-            decoration: const InputDecoration(labelText: 'Academic Year *'),
+            value: _selectedAcademicYearId != null && availableYears.any((y) => y.id == _selectedAcademicYearId)
+                ? _selectedAcademicYearId
+                : null,
+            decoration: InputDecoration(
+              labelText: 'Academic Year *',
+              hintText: availableYears.isEmpty ? 'No Academic Years available' : 'Select Academic Session',
+            ),
             items: availableYears.map((y) {
               return DropdownMenuItem(value: y.id, child: Text(y.name));
             }).toList(),
@@ -509,39 +558,53 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
 
           const SizedBox(height: 16),
 
-          // Semester & Section in a Row
+          // Semester & Section in a Row (Strictly Cascading)
           Row(
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedSemesterId,
-                  decoration: const InputDecoration(labelText: 'Semester *'),
+                  value: _selectedSemesterId != null && availableSemesters.any((s) => s.id == _selectedSemesterId)
+                      ? _selectedSemesterId
+                      : null,
+                  decoration: InputDecoration(
+                    labelText: 'Semester *',
+                    hintText: _selectedCourseId == null ? 'Select Course first' : 'Select Semester',
+                  ),
                   items: availableSemesters.map((s) {
                     return DropdownMenuItem(value: s.id, child: Text('Semester ${s.number}'));
                   }).toList(),
-                  onChanged: (val) {
-                    setState(() {
-                      _selectedSemesterId = val;
-                      _selectedSectionId = null;
-                    });
-                    _autoGenerateName();
-                    _checkExistingContainers();
-                  },
+                  onChanged: _selectedCourseId == null
+                      ? null
+                      : (val) {
+                          setState(() {
+                            _selectedSemesterId = val;
+                            _selectedSectionId = null;
+                          });
+                          _autoGenerateName();
+                          _checkExistingContainers();
+                        },
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedSectionId,
-                  decoration: const InputDecoration(labelText: 'Section *'),
+                  value: _selectedSectionId != null && availableSections.any((s) => s.id == _selectedSectionId)
+                      ? _selectedSectionId
+                      : null,
+                  decoration: InputDecoration(
+                    labelText: 'Section *',
+                    hintText: _selectedSemesterId == null ? 'Select Semester first' : 'Select Section',
+                  ),
                   items: availableSections.map((s) {
                     return DropdownMenuItem(value: s.id, child: Text(s.name));
                   }).toList(),
-                  onChanged: (val) {
-                    setState(() => _selectedSectionId = val);
-                    _autoGenerateName();
-                    _checkExistingContainers();
-                  },
+                  onChanged: _selectedSemesterId == null
+                      ? null
+                      : (val) {
+                          setState(() => _selectedSectionId = val);
+                          _autoGenerateName();
+                          _checkExistingContainers();
+                        },
                 ),
               ),
             ],
@@ -1303,6 +1366,17 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
   bool _validateCurrentStep() {
     switch (_currentStep) {
       case 0:
+        final prereqResult = AcademicPrerequisiteGuard.checkTimetablePrerequisites(
+          courses: ref.read(coursesProvider).valueOrNull ?? [],
+          academicYears: ref.read(academicYearsProvider).valueOrNull ?? [],
+          semesters: ref.read(semestersProvider).valueOrNull ?? [],
+          sections: ref.read(sectionsProvider).valueOrNull ?? [],
+          subjects: ref.read(subjectsProvider).valueOrNull ?? [],
+          facultyAssignments: ref.read(facultyAssignmentsProvider).valueOrNull ?? [],
+          rooms: ref.read(roomsProvider).valueOrNull ?? [],
+        );
+        if (!prereqResult.isAllowed) return false;
+
         return _selectedDepartmentId != null &&
             _selectedCourseId != null &&
             _selectedAcademicYearId != null &&

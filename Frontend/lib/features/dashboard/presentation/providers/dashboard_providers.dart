@@ -256,9 +256,24 @@ final hodStatsProvider = FutureProvider.autoDispose<List<DashboardStatModel>>((r
   final departmentId = authState is AuthAuthenticated ? (authState.user.departmentId ?? '') : '';
 
   final repo = ref.watch(attendanceRepoProvider);
+  final academicRepo = ref.watch(academicRepositoryProvider);
+
   final summary = departmentId.isNotEmpty
       ? await repo.getDepartmentSummary(departmentId)
       : null;
+
+  // Canonical Faculty source: directly from academicRepository (identical to Faculty Management page)
+  final facultyList = departmentId.isNotEmpty
+      ? await academicRepo.getFaculty(departmentId: departmentId)
+      : await academicRepo.getFaculty();
+  final facultyCount = facultyList.isNotEmpty ? facultyList.length : (summary?.totalFaculty ?? 0);
+
+  // Student count: from summary or academicRepo
+  final studentsCount = (summary?.totalStudents ?? 0) > 0
+      ? summary!.totalStudents
+      : (departmentId.isNotEmpty
+          ? (await academicRepo.getStudents(departmentId: departmentId)).length
+          : 0);
 
   final subjects = ref.watch(subjectsProvider).valueOrNull ?? [];
   final subjectsCount = subjects.where((s) => departmentId.isEmpty || s.departmentId == departmentId).length;
@@ -266,7 +281,7 @@ final hodStatsProvider = FutureProvider.autoDispose<List<DashboardStatModel>>((r
   return [
     DashboardStatModel(
       title: 'Dept Faculty',
-      value: '${summary?.totalFaculty ?? 0}',
+      value: '$facultyCount',
       subtitle: 'In your department',
       icon: LucideIcons.userCheck,
       iconColor: DashboardColors.purple,
@@ -274,7 +289,7 @@ final hodStatsProvider = FutureProvider.autoDispose<List<DashboardStatModel>>((r
     ),
     DashboardStatModel(
       title: 'Dept Students',
-      value: '${summary?.totalStudents ?? 0}',
+      value: '$studentsCount',
       subtitle: 'Enrolled this semester',
       icon: LucideIcons.users,
       iconColor: DashboardColors.primary,

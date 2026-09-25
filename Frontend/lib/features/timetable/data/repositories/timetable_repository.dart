@@ -34,6 +34,7 @@ abstract class TimetableRepository {
     String? sectionId,
     String? facultyId,
     String? date,
+    AppRole? role,
   });
 
   /// Creates a new timetable entry. Validates for conflicts before creating.

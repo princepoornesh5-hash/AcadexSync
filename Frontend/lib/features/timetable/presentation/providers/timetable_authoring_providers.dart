@@ -127,6 +127,8 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
   void _invalidateConsumerProviders() {
     if (ref == null) return;
     ref!.invalidate(weeklyTimetableProvider);
+    ref!.invalidate(todayScheduleProvider);
+    ref!.invalidate(dateScheduleProvider);
   }
 
   void _recordHistory() {

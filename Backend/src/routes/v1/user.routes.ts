@@ -19,6 +19,8 @@ router.get('/institute/:instituteId', requireCollegeScope, UserController.getByI
 router.get('/:id', requireCollegeScope, UserController.getById);
 router.post('/', requireCollegeAdmin, requireCollegeScope, UserController.create);
 router.put('/:id', requireCollegeScope, UserController.update);
+router.post('/:id/deactivate', requireCollegeAdmin, requireCollegeScope, UserController.deactivate);
+router.post('/:id/reactivate', requireCollegeAdmin, requireCollegeScope, UserController.reactivate);
 router.delete('/:id', requireSuperAdmin, UserController.deletePermanently);
 
 export const userRouter = router;

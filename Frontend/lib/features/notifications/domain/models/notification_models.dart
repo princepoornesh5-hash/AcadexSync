@@ -9,6 +9,7 @@ enum NotificationCategory {
   notes,
   certificates,
   timetable,
+  announcement,
   general,
 }
 

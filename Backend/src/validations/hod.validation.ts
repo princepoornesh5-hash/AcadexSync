@@ -38,3 +38,20 @@ export const hodQuerySchema = z.object({
   sortBy: z.enum(['name', 'instituteId', 'createdAt']).optional().default('name'),
   sortOrder: z.enum(['asc', 'desc']).optional().default('asc'),
 });
+
+export const assignExistingHodSchema = z.object({
+  userId: z.string().min(1, 'userId is required'),
+  departmentId: z.string().min(1, 'departmentId is required'),
+});
+
+export const unassignHodSchema = z.object({
+  newRole: z.string().optional(),
+});
+
+export const updateHodStatusSchema = z.object({
+  status: z
+    .string()
+    .transform((val) => val.toLowerCase() as AccountStatus)
+    .pipe(z.nativeEnum(AccountStatus)),
+  reason: z.string().optional(),
+});

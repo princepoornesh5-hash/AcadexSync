@@ -233,6 +233,15 @@ class FirebaseAcademicRepository implements AcademicRepository {
   Future<void> transferHodDepartment(String id, String targetDepartmentId) async {}
 
   @override
+  Future<void> assignExistingUserToHod(String userId, String departmentId) async {}
+
+  @override
+  Future<void> unassignHod(String id, {String? newRole}) async {}
+
+  @override
+  Future<void> updateHodStatus(String id, String status, {String? reason}) async {}
+
+  @override
   Future<Map<String, dynamic>> getHodSummary(String id) async {
     return {};
   }
@@ -1975,4 +1984,20 @@ class FirebaseAcademicRepository implements AcademicRepository {
   Future<void> deleteEnrollment(String id) async {
     await updateEnrollment(id, status: 'withdrawn');
   }
+
+  @override
+  Future<List<Room>> getRooms({String? collegeId, String? departmentId}) async {
+    final docs = await _firestoreService.queryCollection('rooms', {
+      if (collegeId != null && collegeId.isNotEmpty) 'collegeId': collegeId,
+      if (departmentId != null && departmentId.isNotEmpty) 'departmentId': departmentId,
+    });
+    return docs.map((d) => Room.fromJson(d)).toList();
+  }
+
+  @override
+  Future<Room> addRoom(Room room) async {
+    await _firestoreService.setDocument('rooms', room.id, room.toJson());
+    return room;
+  }
 }
+

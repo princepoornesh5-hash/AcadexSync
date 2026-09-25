@@ -416,6 +416,41 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<void> assignExistingUserToHod(String userId, String departmentId) async {
+    try {
+      await _client.dio.post('/academics/hods/assign-existing', data: {
+        'userId': userId,
+        'departmentId': departmentId,
+      });
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to assign user as HOD');
+    }
+  }
+
+  @override
+  Future<void> unassignHod(String id, {String? newRole}) async {
+    try {
+      await _client.dio.post('/academics/hods/$id/unassign', data: {
+        if (newRole != null) 'newRole': newRole,
+      });
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to unassign HOD');
+    }
+  }
+
+  @override
+  Future<void> updateHodStatus(String id, String status, {String? reason}) async {
+    try {
+      await _client.dio.patch('/academics/hods/$id/status', data: {
+        'status': status,
+        if (reason != null) 'reason': reason,
+      });
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to update HOD status');
+    }
+  }
+
+  @override
   Future<Map<String, dynamic>> getHodSummary(String id) async {
     try {
       final response = await _client.dio.get('/academics/hods/$id/summary');
@@ -1722,4 +1757,37 @@ class ApiAcademicRepository implements AcademicRepository {
     }
     return counts;
   }
+
+  @override
+  Future<List<Room>> getRooms({String? collegeId, String? departmentId}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (collegeId != null && collegeId.isNotEmpty) queryParams['collegeId'] = collegeId;
+      if (departmentId != null && departmentId.isNotEmpty) queryParams['departmentId'] = departmentId;
+      final response = await _client.dio.get('/timetables/rooms', queryParameters: queryParams.isNotEmpty ? queryParams : null);
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      final list = data is List ? data : (data is Map && data['items'] is List ? data['items'] as List : null);
+      if (list != null) {
+        return list.map((e) => Room.fromJson(e as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return [];
+      throw _extractError(e, 'Failed to fetch rooms');
+    }
+  }
+
+  @override
+  Future<Room> addRoom(Room room) async {
+    try {
+      final response = await _client.dio.post('/timetables/rooms', data: room.toJson());
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      return Room.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to create room');
+    }
+  }
 }
+

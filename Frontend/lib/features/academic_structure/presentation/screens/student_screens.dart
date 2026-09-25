@@ -964,20 +964,23 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                       data: (courses) {
                                         final filtered = _selectedDeptId != null
                                             ? courses.where((c) => c.departmentId == _selectedDeptId && c.isActive).toList()
-                                            : courses.where((c) => c.isActive).toList();
+                                            : <Course>[];
                                         return DropdownButtonFormField<String>(
                                           dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                                          decoration: const InputDecoration(
+                                          decoration: InputDecoration(
                                             labelText: "Course",
-                                            prefixIcon: Icon(LucideIcons.book, size: 18),
+                                            prefixIcon: const Icon(LucideIcons.book, size: 18),
+                                            hintText: _selectedDeptId == null ? 'Select Department first' : 'Choose Course',
                                           ),
                                           initialValue: _selectedCourseId,
                                           items: filtered.map((c) => DropdownMenuItem(value: c.id, child: Text("${c.name} (${c.code})"))).toList(),
-                                          onChanged: (val) => setState(() {
-                                            _selectedCourseId = val;
-                                            _selectedSemesterId = null;
-                                            _selectedSectionId = null;
-                                          }),
+                                          onChanged: _selectedDeptId == null
+                                              ? null
+                                              : (val) => setState(() {
+                                                    _selectedCourseId = val;
+                                                    _selectedSemesterId = null;
+                                                    _selectedSectionId = null;
+                                                  }),
                                         );
                                       },
                                       loading: () => const LinearProgressIndicator(),
@@ -1018,23 +1021,28 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                   Expanded(
                                     child: semestersAsync.when(
                                       data: (semesters) {
-                                        final filtered = semesters.where((s) {
-                                          if (_selectedCourseId != null && s.courseId != _selectedCourseId) return false;
-                                          if (_selectedAcademicYearId != null && s.academicYearId != _selectedAcademicYearId) return false;
-                                          return s.isActive;
-                                        }).toList();
+                                        final filtered = _selectedCourseId != null
+                                            ? semesters.where((s) {
+                                                if (s.courseId != _selectedCourseId) return false;
+                                                if (_selectedAcademicYearId != null && s.academicYearId != _selectedAcademicYearId) return false;
+                                                return s.isActive;
+                                              }).toList()
+                                            : <Semester>[];
                                         return DropdownButtonFormField<String>(
                                           dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                                          decoration: const InputDecoration(
+                                          decoration: InputDecoration(
                                             labelText: "Semester",
-                                            prefixIcon: Icon(LucideIcons.layers, size: 18),
+                                            prefixIcon: const Icon(LucideIcons.layers, size: 18),
+                                            hintText: _selectedCourseId == null ? 'Select Course first' : 'Choose Semester',
                                           ),
                                           initialValue: _selectedSemesterId,
                                           items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name.isNotEmpty ? s.name : "Semester ${s.semesterNumber}"))).toList(),
-                                          onChanged: (val) => setState(() {
-                                            _selectedSemesterId = val;
-                                            _selectedSectionId = null;
-                                          }),
+                                          onChanged: _selectedCourseId == null
+                                              ? null
+                                              : (val) => setState(() {
+                                                    _selectedSemesterId = val;
+                                                    _selectedSectionId = null;
+                                                  }),
                                         );
                                       },
                                       loading: () => const LinearProgressIndicator(),
@@ -1051,19 +1059,24 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                   Expanded(
                                     child: sectionsAsync.when(
                                       data: (sections) {
-                                        final filtered = sections.where((s) {
-                                          if (_selectedSemesterId != null && s.semesterId != _selectedSemesterId) return false;
-                                          return s.isActive;
-                                        }).toList();
+                                        final filtered = _selectedSemesterId != null
+                                            ? sections.where((s) {
+                                                if (s.semesterId != _selectedSemesterId) return false;
+                                                return s.isActive;
+                                              }).toList()
+                                            : <Section>[];
                                         return DropdownButtonFormField<String>(
                                           dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                                          decoration: const InputDecoration(
+                                          decoration: InputDecoration(
                                             labelText: "Section",
-                                            prefixIcon: Icon(LucideIcons.layoutGrid, size: 18),
+                                            prefixIcon: const Icon(LucideIcons.layoutGrid, size: 18),
+                                            hintText: _selectedSemesterId == null ? 'Select Semester first' : 'Choose Section',
                                           ),
                                           initialValue: _selectedSectionId,
                                           items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text("Section ${s.name}"))).toList(),
-                                          onChanged: (val) => setState(() => _selectedSectionId = val),
+                                          onChanged: _selectedSemesterId == null
+                                              ? null
+                                              : (val) => setState(() => _selectedSectionId = val),
                                         );
                                       },
                                       loading: () => const LinearProgressIndicator(),

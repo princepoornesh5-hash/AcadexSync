@@ -116,6 +116,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _ref.invalidate(userNotesProvider);
       _ref.invalidate(myFacultyAssignmentsProvider);
       _ref.invalidate(todayScheduleProvider);
+      _ref.invalidate(weeklyTimetableProvider);
       _ref.invalidate(currentStudentAcademicProfileProvider);
       
       // Invalidate role dashboard stats

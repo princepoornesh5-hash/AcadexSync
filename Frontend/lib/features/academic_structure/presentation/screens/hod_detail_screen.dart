@@ -100,6 +100,111 @@ class HodDetailScreen extends ConsumerWidget {
     );
   }
 
+  void _showDeactivateOrActivateDialog(BuildContext context, WidgetRef ref, UserModel hod) {
+    final isActive = hod.accountStatus == AccountStatus.active;
+    final actionText = isActive ? 'Deactivate' : 'Activate';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('$actionText Department Head'),
+        content: Text(
+          isActive
+              ? 'Are you sure you want to deactivate ${hod.name}? Deactivating will revoke active sessions, prevent login, and suspend administrative duties while safely preserving all historical academic records.'
+              : 'Reactivate ${hod.name} as active Head of Department? This will allow them to login and manage department academics.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isActive ? AcadexColors.error : AcadexColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              try {
+                final newStatus = isActive ? 'DEACTIVATED' : 'ACTIVE';
+                await ref.read(hodsProvider.notifier).updateStatus(hodId, newStatus);
+                ref.invalidate(hodByIdProvider(hodId));
+                ref.invalidate(hodSummaryProvider(hodId));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('HOD account successfully ${isActive ? "deactivated" : "reactivated"}!'),
+                      backgroundColor: AcadexColors.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(e.toString().replaceFirst('Exception: ', '')),
+                      backgroundColor: AcadexColors.error,
+                    ),
+                  );
+                }
+              }
+            },
+            child: Text(actionText),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showUnassignDialog(BuildContext context, WidgetRef ref, UserModel hod) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove HOD Role'),
+        content: Text(
+          'Are you sure you want to remove ${hod.name} from the HOD role? They will be reassigned as Faculty and removed from department leadership. Historical attendance and records will remain completely intact.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              try {
+                await ref.read(hodsProvider.notifier).unassignHod(hodId, newRole: 'FACULTY');
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('HOD assignment removed successfully. User reassigned to Faculty.'),
+                      backgroundColor: AcadexColors.success,
+                    ),
+                  );
+                  context.safePop(fallbackRoute: '/academics/hods');
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(e.toString().replaceFirst('Exception: ', '')),
+                      backgroundColor: AcadexColors.error,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Remove Assignment'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -308,6 +413,18 @@ class HodDetailScreen extends ConsumerWidget {
                 icon: LucideIcons.arrowRightLeft,
                 variant: AcadexButtonVariant.secondary,
                 onPressed: () => _showTransferDialog(context, ref, hod, allDepts),
+              ),
+              AcadexButton(
+                label: hod.accountStatus == AccountStatus.active ? 'Deactivate HOD' : 'Activate HOD',
+                icon: hod.accountStatus == AccountStatus.active ? LucideIcons.userX : LucideIcons.userCheck,
+                variant: hod.accountStatus == AccountStatus.active ? AcadexButtonVariant.danger : AcadexButtonVariant.secondary,
+                onPressed: () => _showDeactivateOrActivateDialog(context, ref, hod),
+              ),
+              AcadexButton(
+                label: 'Remove HOD Role',
+                icon: LucideIcons.userMinus,
+                variant: AcadexButtonVariant.secondary,
+                onPressed: () => _showUnassignDialog(context, ref, hod),
               ),
             ],
           ),

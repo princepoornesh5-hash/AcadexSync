@@ -49,12 +49,19 @@ export class TimetableService {
     data: { departmentId?: string; name: string; code: string; capacity?: number; type?: string },
     requester: AuthenticatedUser
   ): Promise<IRoom> {
-    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN].includes(requester.role)) {
-      throw ApiError.forbidden('Only administrators have permission to create classrooms/rooms');
+    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
+      throw ApiError.forbidden('Only administrators and HODs have permission to create classrooms/rooms');
     }
 
-    if (requester.role === AppRole.COLLEGE_ADMIN && requester.collegeId !== collegeId) {
+    if ([AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role) && requester.collegeId !== collegeId) {
       throw ApiError.forbidden('Cross-college room creation is strictly prohibited');
+    }
+
+    if (requester.role === AppRole.HOD) {
+      if (data.departmentId && data.departmentId !== requester.departmentId) {
+        throw ApiError.forbidden('HODs can only create rooms for their own department');
+      }
+      data.departmentId = requester.departmentId;
     }
 
     const college = await College.findById(collegeId);
@@ -158,11 +165,14 @@ export class TimetableService {
     update: { name?: string; code?: string; capacity?: number; type?: string; isActive?: boolean },
     requester: AuthenticatedUser
   ): Promise<IRoom> {
-    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN].includes(requester.role)) {
+    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
       throw ApiError.forbidden('Unauthorized to update room');
     }
 
     const room = await this.getRoomById(id, requester);
+    if (requester.role === AppRole.HOD && room.departmentId && room.departmentId.toString() !== requester.departmentId) {
+      throw ApiError.forbidden('HODs can only update rooms for their own department');
+    }
     const prev = room.toJSON();
 
     if (update.name) room.name = update.name.trim();
@@ -938,6 +948,14 @@ export class TimetableService {
     if (requester && requester.role === AppRole.COLLEGE_ADMIN && section.collegeId.toString() !== requester.collegeId) {
       throw ApiError.forbidden('Cross-college access is strictly prohibited');
     }
+    if (requester && requester.role === AppRole.HOD) {
+      if (section.collegeId.toString() !== requester.collegeId) {
+        throw ApiError.forbidden('Cross-college access is strictly prohibited');
+      }
+      if (requester.departmentId && section.departmentId.toString() !== requester.departmentId) {
+        throw ApiError.forbidden('HOD cannot access section timetables outside their assigned department');
+      }
+    }
     if (requester && requester.role === AppRole.STUDENT) {
       const studentProfile = await Student.findOne({ userId: requester.id });
       if (!studentProfile) throw ApiError.notFound('Student profile not found');
@@ -999,6 +1017,10 @@ export class TimetableService {
 
       const entryObj = (e as any).toObject ? (e as any).toObject() : { ...(e as any) };
       entryObj.facultyId = facultyId;
+      entryObj.timetableId = timetable._id;
+      entryObj.sectionId = timetable.sectionId;
+      entryObj.departmentId = timetable.departmentId;
+      entryObj.collegeId = timetable.collegeId;
       if (isSubstituted) {
         (entryObj as any).isSubstituted = true;
       }
@@ -1006,6 +1028,117 @@ export class TimetableService {
     }
 
     return operationalEntries.sort((a, b) => a.startTime.localeCompare(b.startTime));
+  }
+
+  static async getDepartmentTimetable(
+    departmentId: string,
+    day?: string,
+    requester?: AuthenticatedUser,
+    date?: string
+  ): Promise<ITimetableGridEntry[]> {
+    if (!requester) {
+      throw ApiError.unauthorized('User not authenticated');
+    }
+
+    let targetDepartmentId = departmentId;
+    if (departmentId === 'me') {
+      if (!requester.departmentId) {
+        throw ApiError.badRequest('User does not have an assigned department');
+      }
+      targetDepartmentId = requester.departmentId;
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(targetDepartmentId)) {
+      throw ApiError.badRequest(`Invalid Department ID format: "${targetDepartmentId}"`);
+    }
+
+    const department = await Department.findById(targetDepartmentId);
+    if (!department) {
+      throw ApiError.notFound(`Department with ID "${targetDepartmentId}" not found`);
+    }
+
+    // RBAC & Tenant Scoping
+    if (requester.role === AppRole.HOD) {
+      if (department.collegeId.toString() !== requester.collegeId) {
+        throw ApiError.forbidden('Cross-college tenant access is strictly prohibited');
+      }
+      if (requester.departmentId && targetDepartmentId !== requester.departmentId.toString()) {
+        throw ApiError.forbidden('HOD cannot access timetables outside their assigned department');
+      }
+    } else if (requester.role === AppRole.COLLEGE_ADMIN) {
+      if (department.collegeId.toString() !== requester.collegeId) {
+        throw ApiError.forbidden('Cross-college tenant access is strictly prohibited');
+      }
+    } else if (requester.role !== AppRole.SUPER_ADMIN) {
+      throw ApiError.forbidden('Only HODs and administrators can access department timetable schedules');
+    }
+
+    const collegeDoc = await College.findById(department.collegeId);
+    const tz = collegeDoc?.timezone || DEFAULT_INSTITUTION_TIMEZONE;
+
+    let targetDay = normalizeDay(day);
+    let calendarDateStr: string | undefined;
+
+    if (date) {
+      calendarDateStr = formatDateToCalendarString(date, tz);
+      targetDay = getTimetableDayFromDate(date, tz);
+    }
+
+    const timetables = await Timetable.find({
+      collegeId: department.collegeId,
+      departmentId: department._id,
+      status: TimetableStatus.PUBLISHED,
+    });
+
+    const entries: ITimetableGridEntry[] = [];
+    for (const t of timetables) {
+      for (const e of t.entries) {
+        if (!targetDay || e.dayOfWeek === targetDay) {
+          let facultyId = e.facultyId;
+          let isSubstituted = false;
+
+          if (calendarDateStr) {
+            const activeOverride = await CalendarOverrideService.resolveActiveOverride({
+              collegeId: t.collegeId,
+              departmentId: t.departmentId,
+              sectionId: t.sectionId,
+              timetableEntryId: e._id,
+              date: calendarDateStr,
+            });
+            if (activeOverride) {
+              // Holiday or Cancelled classes are not operational on this date
+              continue;
+            }
+
+            const activeSub = await TeacherSubstitutionService.resolveActiveSubstitution({
+              timetableId: t._id,
+              timetableEntryId: e._id,
+              date: calendarDateStr,
+            });
+            if (activeSub) {
+              facultyId = activeSub.substituteFacultyId;
+              isSubstituted = true;
+            }
+          }
+
+          const entryObj = (e as any).toObject ? (e as any).toObject() : { ...(e as any) };
+          entryObj.facultyId = facultyId;
+          if (isSubstituted) {
+            (entryObj as any).isSubstituted = true;
+          }
+          entryObj.timetableId = t._id;
+          entryObj.sectionId = t.sectionId;
+          entryObj.courseId = t.courseId;
+          entryObj.semesterId = t.semesterId;
+          entryObj.academicYearId = t.academicYearId;
+          entryObj.departmentId = t.departmentId;
+          entryObj.collegeId = t.collegeId;
+          entries.push(entryObj as ITimetableGridEntry);
+        }
+      }
+    }
+
+    return entries.sort((a, b) => a.startTime.localeCompare(b.startTime));
   }
 
   static async getFacultyTimetable(

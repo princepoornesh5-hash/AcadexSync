@@ -218,11 +218,13 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
             onPressed: () => context.safePop(fallbackRoute: '/attendance'),
           ),
         ),
-        body: const Center(
+        body: Center(
           child: AcadexEmptyState(
             title: "No Class Selected",
             subtitle: "Please select a teaching class from your schedule first.",
             icon: LucideIcons.calendarX,
+            actionLabel: "View Schedule",
+            onActionTap: () => context.safePop(fallbackRoute: '/attendance'),
           ),
         ),
       );
@@ -701,8 +703,10 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
         return Center(
           child: AcadexEmptyState(
             title: "No Enrolled Students",
-            subtitle: "No students are currently enrolled in this section.",
+            subtitle: "No students are currently enrolled in this section. Enroll students before taking attendance.",
             icon: LucideIcons.users,
+            actionLabel: "Back to Schedule",
+            onActionTap: () => context.safePop(fallbackRoute: '/attendance'),
           ),
         );
       }

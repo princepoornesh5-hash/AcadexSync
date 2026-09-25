@@ -120,7 +120,7 @@ class NotificationCenterScreen extends ConsumerWidget {
 
     final fab = isAdmin
         ? FloatingActionButton.extended(
-            onPressed: () => context.push('/settings/notifications/create'),
+            onPressed: () => context.push('/announcements/create'),
             icon: const Icon(LucideIcons.plus),
             label: const Text('New Announcement'),
           )

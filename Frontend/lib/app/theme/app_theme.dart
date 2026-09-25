@@ -34,8 +34,8 @@ class AcadexColors {
   static const Color hairlineHover = Color(0xFFCBD5E1); // Slate 300
 
   // Light Typography & Ink (High Contrast WCAG AA / AAA)
-  static const Color ink = Color(0xFF0F172A); // Slate 900 primary text
-  static const Color textPrimary = Color(0xFF0F172A);
+  static const Color ink = Color(0xFF07111F); // Dark Navy #07111F primary text
+  static const Color textPrimary = Color(0xFF07111F);
   static const Color inkSecondary = Color(0xFF475569); // Slate 600 secondary text
   static const Color textSecondary = Color(0xFF475569);
   static const Color inkMuted = Color(0xFF64748B); // Slate 500 muted text/captions
@@ -479,15 +479,15 @@ class AppTheme {
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AcadexColors.surface,
+        fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         border: OutlineInputBorder(
           borderRadius: AcadexRadius.borderRadiusMd,
-          borderSide: const BorderSide(color: AcadexColors.hairline, width: 1),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: AcadexRadius.borderRadiusMd,
-          borderSide: const BorderSide(color: AcadexColors.hairline, width: 1),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AcadexRadius.borderRadiusMd,
@@ -501,8 +501,75 @@ class AppTheme {
           borderRadius: AcadexRadius.borderRadiusMd,
           borderSide: const BorderSide(color: AcadexColors.error, width: 1.5),
         ),
-        labelStyle: GoogleFonts.inter(color: AcadexColors.inkMuted, fontSize: 14),
-        hintStyle: GoogleFonts.inter(color: AcadexColors.inkFaint, fontSize: 14),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: AcadexRadius.borderRadiusMd,
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+        ),
+        labelStyle: GoogleFonts.inter(
+          color: const Color(0xFF07111F),
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+        floatingLabelStyle: GoogleFonts.inter(
+          color: AcadexColors.primary,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+        hintStyle: GoogleFonts.inter(
+          color: const Color(0xFF64748B),
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+        ),
+        helperStyle: GoogleFonts.inter(
+          color: const Color(0xFF64748B),
+          fontSize: 12,
+        ),
+        errorStyle: GoogleFonts.inter(
+          color: AcadexColors.error,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+        prefixIconColor: const Color(0xFF64748B),
+        suffixIconColor: const Color(0xFF64748B),
+      ),
+
+      dropdownMenuTheme: DropdownMenuThemeData(
+        textStyle: GoogleFonts.inter(
+          color: const Color(0xFF07111F),
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+        menuStyle: MenuStyle(
+          backgroundColor: WidgetStateProperty.all(Colors.white),
+          surfaceTintColor: WidgetStateProperty.all(Colors.transparent),
+          elevation: WidgetStateProperty.all(4),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(
+              borderRadius: AcadexRadius.borderRadiusMd,
+              side: const BorderSide(color: Color(0xFFCBD5E1), width: 1),
+            ),
+          ),
+        ),
+      ),
+
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: Colors.white,
+        headerBackgroundColor: AcadexColors.primary,
+        headerForegroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        dividerColor: const Color(0xFFE2E8F0),
+        dayStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF07111F)),
+        yearStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF07111F)),
+        todayForegroundColor: WidgetStateProperty.all(AcadexColors.primary),
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          if (states.contains(WidgetState.disabled)) return const Color(0xFF94A3B8);
+          return const Color(0xFF07111F);
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AcadexColors.primary;
+          return Colors.transparent;
+        }),
       ),
 
       dividerTheme: const DividerThemeData(
@@ -543,21 +610,22 @@ class AppTheme {
       ),
 
       dialogTheme: DialogThemeData(
-        backgroundColor: AcadexColors.surface,
-        elevation: 4,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 6,
         constraints: const BoxConstraints(maxWidth: 480),
         shape: RoundedRectangleBorder(
           borderRadius: AcadexRadius.borderRadiusXl,
-          side: const BorderSide(color: AcadexColors.hairline, width: 1),
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
         ),
         titleTextStyle: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: FontWeight.w700,
-          color: AcadexColors.ink,
+          color: const Color(0xFF07111F),
         ),
         contentTextStyle: GoogleFonts.inter(
           fontSize: 14,
-          color: AcadexColors.inkSecondary,
+          color: const Color(0xFF334155),
         ),
       ),
 
@@ -600,9 +668,30 @@ class AppTheme {
         columnSpacing: 24,
       ),
 
-      textTheme: baseTextTheme.apply(
-        bodyColor: AcadexColors.ink,
-        displayColor: AcadexColors.ink,
+      textTheme: baseTextTheme.copyWith(
+        titleMedium: GoogleFonts.inter(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: const Color(0xFF07111F),
+        ),
+        bodyLarge: GoogleFonts.inter(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          color: const Color(0xFF07111F),
+        ),
+        bodyMedium: GoogleFonts.inter(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          color: const Color(0xFF07111F),
+        ),
+        bodySmall: GoogleFonts.inter(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          color: const Color(0xFF475569),
+        ),
+      ).apply(
+        bodyColor: const Color(0xFF07111F),
+        displayColor: const Color(0xFF07111F),
       ),
     );
   }

@@ -82,6 +82,9 @@ import '../../features/search/presentation/screens/global_search_screen.dart';
 import '../../features/notifications/presentation/screens/notification_center_screen.dart';
 import '../../features/notifications/presentation/screens/notification_preferences_screen.dart';
 import '../../features/notifications/presentation/screens/create_announcement_screen.dart';
+import '../../features/notifications/presentation/screens/announcement_list_screen.dart';
+import '../../features/notifications/presentation/screens/announcement_detail_screen.dart';
+import '../../core/presentation/screens/not_found_screen.dart';
 
 import '../../features/timetable/presentation/screens/timetable_dashboard_screen.dart';
 import '../../features/timetable/presentation/screens/timetable_management_screen.dart';
@@ -104,19 +107,34 @@ import '../../features/dashboard/presentation/widgets/acadex_drawer.dart';
 import '../../features/dashboard/presentation/widgets/acadex_bottom_nav.dart';
 import '../../features/dashboard/presentation/widgets/acadex_nav_rail.dart';
 import '../../features/dashboard/presentation/widgets/acadex_app_bar.dart';
-import '../../core/presentation/widgets/super_admin_gradient_background.dart';
 import '../theme/app_theme.dart';
 
 String _getRouteTitle(String route) {
-  if (route.startsWith('/dashboard')) return 'Acadex';
-  if (route == '/academics') return 'Academic Structure';
+  if (route == '/academics/courses/new') return 'Create Course';
+  if (route.endsWith('/edit') && route.contains('/courses')) return 'Edit Course';
+  if (RegExp(r'^/academics/courses/[^/]+$').hasMatch(route)) return 'Course Details';
+  if (route.startsWith('/academics/courses')) return 'Courses';
+
+  if (route == '/academics/semesters/new') return 'Create Semester';
+  if (route.endsWith('/edit') && route.contains('/semesters')) return 'Edit Semester';
+  if (RegExp(r'^/academics/semesters/[^/]+$').hasMatch(route)) return 'Semester Details';
+  if (route.startsWith('/academics/semesters')) return 'Semesters';
+
+  if (route == '/academics/sections/new') return 'Create Section';
+  if (route.endsWith('/edit') && route.contains('/sections')) return 'Edit Section';
+  if (RegExp(r'^/academics/sections/[^/]+$').hasMatch(route)) return 'Section Details';
+  if (route.startsWith('/academics/sections')) return 'Sections';
+
+  if (route == '/academics/subjects/new') return 'Create Subject';
+  if (route.endsWith('/edit') && route.contains('/subjects')) return 'Edit Subject';
+  if (RegExp(r'^/academics/subjects/[^/]+$').hasMatch(route)) return 'Subject Details';
+  if (route.startsWith('/academics/subjects')) return 'Subjects';
+
+  if (route.startsWith('/academics/academic_years')) return 'Academic Years';
   if (route.startsWith('/academics/colleges')) return 'Colleges';
   if (route.startsWith('/academics/departments')) return 'Departments';
-  if (route.startsWith('/academics/courses')) return 'Courses';
-  if (route.startsWith('/academics/academic_years')) return 'Academic Years';
-  if (route.startsWith('/academics/semesters')) return 'Semesters';
-  if (route.startsWith('/academics/sections')) return 'Sections';
-  if (route.startsWith('/academics/subjects')) return 'Subjects';
+  if (route == '/academics') return 'Academic Structure';
+
   if (route.startsWith('/academics/hods')) return 'Department Heads (HODs)';
   if (route.startsWith('/academics/faculty')) return 'Faculty & Staff';
   if (route.startsWith('/faculty-assignments')) return 'Faculty Assignments';
@@ -130,10 +148,13 @@ String _getRouteTitle(String route) {
   if (route.startsWith('/users')) return 'User Management';
   if (route.startsWith('/profile')) return 'My Profile';
   if (route.startsWith('/settings')) return 'Settings';
+  if (route.startsWith('/announcements')) return 'Announcements';
   if (route.startsWith('/notifications')) return 'Notifications';
   if (route.startsWith('/analytics')) return 'Analytics & Reports';
   if (route.startsWith('/reports')) return 'Reports';
-  return 'Acadex';
+  if (route.startsWith('/search')) return 'Search';
+  if (route.startsWith('/dashboard')) return 'Dashboard';
+  return 'Dashboard';
 }
 
 class ShellWrapper extends ConsumerWidget {
@@ -177,15 +198,10 @@ class ShellWrapper extends ConsumerWidget {
       });
     }
 
-    final isGradientRole = userRole == AppRole.superAdmin ||
-        userRole == AppRole.collegeAdmin ||
-        userRole == AppRole.hod ||
-        userRole == AppRole.faculty ||
-        userRole == AppRole.student;
     final pageTitle = _getRouteTitle(activeRoute);
 
     final scaffold = Scaffold(
-      backgroundColor: isGradientRole ? Colors.transparent : null,
+      backgroundColor: AcadexColors.canvas,
       appBar: AcadexAppBar(
         title: pageTitle,
         showDrawerButton: isMobile && isAtRootDashboard,
@@ -232,9 +248,7 @@ class ShellWrapper extends ConsumerWidget {
         // At root dashboard: allow system pop to cleanly exit
         SystemNavigator.pop();
       },
-      child: isGradientRole
-          ? SuperAdminGradientBackground(child: scaffold)
-          : scaffold,
+      child: scaffold,
     );
   }
 }
@@ -320,6 +334,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     refreshListenable: refreshListenable,
+    errorBuilder: (context, state) => AcadexNotFoundScreen(
+      location: state.uri.toString(),
+      error: state.error,
+    ),
     redirect: (context, state) {
       final currentAuthState = ref.read(authProvider);
       final loc = state.matchedLocation;
@@ -441,6 +459,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (loc.startsWith('/analytics')) {
         if (role == AppRole.student) {
           return getHomeRouteForRole(role);
+        }
+      }
+
+      // Announcement creation route protection (Super Admin, College Admin, HOD only)
+      if (loc == '/announcements/create' || loc.startsWith('/announcements/create')) {
+        if (role != AppRole.superAdmin && role != AppRole.collegeAdmin && role != AppRole.hod) {
+          return '/announcements';
         }
       }
 
@@ -611,7 +636,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: const ShellWrapper(activeRoute: '/academics/semesters', child: SemesterListScreen()),
         ),
       ),
-      GoRoute(path: '/academics/semesters/new', builder: (context, state) => const SemesterFormScreen()),
+      GoRoute(path: '/academics/semesters/new', builder: (context, state) => SemesterFormScreen(initialCourseId: state.uri.queryParameters['courseId'])),
       GoRoute(path: '/academics/semesters/edit/:id', builder: (context, state) => SemesterFormScreen(id: state.pathParameters['id'])),
       GoRoute(path: '/academics/semesters/:id', builder: (context, state) => SemesterDetailScreen(semesterId: state.pathParameters['id']!)),
 
@@ -623,7 +648,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: const ShellWrapper(activeRoute: '/academics/sections', child: SectionListScreen()),
         ),
       ),
-      GoRoute(path: '/academics/sections/new', builder: (context, state) => const SectionFormScreen()),
+      GoRoute(path: '/academics/sections/new', builder: (context, state) => SectionFormScreen(initialCourseId: state.uri.queryParameters['courseId'])),
       GoRoute(path: '/academics/sections/edit/:id', builder: (context, state) => SectionFormScreen(id: state.pathParameters['id'])),
       GoRoute(path: '/academics/sections/:id', builder: (context, state) => SectionDetailScreen(sectionId: state.pathParameters['id']!)),
 
@@ -635,7 +660,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: const ShellWrapper(activeRoute: '/academics/subjects', child: SubjectListScreen()),
         ),
       ),
-      GoRoute(path: '/academics/subjects/new', builder: (context, state) => const SubjectFormScreen()),
+      GoRoute(path: '/academics/subjects/new', builder: (context, state) => SubjectFormScreen(initialCourseId: state.uri.queryParameters['courseId'], initialSemesterId: state.uri.queryParameters['semesterId'])),
       GoRoute(path: '/academics/subjects/edit/:id', builder: (context, state) => SubjectFormScreen(id: state.pathParameters['id'])),
       GoRoute(path: '/academics/subjects/:id', builder: (context, state) => SubjectDetailScreen(subjectId: state.pathParameters['id']!)),
 
@@ -902,6 +927,49 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: 'preferences',
             builder: (context, state) => const NotificationPreferencesScreen(),
           ),
+          GoRoute(
+            path: 'create',
+            redirect: (context, state) => '/announcements/create',
+          ),
+        ],
+      ),
+
+      // Announcements Module (Primary Navigation: Instant Replacement)
+      GoRoute(
+        path: '/announcements',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(
+            activeRoute: '/announcements',
+            child: AnnouncementListScreen(),
+          ),
+        ),
+        routes: [
+          GoRoute(
+            path: 'create',
+            pageBuilder: (context, state) => fadeTransitionPage(
+              context: context,
+              state: state,
+              child: const ShellWrapper(
+                activeRoute: '/announcements',
+                child: CreateAnnouncementScreen(),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: ':id',
+            pageBuilder: (context, state) => fadeTransitionPage(
+              context: context,
+              state: state,
+              child: ShellWrapper(
+                activeRoute: '/announcements',
+                child: AnnouncementDetailScreen(
+                  announcementId: state.pathParameters['id'] ?? '',
+                ),
+              ),
+            ),
+          ),
         ],
       ),
 
@@ -943,38 +1011,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: 'notifications',
-            pageBuilder: (context, state) => fadeTransitionPage(context: context, state: state, child: const ShellWrapper(activeRoute: '/notifications', child: NotificationCenterScreen())),
-            routes: [
-              GoRoute(
-                path: 'preferences',
-                builder: (context, state) => const NotificationPreferencesScreen(),
-              ),
-              GoRoute(
-                path: 'create',
-                builder: (context, state) => const CreateAnnouncementScreen(),
-              ),
-            ],
+            pageBuilder: (context, state) => fadeTransitionPage(context: context, state: state, child: const ShellWrapper(activeRoute: '/settings', child: NotificationPreferencesScreen())),
           ),
           GoRoute(
             path: 'language',
             pageBuilder: (context, state) => fadeTransitionPage(context: context, state: state, child: const ShellWrapper(activeRoute: '/settings', child: LanguageScreen())),
-          ),
-          GoRoute(
-            path: 'analytics',
-            pageBuilder: (context, state) => noTransitionPage(context: context, state: state, child: const ShellWrapper(activeRoute: '/analytics', child: AnalyticsDashboardScreen())),
-            routes: [
-              GoRoute(
-                path: 'reports',
-                pageBuilder: (context, state) => noTransitionPage(context: context, state: state, child: const ShellWrapper(activeRoute: '/analytics', child: ReportsListScreen())),
-              ),
-              GoRoute(
-                path: 'report_preview',
-                pageBuilder: (context, state) {
-                  final report = state.extra as AttendanceReport;
-                  return fadeTransitionPage(context: context, state: state, child: ShellWrapper(activeRoute: '/analytics', child: ReportPreviewScreen(report: report)));
-                },
-              ),
-            ],
           ),
           GoRoute(
             path: 'security',

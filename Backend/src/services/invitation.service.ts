@@ -196,14 +196,12 @@ export class InvitationService {
         if (!mongoose.Types.ObjectId.isValid(targetDepartmentId)) {
           throw ApiError.badRequest(`Invalid Department ID format: "${targetDepartmentId}"`);
         }
-        const dept = await Department.findOne({
-          _id: targetDepartmentId,
-          collegeId,
-        });
+        const dept = await Department.findById(targetDepartmentId);
         if (!dept) {
-          throw ApiError.badRequest(
-            'Target department does not exist or does not belong to your college'
-          );
+          throw ApiError.notFound(`Target department does not exist`);
+        }
+        if (dept.collegeId.toString() !== collegeId.toString()) {
+          throw ApiError.forbidden('Cross-college tenant access is strictly prohibited: Target department does not belong to your college');
         }
         if (dept.status === DepartmentStatus.INACTIVE || !dept.isActive) {
           throw ApiError.forbidden(`Cannot provision ${targetRole.toLowerCase()} for an inactive department`);

@@ -112,6 +112,7 @@ class FirebaseTimetableRepository implements TimetableRepository {
     String? sectionId,
     String? facultyId,
     String? date,
+    AppRole? role,
   }) async {
     final effectiveCollegeId = collegeId.isNotEmpty 
         ? collegeId 

@@ -34,17 +34,30 @@ router.post(
   validateBody(registerDeviceTokenSchema),
   asyncHandler(NotificationController.registerDeviceToken)
 );
+router.post(
+  '/device-token',
+  deviceTokenRateLimiter,
+  validateBody(registerDeviceTokenSchema),
+  asyncHandler(NotificationController.registerDeviceToken)
+);
 router.delete(
   '/device-tokens/:token',
+  deviceTokenRateLimiter,
+  asyncHandler(NotificationController.removeDeviceToken)
+);
+router.delete(
+  '/device-token/:token',
   deviceTokenRateLimiter,
   asyncHandler(NotificationController.removeDeviceToken)
 );
 
 // 4. Batch Mark Read
 router.patch('/read-all', asyncHandler(NotificationController.markAllAsRead));
+router.post('/read-all', asyncHandler(NotificationController.markAllAsRead));
 
 // 5. Individual Notification
 router.patch('/:id/read', asyncHandler(NotificationController.markAsRead));
+router.post('/:id/read', asyncHandler(NotificationController.markAsRead));
 router.get('/:id', asyncHandler(NotificationController.getById));
 
 // 6. List Notifications

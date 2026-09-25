@@ -1889,3 +1889,91 @@ class StudentEnrollment {
     );
   }
 }
+
+class Room {
+  final String id;
+  final String collegeId;
+  final String? departmentId;
+  final String name;
+  final String code;
+  final int capacity;
+  final String type;
+  final String status;
+  final bool isActive;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  Room({
+    required this.id,
+    required this.collegeId,
+    this.departmentId,
+    required this.name,
+    required this.code,
+    this.capacity = 60,
+    this.type = 'lecture',
+    this.status = 'active',
+    this.isActive = true,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  factory Room.fromJson(Map<String, dynamic> json) {
+    return Room(
+      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      collegeId: json['collegeId']?.toString() ?? '',
+      departmentId: json['departmentId']?.toString(),
+      name: json['name'] as String? ?? '',
+      code: json['code'] as String? ?? '',
+      capacity: (json['capacity'] as num?)?.toInt() ?? 60,
+      type: json['type'] as String? ?? 'lecture',
+      status: json['status'] as String? ?? 'active',
+      isActive: json['isActive'] as bool? ?? true,
+      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'] as String) : null,
+      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'collegeId': collegeId,
+      if (departmentId != null) 'departmentId': departmentId,
+      'name': name,
+      'code': code,
+      'capacity': capacity,
+      'type': type,
+      'status': status,
+      'isActive': isActive,
+      if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+      if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
+    };
+  }
+
+  Room copyWith({
+    String? id,
+    String? collegeId,
+    String? departmentId,
+    String? name,
+    String? code,
+    int? capacity,
+    String? type,
+    String? status,
+    bool? isActive,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return Room(
+      id: id ?? this.id,
+      collegeId: collegeId ?? this.collegeId,
+      departmentId: departmentId ?? this.departmentId,
+      name: name ?? this.name,
+      code: code ?? this.code,
+      capacity: capacity ?? this.capacity,
+      type: type ?? this.type,
+      status: status ?? this.status,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+}

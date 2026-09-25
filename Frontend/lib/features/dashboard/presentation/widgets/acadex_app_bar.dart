@@ -10,9 +10,8 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../notifications/presentation/widgets/notification_badge.dart';
 import '../../../../core/presentation/widgets/acadex_avatar.dart';
-import '../../../../core/presentation/widgets/acadex_badge.dart';
 
-class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
+class AcadexAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   final String title;
   final String? subtitle;
   final List<Widget>? extraActions;
@@ -34,7 +33,29 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(64.0);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AcadexAppBar> createState() => _AcadexAppBarState();
+}
+
+class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _handleSearch(String query) {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      context.push('/search');
+    } else {
+      context.push('/search?q=${Uri.encodeComponent(trimmed)}');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
     UserModel? user;
@@ -45,32 +66,24 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final isMobile = AcadexBreakpoints.isMobile(context);
     final isDesktop = AcadexBreakpoints.isDesktop(context);
     final topPadding = MediaQuery.paddingOf(context).top;
-    final isGradientRole = user?.role == AppRole.superAdmin ||
-        user?.role == AppRole.collegeAdmin ||
-        user?.role == AppRole.hod ||
-        user?.role == AppRole.faculty ||
-        user?.role == AppRole.student;
 
-    final headerTextColor = isGradientRole ? Colors.white : AcadexColors.ink;
-    final headerMutedColor = isGradientRole ? const Color(0xFFCCE6FF) : AcadexColors.inkMuted;
-    final headerIconColor = isGradientRole ? Colors.white : AcadexColors.ink;
-
-    final toolbarHeight = isMobile ? 64.0 : 60.0;
+    const toolbarHeight = 64.0;
+    const headerTextColor = Color(0xFF07111F);
+    const headerMutedColor = Color(0xFF64748B);
+    const headerIconColor = Color(0xFF07111F);
 
     return Container(
       height: toolbarHeight + topPadding,
       padding: EdgeInsets.only(
         top: topPadding,
-        left: isMobile ? 8 : 16,
-        right: isMobile ? 8 : 16,
+        left: isMobile ? 8 : 20,
+        right: isMobile ? 8 : 20,
       ),
-      decoration: BoxDecoration(
-        color: isGradientRole ? Colors.transparent : AcadexColors.surface,
+      decoration: const BoxDecoration(
+        color: AcadexColors.surface,
         border: Border(
           bottom: BorderSide(
-            color: isGradientRole
-                ? Colors.white.withValues(alpha: 0.12)
-                : AcadexColors.hairline,
+            color: AcadexColors.hairline,
             width: 1,
           ),
         ),
@@ -80,30 +93,30 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Back Button (High priority for secondary screens)
-            if (showBackButton) ...[
+            // Left Action: Back Button or Drawer Menu
+            if (widget.showBackButton) ...[
               IconButton(
-                icon: Icon(
+                icon: const Icon(
                   LucideIcons.arrowLeft,
                   color: headerIconColor,
-                  size: isMobile ? 24 : 20,
+                  size: 22,
                 ),
                 tooltip: 'Back',
                 padding: const EdgeInsets.all(8),
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                 splashRadius: 24,
-                onPressed: onBack ?? () {
+                onPressed: widget.onBack ?? () {
                   context.safePop(fallbackRoute: '/dashboard');
                 },
               ),
               const SizedBox(width: 4),
-            ] else if (showDrawerButton) ...[
+            ] else if (widget.showDrawerButton) ...[
               Builder(
                 builder: (ctx) => IconButton(
-                  icon: Icon(
+                  icon: const Icon(
                     LucideIcons.menu,
                     color: headerIconColor,
-                    size: isMobile ? 24 : 22,
+                    size: 22,
                   ),
                   tooltip: 'Open Navigation Menu',
                   padding: const EdgeInsets.all(8),
@@ -120,162 +133,120 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
               const SizedBox(width: 4),
             ],
 
-            // Logo & Brand (when at root dashboard) or Page Title (when in secondary screen)
-            if (isMobile) ...[
-              if (title == 'Acadex') ...[
-                Expanded(
-                  child: InkWell(
-                    onTap: () => context.go('/dashboard'),
-                    borderRadius: AcadexRadius.borderRadiusSm,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: isGradientRole ? const Color(0xFF0080FF) : AcadexColors.primary,
-                              borderRadius: BorderRadius.circular(9),
-                            ),
-                            child: const Center(
-                              child: Icon(LucideIcons.graduationCap, color: Colors.white, size: 20),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Acadex',
-                                  style: TextStyle(
-                                    color: headerTextColor,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 18,
-                                    letterSpacing: -0.3,
-                                    height: 1.15,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  'Campus Management',
-                                  style: TextStyle(
-                                    color: headerMutedColor,
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 11,
-                                    height: 1.15,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+            // Contextual Page Title & Subtitle
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
+                      color: headerTextColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                      letterSpacing: -0.3,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ] else ...[
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          color: headerTextColor,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 17,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                  if (widget.subtitle != null && widget.subtitle!.isNotEmpty) ...[
+                    const SizedBox(height: 1),
+                    Text(
+                      widget.subtitle!,
+                      style: const TextStyle(
+                        color: headerMutedColor,
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12,
                       ),
-                      if (subtitle != null && subtitle!.isNotEmpty)
-                        Text(
-                          subtitle!,
-                          style: TextStyle(
-                            color: headerMutedColor,
-                            fontWeight: FontWeight.w400,
-                            fontSize: 11.5,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ] else ...[
-              Expanded(
-                child: Row(
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          title,
-                          style: AcadexTypography.title(color: headerTextColor).copyWith(fontWeight: FontWeight.w700),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (subtitle != null && subtitle!.isNotEmpty)
-                          Text(
-                            subtitle!,
-                            style: AcadexTypography.caption(color: headerMutedColor),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                      ],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    if (user != null && isDesktop) ...[
-                      const SizedBox(width: 14),
-                      AcadexBadge(
-                        label: user.role.displayName.toUpperCase(),
-                        variant: isGradientRole ? AcadexBadgeVariant.primary : AcadexBadgeVariant.primary,
-                      ),
-                    ],
                   ],
+                ],
+              ),
+            ),
+
+            // Center: Search Bar (Desktop / Tablet)
+            if (!isMobile) ...[
+              const SizedBox(width: 16),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: 180,
+                  maxWidth: isDesktop ? 340 : 220,
+                  maxHeight: 38,
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: _handleSearch,
+                  style: const TextStyle(
+                    color: headerTextColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Search...',
+                    hintStyle: const TextStyle(
+                      color: headerMutedColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    prefixIcon: const Icon(
+                      LucideIcons.search,
+                      size: 16,
+                      color: headerMutedColor,
+                    ),
+                    prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                    ),
+                  ),
                 ),
               ),
+              const SizedBox(width: 12),
             ],
 
-            // Extra actions if provided (desktop/tablet)
-            if (extraActions != null && !isMobile) ...extraActions!,
+            // Extra Actions if any
+            if (widget.extraActions != null && !isMobile) ...widget.extraActions!,
 
-            // Search Icon (desktop/tablet only to keep mobile header lean)
-            if (!isMobile) ...[
+            // Mobile Compact Search Icon Button
+            if (isMobile) ...[
               IconButton(
-                icon: Icon(
+                icon: const Icon(
                   LucideIcons.search,
-                  color: isGradientRole ? Colors.white70 : AcadexColors.inkSecondary,
-                  size: 19,
+                  color: headerMutedColor,
+                  size: 22,
                 ),
                 tooltip: 'Search',
-                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                 onPressed: () => context.push('/search'),
-                splashRadius: 22,
+                splashRadius: 24,
               ),
-              const SizedBox(width: 2),
             ],
 
-            // Live Notifications Badge (min 48x48 touch target)
+            // Notifications Badge (min 48x48 touch target)
             NotificationBadge(
-              size: isMobile ? 24 : 20,
-              iconColor: isGradientRole ? Colors.white : AcadexColors.inkSecondary,
+              size: isMobile ? 22 : 20,
+              iconColor: const Color(0xFF475569),
             ),
             const SizedBox(width: 4),
 
-            // Authenticated User Profile Menu
+            // Profile Area with Menu
             PopupMenuButton<String>(
               tooltip: 'Account Menu',
               offset: const Offset(0, 52),
@@ -326,16 +297,20 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
                             children: [
                               Text(
                                 user?.name ?? 'Authenticated User',
-                                style: AcadexTypography.body(
-                                  color: AcadexColors.ink,
-                                ).copyWith(fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                  color: Color(0xFF07111F),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
                                 user?.email ?? user?.role.displayName ?? '',
-                                style: AcadexTypography.caption(
-                                  color: AcadexColors.inkMuted,
+                                style: const TextStyle(
+                                  color: Color(0xFF64748B),
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 12,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -351,30 +326,30 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 PopupMenuItem<String>(
                   value: 'profile',
                   child: Row(
-                    children: [
-                      const Icon(LucideIcons.user, size: 16, color: AcadexColors.inkSecondary),
-                      const SizedBox(width: 12),
-                      Text('My Profile', style: AcadexTypography.body(color: AcadexColors.ink)),
+                    children: const [
+                      Icon(LucideIcons.user, size: 16, color: AcadexColors.inkSecondary),
+                      SizedBox(width: 12),
+                      Text('My Profile', style: TextStyle(color: Color(0xFF07111F), fontSize: 13)),
                     ],
                   ),
                 ),
                 PopupMenuItem<String>(
                   value: 'settings',
                   child: Row(
-                    children: [
-                      const Icon(LucideIcons.settings, size: 16, color: AcadexColors.inkSecondary),
-                      const SizedBox(width: 12),
-                      Text('Settings', style: AcadexTypography.body(color: AcadexColors.ink)),
+                    children: const [
+                      Icon(LucideIcons.settings, size: 16, color: AcadexColors.inkSecondary),
+                      SizedBox(width: 12),
+                      Text('Settings', style: TextStyle(color: Color(0xFF07111F), fontSize: 13)),
                     ],
                   ),
                 ),
                 PopupMenuItem<String>(
                   value: 'change_password',
                   child: Row(
-                    children: [
-                      const Icon(LucideIcons.keyRound, size: 16, color: AcadexColors.inkSecondary),
-                      const SizedBox(width: 12),
-                      Text('Change Password', style: AcadexTypography.body(color: AcadexColors.ink)),
+                    children: const [
+                      Icon(LucideIcons.keyRound, size: 16, color: AcadexColors.inkSecondary),
+                      SizedBox(width: 12),
+                      Text('Change Password', style: TextStyle(color: Color(0xFF07111F), fontSize: 13)),
                     ],
                   ),
                 ),
@@ -382,25 +357,80 @@ class AcadexAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 PopupMenuItem<String>(
                   value: 'logout',
                   child: Row(
-                    children: [
-                      const Icon(LucideIcons.logOut, size: 16, color: AcadexColors.error),
-                      const SizedBox(width: 12),
-                      Text('Sign Out', style: AcadexTypography.body(color: AcadexColors.error).copyWith(fontWeight: FontWeight.w600)),
+                    children: const [
+                      Icon(LucideIcons.logOut, size: 16, color: AcadexColors.error),
+                      SizedBox(width: 12),
+                      Text('Sign Out', style: TextStyle(color: AcadexColors.error, fontWeight: FontWeight.w600, fontSize: 13)),
                     ],
                   ),
                 ),
               ],
-              child: SizedBox(
-                width: 48,
-                height: 48,
-                child: Center(
-                  child: AcadexAvatar(
-                    name: user?.name ?? 'User',
-                    size: isMobile ? 36 : 34,
-                    isOnline: true,
-                  ),
-                ),
-              ),
+              child: isDesktop
+                  ? Container(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.transparent),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AcadexAvatar(
+                            name: user?.name ?? 'User',
+                            size: 34,
+                            isOnline: true,
+                          ),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                user?.name ?? 'User',
+                                style: const TextStyle(
+                                  color: Color(0xFF07111F),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.2,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                user?.role.displayName ?? '',
+                                style: const TextStyle(
+                                  color: Color(0xFF64748B),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w400,
+                                  height: 1.2,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 6),
+                          const Icon(
+                            LucideIcons.chevronDown,
+                            size: 14,
+                            color: Color(0xFF64748B),
+                          ),
+                        ],
+                      ),
+                    )
+                  : SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: Center(
+                        child: AcadexAvatar(
+                          name: user?.name ?? 'User',
+                          size: 34,
+                          isOnline: true,
+                        ),
+                      ),
+                    ),
             ),
           ],
         ),

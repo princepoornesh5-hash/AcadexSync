@@ -12,6 +12,7 @@ import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../academic_structure/domain/models/academic_models.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
+import '../../../academic_structure/presentation/utils/academic_prerequisite_guard.dart';
 import '../../domain/models/timetable_models.dart';
 import '../providers/timetable_providers.dart';
 import '../providers/timetable_lookup_providers.dart';
@@ -192,6 +193,37 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     super.dispose();
   }
 
+  void _openCreateTimetable({TimetableContainerModel? initialContainer}) {
+    final courses = ref.read(coursesProvider).value ?? [];
+    final academicYears = ref.read(academicYearsProvider).value ?? [];
+    final semesters = ref.read(semestersProvider).value ?? [];
+    final sections = ref.read(sectionsProvider).value ?? [];
+    final subjects = ref.read(subjectsProvider).value ?? [];
+    final facultyAssignments = ref.read(facultyAssignmentsProvider).value ?? [];
+    final rooms = ref.read(roomsProvider).value ?? [];
+
+    final check = AcademicPrerequisiteGuard.checkTimetablePrerequisites(
+      courses: courses,
+      academicYears: academicYears,
+      semesters: semesters,
+      sections: sections,
+      subjects: subjects,
+      facultyAssignments: facultyAssignments,
+      rooms: rooms,
+    );
+
+    if (!check.isSatisfied) {
+      AcademicPrerequisiteGuard.showBlockerDialog(context, check);
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TimetableSetupScreen(initialContainer: initialContainer),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -235,13 +267,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                           icon: LucideIcons.calendarPlus,
                           variant: AcadexButtonVariant.secondary,
                           size: isMobile ? AcadexButtonSize.sm : AcadexButtonSize.md,
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const TimetableSetupScreen(),
-                              ),
-                            );
-                          },
+                          onPressed: () => _openCreateTimetable(),
                         ),
                         const SizedBox(width: 8),
                         AcadexButton(
@@ -249,13 +275,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                           icon: LucideIcons.sparkles,
                           variant: AcadexButtonVariant.primary,
                           size: isMobile ? AcadexButtonSize.sm : AcadexButtonSize.md,
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const TimetableSetupScreen(),
-                              ),
-                            );
-                          },
+                          onPressed: () => _openCreateTimetable(),
                         ),
                       ],
                     ],
@@ -387,15 +407,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                   : 'No timetable containers have been published for your scope yet.',
               icon: LucideIcons.calendarX,
               actionLabel: canCreate ? 'Create Timetable' : null,
-              onActionTap: canCreate
-                  ? () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const TimetableSetupScreen(),
-                        ),
-                      );
-                    }
-                  : null,
+              onActionTap: canCreate ? _openCreateTimetable : null,
             ),
           );
         }
@@ -555,6 +567,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                   await repo.publishTimetable(container.id, publishedBy: 'user');
                   ref.invalidate(managementContainersProvider);
                   ref.invalidate(managementTimetableProvider);
+                  ref.invalidate(todayScheduleProvider);
+                  ref.invalidate(dateScheduleProvider);
+                  ref.invalidate(weeklyTimetableProvider);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Timetable published to live schedule!'), backgroundColor: AcadexColors.success),
@@ -600,6 +615,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                 await repo.unpublishTimetable(container.id);
                 ref.invalidate(managementContainersProvider);
                 ref.invalidate(managementTimetableProvider);
+                ref.invalidate(todayScheduleProvider);
+                ref.invalidate(dateScheduleProvider);
+                ref.invalidate(weeklyTimetableProvider);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Timetable unpublished.'), backgroundColor: AcadexColors.warning),
@@ -877,13 +895,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                     );
                   }
                 },
-                onDuplicate: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const TimetableSetupScreen(),
-                    ),
-                  );
-                },
+                onDuplicate: () => _openCreateTimetable(),
                 onSubstitute: isHodOrAdmin && entry.timetableId != null && entry.timetableId!.isNotEmpty
                     ? () {
                         TeacherSubstitutionDialog.show(
@@ -1394,34 +1406,28 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                       const SizedBox(height: 16),
                       if (canCreate)
                         ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => TimetableSetupScreen(
-                                  initialContainer: TimetableContainerModel(
-                                    id: const Uuid().v4(),
-                                    collegeId: '',
-                                    departmentId: '',
-                                    courseId: filters.courseId!,
-                                    academicYearId: filters.academicYearId ?? '',
-                                    semesterId: filters.semesterId!,
-                                    sectionId: filters.sectionId!,
-                                    name: '$courseName - $semName - Sec $sectionName',
-                                    activeDays: [
-                                      TimetableDay.monday,
-                                      TimetableDay.tuesday,
-                                      TimetableDay.wednesday,
-                                      TimetableDay.thursday,
-                                      TimetableDay.friday,
-                                    ],
-                                    status: TimetableStatus.draft,
-                                    createdAt: DateTime.now(),
-                                    updatedAt: DateTime.now(),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
+                          onPressed: () => _openCreateTimetable(
+                            initialContainer: TimetableContainerModel(
+                              id: const Uuid().v4(),
+                              collegeId: '',
+                              departmentId: '',
+                              courseId: filters.courseId!,
+                              academicYearId: filters.academicYearId ?? '',
+                              semesterId: filters.semesterId!,
+                              sectionId: filters.sectionId!,
+                              name: '$courseName - $semName - Sec $sectionName',
+                              activeDays: [
+                                TimetableDay.monday,
+                                TimetableDay.tuesday,
+                                TimetableDay.wednesday,
+                                TimetableDay.thursday,
+                                TimetableDay.friday,
+                              ],
+                              status: TimetableStatus.draft,
+                              createdAt: DateTime.now(),
+                              updatedAt: DateTime.now(),
+                            ),
+                          ),
                           icon: const Icon(LucideIcons.plus, size: 16, color: Colors.white),
                           label: const Text('Create Timetable', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                           style: ElevatedButton.styleFrom(

@@ -15,6 +15,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
 import '../widgets/faculty_assignment_dialog.dart';
+import '../utils/academic_prerequisite_guard.dart';
 
 class FacultyAssignmentsManagementScreen extends ConsumerStatefulWidget {
   const FacultyAssignmentsManagementScreen({super.key});
@@ -35,6 +36,25 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
   bool _filterActiveOnly = true;
 
   void _openAssignmentDialog({Faculty? faculty}) {
+    final courses = ref.read(coursesProvider).valueOrNull ?? [];
+    final semesters = ref.read(semestersProvider).valueOrNull ?? [];
+    final sections = ref.read(sectionsProvider).valueOrNull ?? [];
+    final subjects = ref.read(subjectsProvider).valueOrNull ?? [];
+    final faculties = ref.read(facultyProvider(null)).items;
+
+    final check = AcademicPrerequisiteGuard.checkFacultyAssignmentPrerequisites(
+      courses: courses,
+      semesters: semesters,
+      sections: sections,
+      subjects: subjects,
+      faculties: faculties,
+    );
+
+    if (!check.isSatisfied) {
+      AcademicPrerequisiteGuard.showBlockerDialog(context, check);
+      return;
+    }
+
     FacultyAssignmentDialog.show(context, faculty: faculty);
   }
 

@@ -905,6 +905,21 @@ export class ReportService {
 
     await this.logReportAudit(requester, 'ATTENDANCE_DEPARTMENT', department.id, { departmentId: department.id });
 
+    const [totalFaculty, totalStudents] = await Promise.all([
+      User.countDocuments({
+        collegeId: department.collegeId,
+        departmentId: deptObjId,
+        role: AppRole.FACULTY,
+        accountStatus: AccountStatus.ACTIVE,
+      }),
+      Student.countDocuments({
+        collegeId: department.collegeId,
+        departmentId: deptObjId,
+        status: 'active',
+        isActive: true,
+      }),
+    ]);
+
     return {
       department: {
         id: department.id,
@@ -918,6 +933,8 @@ export class ReportService {
         absent: summaryData.absent,
         excused: summaryData.excused,
         percentage,
+        totalFaculty,
+        totalStudents,
       },
       sectionsComparison,
       subjectsComparison,

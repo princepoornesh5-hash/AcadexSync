@@ -663,7 +663,7 @@ describe('ACADEX Phase 9M.1 — Notifications Engine Integration Tests', () => {
     // Alice (Absent) should get attendance marked absent notice
     const aliceAttNotifs = await Notification.find({
       recipientUserId: studentUser1._id,
-      notificationType: NotificationType.ATTENDANCE_MARKED,
+      notificationType: { $in: [NotificationType.ATTENDANCE_MARKED, NotificationType.ATTENDANCE_ABSENT] },
     });
     expect(aliceAttNotifs.length).toBe(1);
     expect(aliceAttNotifs[0].title).toBe('Marked Absent');
@@ -671,7 +671,7 @@ describe('ACADEX Phase 9M.1 — Notifications Engine Integration Tests', () => {
     // Bob (Present) does not get marked absent notice
     const bobAttNotifs = await Notification.find({
       recipientUserId: studentUser2._id,
-      notificationType: NotificationType.ATTENDANCE_MARKED,
+      notificationType: { $in: [NotificationType.ATTENDANCE_MARKED, NotificationType.ATTENDANCE_ABSENT] },
     });
     expect(bobAttNotifs.length).toBe(0);
   });

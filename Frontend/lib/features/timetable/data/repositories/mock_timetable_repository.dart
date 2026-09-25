@@ -79,6 +79,7 @@ class MockTimetableRepository implements TimetableRepository {
     String? sectionId,
     String? facultyId,
     String? date,
+    AppRole? role,
   }) async {
     await _delay();
     var list = _entries.where((entry) {

@@ -373,6 +373,9 @@ export class DepartmentService {
       if (!requester.collegeId || department.collegeId.toString() !== requester.collegeId.toString()) {
         throw ApiError.forbidden('Cross-college tenant access is strictly prohibited');
       }
+      if (requester.role === AppRole.HOD && requester.departmentId && department._id.toString() !== requester.departmentId.toString()) {
+        throw ApiError.forbidden('HOD cannot access summary of another department');
+      }
     }
 
     const college = await College.findById(department.collegeId);
@@ -385,11 +388,11 @@ export class DepartmentService {
       activeUserCount,
       courseCount,
     ] = await Promise.all([
-      User.countDocuments({ departmentId: departmentObjectId, role: AppRole.FACULTY }),
-      User.countDocuments({ departmentId: departmentObjectId, role: AppRole.STUDENT }),
-      User.countDocuments({ departmentId: departmentObjectId, role: AppRole.HOD }),
+      User.countDocuments({ departmentId: departmentObjectId, role: AppRole.FACULTY, accountStatus: AccountStatus.ACTIVE }),
+      User.countDocuments({ departmentId: departmentObjectId, role: AppRole.STUDENT, accountStatus: AccountStatus.ACTIVE }),
+      User.countDocuments({ departmentId: departmentObjectId, role: AppRole.HOD, accountStatus: AccountStatus.ACTIVE }),
       User.countDocuments({ departmentId: departmentObjectId, accountStatus: AccountStatus.ACTIVE }),
-      Course.countDocuments({ departmentId: departmentObjectId }),
+      Course.countDocuments({ departmentId: departmentObjectId, isActive: true }),
     ]);
 
     return {

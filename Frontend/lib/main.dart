@@ -10,6 +10,9 @@ import 'app/theme/app_theme.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'core/observability/logger.dart';
+import 'features/auth/presentation/providers/auth_provider.dart';
+import 'features/auth/domain/models/auth_state.dart';
+import 'features/notifications/presentation/providers/notification_providers.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -135,23 +138,150 @@ class CampusManagementApp extends ConsumerStatefulWidget {
 }
 
 class _CampusManagementAppState extends ConsumerState<CampusManagementApp> {
+  StreamSubscription<RemoteMessage>? _messageSub;
+  StreamSubscription<RemoteMessage>? _messageOpenedSub;
+  StreamSubscription<String>? _tokenRefreshSub;
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
   @override
   void initState() {
     super.initState();
-    _setupFCM();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupFCM();
+      _setupTokenRegistration();
+    });
   }
 
-  void _setupFCM() {
-    if (FirebaseInitializer.shouldUseMock) return;
-    
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      debugPrint('Got a message whilst in the foreground!');
-      debugPrint('Message data: ${message.data}');
+  @override
+  void dispose() {
+    _messageSub?.cancel();
+    _messageOpenedSub?.cancel();
+    _tokenRefreshSub?.cancel();
+    super.dispose();
+  }
 
-      if (message.notification != null) {
-        debugPrint('Message also contained a notification: ${message.notification}');
+  void _setupFCM() async {
+    if (FirebaseInitializer.shouldUseMock) return;
+
+    try {
+      // 1. Foreground message handler
+      _messageSub = FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        debugPrint('[FCM] Foreground notification received: ${message.messageId}');
+
+        // Invalidate notification caches so unread badge and notification center update
+        ref.invalidate(notificationsProvider);
+        ref.invalidate(unreadNotificationCountProvider);
+        ref.invalidate(announcementsProvider);
+        ref.invalidate(adminAnnouncementsProvider);
+
+        final notification = message.notification;
+        final title = notification?.title ?? message.data['title'] ?? 'New Notification';
+        final body = notification?.body ?? message.data['body'] ?? message.data['message'] ?? '';
+        final deepLink = message.data['deepLink'] ?? message.data['navigationTarget'];
+
+        // Display in-app SnackBar banner with navigation action
+        _scaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                if (body.isNotEmpty)
+                  Text(
+                    body,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF1E293B),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
+            action: deepLink != null
+                ? SnackBarAction(
+                    label: 'VIEW',
+                    textColor: const Color(0xFF38BDF8),
+                    onPressed: () {
+                      final router = ref.read(appRouterProvider);
+                      router.push(deepLink.toString());
+                    },
+                  )
+                : null,
+          ),
+        );
+      });
+
+      // 2. Background message opened app
+      _messageOpenedSub = FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        debugPrint('[FCM] User tapped notification from background: ${message.data}');
+        final deepLink = message.data['deepLink'] ?? message.data['navigationTarget'];
+        if (deepLink != null) {
+          final router = ref.read(appRouterProvider);
+          router.push(deepLink.toString());
+        }
+      });
+
+      // 3. Terminated app opened from notification
+      final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMessage != null) {
+        debugPrint('[FCM] App launched from terminated state via notification: ${initialMessage.data}');
+        final deepLink = initialMessage.data['deepLink'] ?? initialMessage.data['navigationTarget'];
+        if (deepLink != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final router = ref.read(appRouterProvider);
+            router.push(deepLink.toString());
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('[FCM] Error setting up FCM listeners: $e');
+    }
+  }
+
+  void _setupTokenRegistration() {
+    if (FirebaseInitializer.shouldUseMock) return;
+
+    // Listen to auth state to register device token when authenticated
+    ref.listenManual(authProvider, (previous, next) async {
+      if (next is AuthAuthenticated) {
+        try {
+          final messaging = FirebaseMessaging.instance;
+          final settings = await messaging.requestPermission(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+
+          if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+              settings.authorizationStatus == AuthorizationStatus.provisional) {
+            final token = await messaging.getToken();
+            if (token != null && token.isNotEmpty) {
+              await ref.read(apiNotificationRepositoryProvider).registerDeviceToken(
+                deviceToken: token,
+                platform: defaultTargetPlatform.name,
+              );
+            }
+          }
+        } catch (e) {
+          debugPrint('[FCM] Device token registration skipped: $e');
+        }
       }
     });
+
+    // Also listen to token refresh
+    try {
+      _tokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+        final auth = ref.read(authProvider);
+        if (auth is AuthAuthenticated && newToken.isNotEmpty) {
+          await ref.read(apiNotificationRepositoryProvider).registerDeviceToken(
+            deviceToken: newToken,
+            platform: defaultTargetPlatform.name,
+          );
+        }
+      });
+    } catch (_) {}
   }
 
   @override
@@ -164,6 +294,7 @@ class _CampusManagementAppState extends ConsumerState<CampusManagementApp> {
       theme: AppTheme.lightTheme,
       themeMode: ThemeMode.light,
       routerConfig: router,
+      scaffoldMessengerKey: _scaffoldMessengerKey,
     );
   }
 }

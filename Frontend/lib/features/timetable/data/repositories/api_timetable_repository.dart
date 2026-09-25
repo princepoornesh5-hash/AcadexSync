@@ -54,6 +54,7 @@ class ApiTimetableRepository implements TimetableRepository {
       sectionId: sectionId,
       facultyId: role == AppRole.faculty ? 'me' : null,
       date: date,
+      role: role,
     );
     yield list;
   }
@@ -67,6 +68,7 @@ class ApiTimetableRepository implements TimetableRepository {
     String? sectionId,
     String? facultyId,
     String? date,
+    AppRole? role,
   }) async {
     try {
       final queryParams = <String, dynamic>{};
@@ -96,7 +98,18 @@ class ApiTimetableRepository implements TimetableRepository {
         if (list != null) {
           return _parseEntries(list, collegeId, departmentId, sectionId, null);
         }
-      } else {
+      } else if (departmentId != null && departmentId.isNotEmpty) {
+        final response = await _client.dio.get(
+          '/timetables/departments/$departmentId',
+          queryParameters: queryParams.isNotEmpty ? queryParams : null,
+        );
+        final body = response.data;
+        final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+        final list = data is List ? data : (data is Map && data['entries'] is List ? data['entries'] as List : null);
+        if (list != null) {
+          return _parseEntries(list, collegeId, departmentId, null, null);
+        }
+      } else if (role == AppRole.student) {
         final response = await _client.dio.get(
           '/timetables/students/me',
           queryParameters: queryParams.isNotEmpty ? queryParams : null,
@@ -113,6 +126,7 @@ class ApiTimetableRepository implements TimetableRepository {
       if (e.response?.statusCode == 404) return [];
       throw _extractError(e, 'Failed to fetch timetable schedule');
     } catch (e) {
+      if (e is Exception) rethrow;
       throw Exception('Error loading timetable: $e');
     }
   }

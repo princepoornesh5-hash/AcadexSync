@@ -13,6 +13,8 @@ export interface AttendanceSummaryMetrics {
   absent: number;
   excused: number;
   percentage: number;
+  totalFaculty?: number;
+  totalStudents?: number;
 }
 
 export interface SubjectAttendanceMetrics extends AttendanceSummaryMetrics {

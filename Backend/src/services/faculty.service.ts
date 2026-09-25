@@ -44,7 +44,7 @@ export interface ListFacultyQuery {
   search?: string;
   collegeId?: string;
   departmentId?: string;
-  status?: AccountStatus;
+  status?: AccountStatus | string;
   sortBy?: 'name' | 'instituteId' | 'employeeId' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
 }
@@ -287,7 +287,11 @@ export class FacultyService {
     }
 
     if (query.status) {
-      mongoQuery.accountStatus = query.status;
+      if (query.status.toString().toUpperCase() !== 'ALL') {
+        mongoQuery.accountStatus = query.status;
+      }
+    } else {
+      mongoQuery.accountStatus = AccountStatus.ACTIVE;
     }
 
     if (query.search && query.search.trim() !== '') {

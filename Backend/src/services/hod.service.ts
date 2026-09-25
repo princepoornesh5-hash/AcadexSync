@@ -3,6 +3,7 @@ import { User, IUser } from '../models/user.model';
 import { College } from '../models/college.model';
 import { Department } from '../models/department.model';
 import { Course } from '../models/course.model';
+import { Faculty } from '../models/faculty.model';
 import { AuditLog } from '../models/auditLog.model';
 import { AppRole } from '../constants/roles';
 import { AccountStatus, CollegeStatus, DepartmentStatus } from '../constants/status';
@@ -10,6 +11,7 @@ import { ApiError } from '../utils/apiError';
 import { AuthenticatedUser } from '../types/auth.types';
 import { InvitationService, CreateInvitationResult } from './invitation.service';
 import { normalizeEmail, normalizePhone } from '../utils/identifier';
+import { UserService } from './user.service';
 
 export interface ProvisionHodInput {
   departmentId: string;
@@ -430,5 +432,189 @@ export class HodService {
       studentCount,
       subjectCount,
     };
+  }
+
+  /**
+   * Assign Existing User to HOD Role & Department
+   */
+  static async assignExistingUserToHod(
+    input: { userId: string; departmentId: string },
+    requester: AuthenticatedUser
+  ): Promise<{ user: IUser; department: InstanceType<typeof Department> }> {
+    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN].includes(requester.role)) {
+      throw ApiError.forbidden('Only administrators have permission to assign HOD roles');
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(input.userId)) {
+      throw ApiError.badRequest(`Invalid User ID format: "${input.userId}"`);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(input.departmentId)) {
+      throw ApiError.badRequest(`Invalid Department ID format: "${input.departmentId}"`);
+    }
+
+    let user = await User.findById(input.userId);
+    if (!user) {
+      const faculty = await Faculty.findById(input.userId);
+      if (faculty && faculty.userId) {
+        user = await User.findById(faculty.userId);
+      }
+    }
+    const targetDept = await Department.findById(input.departmentId);
+
+    if (!user) {
+      throw ApiError.notFound(`User with ID "${input.userId}" not found`);
+    }
+
+    if (!targetDept) {
+      throw ApiError.notFound(`Department with ID "${input.departmentId}" not found`);
+    }
+
+    if (targetDept.status === DepartmentStatus.INACTIVE || !targetDept.isActive) {
+      throw ApiError.forbidden('Cannot assign HOD to an inactive department');
+    }
+
+    // Tenant Scoping
+    if (requester.role === AppRole.COLLEGE_ADMIN) {
+      if (!requester.collegeId || user.collegeId?.toString() !== requester.collegeId.toString()) {
+        throw ApiError.forbidden('Cross-college tenant access is strictly prohibited for user');
+      }
+      if (targetDept.collegeId.toString() !== requester.collegeId.toString()) {
+        throw ApiError.forbidden('Cross-college tenant access is strictly prohibited for department');
+      }
+    }
+
+    if (user.collegeId && targetDept.collegeId.toString() !== user.collegeId.toString()) {
+      throw ApiError.badRequest('User and Department must belong to the same college');
+    }
+
+    // Check if target department already has an active HOD
+    const existingHod = await User.findOne({
+      departmentId: targetDept._id,
+      role: AppRole.HOD,
+      _id: { $ne: user._id },
+      accountStatus: { $in: [AccountStatus.ACTIVE, AccountStatus.PENDING_ACTIVATION] },
+    });
+
+    if (existingHod) {
+      throw ApiError.conflict('Target department already has an active or pending HOD');
+    }
+
+    const previousRole = user.role;
+    const oldDepartmentId = user.departmentId?.toString();
+
+    // If user was previously HOD of another department, clear that department's hodId
+    if (oldDepartmentId && oldDepartmentId !== targetDept._id.toString() && previousRole === AppRole.HOD) {
+      await Department.findByIdAndUpdate(oldDepartmentId, { hodId: null });
+    }
+
+    // Authoritative assignment
+    user.role = AppRole.HOD;
+    user.departmentId = targetDept._id;
+    user.collegeId = targetDept.collegeId;
+    await user.save();
+
+    targetDept.hodId = user._id.toString();
+    await targetDept.save();
+
+    await AuditLog.create({
+      collegeId: targetDept.collegeId.toString(),
+      actorUserId: requester.id,
+      action: 'HOD_ASSIGNED_FROM_EXISTING_USER',
+      entityType: 'User',
+      entityId: user.id,
+      previousValue: {
+        role: previousRole,
+        departmentId: oldDepartmentId,
+      },
+      newValue: {
+        role: AppRole.HOD,
+        departmentId: targetDept._id.toString(),
+        collegeId: targetDept.collegeId.toString(),
+      },
+    });
+
+    return { user, department: targetDept };
+  }
+
+  /**
+   * Unassign / Remove HOD Assignment
+   * Clears department hodId and demotes user role to FACULTY (or specified newRole)
+   */
+  static async unassignHod(
+    id: string,
+    options: { newRole?: AppRole } = {},
+    requester: AuthenticatedUser
+  ): Promise<IUser> {
+    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN].includes(requester.role)) {
+      throw ApiError.forbidden('Only administrators have permission to unassign HODs');
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw ApiError.badRequest(`Invalid HOD ID format: "${id}"`);
+    }
+
+    const hod = await User.findOne({ _id: id, role: AppRole.HOD });
+    if (!hod) {
+      throw ApiError.notFound(`HOD with ID "${id}" not found`);
+    }
+
+    // Tenant check
+    if (requester.role === AppRole.COLLEGE_ADMIN) {
+      if (!requester.collegeId || hod.collegeId?.toString() !== requester.collegeId.toString()) {
+        throw ApiError.forbidden('Cross-college tenant access is strictly prohibited');
+      }
+    }
+
+    const oldDeptId = hod.departmentId?.toString();
+    if (oldDeptId) {
+      await Department.findByIdAndUpdate(oldDeptId, { hodId: null });
+    }
+
+    const previousRole = hod.role;
+    const demotedRole = options.newRole || AppRole.FACULTY;
+
+    hod.role = demotedRole;
+    await hod.save();
+
+    await AuditLog.create({
+      collegeId: hod.collegeId ? hod.collegeId.toString() : 'GLOBAL',
+      actorUserId: requester.id,
+      action: 'HOD_UNASSIGNED',
+      entityType: 'User',
+      entityId: hod.id,
+      previousValue: {
+        role: previousRole,
+        departmentId: oldDeptId,
+      },
+      newValue: {
+        role: demotedRole,
+        departmentId: hod.departmentId?.toString(),
+      },
+    });
+
+    return hod;
+  }
+
+  /**
+   * Update HOD Status (Activate / Deactivate)
+   */
+  static async updateHodStatus(
+    id: string,
+    status: AccountStatus,
+    requester: AuthenticatedUser,
+    reason?: string
+  ): Promise<IUser> {
+    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN].includes(requester.role)) {
+      throw ApiError.forbidden('Only administrators have permission to update HOD status');
+    }
+
+    if (status === AccountStatus.DEACTIVATED) {
+      return UserService.deactivateUserSafely(id, requester, reason || 'HOD deactivated by administrator');
+    } else if (status === AccountStatus.ACTIVE) {
+      return UserService.reactivateUserSafely(id, requester);
+    } else {
+      throw ApiError.badRequest(`Unsupported status transition: ${status}`);
+    }
   }
 }

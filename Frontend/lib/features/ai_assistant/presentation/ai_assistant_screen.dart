@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_theme.dart';
-import '../../../../core/presentation/widgets/acadex_adaptive_gradient_text.dart';
 import 'package:campus_management/features/auth/domain/models/auth_state.dart';
 import 'package:campus_management/features/auth/domain/models/role_enum.dart';
 import 'package:campus_management/features/auth/presentation/providers/auth_provider.dart';
 import 'providers/ai_providers.dart';
+import 'widgets/ai_markdown_view.dart';
+import 'widgets/ai_composer.dart';
+import 'widgets/ai_chat_sidebar.dart';
+import 'widgets/ai_thinking_indicator.dart';
 
 class AiAssistantScreen extends ConsumerStatefulWidget {
   const AiAssistantScreen({super.key});
@@ -18,15 +22,48 @@ class AiAssistantScreen extends ConsumerStatefulWidget {
 class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
   final TextEditingController _queryController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  void _scrollToBottom() {
+  bool _isSidebarOpen = true;
+  bool _showScrollToBottom = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_handleScroll);
+  }
+
+  void _handleScroll() {
+    if (!_scrollController.hasClients) return;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.offset;
+    final isFarFromBottom = (maxScroll - currentScroll) > 180;
+    if (isFarFromBottom != _showScrollToBottom) {
+      setState(() => _showScrollToBottom = isFarFromBottom);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_handleScroll);
+    _queryController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom({bool animate = true}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+        final target = _scrollController.position.maxScrollExtent;
+        if (animate) {
+          _scrollController.animateTo(
+            target,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        } else {
+          _scrollController.jumpTo(target);
+        }
       }
     });
   }
@@ -38,6 +75,11 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
       _scrollToBottom();
     });
     _scrollToBottom();
+  }
+
+  void _handleNewChat() {
+    ref.read(aiChatProvider.notifier).clearChat();
+    _queryController.clear();
   }
 
   List<String> _getSuggestedPrompts(AppRole role) {
@@ -60,19 +102,22 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
         return [
           "How do I monitor department attendance?",
           "How can I identify attendance shortages?",
-          "Where can I view faculty activity?"
+          "Where can I view faculty activity?",
+          "How do I publish the section timetable?"
         ];
       case AppRole.collegeAdmin:
         return [
           "How do I manage departments?",
           "How do I manage students?",
-          "How do I view college analytics?"
+          "How do I view college analytics?",
+          "How do I configure semester dates?"
         ];
       case AppRole.superAdmin:
         return [
           "How do I view platform analytics?",
           "How do I manage colleges?",
-          "How does role management work?"
+          "How does role management work?",
+          "Where are system audit logs?"
         ];
     }
   }
@@ -87,13 +132,8 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
       userRole = authState.user.role;
     }
 
-    final isGradientRole = userRole == AppRole.superAdmin ||
-        userRole == AppRole.collegeAdmin ||
-        userRole == AppRole.hod ||
-        userRole == AppRole.faculty ||
-        userRole == AppRole.student;
-    final primaryActionColor = isGradientRole ? AcadexColors.superAdminDeepAction : Theme.of(context).primaryColor;
     final isMobile = AcadexBreakpoints.isMobile(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Auto-scroll when new messages arrive
     ref.listen(aiChatProvider, (previous, next) {
@@ -102,307 +142,545 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
       }
     });
 
-    final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
+    final suggestedPrompts = _getSuggestedPrompts(userRole);
+    final hasUserMessages = chatState.messages.any((m) => !m.isAi);
 
-    final bodyContent = Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 800),
-        child: Column(
-          children: [
-            if (hasEnclosingScaffold)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      onPressed: () => ref.read(aiChatProvider.notifier).clearChat(),
-                      icon: Icon(LucideIcons.trash2, size: 15, color: isGradientRole ? const Color(0xFFCCE6FF) : null),
-                      label: Text(
-                        'Clear Chat',
-                        style: TextStyle(
-                          color: isGradientRole ? Colors.white : null,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+    return Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      drawer: isMobile
+          ? Drawer(
+              child: AiChatSidebar(
+                onNewChat: () {
+                  Navigator.of(context).pop();
+                  _handleNewChat();
+                },
+                onClose: () => Navigator.of(context).pop(),
+                authState: authState,
+                isModal: true,
               ),
-            // Chat History or Welcome State
-            if (chatState.messages.isEmpty)
-              Expanded(
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: isGradientRole ? const Color(0xFFE6F2FF) : AcadexColors.primaryLight,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            LucideIcons.bot,
-                            size: 28,
-                            color: Color(0xFF003366),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Welcome to Acadex AI',
-                          style: AcadexTypography.heading2(
-                            color: const Color(0xFF0F172A),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Ask questions about attendance, schedules, courses, or college operations.',
-                          textAlign: TextAlign.center,
-                          style: AcadexTypography.body(
-                            color: const Color(0xFF475569),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          alignment: WrapAlignment.center,
-                          children: _getSuggestedPrompts(userRole).map((prompt) {
-                            return ActionChip(
-                              label: Text(prompt),
-                              labelStyle: AcadexTypography.caption(
-                                color: const Color(0xFF003366),
-                              ).copyWith(fontWeight: FontWeight.w600),
-                              backgroundColor: const Color(0xFFE6F2FF),
-                              side: const BorderSide(color: Color(0xFFCCE6FF)),
-                              onPressed: chatState.isLoading ? null : () => _submitQuery(prompt),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ),
+            )
+          : null,
+      body: Row(
+        children: [
+          // Desktop Collapsible Sidebar
+          if (!isMobile)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeInOut,
+              width: _isSidebarOpen ? 260 : 0,
+              child: ClipRect(
+                child: OverflowBox(
+                  minWidth: 260,
+                  maxWidth: 260,
+                  alignment: Alignment.topLeft,
+                  child: AiChatSidebar(
+                    onNewChat: _handleNewChat,
+                    authState: authState,
+                    isModal: false,
                   ),
                 ),
-              )
-            else
-              Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  padding: EdgeInsets.all(isMobile ? 16 : 24),
-                  itemCount: chatState.messages.length,
-                  itemBuilder: (context, index) {
-                    final msg = chatState.messages[index];
-                    final isAi = msg.isAi;
-                    
-                    return Align(
-                      alignment: isAi ? Alignment.centerLeft : Alignment.centerRight,
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                        constraints: const BoxConstraints(maxWidth: 600),
-                        decoration: BoxDecoration(
-                          color: isAi ? Colors.white : primaryActionColor,
-                          borderRadius: BorderRadius.circular(16).copyWith(
-                            bottomLeft: isAi ? const Radius.circular(4) : const Radius.circular(16),
-                            bottomRight: isAi ? const Radius.circular(16) : const Radius.circular(4),
-                          ),
-                          border: isAi ? Border.all(color: const Color(0xFFE2E8F0)) : null,
-                          boxShadow: [
-                            if (isAi) BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2))
-                          ],
-                        ),
-                        child: Text(
-                          msg.text,
-                          style: AcadexTypography.body(color: isAi ? const Color(0xFF0F172A) : Colors.white).copyWith(height: 1.5, fontSize: 14.5),
-                        ),
-                      ),
-                    );
-                  },
-                ),
               ),
+            ),
 
-              // Loading / Error States
-              if (chatState.isLoading)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: primaryActionColor),
-                        ),
-                        const SizedBox(width: 10),
-                        if (isGradientRole)
-                          const AcadexAdaptiveGradientText(
-                            "Acadex AI is thinking...",
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          )
-                        else
-                          Text(
-                            "Acadex AI is thinking...",
-                            style: AcadexTypography.caption(
-                              color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
-                            ).copyWith(fontWeight: FontWeight.w500),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-
-              if (chatState.error != null)
+          // Main Chat Area
+          Expanded(
+            child: Column(
+              children: [
+                // Minimal Header
                 Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  padding: const EdgeInsets.all(14),
+                  height: 52,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEE2E2),
-                    borderRadius: AcadexRadius.borderRadiusMd,
-                    border: Border.all(color: const Color(0xFFFECACA)),
+                    color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        width: 1,
+                      ),
+                    ),
                   ),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 20),
-                      const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          chatState.error!,
-                          style: AcadexTypography.caption(color: const Color(0xFF991B1B)).copyWith(fontWeight: FontWeight.w600),
+                        child: Row(
+                          children: [
+                            if (isMobile)
+                              IconButton(
+                                icon: const Icon(LucideIcons.menu, size: 20),
+                                tooltip: "Open chats sidebar",
+                                onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                              )
+                            else
+                              IconButton(
+                                icon: Icon(
+                                  _isSidebarOpen ? LucideIcons.panelLeftClose : LucideIcons.panelLeftOpen,
+                                  size: 19,
+                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                ),
+                                tooltip: _isSidebarOpen ? "Collapse sidebar" : "Open sidebar",
+                                onPressed: () => setState(() => _isSidebarOpen = !_isSidebarOpen),
+                              ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                "Acadex Assistant",
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                            ),
+                            if (!isMobile) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE6F2FF),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  "Academic AI",
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF0052CC),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                      TextButton(
-                        onPressed: () {
-                          // Simple retry of last user message if available
-                          final lastUserMsg = chatState.messages.reversed.firstWhere((m) => !m.isAi, orElse: () => chatState.messages.first);
-                          if (!lastUserMsg.isAi) {
-                            _submitQuery(lastUserMsg.text);
-                          }
-                        },
-                        child: const Text('Retry'),
-                      )
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(LucideIcons.penSquare, size: 18),
+                            tooltip: "New Chat",
+                            onPressed: _handleNewChat,
+                          ),
+                          if (hasUserMessages)
+                            IconButton(
+                              icon: const Icon(LucideIcons.trash2, size: 18),
+                              tooltip: "Clear conversation",
+                              onPressed: _handleNewChat,
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
 
-              // Suggested Prompts when 1 message exists
-              if (chatState.messages.length == 1)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _getSuggestedPrompts(userRole).map((prompt) {
-                      return ActionChip(
-                        label: Text(prompt),
-                        labelStyle: AcadexTypography.caption(
-                          color: isGradientRole ? const Color(0xFF003366) : (Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
-                        ).copyWith(fontWeight: FontWeight.w600),
-                        backgroundColor: isGradientRole ? const Color(0xFFE6F2FF) : Theme.of(context).colorScheme.surface,
-                        side: BorderSide(color: isGradientRole ? const Color(0xFF0066CC).withValues(alpha: 0.3) : Theme.of(context).dividerColor),
-                        onPressed: chatState.isLoading ? null : () => _submitQuery(prompt),
-                      );
-                    }).toList(),
+                // Conversation Area (or Empty State)
+                Expanded(
+                  child: Stack(
+                    children: [
+                      if (!hasUserMessages)
+                        // Empty State Landing
+                        Center(
+                          child: SingleChildScrollView(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isMobile ? 18 : 28,
+                              vertical: 24,
+                            ),
+                            child: Container(
+                              constraints: const BoxConstraints(maxWidth: 780),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 54,
+                                    height: 54,
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE6F2FF),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: isDark ? const Color(0xFF334155) : const Color(0xFFCCE6FF),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      LucideIcons.sparkles,
+                                      size: 26,
+                                      color: Color(0xFF0052CC),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 18),
+                                  Text(
+                                    "What can I help you with?",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: isMobile ? 22 : 26,
+                                      fontWeight: FontWeight.w700,
+                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    "Ask anything about your timetable, attendance standing, courses, or campus operations.",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 32),
+                                  // 4 Suggestion Cards in 2x2 grid
+                                  LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final isSmall = constraints.maxWidth < 600;
+                                      return Wrap(
+                                        spacing: 12,
+                                        runSpacing: 12,
+                                        children: suggestedPrompts.map((prompt) {
+                                          final cardWidth = isSmall ? constraints.maxWidth : (constraints.maxWidth - 12) / 2;
+                                          return SizedBox(
+                                            width: cardWidth,
+                                            child: InkWell(
+                                              onTap: chatState.isLoading ? null : () => _submitQuery(prompt),
+                                              borderRadius: BorderRadius.circular(12),
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                                decoration: BoxDecoration(
+                                                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                                  ),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black.withValues(alpha: 0.02),
+                                                      blurRadius: 4,
+                                                      offset: const Offset(0, 1),
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        prompt,
+                                                        style: TextStyle(
+                                                          fontSize: 13.5,
+                                                          fontWeight: FontWeight.w500,
+                                                          color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B),
+                                                          height: 1.35,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Icon(
+                                                      LucideIcons.arrowUpRight,
+                                                      size: 16,
+                                                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        // Active Message List
+                        ListView.builder(
+                          controller: _scrollController,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isMobile ? 12 : 24,
+                            vertical: 16,
+                          ),
+                          itemCount: chatState.messages.length + (chatState.isLoading ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            // Thinking state indicator
+                            if (index == chatState.messages.length) {
+                              return Center(
+                                child: Container(
+                                  constraints: const BoxConstraints(maxWidth: 780),
+                                  margin: const EdgeInsets.symmetric(vertical: 12),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 32,
+                                        height: 32,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE6F2FF),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: const Color(0xFFCCE6FF)),
+                                        ),
+                                        child: const Icon(LucideIcons.sparkles, size: 16, color: Color(0xFF0052CC)),
+                                      ),
+                                      const SizedBox(width: 14),
+                                      const Padding(
+                                        padding: EdgeInsets.only(top: 8.0),
+                                        child: AiThinkingIndicator(),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+
+                            final msg = chatState.messages[index];
+                            final isAi = msg.isAi;
+
+                            return Center(
+                              child: Container(
+                                constraints: const BoxConstraints(maxWidth: 780),
+                                margin: const EdgeInsets.symmetric(vertical: 10),
+                                child: isAi
+                                    ? _buildAssistantRow(context, msg.text, isDark)
+                                    : _buildUserRow(context, msg.text, isDark),
+                              ),
+                            );
+                          },
+                        ),
+
+                      // Floating Jump-to-Bottom Button
+                      if (_showScrollToBottom)
+                        Positioned(
+                          bottom: 12,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: InkWell(
+                              onTap: () => _scrollToBottom(),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.1),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      LucideIcons.arrowDown,
+                                      size: 14,
+                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      "Jump to latest",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
 
-              // Input Bar
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: isMobile ? 14 : 24, vertical: isMobile ? 12 : 16),
-                decoration: BoxDecoration(
-                  color: isGradientRole ? Colors.transparent : Theme.of(context).scaffoldBackgroundColor,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _queryController,
-                        style: AcadexTypography.body(color: const Color(0xFF0F172A)),
-                        decoration: InputDecoration(
-                          hintText: "Ask about your campus...",
-                          hintStyle: AcadexTypography.body(color: const Color(0xFF64748B).withValues(alpha: 0.7)),
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: AcadexRadius.borderRadiusLg,
-                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                // Error Banner if present
+                if (chatState.error != null)
+                  Center(
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 800),
+                      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFFECACA)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              chatState.error!,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF991B1B),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: AcadexRadius.borderRadiusLg,
-                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          TextButton(
+                            onPressed: () {
+                              final lastUserMsg = chatState.messages.reversed
+                                  .firstWhere((m) => !m.isAi, orElse: () => chatState.messages.first);
+                              if (!lastUserMsg.isAi) {
+                                _submitQuery(lastUserMsg.text);
+                              }
+                            },
+                            child: const Text('Retry', style: TextStyle(fontSize: 13)),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: AcadexRadius.borderRadiusLg,
-                            borderSide: BorderSide(color: primaryActionColor, width: 2),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        ),
-                        onSubmitted: chatState.isLoading ? null : _submitQuery,
-                        enabled: !chatState.isLoading,
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryActionColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.all(14),
-                        minimumSize: const Size(48, 48),
-                        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusLg),
-                        elevation: 0,
-                      ),
-                      onPressed: chatState.isLoading
-                          ? null
-                          : () => _submitQuery(_queryController.text),
-                      child: const Icon(LucideIcons.send, size: 20),
-                    ),
-                  ],
+                  ),
+
+                // Message Composer
+                AiComposer(
+                  controller: _queryController,
+                  isLoading: chatState.isLoading,
+                  onSubmitted: _submitQuery,
                 ),
-              )
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserRow(BuildContext context, String text, bool isDark) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 620),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F172A), // Dark navy ChatGPT style user bubble
+          borderRadius: BorderRadius.circular(20).copyWith(
+            bottomRight: const Radius.circular(4),
+          ),
+        ),
+        child: SelectableText(
+          text,
+          style: const TextStyle(
+            fontSize: 15,
+            color: Colors.white,
+            height: 1.45,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAssistantRow(BuildContext context, String text, bool isDark) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Assistant Avatar Indicator
+        Container(
+          margin: const EdgeInsets.only(top: 2),
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE6F2FF),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFCCE6FF),
+            ),
+          ),
+          child: const Icon(
+            LucideIcons.sparkles,
+            size: 16,
+            color: Color(0xFF0052CC),
+          ),
+        ),
+        const SizedBox(width: 14),
+        // Open Markdown Content Area
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AiMarkdownView(
+                text: text,
+                textColor: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A),
+              ),
+              const SizedBox(height: 6),
+              // Subtle Assistant Actions (Copy, etc.)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _CopyButton(text: text, isDark: isDark),
+                ],
+              ),
             ],
           ),
         ),
-      );
+      ],
+    );
+  }
+}
 
-    if (hasEnclosingScaffold) {
-      return bodyContent;
-    }
+class _CopyButton extends StatefulWidget {
+  final String text;
+  final bool isDark;
 
-    return Scaffold(
-      backgroundColor: isGradientRole ? Colors.transparent : Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'Acadex AI',
-          style: AcadexTypography.heading3(
-            color: isGradientRole ? Colors.white : Theme.of(context).colorScheme.onSurface,
-          ),
+  const _CopyButton({required this.text, required this.isDark});
+
+  @override
+  State<_CopyButton> createState() => _CopyButtonState();
+}
+
+class _CopyButtonState extends State<_CopyButton> {
+  bool _copied = false;
+
+  void _copy() {
+    Clipboard.setData(ClipboardData(text: widget.text));
+    setState(() => _copied = true);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _copied = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: _copy,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _copied ? LucideIcons.check : LucideIcons.copy,
+              size: 14,
+              color: _copied
+                  ? AcadexColors.success
+                  : (widget.isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              _copied ? "Copied" : "Copy",
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+                color: _copied
+                    ? AcadexColors.success
+                    : (widget.isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+              ),
+            ),
+          ],
         ),
-        backgroundColor: isGradientRole ? Colors.transparent : Theme.of(context).colorScheme.surface,
-        elevation: 0,
-        iconTheme: IconThemeData(
-          color: isGradientRole ? Colors.white : Theme.of(context).colorScheme.onSurface,
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Clear Conversation',
-            icon: Icon(LucideIcons.trash2, color: isGradientRole ? Colors.white : null),
-            onPressed: () {
-              ref.read(aiChatProvider.notifier).clearChat();
-            },
-          ),
-          const SizedBox(width: 8),
-        ],
       ),
-      body: bodyContent,
     );
   }
 }

@@ -1360,7 +1360,10 @@ export class AttendanceService {
             body: `You were marked ${record.status} for ${session.subjectName || 'Class'} on ${new Date(
               session.date
             ).toLocaleDateString()}.`,
-            notificationType: NotificationType.ATTENDANCE_MARKED,
+            notificationType:
+              record.status === AttendanceStatus.ABSENT
+                ? NotificationType.ATTENDANCE_ABSENT
+                : NotificationType.ATTENDANCE_LATE,
             category: NotificationCategory.ATTENDANCE,
             entityType: 'AttendanceSession',
             entityId: session.id,

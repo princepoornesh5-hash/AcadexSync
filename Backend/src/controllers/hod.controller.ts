@@ -106,6 +106,54 @@ export class HodController {
   });
 
   /**
+   * POST /api/v1/academics/hods/assign-existing
+   * Assign Existing User to HOD Role & Department
+   */
+  static assignExistingUser = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw ApiError.unauthorized('User not authenticated');
+    }
+
+    const { assignExistingHodSchema } = await import('../validations/hod.validation');
+    const validatedData = assignExistingHodSchema.parse(req.body);
+    const result = await HodService.assignExistingUserToHod(validatedData, req.user);
+
+    return ApiResponse.success(res, result, 'User successfully assigned as HOD');
+  });
+
+  /**
+   * POST /api/v1/academics/hods/:id/unassign
+   * Unassign HOD from Department and demote role
+   */
+  static unassign = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw ApiError.unauthorized('User not authenticated');
+    }
+
+    const { unassignHodSchema } = await import('../validations/hod.validation');
+    const validatedData = unassignHodSchema.parse(req.body);
+    const result = await HodService.unassignHod(req.params.id, validatedData as any, req.user);
+
+    return ApiResponse.success(res, result, 'HOD successfully unassigned');
+  });
+
+  /**
+   * PATCH /api/v1/academics/hods/:id/status
+   * Activate or Deactivate HOD Account
+   */
+  static updateStatus = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw ApiError.unauthorized('User not authenticated');
+    }
+
+    const { updateHodStatusSchema } = await import('../validations/hod.validation');
+    const { status, reason } = updateHodStatusSchema.parse(req.body);
+    const result = await HodService.updateHodStatus(req.params.id, status, req.user, reason);
+
+    return ApiResponse.success(res, result, `HOD status updated to ${status}`);
+  });
+
+  /**
    * GET /api/v1/departments/:departmentId/hod
    * Lookup HOD for a Department
    */

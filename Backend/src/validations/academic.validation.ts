@@ -21,6 +21,7 @@ export const courseQuerySchema = z.object({
   search: z.string().optional(),
   departmentId: z.string().optional(),
   collegeId: z.string().optional(),
+  isActive: z.string().optional(),
 });
 
 // Academic Year Validation

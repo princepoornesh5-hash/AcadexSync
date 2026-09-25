@@ -58,6 +58,9 @@ abstract class AcademicRepository {
   Future<UserModel> getHodById(String id);
   Future<void> updateHodProfile(String id, {String? name, String? email, String? phone});
   Future<void> transferHodDepartment(String id, String targetDepartmentId);
+  Future<void> assignExistingUserToHod(String userId, String departmentId);
+  Future<void> unassignHod(String id, {String? newRole});
+  Future<void> updateHodStatus(String id, String status, {String? reason});
   Future<Map<String, dynamic>> getHodSummary(String id);
 
   Future<void> addCourse(Course course);
@@ -191,4 +194,6 @@ abstract class AcademicRepository {
   Future<List<FacultyWorkloadSummary>> getFacultyWorkloadSummaries({String? departmentId});
   Future<Map<String, int>> getDepartmentStudentCounts();
   Future<Map<String, int>> getDepartmentFacultyCounts();
+  Future<List<Room>> getRooms({String? collegeId, String? departmentId});
+  Future<Room> addRoom(Room room);
 }

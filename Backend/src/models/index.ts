@@ -21,3 +21,4 @@ export * from './auditLog.model';
 export * from './authSession.model';
 export * from './otp.model';
 export * from './invitation.model';
+export * from './announcement.model';

@@ -35,6 +35,11 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
     final deptMap = ref.watch(departmentMapProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = AcadexBreakpoints.isMobile(context);
+    final authState = ref.watch(authProvider);
+    final user = authState is AuthAuthenticated ? authState.user : null;
+    final canManageCourses = user?.role == AppRole.superAdmin ||
+        user?.role == AppRole.collegeAdmin ||
+        user?.role == AppRole.hod;
 
     return AcadexPageContainer(
       scrollable: false,
@@ -48,7 +53,7 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
           AcadexSearchFilterBar(
             searchHint: "Search courses by name, code, or department...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
-            onActionTap: () => context.push('/academics/courses/new'),
+            onActionTap: canManageCourses ? () => context.push('/academics/courses/new') : null,
             actionLabel: "Add Course",
           ),
           const SizedBox(height: 10),
@@ -103,20 +108,27 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
 
                 if (filtered.isEmpty) {
                   if (_searchQuery.isEmpty) {
-                    return FreshDepartmentSetupCard(
-                      currentStep: AcademicSetupStep.course,
-                      actionLabel: "Add First Course",
-                      customMessage:
-                          "Step 1 of 3: Establish your department's initial degree course (e.g. Diploma in Computer Engineering), then select an Academic Year and configure Semesters.",
-                      onAction: () => context.push('/academics/courses/new'),
+                    if (canManageCourses) {
+                      return FreshDepartmentSetupCard(
+                        currentStep: AcademicSetupStep.course,
+                        actionLabel: "Add First Course",
+                        customMessage:
+                            "Step 1 of 3: Establish your department's initial degree course (e.g. Diploma in Computer Engineering), then select an Academic Year and configure Semesters.",
+                        onAction: () => context.push('/academics/courses/new'),
+                      );
+                    }
+                    return const AcadexEmptyState(
+                      title: "No Courses Available",
+                      subtitle: "There are currently no active degree courses configured.",
+                      icon: LucideIcons.bookOpen,
                     );
                   }
                   return AcadexEmptyState(
                     title: "No Courses Found",
                     subtitle: "No courses match '$_searchQuery'.",
                     icon: LucideIcons.bookOpen,
-                    actionLabel: "Add Course",
-                    onActionTap: () => context.push('/academics/courses/new'),
+                    actionLabel: canManageCourses ? "Add Course" : null,
+                    onActionTap: canManageCourses ? () => context.push('/academics/courses/new') : null,
                   );
                 }
 
@@ -276,11 +288,12 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                                 tooltip: "View Details",
                                 onPressed: () => context.push('/academics/courses/${c.id}'),
                               ),
-                              IconButton(
-                                icon: const Icon(LucideIcons.edit, size: 18),
-                                tooltip: "Edit Course",
-                                onPressed: () => context.push('/academics/courses/edit/${c.id}'),
-                              ),
+                              if (canManageCourses)
+                                IconButton(
+                                  icon: const Icon(LucideIcons.edit, size: 18),
+                                  tooltip: "Edit Course",
+                                  onPressed: () => context.push('/academics/courses/edit/${c.id}'),
+                                ),
                             ],
                           ),
                         ),
@@ -310,6 +323,7 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
   late TextEditingController _nameCtrl;
   late TextEditingController _codeCtrl;
   int _duration = 3;
+  bool _isActive = true;
   bool _isLoading = false;
   Course? _existing;
   String? _selectedDepartmentId;
@@ -334,6 +348,7 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
       _nameCtrl.text = _existing!.name;
       _codeCtrl.text = _existing!.code;
       _duration = _existing!.duration;
+      _isActive = _existing!.isActive;
       _selectedDepartmentId = _existing!.departmentId;
       _selectedCollegeId = _existing!.collegeId;
     } catch (e) {
@@ -370,7 +385,7 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
         name: _nameCtrl.text.trim(),
         code: _codeCtrl.text.trim().toUpperCase(),
         duration: _duration,
-        isActive: _existing?.isActive ?? true,
+        isActive: _existing == null ? true : _isActive,
       );
 
       if (_existing == null) {
@@ -435,7 +450,7 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
           onPressed: () => context.safePop(fallbackRoute: '/academics/courses'),
         ),
         title: Text(
-          isEdit ? "Edit Course" : "Add Course",
+          isEdit ? "Edit Course" : "Create Course",
           style: AcadexTypography.heading2(
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ).copyWith(fontSize: 18),
@@ -576,6 +591,26 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
                           },
                         ),
                       ),
+                      if (isEdit) ...[
+                        const SizedBox(height: 14),
+                        Material(
+                          color: Colors.transparent,
+                          child: SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              "Course Status",
+                              style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: Text(
+                              _isActive ? "Active (visible for enrollment and scheduling)" : "Inactive (archived)",
+                              style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                            ),
+                            value: _isActive,
+                            activeColor: AcadexColors.primary,
+                            onChanged: (val) => setState(() => _isActive = val),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

@@ -14,6 +14,7 @@ import { reportRouter } from './report.routes';
 import { analyticsRouter } from './analytics.routes';
 import { calendarOverrideRouter } from './calendarOverride.routes';
 import { teacherSubstitutionRouter } from './teacherSubstitution.routes';
+import { announcementRouter } from './announcement.routes';
 
 const router = Router();
 
@@ -32,6 +33,7 @@ router.use('/teacher-substitutions', teacherSubstitutionRouter);
 router.use('/attendance', attendanceRouter);
 router.use('/notes', noteRouter);
 router.use('/notifications', notificationRouter);
+router.use('/announcements', announcementRouter);
 router.use('/audit', auditRouter);
 router.use('/reports', reportRouter);
 router.use('/analytics', analyticsRouter);

@@ -302,6 +302,21 @@ class MockAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<void> assignExistingUserToHod(String userId, String departmentId) async {
+    await _delay();
+  }
+
+  @override
+  Future<void> unassignHod(String id, {String? newRole}) async {
+    await _delay();
+  }
+
+  @override
+  Future<void> updateHodStatus(String id, String status, {String? reason}) async {
+    await _delay();
+  }
+
+  @override
   Future<Map<String, dynamic>> getHodSummary(String id) async {
     await _delay();
     return {};
@@ -1870,7 +1885,27 @@ class MockAcademicRepository implements AcademicRepository {
   Future<void> deleteEnrollment(String id) async {
     await updateEnrollment(id, status: 'withdrawn');
   }
+
+  final List<Room> _rooms = [
+    Room(id: 'room_1', collegeId: 'c1', name: 'Room 101', code: 'R101', capacity: 60),
+    Room(id: 'room_2', collegeId: 'c1', name: 'Lab 201', code: 'L201', capacity: 40, type: 'lab'),
+  ];
+
+  @override
+  Future<List<Room>> getRooms({String? collegeId, String? departmentId}) async {
+    await _delay();
+    return List.from(_rooms);
+  }
+
+  @override
+  Future<Room> addRoom(Room room) async {
+    await _delay();
+    final newRoom = room.copyWith(id: 'room_${DateTime.now().millisecondsSinceEpoch}');
+    _rooms.add(newRoom);
+    return newRoom;
+  }
 }
+
 
 // Singleton instance
 final mockAcademicRepo = MockAcademicRepository();

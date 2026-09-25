@@ -163,4 +163,17 @@ export class TimetableController {
     const entries = await TimetableService.getStudentTimetable(req.user, day, date);
     return ApiResponse.success(res, entries);
   });
+
+  static getDepartmentTimetable = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const day = req.query.day as TimetableDay | undefined;
+    const date = req.query.date as string | undefined;
+    const entries = await TimetableService.getDepartmentTimetable(
+      req.params.departmentId,
+      day,
+      req.user,
+      date
+    );
+    return ApiResponse.success(res, entries);
+  });
 }

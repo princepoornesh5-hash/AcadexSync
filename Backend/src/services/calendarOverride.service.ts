@@ -6,9 +6,20 @@ import {
   CalendarOverrideScope,
 } from '../models/calendarOverride.model';
 import { Department } from '../models/department.model';
+import { User } from '../models/user.model';
+import { Student } from '../models/student.model';
+import { StudentEnrollment } from '../models/studentEnrollment.model';
+import { NotificationService, CreateNotificationInput } from './notification.service';
+import {
+  NotificationType,
+  NotificationCategory,
+  NotificationPriority,
+} from '../constants/notification.constants';
 import { ApiError } from '../utils/apiError';
 import { AuthenticatedUser } from '../types/auth.types';
 import { AppRole } from '../constants/roles';
+import { AccountStatus } from '../constants/status';
+import { logger } from '../utils/logger';
 
 export class CalendarOverrideService {
   /**
@@ -33,10 +44,10 @@ export class CalendarOverrideService {
     }
 
     // 1. Authoritative College ID resolution
-    let collegeId = requester.collegeId;
+    let collegeId = requester.collegeId ? requester.collegeId.toString() : '';
     if (requester.role === AppRole.SUPER_ADMIN) {
-      collegeId = data.collegeId || requester.collegeId;
-    } else if (data.collegeId && data.collegeId !== requester.collegeId) {
+      collegeId = data.collegeId || collegeId;
+    } else if (data.collegeId && collegeId && data.collegeId.toString() !== collegeId) {
       throw ApiError.forbidden('Cross-college access is strictly prohibited');
     }
 
@@ -133,7 +144,69 @@ export class CalendarOverrideService {
       createdBy: new mongoose.Types.ObjectId(requester.id),
     });
 
+    try {
+      await this.dispatchOverrideNotifications(override);
+    } catch (err) {
+      logger.warn(`Failed to dispatch calendar override notifications: ${(err as Error).message}`);
+    }
+
     return override;
+  }
+
+  private static async dispatchOverrideNotifications(override: ICalendarOverride): Promise<void> {
+    try {
+      const recipientUserIds = new Set<string>();
+
+      if (override.scope === CalendarOverrideScope.COLLEGE) {
+        const users = await User.find({
+          collegeId: override.collegeId,
+          accountStatus: { $ne: AccountStatus.DEACTIVATED },
+        }).select('_id');
+        users.forEach((u) => recipientUserIds.add(u._id.toString()));
+      } else if (override.scope === CalendarOverrideScope.DEPARTMENT && override.departmentId) {
+        const users = await User.find({
+          collegeId: override.collegeId,
+          departmentId: override.departmentId,
+          accountStatus: { $ne: AccountStatus.DEACTIVATED },
+        }).select('_id');
+        users.forEach((u) => recipientUserIds.add(u._id.toString()));
+      } else if (override.sectionId) {
+        const enrollments = await StudentEnrollment.find({
+          sectionId: override.sectionId,
+          status: 'active',
+        }).select('studentId');
+        const studentIds = enrollments.map((e) => e.studentId);
+        if (studentIds.length > 0) {
+          const students = await Student.find({ _id: { $in: studentIds } }).select('userId');
+          students.forEach((s) => recipientUserIds.add(s.userId.toString()));
+        }
+      }
+
+      if (recipientUserIds.size === 0) return;
+
+      const title =
+        override.type === CalendarOverrideType.HOLIDAY ? 'Holiday Declared' : 'Calendar / Schedule Update';
+      const body = `${override.reason} on ${override.date}`;
+
+      const notifInputs: CreateNotificationInput[] = Array.from(recipientUserIds).map((userId) => ({
+        collegeId: override.collegeId.toString(),
+        departmentId: override.departmentId?.toString(),
+        recipientUserId: userId,
+        title,
+        body,
+        notificationType: NotificationType.CALENDAR_OVERRIDE,
+        category: NotificationCategory.SYSTEM,
+        priority: NotificationPriority.NORMAL,
+        entityType: 'CalendarOverride',
+        entityId: override.id,
+        deepLink: '/timetable',
+        idempotencyKey: `co_${override.id}_${userId}`,
+      }));
+
+      await NotificationService.createBatchNotifications(notifInputs);
+    } catch (err) {
+      logger.warn(`Failed to dispatch calendar override notifications: ${(err as Error).message}`);
+    }
   }
 
   /**

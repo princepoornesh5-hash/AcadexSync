@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { User } from '../models/user.model';
 import { Course, ICourse } from '../models/course.model';
 import { AcademicYear, IAcademicYear } from '../models/academicYear.model';
 import { Semester, ISemester } from '../models/semester.model';
@@ -12,7 +13,7 @@ import { College } from '../models/college.model';
 import { Department } from '../models/department.model';
 import { AuditLog } from '../models/auditLog.model';
 import { AppRole } from '../constants/roles';
-import { CollegeStatus, DepartmentStatus } from '../constants/status';
+import { CollegeStatus, DepartmentStatus, AccountStatus } from '../constants/status';
 import { ApiError } from '../utils/apiError';
 import { AuthenticatedUser } from '../types/auth.types';
 
@@ -92,7 +93,7 @@ export class AcademicService {
 
   static async listCourses(
     requester: AuthenticatedUser,
-    query: { collegeId?: string; departmentId?: string; search?: string; page?: number; limit?: number } = {}
+    query: { collegeId?: string; departmentId?: string; search?: string; isActive?: string | boolean; page?: number; limit?: number } = {}
   ): Promise<{ items: ICourse[]; page: number; limit: number; total: number; totalPages: number }> {
     const mongoQuery: Record<string, unknown> = {};
 
@@ -106,14 +107,42 @@ export class AcademicService {
       if (!requester.collegeId || !requester.departmentId) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
       mongoQuery.departmentId = new mongoose.Types.ObjectId(requester.departmentId);
+    } else if (requester.role === AppRole.STUDENT) {
+      if (!requester.collegeId) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
+      if (query.collegeId && query.collegeId !== requester.collegeId) {
+        throw ApiError.forbidden('Cross-college access is strictly prohibited');
+      }
+      mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+
+      const studentProfile = await Student.findOne({ userId: requester.id });
+      if (studentProfile) {
+        const activeEnrollments = await StudentEnrollment.find({
+          studentId: studentProfile._id,
+          status: 'active',
+        }).select('courseId');
+        if (activeEnrollments.length > 0) {
+          const courseIds = activeEnrollments.map((e) => e.courseId);
+          mongoQuery._id = { $in: courseIds };
+        } else if (studentProfile.courseId) {
+          mongoQuery._id = studentProfile.courseId;
+        } else if (requester.departmentId) {
+          mongoQuery.departmentId = new mongoose.Types.ObjectId(requester.departmentId);
+        }
+      } else if (requester.departmentId) {
+        mongoQuery.departmentId = new mongoose.Types.ObjectId(requester.departmentId);
+      }
     } else if (query.collegeId) {
       if (!mongoose.Types.ObjectId.isValid(query.collegeId)) throw ApiError.badRequest('Invalid collegeId');
       mongoQuery.collegeId = new mongoose.Types.ObjectId(query.collegeId);
     }
 
-    if (query.departmentId && ![AppRole.HOD, AppRole.FACULTY].includes(requester.role)) {
+    if (query.departmentId && ![AppRole.HOD, AppRole.FACULTY, AppRole.STUDENT].includes(requester.role)) {
       if (!mongoose.Types.ObjectId.isValid(query.departmentId)) throw ApiError.badRequest('Invalid departmentId');
       mongoQuery.departmentId = new mongoose.Types.ObjectId(query.departmentId);
+    }
+
+    if (query.isActive !== undefined && query.isActive !== 'all') {
+      mongoQuery.isActive = query.isActive === true || query.isActive === 'true';
     }
 
     if (query.search && query.search.trim() !== '') {
@@ -143,6 +172,30 @@ export class AcademicService {
     }
     if ([AppRole.HOD, AppRole.FACULTY].includes(requester.role) && course.departmentId.toString() !== requester.departmentId) {
       throw ApiError.forbidden('Cross-department access is strictly prohibited');
+    }
+    if (requester.role === AppRole.STUDENT) {
+      if (course.collegeId.toString() !== requester.collegeId) {
+        throw ApiError.forbidden('Cross-college access is strictly prohibited');
+      }
+      const studentProfile = await Student.findOne({ userId: requester.id });
+      if (studentProfile) {
+        const activeEnrollments = await StudentEnrollment.find({
+          studentId: studentProfile._id,
+          status: 'active',
+        }).select('courseId');
+        if (activeEnrollments.length > 0) {
+          const isEnrolled = activeEnrollments.some((e) => e.courseId.toString() === course.id);
+          if (!isEnrolled) {
+            throw ApiError.forbidden('Access denied to course outside active enrollment');
+          }
+        } else if (studentProfile.courseId && studentProfile.courseId.toString() !== course.id) {
+          throw ApiError.forbidden('Access denied to course outside active enrollment');
+        } else if (requester.departmentId && course.departmentId.toString() !== requester.departmentId) {
+          throw ApiError.forbidden('Cross-department access is strictly prohibited');
+        }
+      } else if (requester.departmentId && course.departmentId.toString() !== requester.departmentId) {
+        throw ApiError.forbidden('Cross-department access is strictly prohibited');
+      }
     }
 
     return course;
@@ -1375,6 +1428,12 @@ export class AcademicService {
 
     if (!faculty.isActive || faculty.status === 'inactive') {
       throw ApiError.forbidden('Cannot assign an inactive faculty member');
+    }
+    if (faculty.userId) {
+      const userDoc = await User.findById(faculty.userId);
+      if (!userDoc || userDoc.accountStatus !== AccountStatus.ACTIVE) {
+        throw ApiError.forbidden('Cannot assign a faculty member with an inactive user account');
+      }
     }
     if (!subject.isActive) {
       throw ApiError.forbidden('Cannot assign an inactive subject');

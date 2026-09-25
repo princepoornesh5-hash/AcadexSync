@@ -581,11 +581,15 @@ class ApiAttendanceRepository implements AttendanceRepository {
       if (data is Map<String, dynamic>) {
         final summary = data['summary'] as Map<String, dynamic>? ?? data;
         return DepartmentAttendanceSummary(
-          overallPercentage: (summary['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+          overallPercentage: (summary['percentage'] as num?)?.toDouble() ??
+              (summary['attendancePercentage'] as num?)?.toDouble() ??
+              0.0,
           studentsBelow75: (summary['studentsBelow75'] as num?)?.toInt() ?? 0,
           facultyCompleted: (summary['facultyCompleted'] as num?)?.toInt() ?? 0,
           facultyPending: (summary['facultyPending'] as num?)?.toInt() ?? 0,
-          todayClasses: (summary['todayClasses'] as num?)?.toInt() ?? 0,
+          todayClasses: (summary['todayClasses'] as num?)?.toInt() ??
+              (summary['totalClasses'] as num?)?.toInt() ??
+              0,
           totalStudents: (summary['totalStudents'] as num?)?.toInt() ?? 0,
           totalFaculty: (summary['totalFaculty'] as num?)?.toInt() ?? 0,
         );

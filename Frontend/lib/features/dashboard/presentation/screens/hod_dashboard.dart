@@ -56,6 +56,10 @@ class HodDashboard extends ConsumerWidget {
             onRefresh: () async {
               ref.invalidate(hodStatsProvider);
               ref.invalidate(hodActivityProvider);
+              ref.invalidate(dateScheduleProvider);
+              ref.invalidate(todayScheduleProvider);
+              ref.invalidate(weeklyTimetableProvider);
+              ref.invalidate(facultyAssignmentsProvider);
             },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,7 +143,7 @@ class HodDashboard extends ConsumerWidget {
                 stats.when(
                   loading: () => const AcadexLoadingState(message: 'Loading department metrics...'),
                   error: (err, _) => AcadexErrorState(
-                    message: 'Failed to load department metrics: $err',
+                    message: 'Failed to load department metrics. Please check your connection and try again.',
                     onRetry: () => ref.refresh(hodStatsProvider),
                   ),
                   data: (data) => GridView.builder(
@@ -168,10 +172,16 @@ class HodDashboard extends ConsumerWidget {
                     return todayAsync.when(
                       loading: () => const AcadexLoadingState(message: "Loading today's department sessions..."),
                       error: (err, _) => AcadexErrorState(
-                        message: 'Error loading timetable: $err',
+                        message: "Unable to load today's department timetable. Tap to retry.",
                         onRetry: () => ref.refresh(todayScheduleProvider),
                       ),
-                      data: (data) => TodayScheduleWidget(todayEntries: data),
+                      data: (data) => TodayScheduleWidget(
+                        todayEntries: data,
+                        emptyTitle: 'No timetable published yet',
+                        emptySubtitle: 'There are no active timetable sessions or lectures scheduled for your department today.',
+                        actionLabel: 'Manage Timetable',
+                        onAction: () => context.go('/timetable/manage'),
+                      ),
                     );
                   },
                 ),
@@ -199,7 +209,7 @@ class HodDashboard extends ConsumerWidget {
                     return assignmentsAsync.when(
                       loading: () => const AcadexLoadingState(message: 'Loading teaching allocations...'),
                       error: (err, _) => AcadexErrorState(
-                        message: 'Error loading assignments: $err',
+                        message: 'Unable to load teaching allocations. Tap to retry.',
                         onRetry: () => ref.refresh(facultyAssignmentsProvider),
                       ),
                       data: (allAssignments) {
@@ -316,7 +326,7 @@ class HodDashboard extends ConsumerWidget {
                 activity.when(
                   loading: () => const AcadexLoadingState(message: 'Loading departmental updates...'),
                   error: (err, _) => AcadexErrorState(
-                    message: 'Failed to load activity: $err',
+                    message: 'Unable to load departmental activity. Tap to retry.',
                     onRetry: () => ref.refresh(hodActivityProvider),
                   ),
                   data: (data) => ActivityFeed(items: data),

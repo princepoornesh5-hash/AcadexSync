@@ -5,6 +5,7 @@ import { FacultyController } from '../../controllers/faculty.controller';
 import { StudentController } from '../../controllers/student.controller';
 import { TimetableController } from '../../controllers/timetable.controller';
 import { NoteController } from '../../controllers/note.controller';
+import { IntegrityController } from '../../controllers/integrity.controller';
 import { noteRouter } from './note.routes';
 import { authenticateRequest } from '../../middleware/auth.middleware';
 import {
@@ -17,12 +18,15 @@ const router = Router();
 
 router.use(authenticateRequest);
 
-// HOD Management (Phase 9F.1)
+// HOD Management (Phase 9F.1 & Prompt 13)
 router.post('/hods', requireCollegeAdmin, HodController.provision);
+router.post('/hods/assign-existing', requireCollegeAdmin, HodController.assignExistingUser);
 router.get('/hods', requireCollegeAdmin, HodController.list);
 router.get('/hods/:id', HodController.getById);
 router.put('/hods/:id', HodController.updateProfile);
 router.patch('/hods/:id/department', requireCollegeAdmin, HodController.transferDepartment);
+router.post('/hods/:id/unassign', requireCollegeAdmin, HodController.unassign);
+router.patch('/hods/:id/status', requireCollegeAdmin, HodController.updateStatus);
 router.get('/hods/:id/summary', HodController.getSummary);
 
 // Faculty Management (Phase 9G.1)
@@ -87,10 +91,10 @@ router.patch('/enrollments/:id', requireHodOrAbove, AcademicController.updateEnr
 router.delete('/enrollments/:id', requireHodOrAbove, AcademicController.deleteEnrollment);
 
 // Room Management (Phase 9J.1)
-router.post('/rooms', requireCollegeAdmin, TimetableController.createRoom);
+router.post('/rooms', requireHodOrAbove, TimetableController.createRoom);
 router.get('/rooms', TimetableController.listRooms);
 router.get('/rooms/:id', TimetableController.getRoomById);
-router.put('/rooms/:id', requireCollegeAdmin, TimetableController.updateRoom);
+router.put('/rooms/:id', requireHodOrAbove, TimetableController.updateRoom);
 
 // Timetable Management (Phase 9J.1)
 router.get('/students/me/timetable', TimetableController.getStudentTimetable);
@@ -119,6 +123,10 @@ router.get('/faculty-assignments/my', requireFacultyOrAbove, AcademicController.
 router.get('/faculty-assignments/:id', AcademicController.getFacultyAssignmentById);
 router.put('/faculty-assignments/:id', requireHodOrAbove, AcademicController.updateFacultyAssignment);
 router.delete('/faculty-assignments/:id', requireHodOrAbove, AcademicController.deleteFacultyAssignment);
+
+// Academic Integrity & Forensic Orphan Auditing (Prompt 13)
+router.get('/integrity/audit', requireCollegeAdmin, IntegrityController.audit);
+router.post('/integrity/repair', requireCollegeAdmin, IntegrityController.repair);
 
 // Backwards-Compatible Legacy Routes
 router.post('/student-enrollments', requireCollegeAdmin, AcademicController.enrollStudent);

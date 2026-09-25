@@ -38,8 +38,8 @@ class StudentDashboard extends ConsumerWidget {
     final scheduleAsync = ref.watch(todayScheduleProvider);
 
     final firstName = user?.name.split(' ').first ?? 'Student';
-    final classesToday = scheduleAsync.value?.length ?? 0;
-    final profile = profileAsync.value;
+    final classesToday = scheduleAsync.valueOrNull?.length ?? 0;
+    final profile = profileAsync.valueOrNull;
 
     return LayoutBuilder(
         builder: (context, constraints) {
