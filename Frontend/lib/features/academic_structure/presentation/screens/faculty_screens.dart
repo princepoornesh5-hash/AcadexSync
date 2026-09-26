@@ -8,11 +8,13 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_data_table.dart';
 import '../../../../core/presentation/widgets/acadex_search_bar.dart';
-import '../../../../core/presentation/widgets/acadex_empty_state.dart';
 import '../../../../core/presentation/widgets/acadex_form_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../providers/academic_providers.dart';
+import '../providers/department_setup_provider.dart';
 import '../../domain/models/academic_models.dart';
 import '../widgets/faculty_assignment_dialog.dart';
 import '../widgets/import_data_dialog.dart';
@@ -168,7 +170,7 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
             searchHint: "Search faculty by name, ID, or department...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
             onActionTap: () => context.push('/academics/faculty/new'),
-            actionLabel: "Provision Faculty",
+            actionLabel: "Add Faculty",
           ),
           const SizedBox(height: 8),
           // Filter Chips
@@ -208,21 +210,28 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : facultyAsync.error != null
                     ? Center(
-                        child: Text(
-                          "Error: ${facultyAsync.error}",
-                          style: const TextStyle(color: AcadexColors.error),
+                        child: AcadexErrorState.fromError(
+                          error: facultyAsync.error,
+                          title: "Unable to load faculty",
+                          onRetry: () => ref.read(facultyProvider(null).notifier).refresh(),
                         ),
                       )
                     : filteredItems.isEmpty
-                        ? AcadexEmptyState(
-                            title: "No Faculty Found",
-                            subtitle: _searchQuery.isNotEmpty
-                                ? "No faculty members match '$_searchQuery'."
-                                : "Provision faculty members to allocate courses and manage curriculum.",
-                            icon: LucideIcons.graduationCap,
-                            actionLabel: "Provision Faculty",
-                            onActionTap: () => context.push('/academics/faculty/new'),
-                          )
+                        ? (facultyAsync.items.isEmpty
+                            ? AcadexEmptyState(
+                                title: "No faculty members have been added yet.",
+                                subtitle: "Add faculty members to allocate courses and manage teaching assignments.",
+                                icon: LucideIcons.graduationCap,
+                                actionLabel: "Add Faculty",
+                                onActionTap: () => context.push('/academics/faculty/new'),
+                              )
+                            : AcadexEmptyState.filterEmpty(
+                                filterSummary: _searchQuery.isNotEmpty ? "query '$_searchQuery'" : "selected filter",
+                                onClearFilters: () => setState(() {
+                                  _searchQuery = '';
+                                  _filter = 'all';
+                                }),
+                              ))
                         : isMobile
                             ? _buildMobileList(filteredItems, deptMap, allAssignments, isDark)
                             : _buildDesktopTable(filteredItems, deptMap, allAssignments),
@@ -673,12 +682,9 @@ class FacultyActivationResultDialog extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: result.activationCode));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Activation code copied to clipboard'),
-                          backgroundColor: AcadexColors.success,
-                          duration: Duration(seconds: 2),
-                        ),
+                      AcadexSnackBar.showSuccess(
+                        context,
+                        'Activation code copied to clipboard',
                       );
                     },
                     icon: const Icon(LucideIcons.copy, size: 16),
@@ -744,7 +750,8 @@ class FacultyActivationResultDialog extends StatelessWidget {
 
 class FacultyFormScreen extends ConsumerStatefulWidget {
   final String? id;
-  const FacultyFormScreen({super.key, this.id});
+  final String? initialDepartmentId;
+  const FacultyFormScreen({super.key, this.id, this.initialDepartmentId});
 
   @override
   ConsumerState<FacultyFormScreen> createState() => _FacultyFormScreenState();
@@ -769,6 +776,7 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedDepartmentId = widget.initialDepartmentId;
     _nameCtrl = TextEditingController();
     _instituteIdCtrl = TextEditingController();
     _emailCtrl = TextEditingController();
@@ -780,6 +788,17 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
 
     if (widget.id != null) {
       _loadExistingFaculty();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final authState = ref.read(authProvider);
+        if (authState is AuthAuthenticated && authState.user.role == AppRole.hod) {
+          if (authState.user.departmentId != null && authState.user.departmentId!.isNotEmpty) {
+            setState(() {
+              _selectedDepartmentId = authState.user.departmentId;
+            });
+          }
+        }
+      });
     }
   }
 
@@ -813,8 +832,10 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load faculty: $e'), backgroundColor: AcadexColors.warning),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to load faculty details',
         );
       }
     } finally {
@@ -825,11 +846,9 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedDepartmentId == null || _selectedDepartmentId!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a department for this faculty member'),
-          backgroundColor: AcadexColors.warning,
-        ),
+      AcadexSnackBar.showWarning(
+        context,
+        'Please select a department for this faculty member',
       );
       return;
     }
@@ -887,20 +906,21 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
 
         await ref.read(academicRepositoryProvider).updateFaculty(updatedFaculty);
         ref.invalidate(facultyProvider(null));
+        ref.invalidate(facultyByIdProvider(widget.id!));
+        ref.invalidate(facultySummaryProvider(widget.id!));
+        if (_selectedDepartmentId != null) {
+          ref.invalidate(facultyProvider(_selectedDepartmentId));
+          ref.invalidate(departmentSetupProvider(_selectedDepartmentId!));
+        }
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Faculty profile updated successfully'), backgroundColor: AcadexColors.success),
-          );
+          AcadexSnackBar.showSuccess(context, 'Faculty profile updated successfully.');
           context.safePop(fallbackRoute: '/academics/faculty');
         }
       }
     } catch (e) {
       if (mounted) {
-        final errorMsg = e.toString().replaceAll('Exception: ', '');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg), backgroundColor: AcadexColors.warning),
-        );
+        AcadexSnackBar.showError(context, e);
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -913,14 +933,16 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
     final departmentsAsync = ref.watch(departmentsProvider);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => context.safePop(fallbackRoute: '/academics/faculty'),
         ),
         title: Text(
-          isEdit ? "Edit Faculty Profile" : "Provision Faculty Account",
+          isEdit ? "Edit Faculty" : "Add Faculty",
           style: AcadexTypography.body(color: Theme.of(context).colorScheme.onSurface).copyWith(fontWeight: FontWeight.bold),
         ),
       ),
@@ -1125,10 +1147,10 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
                               : const Icon(LucideIcons.userPlus, size: 18),
                           label: Text(
                             _isSubmitting
-                                ? "Provisioning..."
+                                ? (isEdit ? "Saving..." : "Adding Faculty...")
                                 : isEdit
                                     ? "Save Changes"
-                                    : "Provision Faculty",
+                                    : "Add Faculty",
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),

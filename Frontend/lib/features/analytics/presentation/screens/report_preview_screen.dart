@@ -142,7 +142,7 @@ class ReportPreviewScreen extends ConsumerWidget {
 
     // Standalone — wrap in Scaffold with AppBar
     return Scaffold(
-      backgroundColor: DashboardColors.background,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text('Report Preview', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: DashboardColors.textPrimary)),
         backgroundColor: DashboardColors.surface,
@@ -168,22 +168,24 @@ class ReportPreviewScreen extends ConsumerWidget {
       child: Row(
         children: [
           Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Excel export is not implemented yet')));
-              },
-              icon: const Icon(LucideIcons.fileSpreadsheet),
-              label: const Text('Export Excel'),
+            child: Tooltip(
+              message: 'Excel export will be available in an upcoming release',
+              child: OutlinedButton.icon(
+                onPressed: null,
+                icon: const Icon(LucideIcons.fileSpreadsheet),
+                label: const Text('Export Excel'),
+              ),
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('PDF generation is not implemented yet')));
-              },
-              icon: const Icon(LucideIcons.fileText),
-              label: const Text('Export PDF'),
+            child: Tooltip(
+              message: 'PDF report generation will be available in an upcoming release',
+              child: ElevatedButton.icon(
+                onPressed: null,
+                icon: const Icon(LucideIcons.fileText),
+                label: const Text('Export PDF'),
+              ),
             ),
           ),
         ],

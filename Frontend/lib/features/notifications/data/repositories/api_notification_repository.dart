@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/errors/acadex_error.dart';
 import '../../../../features/auth/domain/models/user_model.dart';
 import '../../domain/models/notification_models.dart';
 import '../../domain/models/announcement_model.dart';
@@ -14,19 +15,8 @@ class ApiNotificationRepository implements NotificationRepository {
   ApiNotificationRepository({ApiClient? apiClient})
       : _apiClient = apiClient ?? ApiClient();
 
-  Exception _extractError(DioException e, String fallback) {
-    final errData = e.response?.data;
-    String? message;
-    if (errData is Map) {
-      if (errData['error'] is Map) {
-        message = errData['error']['message']?.toString();
-      } else if (errData['error'] is String) {
-        message = errData['error'] as String;
-      }
-      message ??= errData['message']?.toString();
-    }
-    message ??= e.message ?? fallback;
-    return Exception(message);
+  AcadexException _extractError(DioException e, String fallback) {
+    return AcadexException.fromDio(e, context: fallback);
   }
 
   /// Fetches a page of notifications from the backend API.

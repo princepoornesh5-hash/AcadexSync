@@ -30,7 +30,7 @@ class MyAssignmentsScreen extends ConsumerWidget {
     final students = studentsState.items;
 
     return AcadexPageContainer(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         maxWidth: 1400,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -12,6 +12,7 @@ import '../../../../core/providers/pagination_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../dashboard/presentation/providers/dashboard_providers.dart';
 import '../../../reports/presentation/providers/reports_providers.dart';
+import 'department_setup_provider.dart';
 
 final firebaseAcademicRepositoryProvider = Provider<AcademicRepository>((ref) {
   final firestoreService = ref.watch(firestoreServiceProvider);
@@ -232,22 +233,46 @@ class CourseNotifier extends AutoDisposeAsyncNotifier<List<Course>> {
   Future<void> addCourse(Course course) async {
     await ref.read(academicRepositoryProvider).addCourse(course);
     ref.invalidateSelf();
+    if (course.departmentId.isNotEmpty) {
+      ref.invalidate(departmentSetupProvider(course.departmentId));
+      ref.invalidate(departmentSummaryProvider(course.departmentId));
+    }
+    if (course.collegeId.isNotEmpty) {
+      ref.invalidate(collegeSummaryProvider(course.collegeId));
+    }
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(roleDashboardReportProvider);
   }
   Future<void> updateCourse(Course course) async {
     await ref.read(academicRepositoryProvider).updateCourse(course);
     ref.invalidateSelf();
     ref.invalidate(courseByIdProvider(course.id));
+    if (course.departmentId.isNotEmpty) {
+      ref.invalidate(departmentSetupProvider(course.departmentId));
+      ref.invalidate(departmentSummaryProvider(course.departmentId));
+    }
+    if (course.collegeId.isNotEmpty) {
+      ref.invalidate(collegeSummaryProvider(course.collegeId));
+    }
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(roleDashboardReportProvider);
   }
   Future<void> toggleCourseStatus(String id, bool activate) async {
     final repo = ref.read(academicRepositoryProvider);
     await repo.updateCourseStatus(id, activate);
     ref.invalidateSelf();
     ref.invalidate(courseByIdProvider(id));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> deactivateCourse(String id) async {
     await ref.read(academicRepositoryProvider).deactivateCourse(id);
     ref.invalidateSelf();
     ref.invalidate(courseByIdProvider(id));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
 }
 final coursesProvider = AsyncNotifierProvider.autoDispose<CourseNotifier, List<Course>>(CourseNotifier.new);
@@ -268,12 +293,14 @@ class AcademicYearNotifier extends AutoDisposeAsyncNotifier<List<AcademicYear>> 
     await ref.read(academicRepositoryProvider).addAcademicYear(academicYear);
     ref.invalidateSelf();
     ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> updateAcademicYear(AcademicYear academicYear) async {
     await ref.read(academicRepositoryProvider).updateAcademicYear(academicYear);
     ref.invalidateSelf();
     ref.invalidate(academicYearByIdProvider(academicYear.id));
     ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> setAsCurrent(String id) async {
     final repo = ref.read(academicRepositoryProvider);
@@ -281,6 +308,7 @@ class AcademicYearNotifier extends AutoDisposeAsyncNotifier<List<AcademicYear>> 
     ref.invalidateSelf();
     ref.invalidate(academicYearByIdProvider(id));
     ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> toggleStatus(String id, bool activate) async {
     final repo = ref.read(academicRepositoryProvider);
@@ -288,18 +316,21 @@ class AcademicYearNotifier extends AutoDisposeAsyncNotifier<List<AcademicYear>> 
     ref.invalidateSelf();
     ref.invalidate(academicYearByIdProvider(id));
     ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> deactivateAcademicYear(String id) async {
     await ref.read(academicRepositoryProvider).deactivateAcademicYear(id);
     ref.invalidateSelf();
     ref.invalidate(academicYearByIdProvider(id));
     ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> activateAcademicYear(String collegeId, String academicYearId) async {
     await ref.read(academicRepositoryProvider).activateAcademicYear(collegeId, academicYearId);
     ref.invalidateSelf();
     ref.invalidate(academicYearByIdProvider(academicYearId));
     ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
 }
 final academicYearsProvider = AsyncNotifierProvider.autoDispose<AcademicYearNotifier, List<AcademicYear>>(AcademicYearNotifier.new);
@@ -319,38 +350,68 @@ class SemesterNotifier extends AutoDisposeAsyncNotifier<List<Semester>> {
   Future<void> addSemester(Semester semester) async {
     await ref.read(academicRepositoryProvider).addSemester(semester);
     ref.invalidateSelf();
+    if (semester.departmentId.isNotEmpty) {
+      ref.invalidate(departmentSetupProvider(semester.departmentId));
+      ref.invalidate(departmentSummaryProvider(semester.departmentId));
+    }
+    if (semester.courseId.isNotEmpty) {
+      ref.invalidate(currentSemesterProvider(semester.courseId));
+      ref.invalidate(semestersByCourseProvider(semester.courseId));
+    }
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> updateSemester(Semester semester) async {
     await ref.read(academicRepositoryProvider).updateSemester(semester);
     ref.invalidateSelf();
     ref.invalidate(semesterByIdProvider(semester.id));
+    if (semester.departmentId.isNotEmpty) {
+      ref.invalidate(departmentSetupProvider(semester.departmentId));
+      ref.invalidate(departmentSummaryProvider(semester.departmentId));
+    }
+    if (semester.courseId.isNotEmpty) {
+      ref.invalidate(currentSemesterProvider(semester.courseId));
+      ref.invalidate(semestersByCourseProvider(semester.courseId));
+    }
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> toggleStatus(String id, bool activate) async {
     final repo = ref.read(academicRepositoryProvider);
     await repo.updateSemesterStatus(id, activate);
     ref.invalidateSelf();
     ref.invalidate(semesterByIdProvider(id));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> toggleCurrent(String id, bool isCurrent) async {
     final repo = ref.read(academicRepositoryProvider);
     await repo.toggleSemesterCurrent(id, isCurrent);
     ref.invalidateSelf();
     ref.invalidate(semesterByIdProvider(id));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> deactivateSemester(String id) async {
     await ref.read(academicRepositoryProvider).deactivateSemester(id);
     ref.invalidateSelf();
     ref.invalidate(semesterByIdProvider(id));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> activateSemester(String collegeId, String courseId, String semesterId) async {
     await ref.read(academicRepositoryProvider).activateSemester(collegeId, courseId, semesterId);
     ref.invalidateSelf();
     ref.invalidate(semesterByIdProvider(semesterId));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> completeSemester(String semesterId) async {
     await ref.read(academicRepositoryProvider).completeSemester(semesterId);
     ref.invalidateSelf();
     ref.invalidate(semesterByIdProvider(semesterId));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
 }
 final semestersProvider = AsyncNotifierProvider.autoDispose<SemesterNotifier, List<Semester>>(SemesterNotifier.new);
@@ -370,39 +431,66 @@ class SectionNotifier extends AutoDisposeAsyncNotifier<List<Section>> {
   Future<void> addSection(Section section) async {
     await ref.read(academicRepositoryProvider).addSection(section);
     ref.invalidateSelf();
+    if (section.departmentId.isNotEmpty) {
+      ref.invalidate(departmentSetupProvider(section.departmentId));
+    }
+    if (section.collegeId.isNotEmpty) {
+      ref.invalidate(collegeCapacityUtilizationProvider(section.collegeId));
+    }
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> updateSection(Section section) async {
     await ref.read(academicRepositoryProvider).updateSection(section);
     ref.invalidateSelf();
     ref.invalidate(sectionByIdProvider(section.id));
+    if (section.departmentId.isNotEmpty) {
+      ref.invalidate(departmentSetupProvider(section.departmentId));
+    }
+    if (section.collegeId.isNotEmpty) {
+      ref.invalidate(collegeCapacityUtilizationProvider(section.collegeId));
+    }
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> toggleStatus(String id, bool activate) async {
     final repo = ref.read(academicRepositoryProvider);
     await repo.updateSectionStatus(id, activate);
     ref.invalidateSelf();
     ref.invalidate(sectionByIdProvider(id));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
   Future<void> updateSectionCapacity(String sectionId, int newCapacity) async {
     await ref.read(academicRepositoryProvider).updateSectionCapacity(sectionId, newCapacity);
     ref.invalidateSelf();
     ref.invalidate(sectionByIdProvider(sectionId));
+    ref.invalidate(sectionCapacityInfoProvider(sectionId));
   }
   Future<void> transferStudents(List<String> studentIds, String targetSectionId) async {
     await ref.read(academicRepositoryProvider).transferStudentsSection(studentIds: studentIds, targetSectionId: targetSectionId);
     ref.invalidateSelf();
     ref.invalidate(sectionByIdProvider(targetSectionId));
+    ref.invalidate(sectionStudentCountProvider(targetSectionId));
+    ref.invalidate(sectionCapacityInfoProvider(targetSectionId));
+    ref.invalidate(studentsBySectionProvider(targetSectionId));
     ref.invalidate(studentsProvider);
   }
   Future<void> executeBulkTransfer(List<String> studentIds, String targetSectionId) async {
     await ref.read(academicRepositoryProvider).executeBulkSectionTransfer(studentIds: studentIds, targetSectionId: targetSectionId);
     ref.invalidateSelf();
     ref.invalidate(sectionByIdProvider(targetSectionId));
+    ref.invalidate(sectionStudentCountProvider(targetSectionId));
+    ref.invalidate(sectionCapacityInfoProvider(targetSectionId));
+    ref.invalidate(studentsBySectionProvider(targetSectionId));
     ref.invalidate(studentsProvider);
   }
   Future<void> deactivateSection(String id) async {
     await ref.read(academicRepositoryProvider).deactivateSection(id);
     ref.invalidateSelf();
     ref.invalidate(sectionByIdProvider(id));
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
 }
 final sectionsProvider = AsyncNotifierProvider.autoDispose<SectionNotifier, List<Section>>(SectionNotifier.new);
@@ -422,6 +510,15 @@ class SubjectNotifier extends AutoDisposeAsyncNotifier<List<Subject>> {
   Future<void> addSubject(Subject subject) async {
     await ref.read(academicRepositoryProvider).addSubject(subject);
     ref.invalidateSelf();
+    if (subject.departmentId.isNotEmpty) {
+      ref.invalidate(departmentSetupProvider(subject.departmentId));
+    }
+    if (subject.courseId.isNotEmpty) {
+      ref.invalidate(subjectsByCourseProvider(subject.courseId));
+    }
+    if (subject.semesterId.isNotEmpty) {
+      ref.invalidate(subjectsForSemesterProvider(subject.semesterId));
+    }
     ref.invalidate(collegeAdminStatsProvider);
     ref.invalidate(hodStatsProvider);
   }
@@ -429,6 +526,15 @@ class SubjectNotifier extends AutoDisposeAsyncNotifier<List<Subject>> {
     await ref.read(academicRepositoryProvider).updateSubject(subject);
     ref.invalidateSelf();
     ref.invalidate(subjectByIdProvider(subject.id));
+    if (subject.departmentId.isNotEmpty) {
+      ref.invalidate(departmentSetupProvider(subject.departmentId));
+    }
+    if (subject.courseId.isNotEmpty) {
+      ref.invalidate(subjectsByCourseProvider(subject.courseId));
+    }
+    if (subject.semesterId.isNotEmpty) {
+      ref.invalidate(subjectsForSemesterProvider(subject.semesterId));
+    }
     ref.invalidate(collegeAdminStatsProvider);
     ref.invalidate(hodStatsProvider);
   }
@@ -554,8 +660,13 @@ class FacultyNotifier extends PaginationNotifier<Faculty> {
 
   @override
   Future<PaginatedResponse<Faculty>> fetchPage({DocumentSnapshot? startAfter}) {
+    String? effectiveDeptId = departmentId;
+    final authState = ref.read(auth.authProvider);
+    if (authState is AuthAuthenticated && authState.user.role == AppRole.hod) {
+      effectiveDeptId = authState.user.departmentId;
+    }
     return ref.read(academicRepositoryProvider).getPaginatedFaculty(
-      departmentId: departmentId,
+      departmentId: effectiveDeptId,
       startAfter: startAfter,
       limit: limit,
     );
@@ -582,9 +693,52 @@ class FacultyNotifier extends PaginationNotifier<Faculty> {
     ref.invalidate(facultyStatsProvider);
   }
 
+  Future<void> toggleFacultyStatus(String facultyId, bool isActive, {String? departmentId}) async {
+    final repo = ref.read(academicRepositoryProvider);
+    if (!isActive) {
+      await repo.deactivateFaculty(facultyId);
+    } else {
+      final current = await repo.getFacultyById(facultyId);
+      if (current != null) {
+        await repo.updateFaculty(current.copyWith(isActive: true, accountStatus: AccountStatus.active));
+      }
+    }
+    await refresh();
+    final deptId = departmentId ?? this.departmentId;
+    if (this.departmentId != null) {
+      ref.invalidate(facultyProvider(null));
+      if (deptId != null && deptId.isNotEmpty && deptId != this.departmentId) {
+        ref.invalidate(facultyProvider(deptId));
+      }
+    } else if (deptId != null && deptId.isNotEmpty) {
+      ref.invalidate(facultyProvider(deptId));
+    }
+    if (deptId != null && deptId.isNotEmpty) {
+      ref.invalidate(departmentSetupProvider(deptId));
+    }
+    ref.invalidate(facultyByIdProvider(facultyId));
+    ref.invalidate(facultySummaryProvider(facultyId));
+    ref.invalidate(facultyAssignmentsProvider);
+    ref.invalidate(myFacultyAssignmentsProvider);
+    ref.invalidate(departmentFacultyCountsProvider);
+    ref.invalidate(facultyStatsProvider);
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(superAdminStatsProvider);
+  }
+
   Future<ProvisionFacultyResult> provisionFaculty(ProvisionFacultyRequest request) async {
     final result = await ref.read(academicRepositoryProvider).provisionFaculty(request);
     await refresh();
+    if (request.departmentId.isNotEmpty) {
+      ref.invalidate(departmentSetupProvider(request.departmentId));
+      if (departmentId != request.departmentId) {
+        ref.invalidate(facultyProvider(request.departmentId));
+      }
+    }
+    if (departmentId != null) {
+      ref.invalidate(facultyProvider(null));
+    }
     ref.invalidate(departmentFacultyCountsProvider);
     ref.invalidate(collegeAdminStatsProvider);
     ref.invalidate(hodStatsProvider);
@@ -611,6 +765,7 @@ class FacultyProvisionNotifier extends StateNotifier<AsyncValue<ProvisionFaculty
       ref.invalidate(facultyProvider(null));
       if (request.departmentId.isNotEmpty) {
         ref.invalidate(facultyProvider(request.departmentId));
+        ref.invalidate(departmentSetupProvider(request.departmentId));
       }
       ref.invalidate(departmentFacultyCountsProvider);
       ref.invalidate(collegeAdminStatsProvider);
@@ -664,9 +819,14 @@ class StudentNotifier extends PaginationNotifier<Student> {
 
   @override
   Future<PaginatedResponse<Student>> fetchPage({DocumentSnapshot? startAfter}) {
+    String? effectiveDeptId = departmentId;
+    final authState = ref.read(auth.authProvider);
+    if (authState is AuthAuthenticated && authState.user.role == AppRole.hod) {
+      effectiveDeptId = authState.user.departmentId;
+    }
     return ref.read(academicRepositoryProvider).getPaginatedStudents(
       sectionId: sectionId,
-      departmentId: departmentId,
+      departmentId: effectiveDeptId,
       startAfter: startAfter,
       limit: limit,
     );
@@ -675,6 +835,16 @@ class StudentNotifier extends PaginationNotifier<Student> {
   Future<void> admitStudent(Student student) async {
     await ref.read(academicRepositoryProvider).admitStudent(student);
     await refresh();
+    if (student.departmentId.isNotEmpty) {
+      ref.invalidate(studentsByDepartmentProvider(student.departmentId));
+      ref.invalidate(departmentSetupProvider(student.departmentId));
+    }
+    if (student.sectionId.isNotEmpty) {
+      ref.invalidate(studentsBySectionProvider(student.sectionId));
+      ref.invalidate(sectionStudentCountProvider(student.sectionId));
+      ref.invalidate(sectionCapacityInfoProvider(student.sectionId));
+    }
+    ref.invalidate(departmentStudentCountsProvider);
     ref.invalidate(collegeAdminStatsProvider);
     ref.invalidate(hodStatsProvider);
     ref.invalidate(superAdminStatsProvider);
@@ -683,6 +853,18 @@ class StudentNotifier extends PaginationNotifier<Student> {
   Future<void> bulkAdmit(List<Student> students) async {
     await ref.read(academicRepositoryProvider).bulkAdmitStudents(students);
     await refresh();
+    final deptIds = students.map((s) => s.departmentId).where((id) => id.isNotEmpty).toSet();
+    for (final deptId in deptIds) {
+      ref.invalidate(studentsByDepartmentProvider(deptId));
+      ref.invalidate(departmentSetupProvider(deptId));
+    }
+    final sectionIds = students.map((s) => s.sectionId).where((id) => id.isNotEmpty).toSet();
+    for (final secId in sectionIds) {
+      ref.invalidate(studentsBySectionProvider(secId));
+      ref.invalidate(sectionStudentCountProvider(secId));
+      ref.invalidate(sectionCapacityInfoProvider(secId));
+    }
+    ref.invalidate(departmentStudentCountsProvider);
     ref.invalidate(collegeAdminStatsProvider);
     ref.invalidate(hodStatsProvider);
     ref.invalidate(superAdminStatsProvider);
@@ -706,6 +888,11 @@ class StudentNotifier extends PaginationNotifier<Student> {
       ref.invalidate(studentAcademicProfileProvider(id));
       ref.invalidate(studentByIdProvider(id));
     }
+    if (newSectionId.isNotEmpty) {
+      ref.invalidate(studentsBySectionProvider(newSectionId));
+      ref.invalidate(sectionStudentCountProvider(newSectionId));
+      ref.invalidate(sectionCapacityInfoProvider(newSectionId));
+    }
     ref.invalidate(collegeAdminStatsProvider);
     ref.invalidate(hodStatsProvider);
   }
@@ -719,6 +906,11 @@ class StudentNotifier extends PaginationNotifier<Student> {
     for (final id in studentIds) {
       ref.invalidate(studentAcademicProfileProvider(id));
       ref.invalidate(studentByIdProvider(id));
+    }
+    if (newSectionId.isNotEmpty) {
+      ref.invalidate(studentsBySectionProvider(newSectionId));
+      ref.invalidate(sectionStudentCountProvider(newSectionId));
+      ref.invalidate(sectionCapacityInfoProvider(newSectionId));
     }
     ref.invalidate(collegeAdminStatsProvider);
     ref.invalidate(hodStatsProvider);
@@ -743,6 +935,12 @@ class StudentNotifier extends PaginationNotifier<Student> {
       ref.invalidate(studentAcademicProfileProvider(id));
       ref.invalidate(studentByIdProvider(id));
     }
+    ref.invalidate(studentsByDepartmentProvider(targetDepartmentId));
+    ref.invalidate(departmentSetupProvider(targetDepartmentId));
+    ref.invalidate(studentsBySectionProvider(targetSectionId));
+    ref.invalidate(sectionStudentCountProvider(targetSectionId));
+    ref.invalidate(sectionCapacityInfoProvider(targetSectionId));
+    ref.invalidate(departmentStudentCountsProvider);
     ref.invalidate(collegeAdminStatsProvider);
     ref.invalidate(hodStatsProvider);
   }
@@ -779,6 +977,43 @@ class StudentNotifier extends PaginationNotifier<Student> {
       studentIds: studentIds,
     );
     await refresh();
+  }
+
+  Future<void> toggleStudentStatus(String studentId, bool isActive, {String? departmentId, String? sectionId}) async {
+    final repo = ref.read(academicRepositoryProvider);
+    if (!isActive) {
+      await repo.deactivateStudent(studentId);
+    } else {
+      final current = await repo.getStudentById(studentId);
+      if (current != null) {
+        await repo.updateStudent(current.copyWith(
+          isActive: true,
+          accountStatus: AccountStatus.active,
+          lifecycleState: StudentLifecycleState.active,
+        ));
+      }
+    }
+    await refresh();
+    ref.invalidate(studentByIdProvider(studentId));
+    ref.invalidate(studentAcademicProfileProvider(studentId));
+    ref.invalidate(studentSummaryProvider(studentId));
+    final deptId = departmentId ?? this.departmentId;
+    if (deptId != null && deptId.isNotEmpty) {
+      ref.invalidate(studentsByDepartmentProvider(deptId));
+      ref.invalidate(departmentSetupProvider(deptId));
+    }
+    final secId = sectionId ?? this.sectionId;
+    if (secId != null && secId.isNotEmpty) {
+      ref.invalidate(studentsBySectionProvider(secId));
+      ref.invalidate(sectionEnrollmentsNotifierProvider(secId));
+      ref.invalidate(sectionActiveEnrollmentCountProvider(secId));
+      ref.invalidate(sectionStudentCountProvider(secId));
+      ref.invalidate(sectionCapacityInfoProvider(secId));
+    }
+    ref.invalidate(departmentStudentCountsProvider);
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
+    ref.invalidate(superAdminStatsProvider);
   }
 }
 
@@ -839,24 +1074,46 @@ class FacultyAssignmentsNotifier extends AutoDisposeAsyncNotifier<List<FacultyAs
     await ref.read(academicRepositoryProvider).createFacultyAssignment(assignment);
     ref.invalidateSelf();
     ref.invalidate(facultyProvider(null));
+    if (assignment.departmentId.isNotEmpty) {
+      ref.invalidate(departmentSetupProvider(assignment.departmentId));
+      ref.invalidate(facultyProvider(assignment.departmentId));
+      ref.invalidate(facultyWorkloadSummariesProvider(assignment.departmentId));
+    }
+    ref.invalidate(facultyByIdProvider(assignment.facultyId));
+    ref.invalidate(facultySummaryProvider(assignment.facultyId));
+    ref.invalidate(facultyStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
 
   Future<void> updateAssignment(FacultyAssignment assignment) async {
     await ref.read(academicRepositoryProvider).createFacultyAssignment(assignment);
     ref.invalidateSelf();
     ref.invalidate(facultyProvider(null));
+    if (assignment.departmentId.isNotEmpty) {
+      ref.invalidate(departmentSetupProvider(assignment.departmentId));
+      ref.invalidate(facultyProvider(assignment.departmentId));
+      ref.invalidate(facultyWorkloadSummariesProvider(assignment.departmentId));
+    }
+    ref.invalidate(facultyByIdProvider(assignment.facultyId));
+    ref.invalidate(facultySummaryProvider(assignment.facultyId));
+    ref.invalidate(facultyStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
 
   Future<void> removeAssignment(String assignmentId) async {
     await ref.read(academicRepositoryProvider).removeFacultyAssignment(assignmentId);
     ref.invalidateSelf();
     ref.invalidate(facultyProvider(null));
+    ref.invalidate(facultyStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
 
   Future<void> deactivateAssignment(String assignmentId) async {
     await ref.read(academicRepositoryProvider).updateFacultyAssignment(assignmentId, isActive: false);
     ref.invalidateSelf();
     ref.invalidate(facultyProvider(null));
+    ref.invalidate(facultyStatsProvider);
+    ref.invalidate(hodStatsProvider);
   }
 }
 
@@ -1173,12 +1430,38 @@ class StudentEnrollmentsNotifier extends AutoDisposeFamilyAsyncNotifier<List<Stu
     );
     ref.invalidateSelf();
     ref.invalidate(sectionsProvider);
+    ref.invalidate(sectionStudentCountProvider(sectionId));
+    ref.invalidate(sectionCapacityInfoProvider(sectionId));
+    ref.invalidate(studentsBySectionProvider(sectionId));
+    ref.invalidate(studentByIdProvider(studentId));
+    ref.invalidate(studentAcademicProfileProvider(studentId));
+    ref.invalidate(studentsProvider);
+    ref.invalidate(departmentStudentCountsProvider);
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
+    final sections = ref.read(sectionsProvider).valueOrNull ?? [];
+    final sec = sections.where((s) => s.id == sectionId).firstOrNull;
+    if (sec != null && sec.departmentId.isNotEmpty) {
+      ref.invalidate(departmentSetupProvider(sec.departmentId));
+    }
   }
 
   Future<void> withdrawStudent(String enrollmentId) async {
     await ref.read(academicRepositoryProvider).deleteEnrollment(enrollmentId);
     ref.invalidateSelf();
     ref.invalidate(sectionsProvider);
+    ref.invalidate(sectionStudentCountProvider(arg));
+    ref.invalidate(sectionCapacityInfoProvider(arg));
+    ref.invalidate(studentsBySectionProvider(arg));
+    ref.invalidate(studentsProvider);
+    ref.invalidate(departmentStudentCountsProvider);
+    ref.invalidate(collegeAdminStatsProvider);
+    ref.invalidate(hodStatsProvider);
+    final sections = ref.read(sectionsProvider).valueOrNull ?? [];
+    final sec = sections.where((s) => s.id == arg).firstOrNull;
+    if (sec != null && sec.departmentId.isNotEmpty) {
+      ref.invalidate(departmentSetupProvider(sec.departmentId));
+    }
   }
 }
 

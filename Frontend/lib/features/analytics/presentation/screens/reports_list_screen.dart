@@ -99,7 +99,7 @@ class ReportsListScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
@@ -109,7 +109,7 @@ class ReportsListScreen extends ConsumerWidget {
           'Reports',
           style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white),
         ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
         iconTheme: const IconThemeData(color: Colors.white),

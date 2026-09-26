@@ -18,7 +18,18 @@ import '../widgets/faculty_assignment_dialog.dart';
 import '../utils/academic_prerequisite_guard.dart';
 
 class FacultyAssignmentsManagementScreen extends ConsumerStatefulWidget {
-  const FacultyAssignmentsManagementScreen({super.key});
+  final String? initialSubjectId;
+  final String? initialCourseId;
+  final String? initialSemesterId;
+  final String? initialSectionId;
+
+  const FacultyAssignmentsManagementScreen({
+    super.key,
+    this.initialSubjectId,
+    this.initialCourseId,
+    this.initialSemesterId,
+    this.initialSectionId,
+  });
 
   @override
   ConsumerState<FacultyAssignmentsManagementScreen> createState() => _FacultyAssignmentsManagementScreenState();
@@ -34,6 +45,15 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
   String? _filterSubjectId;
   String? _filterAcademicYearId;
   bool _filterActiveOnly = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _filterSubjectId = widget.initialSubjectId;
+    _filterCourseId = widget.initialCourseId;
+    _filterSemesterId = widget.initialSemesterId;
+    _filterSectionId = widget.initialSectionId;
+  }
 
   void _openAssignmentDialog({Faculty? faculty}) {
     final courses = ref.read(coursesProvider).valueOrNull ?? [];
@@ -55,7 +75,15 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
       return;
     }
 
-    FacultyAssignmentDialog.show(context, faculty: faculty);
+    FacultyAssignmentDialog.show(
+      context,
+      faculty: faculty,
+      initialCourseId: _filterCourseId,
+      initialSemesterId: _filterSemesterId,
+      initialSectionId: _filterSectionId,
+      initialSubjectId: _filterSubjectId,
+      initialAcademicYearId: _filterAcademicYearId,
+    );
   }
 
   @override
@@ -113,10 +141,12 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
       return true;
     }).toList();
 
+    final isMobile = AcadexBreakpoints.isMobile(context);
+
     return AcadexPageContainer(
         backgroundColor: Colors.transparent,
         maxWidth: 1600,
-        scrollable: false,
+        scrollable: isMobile,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -518,13 +548,27 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
 
                   if (filtered.isEmpty) {
                     return Center(
-                      child: AcadexEmptyState(
-                        title: "No Assignments Found",
-                        subtitle: "No active faculty assignments match the current filter criteria.",
-                        icon: LucideIcons.userCheck,
-                        actionLabel: "Assign Faculty",
-                        onActionTap: () => _openAssignmentDialog(),
-                      ),
+                      child: allAssignments.isEmpty
+                          ? AcadexEmptyState(
+                              title: "No faculty assignments yet.",
+                              subtitle: "Assign faculty members to subjects and sections to start academic scheduling.",
+                              icon: LucideIcons.userCheck,
+                              actionLabel: "Assign Faculty",
+                              onActionTap: () => _openAssignmentDialog(),
+                            )
+                          : AcadexEmptyState.filterEmpty(
+                              title: "No assignments match criteria",
+                              subtitle: "Try adjusting search or filters to see all faculty assignments.",
+                              onClearFilters: () => setState(() {
+                                _searchQuery = '';
+                                _filterDepartmentId = isHod ? currentUser?.departmentId : null;
+                                _filterCourseId = null;
+                                _filterSemesterId = null;
+                                _filterSectionId = null;
+                                _filterFacultyId = null;
+                                _filterSubjectId = null;
+                              }),
+                            ),
                     );
                   }
 

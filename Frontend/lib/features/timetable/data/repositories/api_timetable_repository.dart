@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/errors/acadex_error.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../domain/models/timetable_models.dart';
 import '../../domain/models/calendar_override.dart';
@@ -20,19 +22,8 @@ class ApiTimetableRepository implements TimetableRepository {
 
   ApiTimetableRepository([ApiClient? client]) : _client = client ?? apiClient;
 
-  Exception _extractError(DioException e, String fallback) {
-    final errData = e.response?.data;
-    String? message;
-    if (errData is Map) {
-      if (errData['error'] is Map) {
-        message = errData['error']['message']?.toString();
-      } else if (errData['error'] is String) {
-        message = errData['error'] as String;
-      }
-      message ??= errData['message']?.toString();
-    }
-    message ??= e.message ?? fallback;
-    return Exception(message);
+  AcadexException _extractError(DioException e, String fallback) {
+    return AcadexException.fromDio(e, context: fallback);
   }
 
   // =========================================================================
@@ -126,8 +117,8 @@ class ApiTimetableRepository implements TimetableRepository {
       if (e.response?.statusCode == 404) return [];
       throw _extractError(e, 'Failed to fetch timetable schedule');
     } catch (e) {
-      if (e is Exception) rethrow;
-      throw Exception('Error loading timetable: $e');
+      if (e is AcadexException) rethrow;
+      throw AcadexException.fromError(e, fallback: 'Unable to load timetable');
     }
   }
 
@@ -575,17 +566,63 @@ class ApiTimetableRepository implements TimetableRepository {
 
   @override
   Future<void> createEntry(TimetableModel entry) async {
-    throw UnimplementedError('Individual entry creation deprecated. Use container authoring.');
+    final timetableId = entry.timetableId;
+    if (timetableId == null || timetableId.isEmpty) {
+      throw ArgumentError('Cannot schedule class entry without an authoritative parent timetableId container reference.');
+    }
+    final gridEntry = TimetableGridEntryModel(
+      id: entry.id.isNotEmpty ? entry.id : const Uuid().v4(),
+      dayOfWeek: entry.dayOfWeek,
+      startPeriodIndex: 1,
+      periodSpan: 1,
+      startTime: entry.startTime,
+      endTime: entry.endTime,
+      subjectId: entry.subjectId,
+      facultyId: entry.facultyId,
+      facultyAssignmentId: entry.facultyAssignmentId,
+      roomId: entry.roomId,
+      roomNumber: entry.roomNumber,
+      building: entry.building,
+      sessionType: entry.sessionType,
+      isSubstituted: entry.isSubstituted,
+    );
+    await saveGridEntry(timetableId, gridEntry);
   }
 
   @override
   Future<void> updateEntry(TimetableModel entry) async {
-    throw UnimplementedError('Individual entry update deprecated. Use container authoring.');
+    final timetableId = entry.timetableId;
+    if (timetableId == null || timetableId.isEmpty) {
+      throw ArgumentError('Cannot update timetable entry without an authoritative parent timetableId container reference.');
+    }
+    final gridEntry = TimetableGridEntryModel(
+      id: entry.id,
+      dayOfWeek: entry.dayOfWeek,
+      startPeriodIndex: 1,
+      periodSpan: 1,
+      startTime: entry.startTime,
+      endTime: entry.endTime,
+      subjectId: entry.subjectId,
+      facultyId: entry.facultyId,
+      facultyAssignmentId: entry.facultyAssignmentId,
+      roomId: entry.roomId,
+      roomNumber: entry.roomNumber,
+      building: entry.building,
+      sessionType: entry.sessionType,
+      isSubstituted: entry.isSubstituted,
+    );
+    await saveGridEntry(timetableId, gridEntry);
   }
 
   @override
   Future<void> deleteEntry(String entryId) async {
-    throw UnimplementedError('Individual entry delete deprecated. Use container authoring.');
+    // Find container owning this entry in cached map
+    for (final entry in _gridEntries.entries) {
+      if (entry.value.any((e) => e.id == entryId)) {
+        await deleteGridEntry(entry.key, entryId);
+        return;
+      }
+    }
   }
 
   @override

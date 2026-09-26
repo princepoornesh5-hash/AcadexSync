@@ -311,6 +311,33 @@ describe('ACADEX — HOD Academic Foundation Integration Tests (Prompt 1 of 6)',
     expect(resList.body.data.items[0].name).toBe('2026–27');
   });
 
+  it('5b. HOD can create and update Academic Year within own college', async () => {
+    const resHodCreate = await request(app)
+      .post('/api/v1/academics/academic-years')
+      .set(hodA1Header)
+      .send({
+        name: '2027–28',
+        startDate: '2027-06-01T00:00:00.000Z',
+        endDate: '2028-05-31T23:59:59.000Z',
+        isCurrent: false,
+      });
+
+    expect(resHodCreate.status).toBe(201);
+    expect(resHodCreate.body.data.name).toBe('2027–28');
+    const createdYearId = resHodCreate.body.data.id;
+
+    // HOD can update the academic year (e.g. set current or update name)
+    const resHodUpdate = await request(app)
+      .put(`/api/v1/academics/academic-years/${createdYearId}`)
+      .set(hodA1Header)
+      .send({
+        isCurrent: true,
+      });
+
+    expect(resHodUpdate.status).toBe(200);
+    expect(resHodUpdate.body.data.isCurrent).toBe(true);
+  });
+
   // =========================================================================
   // SCENARIO 6: Invalid/duplicate Academic Year behavior follows domain rules
   // =========================================================================

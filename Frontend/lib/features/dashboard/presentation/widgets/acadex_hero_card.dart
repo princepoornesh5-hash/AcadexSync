@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../auth/domain/models/auth_state.dart';
-import '../../../auth/domain/models/role_enum.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 
 /// Standardized Hero / Priority card used across all role dashboards.
-/// For Super Admin, adopts the Deep Action Blue (#003366) / Primary Action Blue (#0066CC) hierarchy.
-class AcadexHeroCard extends ConsumerWidget {
+class AcadexHeroCard extends StatelessWidget {
   final String eyebrow;
   final Widget? badge;
   final String title;
@@ -36,23 +31,15 @@ class AcadexHeroCard extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isMobile = AcadexBreakpoints.isMobile(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final authState = ref.watch(authProvider);
-    final isGradientRole = authState is AuthAuthenticated &&
-        (authState.user.role == AppRole.superAdmin ||
-            authState.user.role == AppRole.collegeAdmin ||
-            authState.user.role == AppRole.hod ||
-            authState.user.role == AppRole.faculty ||
-            authState.user.role == AppRole.student);
-
-    final accentColor = isGradientRole ? AcadexColors.superAdminDeepAction : AcadexColors.primary;
-    final iconBgColor = isGradientRole ? AcadexColors.superAdminSoftAction : AcadexColors.primaryLight;
-    final iconFgColor = isGradientRole ? AcadexColors.superAdminPrimaryAction : AcadexColors.primary;
-    final primaryBtnBg = isGradientRole ? AcadexColors.superAdminDeepAction : AcadexColors.primary;
-    final secondaryBtnBorder = isGradientRole ? AcadexColors.superAdminPrimaryAction : AcadexColors.border;
-    final secondaryBtnText = isGradientRole ? AcadexColors.superAdminDeepAction : AcadexColors.ink;
+    final accentColor = AcadexColors.primary;
+    const iconBgColor = AcadexColors.primaryLight;
+    const iconFgColor = AcadexColors.primary;
+    const primaryBtnBg = AcadexColors.primary;
+    const secondaryBtnBorder = AcadexColors.border;
+    const secondaryBtnText = AcadexColors.ink;
 
     return Container(
       width: double.infinity,

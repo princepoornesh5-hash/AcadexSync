@@ -6,7 +6,6 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_data_table.dart';
 import '../../../../core/presentation/widgets/acadex_search_bar.dart';
-import '../../../../core/presentation/widgets/acadex_empty_state.dart';
 import '../../../../core/presentation/widgets/acadex_form_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
@@ -15,6 +14,8 @@ import '../../domain/models/academic_models.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 
 class CollegeListScreen extends ConsumerStatefulWidget {
   const CollegeListScreen({super.key});
@@ -53,20 +54,17 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
               try {
                 await ref.read(collegesProvider.notifier).deleteCollegePermanently(college.id);
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('College "${college.name}" deleted permanently'),
-                      backgroundColor: AcadexColors.success,
-                    ),
+                  AcadexSnackBar.showSuccess(
+                    context,
+                    'College "${college.name}" deleted permanently',
                   );
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to delete college: $e'),
-                      backgroundColor: AcadexColors.error,
-                    ),
+                  AcadexSnackBar.showError(
+                    context,
+                    e,
+                    fallbackMessage: 'Failed to delete college',
                   );
                 }
               }
@@ -134,8 +132,10 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
           Expanded(
             child: collegesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(
-                child: Text("Error: $err", style: const TextStyle(color: AcadexColors.error)),
+              error: (err, stack) => AcadexErrorState.fromError(
+                error: err,
+                title: "Unable to load colleges",
+                onRetry: () => ref.invalidate(collegesProvider),
               ),
               data: (colleges) {
                 final filtered = colleges.where((c) {
@@ -151,11 +151,21 @@ class _CollegeListScreenState extends ConsumerState<CollegeListScreen> {
                 }).toList();
 
                 if (filtered.isEmpty) {
+                  if (colleges.isNotEmpty) {
+                    return AcadexEmptyState.filterEmpty(
+                      title: "No colleges match criteria",
+                      subtitle: "Try clearing search or filters to see all colleges.",
+                      onClearFilters: () {
+                        setState(() {
+                          _searchQuery = '';
+                          _statusFilter = 'all';
+                        });
+                      },
+                    );
+                  }
                   return AcadexEmptyState(
                     title: "No Colleges Found",
-                    subtitle: _searchQuery.isNotEmpty
-                        ? "No colleges match '$_searchQuery'."
-                        : "Get started by adding the first college.",
+                    subtitle: "Get started by adding the first college.",
                     icon: LucideIcons.building,
                     actionLabel: "Add College",
                     onActionTap: () => context.push('/academics/colleges/new'),
@@ -393,11 +403,10 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading college: $e'),
-            backgroundColor: AcadexColors.error,
-          ),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to load college details',
         );
       }
     } finally {
@@ -443,23 +452,20 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text((_existing == null && widget.collegeId == null)
-                ? 'College created successfully'
-                : 'College updated successfully'),
-            backgroundColor: AcadexColors.success,
-          ),
+        AcadexSnackBar.showSuccess(
+          context,
+          (_existing == null && widget.collegeId == null)
+              ? 'College created successfully'
+              : 'College updated successfully',
         );
         context.safePop(fallbackRoute: '/academics/colleges');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: AcadexColors.error,
-          ),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to save college',
         );
       }
     } finally {
@@ -471,7 +477,9 @@ class _CollegeFormScreenState extends ConsumerState<CollegeFormScreen> {
   Widget build(BuildContext context) {
     final isEdit = widget.collegeId != null;
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface),

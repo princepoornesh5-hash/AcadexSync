@@ -910,7 +910,45 @@ class MockAcademicRepository implements AcademicRepository {
 
   @override
   Future<ProvisionFacultyResult> provisionFaculty(ProvisionFacultyRequest request) async {
-    throw UnimplementedError('Faculty provisioning is only handled via ApiAcademicRepository in production');
+    await _delay();
+    final dept = _departments.firstWhere((d) => d.id == request.departmentId, orElse: () => throw Exception("Invalid Department"));
+    _validateScope(dept.collegeId, dept.id);
+    final id = 'f_${_faculty.length + 1}';
+    final faculty = Faculty(
+      id: id,
+      collegeId: dept.collegeId,
+      departmentId: dept.id,
+      name: request.name,
+      employeeId: request.employeeId ?? 'EMP-$id',
+      instituteId: request.instituteId,
+      email: request.email,
+      phone: request.phone ?? '',
+      designation: request.designation,
+      qualification: request.qualification,
+      specialization: request.specialization,
+      joiningDate: request.joiningDate != null ? DateTime.tryParse(request.joiningDate!) : DateTime.now(),
+      isActive: true,
+      accountStatus: AccountStatus.active,
+    );
+    _faculty.add(faculty);
+    final user = UserModel(
+      id: 'u_$id',
+      name: request.name,
+      email: request.email,
+      role: AppRole.faculty,
+      collegeId: dept.collegeId,
+      departmentId: dept.id,
+    );
+    return ProvisionFacultyResult(
+      user: user,
+      faculty: faculty,
+      invitation: InvitationInfo(
+        id: 'inv_$id',
+        status: 'pending',
+        expiresAt: DateTime.now().add(const Duration(days: 7)),
+      ),
+      activationCode: '123456',
+    );
   }
   @override
   Future<void> updateFaculty(Faculty faculty) async {
@@ -971,7 +1009,12 @@ class MockAcademicRepository implements AcademicRepository {
       final faculty = _faculty[idx];
       final dept = _departments.firstWhere((d) => d.id == faculty.departmentId);
       _validateScope(dept.collegeId, dept.id);
-      _faculty[idx] = faculty.copyWith(isActive: false);
+      _faculty[idx] = faculty.copyWith(isActive: false, accountStatus: AccountStatus.deactivated);
+      for (int i = 0; i < _facultyAssignments.length; i++) {
+        if (_facultyAssignments[i].facultyId == id && _facultyAssignments[i].isActive) {
+          _facultyAssignments[i] = _facultyAssignments[i].copyWith(isActive: false, updatedAt: DateTime.now());
+        }
+      }
     }
   }
   @override
@@ -1085,20 +1128,28 @@ class MockAcademicRepository implements AcademicRepository {
   }) async {
     await _delay();
     final index = _students.indexWhere((s) => s.id == studentId);
-    if (index != -1) {
-      _students[index] = _students[index].copyWith(
-        courseId: courseId,
-        academicYearId: academicYearId,
-        semesterId: semesterId,
-        sectionId: sectionId,
-      );
-    }
     final student = index != -1 ? _students[index] : null;
+    if (student == null || !student.isActive || student.accountStatus == AccountStatus.deactivated) {
+      throw const BackendValidationException('Student not found or inactive');
+    }
+    final isAlreadyEnrolled = _enrollments.any((e) =>
+        e.studentId == studentId &&
+        e.sectionId == sectionId &&
+        e.status == 'active');
+    if (isAlreadyEnrolled) {
+      throw const BackendValidationException('Student is already enrolled in this section.');
+    }
+    _students[index] = _students[index].copyWith(
+      courseId: courseId,
+      academicYearId: academicYearId,
+      semesterId: semesterId,
+      sectionId: sectionId,
+    );
     _enrollments.removeWhere((e) => e.studentId == studentId && e.semesterId == semesterId && e.status == 'active');
     _enrollments.add(StudentEnrollment(
       id: 'enr-${_enrollments.length + 1}',
-      collegeId: student?.collegeId ?? 'c1',
-      departmentId: student?.departmentId ?? 'd1',
+      collegeId: student.collegeId,
+      departmentId: student.departmentId,
       courseId: courseId,
       academicYearId: academicYearId,
       semesterId: semesterId,
@@ -1106,7 +1157,7 @@ class MockAcademicRepository implements AcademicRepository {
       studentId: studentId,
       status: 'active',
       enrollmentDate: enrollmentDate != null ? DateTime.tryParse(enrollmentDate) ?? DateTime.now() : DateTime.now(),
-      student: student != null ? {'id': student.id, 'name': student.name, 'rollNumber': student.rollNumber, 'email': student.email} : null,
+      student: {'id': student.id, 'name': student.name, 'rollNumber': student.rollNumber, 'email': student.email},
     ));
   }
   @override
@@ -1137,7 +1188,10 @@ class MockAcademicRepository implements AcademicRepository {
     if (index != -1) {
       final student = _students[index];
       _validateScope(student.collegeId, student.departmentId);
-      _students[index] = student.copyWith(isActive: false);
+      _students[index] = student.copyWith(
+        isActive: false,
+        accountStatus: AccountStatus.deactivated,
+      );
     }
   }
 

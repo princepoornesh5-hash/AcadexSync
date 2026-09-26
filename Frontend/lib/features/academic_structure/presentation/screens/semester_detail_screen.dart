@@ -6,6 +6,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
@@ -44,18 +46,11 @@ class SemesterDetailScreen extends ConsumerWidget {
                 await ref.read(semestersProvider.notifier).toggleCurrent(semesterId, !isCurrentlyCurrent);
                 ref.invalidate(semesterByIdProvider(semesterId));
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Semester current status updated successfully.'),
-                      backgroundColor: AcadexColors.success,
-                    ),
-                  );
+                  AcadexSnackBar.showSuccess(context, 'Semester current status updated successfully.');
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e'), backgroundColor: AcadexColors.error),
-                  );
+                  AcadexSnackBar.showError(context, e);
                 }
               }
             },
@@ -93,18 +88,11 @@ class SemesterDetailScreen extends ConsumerWidget {
                 await ref.read(semestersProvider.notifier).toggleStatus(semesterId, !isCurrentlyActive);
                 ref.invalidate(semesterByIdProvider(semesterId));
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Semester $action successful!'),
-                      backgroundColor: AcadexColors.success,
-                    ),
-                  );
+                  AcadexSnackBar.showSuccess(context, 'Semester $action successful!');
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to update status: $e'), backgroundColor: AcadexColors.error),
-                  );
+                  AcadexSnackBar.showError(context, e);
                 }
               }
             },
@@ -133,18 +121,12 @@ class SemesterDetailScreen extends ConsumerWidget {
     final bodyContent = semesterAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(LucideIcons.circleAlert, color: AcadexColors.error, size: 36),
-            const SizedBox(height: 12),
-            Text('Error loading semester: $err', style: const TextStyle(color: AcadexColors.error)),
-            const SizedBox(height: 12),
-            AcadexButton(
-              label: 'Retry',
-              onPressed: () => ref.invalidate(semesterByIdProvider(semesterId)),
-            ),
-          ],
+        child: AcadexErrorState.fromError(
+          error: err,
+          title: 'Unable to load semester',
+          onRetry: () => ref.invalidate(semesterByIdProvider(semesterId)),
+          actionLabel: 'Go Back',
+          onAction: () => context.safePop(fallbackRoute: '/academics/semesters'),
         ),
       ),
       data: (semester) {
@@ -153,7 +135,7 @@ class SemesterDetailScreen extends ConsumerWidget {
         final department = deptsMap[semester.departmentId] ?? (course != null ? deptsMap[course.departmentId] : null);
 
         return AcadexPageContainer(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.white,
           maxWidth: 960,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,9 +162,9 @@ class SemesterDetailScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),

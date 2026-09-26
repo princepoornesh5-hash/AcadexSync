@@ -113,40 +113,43 @@ class AnalyticsDateRangeSelector extends StatelessWidget {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: AcadexRadius.borderRadiusSm,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AcadexColors.primary
-              : Colors.transparent,
-          borderRadius: AcadexRadius.borderRadiusSm,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 14,
-              color: isSelected
-                  ? Colors.white
-                  : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: AcadexTypography.caption(
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AcadexRadius.borderRadiusSm,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AcadexColors.primary
+                : Colors.transparent,
+            borderRadius: AcadexRadius.borderRadiusSm,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 14,
                 color: isSelected
                     ? Colors.white
-                    : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
-              ).copyWith(
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
               ),
-            ),
-          ],
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: AcadexTypography.caption(
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                ).copyWith(
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

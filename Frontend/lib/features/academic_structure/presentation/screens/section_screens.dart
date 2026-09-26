@@ -7,15 +7,21 @@ import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../../core/presentation/widgets/acadex_data_table.dart';
 import '../../../../core/presentation/widgets/acadex_search_bar.dart';
-import '../../../../core/presentation/widgets/acadex_empty_state.dart';
 import '../../../../core/presentation/widgets/acadex_form_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../features/auth/domain/models/auth_state.dart';
 import '../../../../features/auth/domain/models/role_enum.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/errors/acadex_error.dart';
 import '../providers/academic_providers.dart';
+import '../providers/department_setup_provider.dart';
 import '../widgets/fresh_department_setup_card.dart';
+import '../widgets/setup_continuation_dialog.dart';
+import '../utils/academic_prerequisite_guard.dart';
+import '../../../../core/presentation/widgets/acadex_workflow_context_banner.dart';
 import '../../domain/models/academic_models.dart';
 
 class SectionListScreen extends ConsumerStatefulWidget {
@@ -31,6 +37,18 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
   String? _selectedCourseId;
   String? _selectedAcademicYearId;
   String? _selectedSemesterId;
+
+  void _navigateCreateSection(BuildContext context, List<Course> courses, List<Semester> semesters) {
+    final check = AcademicPrerequisiteGuard.checkSectionPrerequisites(
+      courses: courses,
+      semesters: semesters,
+    );
+    if (!check.isSatisfied) {
+      AcademicPrerequisiteGuard.showBlockerDialog(context, check);
+      return;
+    }
+    context.push('/academics/sections/new');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,14 +79,14 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const AcadexPageHeader(
-            title: "Sections & Batches",
-            subtitle: "Manage section capacity, class cohorts, and batch assignments.",
+            title: "Sections",
+            subtitle: "Manage section capacity, classroom cohorts, and academic assignments.",
           ),
           AcadexSearchFilterBar(
-            searchHint: "Search sections, courses, or terms...",
+            searchHint: "Search sections, courses, or semesters...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
-            onActionTap: () => context.push('/academics/sections/new'),
-            actionLabel: "Add Section",
+            onActionTap: () => _navigateCreateSection(context, coursesList, semsList),
+            actionLabel: "Create Section",
           ),
           const SizedBox(height: 10),
 
@@ -210,19 +228,10 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
           Expanded(
             child: sectionsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("Error: $err", style: const TextStyle(color: AcadexColors.error)),
-                    const SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      icon: const Icon(LucideIcons.refreshCw, size: 16),
-                      label: const Text("Retry"),
-                      onPressed: () => ref.invalidate(sectionsProvider),
-                    ),
-                  ],
-                ),
+              error: (err, stack) => AcadexErrorState.fromError(
+                error: err,
+                title: "Unable to load sections",
+                onRetry: () => ref.invalidate(sectionsProvider),
               ),
               data: (sections) {
                 // If department has no sections at all, show guided roadmap
@@ -232,7 +241,7 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
                       currentStep: AcademicSetupStep.course,
                       actionLabel: "Create Course",
                       onAction: () => context.push('/academics/courses/new'),
-                      customMessage: "No degree programs found. Create a course first before adding sections.",
+                      customMessage: "No courses found. Create a course first before creating sections.",
                     );
                   }
                   if (semsList.isEmpty) {
@@ -240,14 +249,14 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
                       currentStep: AcademicSetupStep.semester,
                       actionLabel: "Create Semester",
                       onAction: () => context.push('/academics/semesters/new'),
-                      customMessage: "No semesters found. Create semesters for your courses before adding sections.",
+                      customMessage: "No semesters found. Create semesters for your courses before creating sections.",
                     );
                   }
                   return FreshDepartmentSetupCard(
                     currentStep: AcademicSetupStep.section,
-                    actionLabel: "Add First Section",
+                    actionLabel: "Create First Section",
                     onAction: () => context.push('/academics/sections/new'),
-                    customMessage: "Courses and semesters are configured. Add your first class section or student batch.",
+                    customMessage: "Courses and semesters are configured. Create your first class section.",
                   );
                 }
 
@@ -268,14 +277,9 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
                 }).toList();
 
                 if (filtered.isEmpty) {
-                  return AcadexEmptyState(
-                    title: "No Sections Found",
-                    subtitle: _searchQuery.isNotEmpty
-                        ? "No sections match '$_searchQuery'."
-                        : "No sections match the selected filter criteria.",
-                    icon: LucideIcons.users,
-                    actionLabel: "Reset Filters",
-                    onActionTap: () => setState(() {
+                  return AcadexEmptyState.filterEmpty(
+                    filterSummary: _searchQuery.isNotEmpty ? "query '$_searchQuery'" : "selected filter criteria",
+                    onClearFilters: () => setState(() {
                       _searchQuery = '';
                       _selectedCourseId = null;
                       _selectedAcademicYearId = null;
@@ -293,7 +297,7 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
                     itemBuilder: (context, i) {
                       final s = filtered[i];
                       final semName = semsMap[s.semesterId] ?? 'Term';
-                      final courseName = coursesMap[s.courseId] ?? 'Program';
+                      final courseName = coursesMap[s.courseId] ?? 'Course';
 
                       return GestureDetector(
                         onTap: () => context.push('/academics/sections/${s.id}'),
@@ -363,13 +367,13 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
                                 ],
                               ),
                               const SizedBox(height: 6),
-                              Text(
-                                "Program: $courseName • Term: $semName",
-                                style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                Text(
+                                  "Course: $courseName • Semester: $semName",
+                                  style: AcadexTypography.caption(
+                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
                               const SizedBox(height: 8),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
@@ -404,7 +408,7 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
                 }
 
                 return AcadexDataTable(
-                  columns: const ["Section Name", "Program (Course)", "Semester / Term", "Seating Capacity", "Status", "Actions"],
+                  columns: const ["Section Name", "Course", "Semester", "Seating Capacity", "Status", "Actions"],
                   rows: filtered.map((s) {
                     return DataRow(
                       onSelectChanged: (_) => context.push('/academics/sections/${s.id}'),
@@ -482,7 +486,13 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
 class SectionFormScreen extends ConsumerStatefulWidget {
   final String? id;
   final String? initialCourseId;
-  const SectionFormScreen({super.key, this.id, this.initialCourseId});
+  final String? initialSemesterId;
+  const SectionFormScreen({
+    super.key,
+    this.id,
+    this.initialCourseId,
+    this.initialSemesterId,
+  });
 
   @override
   ConsumerState<SectionFormScreen> createState() => _SectionFormScreenState();
@@ -497,6 +507,7 @@ class _SectionFormScreenState extends ConsumerState<SectionFormScreen> {
 
   String? _selectedCourseId;
   String? _selectedSemesterId;
+  bool _showManualContext = false;
 
   @override
   void initState() {
@@ -504,6 +515,7 @@ class _SectionFormScreenState extends ConsumerState<SectionFormScreen> {
     _nameCtrl = TextEditingController();
     _capacityCtrl = TextEditingController(text: '60');
     _selectedCourseId = widget.initialCourseId;
+    _selectedSemesterId = widget.initialSemesterId;
 
     if (widget.id != null) {
       _loadExisting();
@@ -520,7 +532,7 @@ class _SectionFormScreenState extends ConsumerState<SectionFormScreen> {
       _selectedSemesterId = _existing!.semesterId;
       _selectedCourseId = _existing!.courseId;
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading section: $e')));
+      if (mounted) AcadexSnackBar.showError(context, e);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -534,15 +546,16 @@ class _SectionFormScreenState extends ConsumerState<SectionFormScreen> {
   }
 
   Future<void> _save() async {
+    if (_isLoading) return;
     if (!_formKey.currentState!.validate()) return;
     if (_selectedSemesterId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a Semester')));
+      AcadexSnackBar.showWarning(context, 'Please select a Semester');
       return;
     }
 
     final cap = int.tryParse(_capacityCtrl.text.trim()) ?? 60;
     if (cap <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Capacity must be greater than 0')));
+      AcadexSnackBar.showWarning(context, 'Capacity must be greater than 0');
       return;
     }
 
@@ -566,28 +579,49 @@ class _SectionFormScreenState extends ConsumerState<SectionFormScreen> {
 
       if (_existing == null) {
         await ref.read(sectionsProvider.notifier).addSection(section);
+        ref.invalidate(sectionsProvider);
+        if (section.departmentId.isNotEmpty) {
+          ref.invalidate(departmentSetupProvider(section.departmentId));
+        }
+
+        final freshSections = await ref.read(sectionsProvider.future);
+        final createdSection = freshSections.where((s) =>
+            s.semesterId == section.semesterId &&
+            s.name.toUpperCase() == section.name.toUpperCase()).firstOrNull ?? section;
+
+        if (mounted) {
+          AcadexSnackBar.showSuccess(context, 'Section created successfully.');
+
+          SetupContinuationDialog.show(
+            context,
+            title: 'Section Created Successfully',
+            entityName: 'Section ${createdSection.name}',
+            message: 'Section ${createdSection.name} is ready. Continue to define syllabus subjects for this semester.',
+            primaryActionLabel: 'Continue to Subject',
+            onContinue: () {
+              context.push(
+                '/academics/subjects/new?courseId=${createdSection.courseId}&semesterId=${createdSection.semesterId}&sectionId=${createdSection.id}',
+              );
+            },
+            secondaryActionLabel: 'Done',
+            onDone: () => context.safePop(fallbackRoute: '/academics/sections'),
+          );
+        }
       } else {
         await ref.read(sectionsProvider.notifier).updateSection(section);
         ref.invalidate(sectionByIdProvider(widget.id!));
-      }
+        if (section.departmentId.isNotEmpty) {
+          ref.invalidate(departmentSetupProvider(section.departmentId));
+        }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_existing == null ? 'Section created successfully' : 'Section updated successfully'),
-            backgroundColor: AcadexColors.success,
-          ),
-        );
-        context.safePop(fallbackRoute: '/academics/sections');
+        if (mounted) {
+          AcadexSnackBar.showSuccess(context, 'Section updated successfully.');
+          context.safePop(fallbackRoute: '/academics/sections');
+        }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: AcadexColors.error,
-          ),
-        );
+        AcadexSnackBar.showError(context, e);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -609,29 +643,31 @@ class _SectionFormScreenState extends ConsumerState<SectionFormScreen> {
         (userDepartmentId.isNotEmpty ? userDepartmentId : 'Assigned Department');
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
           onPressed: () => context.safePop(fallbackRoute: '/academics/sections'),
         ),
         title: Text(
-          isEdit ? "Edit Section" : "Add Section",
+          isEdit ? "Edit Section" : "Create Section",
           style: AcadexTypography.heading2(
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ).copyWith(fontSize: 18),
         ),
       ),
-      body: _isLoading
+      body: (isEdit && _existing == null && _isLoading)
           ? const Center(child: CircularProgressIndicator())
           : AcadexPageContainer(
               maxWidth: AcadexLayout.formMaxWidth,
               child: Form(
                 key: _formKey,
                 child: AcadexFormCard(
-                  title: "Section & Batch Information",
+                  title: isEdit ? "Edit Section" : "Section Information",
+                  isSaving: _isLoading,
+                  saveLabel: isEdit ? "Update Section" : "Create Section",
                   onCancel: () => context.safePop(fallbackRoute: '/academics/sections'),
                   onSave: _save,
                   child: Column(
@@ -666,110 +702,150 @@ class _SectionFormScreenState extends ConsumerState<SectionFormScreen> {
                         const SizedBox(height: 14),
                       ],
 
-                      // Course Selector
-                      AcadexFormField(
-                        label: "Degree Program (Course) *",
-                        child: coursesAsync.when(
-                          loading: () => const LinearProgressIndicator(),
-                          error: (e, _) => Text('Error loading courses: $e', style: const TextStyle(color: AcadexColors.error)),
-                          data: (courses) {
-                            if (courses.isEmpty) {
-                              return Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.warningLight,
-                                  borderRadius: AcadexRadius.borderRadiusMd,
-                                  border: Border.all(color: AcadexColors.warning),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text("No Courses Found", style: TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.warning)),
-                                    const SizedBox(height: 4),
-                                    const Text("You must create a course before adding a section."),
-                                    const SizedBox(height: 8),
-                                    ElevatedButton(
-                                      onPressed: () => context.push('/academics/courses/new'),
-                                      child: const Text("Create Course"),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
+                      // Contextual Header when entered with known Course / Semester
+                      Builder(builder: (context) {
+                        final hasInheritedContext = !isEdit &&
+                            widget.initialCourseId != null &&
+                            _selectedCourseId != null &&
+                            !_showManualContext;
+                        final selectedCourse = coursesAsync.valueOrNull
+                            ?.where((c) => c.id == _selectedCourseId)
+                            .firstOrNull;
+                        final selectedSemester = semestersAsync.valueOrNull
+                            ?.where((s) => s.id == _selectedSemesterId)
+                            .firstOrNull;
 
-                            return DropdownButtonFormField<String>(
-                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                              initialValue: _selectedCourseId,
-                              decoration: const InputDecoration(hintText: "Select Degree Program / Course"),
-                              validator: (v) => v == null ? 'Course is required' : null,
-                              items: courses.map((c) => DropdownMenuItem(value: c.id, child: Text("${c.name} (${c.code})"))).toList(),
-                              onChanged: isEdit
-                                  ? null
-                                  : (v) => setState(() {
-                                        _selectedCourseId = v;
-                                        _selectedSemesterId = null;
-                                      }),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Semester Selector (Filtered to selected course)
-                      AcadexFormField(
-                        label: "Semester / Academic Term *",
-                        child: semestersAsync.when(
-                          loading: () => const LinearProgressIndicator(),
-                          error: (e, _) => Text('Error loading semesters: $e', style: const TextStyle(color: AcadexColors.error)),
-                          data: (semesters) {
-                            final availableSems = _selectedCourseId == null
-                                ? semesters
-                                : semesters.where((s) => s.courseId == _selectedCourseId).toList();
-
-                            if (semesters.isEmpty) {
-                              return Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.warningLight,
-                                  borderRadius: AcadexRadius.borderRadiusMd,
-                                  border: Border.all(color: AcadexColors.warning),
+                        if (hasInheritedContext && selectedCourse != null) {
+                          return AcadexWorkflowContextBanner(
+                            targetEntityName: 'Section',
+                            contextItems: [
+                              AcadexContextItem(
+                                label: 'Course',
+                                value: '${selectedCourse.name} (${selectedCourse.code})',
+                                icon: LucideIcons.bookOpen,
+                              ),
+                              if (selectedSemester != null)
+                                AcadexContextItem(
+                                  label: 'Semester',
+                                  value: selectedSemester.name,
+                                  icon: LucideIcons.calendar,
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text("No Semesters Found", style: TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.warning)),
-                                    const SizedBox(height: 4),
-                                    const Text("You must create at least one semester before adding a section."),
-                                    const SizedBox(height: 8),
-                                    ElevatedButton(
-                                      onPressed: () => context.push('/academics/semesters/new'),
-                                      child: const Text("Create Semester"),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
+                            ],
+                            onChangeContext: () => setState(() => _showManualContext = true),
+                          );
+                        }
 
-                            return DropdownButtonFormField<String>(
-                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                              initialValue: _selectedSemesterId,
-                              decoration: const InputDecoration(hintText: "Select Semester Term"),
-                              validator: (v) => v == null ? 'Semester is required' : null,
-                              items: availableSems.map((s) => DropdownMenuItem(value: s.id, child: Text("${s.name} (Term ${s.number})"))).toList(),
-                              onChanged: isEdit
-                                  ? null
-                                  : (v) => setState(() {
-                                        _selectedSemesterId = v;
-                                        if (v != null && _selectedCourseId == null) {
-                                          final sem = semesters.firstWhere((s) => s.id == v);
-                                          _selectedCourseId = sem.courseId;
-                                        }
-                                      }),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 14),
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Course Selector
+                            AcadexFormField(
+                              label: "Course *",
+                              child: coursesAsync.when(
+                                loading: () => const LinearProgressIndicator(),
+                                error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error)),
+                                data: (courses) {
+                                  if (courses.isEmpty) {
+                                    return Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.warningLight,
+                                        borderRadius: AcadexRadius.borderRadiusMd,
+                                        border: Border.all(color: AcadexColors.warning),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text("No Courses Found", style: TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.warning)),
+                                          const SizedBox(height: 4),
+                                          const Text("You must create a course before creating a section."),
+                                          const SizedBox(height: 8),
+                                          ElevatedButton(
+                                            onPressed: () => context.push('/academics/courses/new'),
+                                            child: const Text("Create Course"),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+
+                                  return DropdownButtonFormField<String>(
+                                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                    initialValue: _selectedCourseId,
+                                    decoration: const InputDecoration(hintText: "Select Course"),
+                                    validator: (v) => v == null ? 'Course is required' : null,
+                                    items: courses.map((c) => DropdownMenuItem(value: c.id, child: Text("${c.name} (${c.code})"))).toList(),
+                                    onChanged: isEdit
+                                        ? null
+                                        : (v) => setState(() {
+                                              _selectedCourseId = v;
+                                              _selectedSemesterId = null;
+                                            }),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+
+                            // Semester Selector (Filtered to selected course)
+                            AcadexFormField(
+                              label: "Semester / Academic Term *",
+                              child: semestersAsync.when(
+                                loading: () => const LinearProgressIndicator(),
+                                error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error)),
+                                data: (semesters) {
+                                  final availableSems = _selectedCourseId == null
+                                      ? semesters
+                                      : semesters.where((s) => s.courseId == _selectedCourseId).toList();
+
+                                  if (semesters.isEmpty) {
+                                    return Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.warningLight,
+                                        borderRadius: AcadexRadius.borderRadiusMd,
+                                        border: Border.all(color: AcadexColors.warning),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text("No Semesters Found", style: TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.warning)),
+                                          const SizedBox(height: 4),
+                                          const Text("You must create at least one semester before adding a section."),
+                                          const SizedBox(height: 8),
+                                          ElevatedButton(
+                                            onPressed: () => context.push('/academics/semesters/new'),
+                                            child: const Text("Create Semester"),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+
+                                  return DropdownButtonFormField<String>(
+                                    key: ValueKey('section_sem_dropdown_$_selectedCourseId'),
+                                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                    value: _selectedSemesterId,
+                                    decoration: const InputDecoration(hintText: "Select Semester Term"),
+                                    validator: (v) => v == null ? 'Semester is required' : null,
+                                    items: availableSems.map((s) => DropdownMenuItem(value: s.id, child: Text("${s.name} (Term ${s.number})"))).toList(),
+                                    onChanged: isEdit
+                                        ? null
+                                        : (v) => setState(() {
+                                              _selectedSemesterId = v;
+                                              if (v != null && _selectedCourseId == null) {
+                                                final sem = semesters.firstWhere((s) => s.id == v);
+                                                _selectedCourseId = sem.courseId;
+                                              }
+                                            }),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                          ],
+                        );
+                      }),
 
                       // Section Name & Capacity Row
                       Row(
@@ -787,7 +863,7 @@ class _SectionFormScreenState extends ConsumerState<SectionFormScreen> {
                                   return null;
                                 },
                                 style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                                decoration: const InputDecoration(hintText: "e.g. A, B, or Batch 1"),
+                                decoration: const InputDecoration(hintText: "e.g. A, B, or C"),
                               ),
                             ),
                           ),

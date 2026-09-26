@@ -32,8 +32,9 @@ class RoleDashboardScreen extends ConsumerWidget {
       },
       child: dashboardAsync.when(
         loading: () => const AcadexLoadingState(message: 'Loading dashboard metrics...'),
-        error: (err, _) => AcadexErrorState(
-          message: err.toString(),
+        error: (err, _) => AcadexErrorState.fromError(
+          error: err,
+          title: 'Unable to load dashboard metrics',
           onRetry: () => ref.invalidate(roleDashboardReportProvider),
         ),
         data: (dashboard) {
@@ -207,7 +208,7 @@ class RoleDashboardScreen extends ConsumerWidget {
           physics: const NeverScrollableScrollPhysics(),
           children: [
             AcadexStatCard(
-              title: 'Dept Faculty',
+              title: 'Department Faculty',
               value: (m['deptFacultyCount'] ?? '12').toString(),
               subtitle: 'Assigned teachers',
               icon: Icons.person_outline,
@@ -221,7 +222,7 @@ class RoleDashboardScreen extends ConsumerWidget {
               iconColor: AcadexColors.skyInfo,
             ),
             AcadexStatCard(
-              title: 'Dept Attendance',
+              title: 'Department Attendance',
               value: '${(m['deptAttendance'] ?? 89.2)}%',
               subtitle: 'Today rate',
               icon: Icons.how_to_reg_outlined,

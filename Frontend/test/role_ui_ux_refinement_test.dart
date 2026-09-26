@@ -44,6 +44,7 @@ class _FakeFacultyAssignmentsNotifier extends FacultyAssignmentsNotifier {
 
 Widget _wrapWithApp(Widget child, {required UserModel user, List<Override> overrides = const []}) {
   return ProviderScope(
+    key: UniqueKey(),
     overrides: [
       authProvider.overrideWith((ref) => _FakeAuthNotifier(AuthAuthenticated(user: user, token: 'tok'))),
       ...overrides,
@@ -450,8 +451,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Platform Users'), findsOneWidget);
-      expect(find.text('Global Analytics'), findsOneWidget);
+      expect(find.text('People'), findsOneWidget);
+      expect(find.text('Reports'), findsOneWidget);
 
       // Test Student Drawer items (No administrative routes exposed)
       await tester.pumpWidget(
@@ -462,10 +463,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('My Timetable'), findsOneWidget);
-      expect(find.text('Study Notes'), findsOneWidget);
-      expect(find.text('Platform Users'), findsNothing);
-      expect(find.text('Global Analytics'), findsNothing);
+      expect(find.text('Timetable'), findsOneWidget);
+      expect(find.text('Notes'), findsOneWidget);
+      expect(find.text('People'), findsNothing);
+      expect(find.text('Reports'), findsNothing);
 
       // Test Student Bottom Nav (5 concise student-friendly destinations)
       await tester.pumpWidget(
@@ -483,7 +484,7 @@ void main() {
       expect(find.text('Timetable'), findsOneWidget);
       expect(find.text('Attendance'), findsOneWidget);
       expect(find.text('Notes'), findsOneWidget);
-      expect(find.text('Profile'), findsOneWidget);
+      expect(find.text('More'), findsOneWidget);
       expect(find.text('Colleges'), findsNothing);
     });
 
@@ -498,7 +499,8 @@ void main() {
           user: superAdminUser,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(tester.takeException(), isNull);
       expect(find.text('Multi-Campus Attendance'), findsOneWidget);

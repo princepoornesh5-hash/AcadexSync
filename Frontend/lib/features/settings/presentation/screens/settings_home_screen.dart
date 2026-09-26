@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../features/auth/domain/models/auth_state.dart';
-import '../../../../features/auth/domain/models/role_enum.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../widgets/settings_widgets.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
@@ -16,17 +14,10 @@ class SettingsHomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final isGradientRole = authState is AuthAuthenticated &&
-        (authState.user.role == AppRole.superAdmin ||
-            authState.user.role == AppRole.collegeAdmin ||
-            authState.user.role == AppRole.hod ||
-            authState.user.role == AppRole.faculty ||
-            authState.user.role == AppRole.student);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isGradientRole ? Colors.transparent : (isDark ? AcadexColors.darkCanvas : AcadexColors.canvas),
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       body: AcadexPageContainer(
         maxWidth: AcadexLayout.formMaxWidth,
         child: Column(

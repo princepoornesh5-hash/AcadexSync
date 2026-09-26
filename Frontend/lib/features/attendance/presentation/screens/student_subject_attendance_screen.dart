@@ -33,7 +33,7 @@ class StudentSubjectAttendanceScreen extends ConsumerWidget {
     final subjectsAsync = ref.watch(studentDetailedSubjectsProvider);
 
     return AcadexPageContainer(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       maxWidth: AcadexLayout.contentMaxWidth,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

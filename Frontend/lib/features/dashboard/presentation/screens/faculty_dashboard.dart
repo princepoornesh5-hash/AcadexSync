@@ -55,7 +55,6 @@ class FacultyDashboard extends ConsumerWidget {
           final nextSecName = nextSec?.name ?? (nextClass != null && nextClass.sectionId.isNotEmpty ? nextClass.sectionId : null);
 
           return AcadexPageContainer(
-            backgroundColor: Colors.transparent,
             topPadding: isMobile ? 16 : 24,
             onRefresh: () async {
               ref.invalidate(facultyStatsProvider);

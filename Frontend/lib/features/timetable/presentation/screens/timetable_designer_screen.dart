@@ -94,9 +94,9 @@ class _TimetableDesignerScreenState extends ConsumerState<TimetableDesignerScree
 
     // 1. Loading State
     if (authoringState.container == null && authoringState.errorMessage == null) {
-      return Scaffold(
-        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-        body: const Center(
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
           child: CircularProgressIndicator(),
         ),
       );
@@ -105,7 +105,7 @@ class _TimetableDesignerScreenState extends ConsumerState<TimetableDesignerScree
     // 2. Error State (Failed initial load)
     if (authoringState.errorMessage != null && authoringState.container == null) {
       return Scaffold(
-        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+        backgroundColor: Colors.white,
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -135,9 +135,9 @@ class _TimetableDesignerScreenState extends ConsumerState<TimetableDesignerScree
 
     final container = authoringState.container;
     if (container == null) {
-      return Scaffold(
-        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-        body: const Center(child: Text('Timetable not found.')),
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(child: Text('Timetable not found.')),
       );
     }
 
@@ -185,7 +185,7 @@ class _TimetableDesignerScreenState extends ConsumerState<TimetableDesignerScree
           focusNode: _gridFocusNode,
           autofocus: true,
           child: Scaffold(
-            backgroundColor: Colors.transparent,
+            backgroundColor: Colors.white,
             body: SafeArea(
               child: Column(
                 children: [

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:campus_management/app/router/app_router.dart';
 import 'package:campus_management/features/auth/domain/models/auth_state.dart';
 import 'package:campus_management/features/auth/domain/models/role_enum.dart';
@@ -225,4 +226,43 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('STUDENT'), findsWidgets);
   });
+
+  testWidgets('7. HOD can navigate to /academics/academic_years and /academics/academic_years/new', (tester) async {
+    const user = UserModel(
+      id: 'hod-1',
+      name: 'HOD User',
+      email: 'hod.cs@mit.edu',
+      collegeId: 'col-1',
+      departmentId: 'dept-1',
+      role: AppRole.hod,
+      accountStatus: AccountStatus.active,
+    );
+
+    late GoRouter router;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: commonOverrides(user).cast(),
+        child: Consumer(
+          builder: (context, ref, _) {
+            router = ref.watch(appRouterProvider);
+            return MaterialApp.router(
+              routerConfig: router,
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    router.go('/academics/academic_years');
+    await tester.pumpAndSettle();
+    expect(find.text('Access Restricted'), findsNothing);
+    expect(find.text('Academic Years'), findsWidgets);
+
+    router.go('/academics/academic_years/new');
+    await tester.pumpAndSettle();
+    expect(find.text('Access Restricted'), findsNothing);
+    expect(find.text('Create Academic Year'), findsWidgets);
+  });
 }
+

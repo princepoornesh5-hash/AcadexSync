@@ -12,7 +12,7 @@ import '../providers/notification_providers.dart';
 import '../widgets/notification_card.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
-import '../../../../core/presentation/widgets/acadex_adaptive_gradient_text.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 class NotificationCenterScreen extends ConsumerWidget {
   const NotificationCenterScreen({super.key});
@@ -22,12 +22,6 @@ class NotificationCenterScreen extends ConsumerWidget {
     final notificationsAsync = ref.watch(notificationsProvider);
     final filteredNotifications = ref.watch(filteredNotificationsProvider);
     final authState = ref.watch(authProvider);
-    final isGradientRole = authState is AuthAuthenticated &&
-        (authState.user.role == AppRole.superAdmin ||
-            authState.user.role == AppRole.collegeAdmin ||
-            authState.user.role == AppRole.hod ||
-            authState.user.role == AppRole.faculty ||
-            authState.user.role == AppRole.student);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
@@ -73,17 +67,12 @@ class NotificationCenterScreen extends ConsumerWidget {
               if (item is _GroupHeader) {
                 return Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: isGradientRole
-                      ? AcadexAdaptiveGradientText(
-                          item.title.toUpperCase(),
-                          style: AcadexTypography.eyebrow().copyWith(fontWeight: FontWeight.w700),
-                        )
-                      : Text(
-                          item.title.toUpperCase(),
-                          style: AcadexTypography.eyebrow(
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                          ),
-                        ),
+                  child: Text(
+                    item.title.toUpperCase(),
+                    style: AcadexTypography.eyebrow(
+                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                    ),
+                  ),
                 );
               } else if (item is _GroupItem) {
                 return Padding(
@@ -136,7 +125,7 @@ class NotificationCenterScreen extends ConsumerWidget {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _FilterBar(isDark: isDark, isSuperAdmin: isGradientRole),
+                      child: _FilterBar(isDark: isDark),
                     ),
                     const SizedBox(width: 8),
                     Row(
@@ -145,22 +134,20 @@ class NotificationCenterScreen extends ConsumerWidget {
                         TextButton.icon(
                           onPressed: () {
                             ref.read(notificationsProvider.notifier).markAllAsRead();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('All notifications marked as read'),
-                                backgroundColor: AcadexColors.success,
-                              ),
+                            AcadexSnackBar.showSuccess(
+                              context,
+                              'All notifications marked as read',
                             );
                           },
-                          icon: Icon(
+                          icon: const Icon(
                             LucideIcons.checkCheck,
                             size: 16,
-                            color: isGradientRole ? const Color(0xFFCCE6FF) : null,
+                            color: AcadexColors.primary,
                           ),
-                          label: Text(
+                          label: const Text(
                             'Mark all read',
                             style: TextStyle(
-                              color: isGradientRole ? Colors.white : null,
+                              color: AcadexColors.primary,
                               fontWeight: FontWeight.w600,
                               fontSize: 13,
                             ),
@@ -170,7 +157,7 @@ class NotificationCenterScreen extends ConsumerWidget {
                           icon: Icon(
                             LucideIcons.settings,
                             size: 19,
-                            color: isGradientRole ? Colors.white : null,
+                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                           ),
                           tooltip: 'Notification Settings',
                           onPressed: () => context.push('/settings/notifications/preferences'),
@@ -194,39 +181,37 @@ class NotificationCenterScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: isGradientRole ? Colors.transparent : (isDark ? AcadexColors.darkCanvas : AcadexColors.canvas),
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isGradientRole ? Colors.white : (isDark ? AcadexColors.darkInk : AcadexColors.ink)),
+          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
           onPressed: () => context.safePop(fallbackRoute: '/dashboard'),
         ),
-        backgroundColor: isGradientRole ? Colors.transparent : null,
+        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         title: Text(
           'Notification Center',
           style: AcadexTypography.title(
-            color: isGradientRole ? Colors.white : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
         ),
         actions: [
           TextButton.icon(
             onPressed: () {
               ref.read(notificationsProvider.notifier).markAllAsRead();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('All notifications marked as read'),
-                  backgroundColor: AcadexColors.success,
-                ),
+              AcadexSnackBar.showSuccess(
+                context,
+                'All notifications marked as read',
               );
             },
-            icon: Icon(
+            icon: const Icon(
               LucideIcons.checkCheck,
               size: 16,
-              color: isGradientRole ? const Color(0xFFCCE6FF) : null,
+              color: AcadexColors.primary,
             ),
-            label: Text(
+            label: const Text(
               'Mark all read',
               style: TextStyle(
-                color: isGradientRole ? Colors.white : null,
+                color: AcadexColors.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -235,7 +220,7 @@ class NotificationCenterScreen extends ConsumerWidget {
             icon: Icon(
               LucideIcons.settings,
               size: 20,
-              color: isGradientRole ? Colors.white : null,
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
             ),
             tooltip: 'Notification Settings',
             onPressed: () => context.push('/settings/notifications/preferences'),
@@ -244,7 +229,7 @@ class NotificationCenterScreen extends ConsumerWidget {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
-          child: _FilterBar(isDark: isDark, isSuperAdmin: isGradientRole),
+          child: _FilterBar(isDark: isDark),
         ),
       ),
       floatingActionButton: fab,
@@ -311,8 +296,7 @@ class _GroupItem {
 
 class _FilterBar extends ConsumerWidget {
   final bool isDark;
-  final bool isSuperAdmin;
-  const _FilterBar({required this.isDark, this.isSuperAdmin = false});
+  const _FilterBar({required this.isDark});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -322,10 +306,10 @@ class _FilterBar extends ConsumerWidget {
       height: 48,
       padding: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
-        color: isSuperAdmin ? const Color.fromRGBO(255, 255, 255, 0.74) : (isDark ? AcadexColors.darkSurface : AcadexColors.surface),
+        color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusSm,
         border: Border.all(
-          color: isSuperAdmin ? const Color.fromRGBO(255, 255, 255, 0.45) : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
         ),
       ),
       clipBehavior: Clip.antiAlias,

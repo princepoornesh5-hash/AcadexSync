@@ -203,6 +203,7 @@ class TimetableManagementNotifier extends AsyncNotifier<void> {
       final repository = ref.read(timetableRepositoryProvider);
       await repository.createEntry(entry);
       ref.invalidate(weeklyTimetableProvider);
+      ref.invalidate(todayScheduleProvider);
       ref.invalidate(studentStatsProvider);
     });
   }
@@ -213,6 +214,7 @@ class TimetableManagementNotifier extends AsyncNotifier<void> {
       final repository = ref.read(timetableRepositoryProvider);
       await repository.updateEntry(entry);
       ref.invalidate(weeklyTimetableProvider);
+      ref.invalidate(todayScheduleProvider);
       ref.invalidate(studentStatsProvider);
     });
   }
@@ -224,6 +226,7 @@ class TimetableManagementNotifier extends AsyncNotifier<void> {
       final repository = ref.read(timetableRepositoryProvider);
       await repository.deleteGridEntry(timetableId, entryId);
       ref.invalidate(weeklyTimetableProvider);
+      ref.invalidate(todayScheduleProvider);
       ref.invalidate(studentStatsProvider);
     });
   }

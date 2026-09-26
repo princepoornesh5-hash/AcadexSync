@@ -156,10 +156,12 @@ class LowAttendanceActionPanel extends StatelessWidget {
                       final rollNumber = student.rollNumber.isNotEmpty ? student.rollNumber : 'Roll: --';
                       final recoveryNeeded = student.recoverySessionsNeeded;
 
-                      return InkWell(
-                        onTap: onStudentSelected != null ? () => onStudentSelected!(student) : null,
-                        borderRadius: AcadexRadius.borderRadiusSm,
-                        child: Padding(
+                      return Material(
+                        type: MaterialType.transparency,
+                        child: InkWell(
+                          onTap: onStudentSelected != null ? () => onStudentSelected!(student) : null,
+                          borderRadius: AcadexRadius.borderRadiusSm,
+                          child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
@@ -289,7 +291,8 @@ class LowAttendanceActionPanel extends StatelessWidget {
                             ],
                           ),
                         ),
-                      );
+                      ),
+                    );
                     },
                   ),
                 ],

@@ -55,7 +55,7 @@ class _FacultyWorkloadScreenState extends ConsumerState<FacultyWorkloadScreen> {
     final avgPeriods = totalFaculty > 0 ? (totalWeeklyPeriods / totalFaculty).toStringAsFixed(1) : '0';
 
     return AcadexPageContainer(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         maxWidth: 1600,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,7 +68,7 @@ class _FacultyWorkloadScreenState extends ConsumerState<FacultyWorkloadScreen> {
                   : "College-wide academic workload oversight and subject allocations.",
               actions: [
                 AcadexButton(
-                  label: "Assign Classes",
+                  label: "Create Faculty Assignment",
                   icon: LucideIcons.userPlus,
                   onPressed: () => FacultyAssignmentDialog.show(context),
                 ),
@@ -242,7 +242,7 @@ class _FacultyWorkloadScreenState extends ConsumerState<FacultyWorkloadScreen> {
                               ),
                               TextButton.icon(
                                 icon: const Icon(LucideIcons.plus, size: 14),
-                                label: const Text("Add Class"),
+                                label: const Text("Create Faculty Assignment"),
                                 onPressed: () => FacultyAssignmentDialog.show(context, faculty: item.faculty),
                               ),
                             ],
@@ -252,7 +252,7 @@ class _FacultyWorkloadScreenState extends ConsumerState<FacultyWorkloadScreen> {
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               child: Text(
-                                "No active teaching assignments. Click '+ Add Class' to assign subjects.",
+                                "No active teaching assignments. Click '+ Create Faculty Assignment' to assign subjects.",
                                 style: AcadexTypography.body(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
                               ),
                             )

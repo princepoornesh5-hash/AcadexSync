@@ -61,9 +61,9 @@ router.put('/courses/:id', requireHodOrAbove, AcademicController.updateCourse);
 
 // Academic Years
 router.get('/academic-years', AcademicController.listAcademicYears);
-router.post('/academic-years', requireCollegeAdmin, AcademicController.createAcademicYear);
+router.post('/academic-years', requireHodOrAbove, AcademicController.createAcademicYear);
 router.get('/academic-years/:id', AcademicController.getAcademicYearById);
-router.put('/academic-years/:id', requireCollegeAdmin, AcademicController.updateAcademicYear);
+router.put('/academic-years/:id', requireHodOrAbove, AcademicController.updateAcademicYear);
 
 // Semesters
 router.get('/semesters', AcademicController.listSemesters);

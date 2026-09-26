@@ -8,12 +8,18 @@ import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../../core/presentation/widgets/acadex_data_table.dart';
 import '../../../../core/presentation/widgets/acadex_search_bar.dart';
-import '../../../../core/presentation/widgets/acadex_empty_state.dart';
 import '../../../../core/presentation/widgets/acadex_form_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/errors/acadex_error.dart';
 import '../widgets/fresh_department_setup_card.dart';
+import '../widgets/setup_continuation_dialog.dart';
+import '../utils/academic_prerequisite_guard.dart';
 import '../providers/academic_providers.dart';
+import '../providers/department_setup_provider.dart';
+import '../../../../core/presentation/widgets/acadex_workflow_context_banner.dart';
 import '../../domain/models/academic_models.dart';
 
 class SemesterListScreen extends ConsumerStatefulWidget {
@@ -28,6 +34,18 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
   String _statusFilter = 'all'; // 'all' | 'current' | 'active' | 'upcoming' | 'completed'
   String? _selectedCourseId;
   String? _selectedAcademicYearId;
+
+  void _navigateCreateSemester(BuildContext context, List<Course> courses, List<AcademicYear> years) {
+    final check = AcademicPrerequisiteGuard.checkSemesterPrerequisites(
+      courses: courses,
+      academicYears: years,
+    );
+    if (!check.isSatisfied) {
+      AcademicPrerequisiteGuard.showBlockerDialog(context, check);
+      return;
+    }
+    context.push('/academics/semesters/new');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,14 +66,14 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const AcadexPageHeader(
-            title: "Semesters & Terms",
-            subtitle: "Manage academic terms, semester numbers, curricula, and current cohorts.",
+            title: "Semesters",
+            subtitle: "Manage academic semesters, semester numbers, curricula, and current cohorts.",
           ),
           AcadexSearchFilterBar(
             searchHint: "Search semesters or courses...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
-            onActionTap: () => context.push('/academics/semesters/new'),
-            actionLabel: "Add Semester",
+            onActionTap: () => _navigateCreateSemester(context, coursesList, yearsList),
+            actionLabel: "Create Semester",
           ),
           const SizedBox(height: 10),
 
@@ -174,8 +192,10 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
           Expanded(
             child: semestersAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(
-                child: Text("Error: $err", style: const TextStyle(color: AcadexColors.error)),
+              error: (err, stack) => AcadexErrorState.fromError(
+                error: err,
+                title: "Unable to load semesters",
+                onRetry: () => ref.invalidate(semestersProvider),
               ),
               data: (semesters) {
                 final filtered = semesters.where((s) {
@@ -205,7 +225,7 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                       return FreshDepartmentSetupCard(
                         currentStep: AcademicSetupStep.course,
                         customMessage:
-                            "Step 1 Pending: Create a Course (Degree Program) first. Semesters cannot be added without a Course.",
+                            "Step 1 Pending: Create a Course first. Semesters cannot be created without a Course.",
                         actionLabel: "Create Course",
                         onAction: () => context.push('/academics/courses/new'),
                       );
@@ -223,19 +243,29 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                       currentStep: AcademicSetupStep.semester,
                       customMessage:
                           "Step 3 of 3: Establish semester cycles (e.g. Semester 1 to 6) for your courses and academic years.",
-                      actionLabel: "Add First Semester",
+                      actionLabel: "Create First Semester",
                       onAction: () => context.push('/academics/semesters/new'),
                     );
                   }
 
-                  return AcadexEmptyState(
-                    title: "No Semesters Found",
-                    subtitle: _searchQuery.isNotEmpty
-                        ? "No semesters match '$_searchQuery'."
-                        : "No semesters found matching the selected context.",
-                    icon: LucideIcons.calendarClock,
-                    actionLabel: "Add Semester",
-                    onActionTap: () => context.push('/academics/semesters/new'),
+                  if (semesters.isEmpty) {
+                    return AcadexEmptyState(
+                      title: "No Semesters Found",
+                      subtitle: "Create a semester for the selected course and academic year.",
+                      icon: LucideIcons.calendarClock,
+                      actionLabel: "Create Semester",
+                      onActionTap: () => _navigateCreateSemester(context, coursesList, yearsList),
+                    );
+                  }
+
+                  return AcadexEmptyState.filterEmpty(
+                    filterSummary: _searchQuery.isNotEmpty ? "query '$_searchQuery'" : "selected filters",
+                    onClearFilters: () => setState(() {
+                      _searchQuery = '';
+                      _selectedCourseId = null;
+                      _selectedAcademicYearId = null;
+                      _statusFilter = 'all';
+                    }),
                   );
                 }
 
@@ -324,7 +354,7 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                "Program: $cName",
+                                "Course: $cName",
                                 style: AcadexTypography.caption(
                                   color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                                 ).copyWith(fontWeight: FontWeight.w500),
@@ -372,7 +402,7 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                 }
 
                 return AcadexDataTable(
-                  columns: const ["Semester Name", "Term #", "Program (Course)", "Academic Year", "Current", "Status", "Actions"],
+                  columns: const ["Semester Name", "Term #", "Course", "Academic Year", "Current", "Status", "Actions"],
                   rows: filtered.map((s) {
                     return DataRow(
                       onSelectChanged: (_) => context.push('/academics/semesters/${s.id}'),
@@ -455,7 +485,13 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
 class SemesterFormScreen extends ConsumerStatefulWidget {
   final String? id;
   final String? initialCourseId;
-  const SemesterFormScreen({super.key, this.id, this.initialCourseId});
+  final String? initialAcademicYearId;
+  const SemesterFormScreen({
+    super.key,
+    this.id,
+    this.initialCourseId,
+    this.initialAcademicYearId,
+  });
 
   @override
   ConsumerState<SemesterFormScreen> createState() => _SemesterFormScreenState();
@@ -473,12 +509,14 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
 
   String? _selectedCourseId;
   String? _selectedAcademicYearId;
+  bool _showManualContext = false;
 
   @override
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController();
     _selectedCourseId = widget.initialCourseId;
+    _selectedAcademicYearId = widget.initialAcademicYearId;
 
     if (widget.id != null) {
       _loadExisting();
@@ -498,7 +536,7 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
       _startDate = _existing!.startDate;
       _endDate = _existing!.endDate;
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading semester: $e')));
+      if (mounted) AcadexSnackBar.showError(context, e);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -530,26 +568,38 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
   }
 
   Future<void> _save() async {
+    if (_isLoading) return;
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCourseId == null || _selectedAcademicYearId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select both a Course and an Academic Year')),
+      AcadexSnackBar.showWarning(
+        context,
+        'Please select both a Course and an Academic Year',
       );
       return;
     }
     if (_startDate != null && _endDate != null && !_endDate!.isAfter(_startDate!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('End date must be after Start date')),
+      AcadexSnackBar.showWarning(
+        context,
+        'End date must be after Start date',
       );
       return;
     }
 
     setState(() => _isLoading = true);
     try {
+      final courses = ref.read(coursesProvider).valueOrNull ?? [];
+      final selectedCourse = courses.where((c) => c.id == _selectedCourseId).firstOrNull;
+      final effectiveDeptId = _existing?.departmentId.isNotEmpty == true
+          ? _existing!.departmentId
+          : (selectedCourse?.departmentId ?? '');
+      final effectiveCollegeId = _existing?.collegeId.isNotEmpty == true
+          ? _existing!.collegeId
+          : (selectedCourse?.collegeId ?? '');
+
       final sem = Semester(
         id: _existing?.id ?? '',
-        collegeId: _existing?.collegeId ?? '',
-        departmentId: _existing?.departmentId ?? '',
+        collegeId: effectiveCollegeId,
+        departmentId: effectiveDeptId,
         courseId: _selectedCourseId!,
         academicYearId: _selectedAcademicYearId!,
         name: _nameCtrl.text.trim(),
@@ -563,28 +613,50 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
 
       if (_existing == null) {
         await ref.read(semestersProvider.notifier).addSemester(sem);
+        ref.invalidate(semestersProvider);
+        if (effectiveDeptId.isNotEmpty) {
+          ref.invalidate(departmentSetupProvider(effectiveDeptId));
+        }
+
+        final freshSemesters = await ref.read(semestersProvider.future);
+        final createdSem = freshSemesters.where((s) =>
+            s.courseId == sem.courseId &&
+            s.academicYearId == sem.academicYearId &&
+            s.number == sem.number).firstOrNull ?? sem;
+
+        if (mounted) {
+          AcadexSnackBar.showSuccess(context, 'Semester created successfully.');
+
+          SetupContinuationDialog.show(
+            context,
+            title: 'Semester Created Successfully',
+            entityName: createdSem.name,
+            message: '${createdSem.name} is active. Continue to form student cohort sections.',
+            primaryActionLabel: 'Continue to Section',
+            onContinue: () {
+              context.push(
+                '/academics/sections/new?courseId=${createdSem.courseId}&semesterId=${createdSem.id}&academicYearId=${createdSem.academicYearId}',
+              );
+            },
+            secondaryActionLabel: 'Done',
+            onDone: () => context.safePop(fallbackRoute: '/academics/semesters'),
+          );
+        }
       } else {
         await ref.read(semestersProvider.notifier).updateSemester(sem);
         ref.invalidate(semesterByIdProvider(widget.id!));
-      }
+        if (effectiveDeptId.isNotEmpty) {
+          ref.invalidate(departmentSetupProvider(effectiveDeptId));
+        }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_existing == null ? 'Semester created successfully' : 'Semester updated successfully'),
-            backgroundColor: AcadexColors.success,
-          ),
-        );
-        context.safePop(fallbackRoute: '/academics/semesters');
+        if (mounted) {
+          AcadexSnackBar.showSuccess(context, 'Semester updated successfully.');
+          context.safePop(fallbackRoute: '/academics/semesters');
+        }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: AcadexColors.error,
-          ),
-        );
+        AcadexSnackBar.showError(context, e);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -600,121 +672,162 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
     final dateFormat = DateFormat('yyyy-MM-dd');
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
           onPressed: () => context.safePop(fallbackRoute: '/academics/semesters'),
         ),
         title: Text(
-          isEdit ? "Edit Semester" : "Add Semester",
+          isEdit ? "Edit Semester" : "Create Semester",
           style: AcadexTypography.heading2(
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ).copyWith(fontSize: 18),
         ),
       ),
-      body: _isLoading
+      body: (isEdit && _existing == null && _isLoading)
           ? const Center(child: CircularProgressIndicator())
           : AcadexPageContainer(
               maxWidth: AcadexLayout.formMaxWidth,
               child: Form(
                 key: _formKey,
                 child: AcadexFormCard(
-                  title: "Semester Term Details",
+                  title: isEdit ? "Edit Semester" : "Semester Details",
+                  isSaving: _isLoading,
+                  saveLabel: isEdit ? "Update Semester" : "Create Semester",
                   onCancel: () => context.safePop(fallbackRoute: '/academics/semesters'),
                   onSave: _save,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Course Selector
-                      AcadexFormField(
-                        label: "Degree Program (Course) *",
-                        child: coursesAsync.when(
-                          loading: () => const LinearProgressIndicator(),
-                          error: (e, _) => Text('Error loading courses: $e', style: const TextStyle(color: AcadexColors.error)),
-                          data: (courses) {
-                            if (courses.isEmpty) {
-                              return Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.warningLight,
-                                  borderRadius: AcadexRadius.borderRadiusMd,
-                                  border: Border.all(color: AcadexColors.warning),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text("No Courses Found", style: TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.warning)),
-                                    const SizedBox(height: 4),
-                                    const Text("You must create at least one course (degree program) before adding a semester."),
-                                    const SizedBox(height: 8),
-                                    ElevatedButton(
-                                      onPressed: () => context.push('/academics/courses/new'),
-                                      child: const Text("Create Course"),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
+                      // Contextual Header when entered with known Course / Academic Year
+                      Builder(builder: (context) {
+                        final hasInheritedContext = !isEdit &&
+                            widget.initialCourseId != null &&
+                            _selectedCourseId != null &&
+                            !_showManualContext;
+                        final selectedCourse = coursesAsync.valueOrNull
+                            ?.where((c) => c.id == _selectedCourseId)
+                            .firstOrNull;
+                        final selectedYear = yearsAsync.valueOrNull
+                            ?.where((y) => y.id == _selectedAcademicYearId)
+                            .firstOrNull;
 
-                            return DropdownButtonFormField<String>(
-                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                              initialValue: _selectedCourseId,
-                              decoration: const InputDecoration(hintText: "Select Degree Program / Course"),
-                              validator: (v) => v == null ? 'Course is required' : null,
-                              items: courses.map((c) => DropdownMenuItem(value: c.id, child: Text("${c.name} (${c.code})"))).toList(),
-                              onChanged: isEdit ? null : (v) => setState(() => _selectedCourseId = v),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Academic Year Selector
-                      AcadexFormField(
-                        label: "Academic Session (Year) *",
-                        child: yearsAsync.when(
-                          loading: () => const LinearProgressIndicator(),
-                          error: (e, _) => Text('Error loading academic years: $e', style: const TextStyle(color: AcadexColors.error)),
-                          data: (years) {
-                            if (years.isEmpty) {
-                              return Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.warningLight,
-                                  borderRadius: AcadexRadius.borderRadiusMd,
-                                  border: Border.all(color: AcadexColors.warning),
+                        if (hasInheritedContext && selectedCourse != null) {
+                          return AcadexWorkflowContextBanner(
+                            targetEntityName: 'Semester',
+                            contextItems: [
+                              AcadexContextItem(
+                                label: 'Course',
+                                value: '${selectedCourse.name} (${selectedCourse.code})',
+                                icon: LucideIcons.bookOpen,
+                              ),
+                              if (selectedYear != null)
+                                AcadexContextItem(
+                                  label: 'Academic Session',
+                                  value: selectedYear.name,
+                                  icon: LucideIcons.calendar,
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text("No Academic Years Found", style: TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.warning)),
-                                    const SizedBox(height: 4),
-                                    const Text("You must create at least one academic session/year before adding a semester."),
-                                    const SizedBox(height: 8),
-                                    ElevatedButton(
-                                      onPressed: () => context.push('/academics/academic_years/new'),
-                                      child: const Text("Create Academic Year"),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
+                            ],
+                            onChangeContext: () => setState(() => _showManualContext = true),
+                          );
+                        }
 
-                            return DropdownButtonFormField<String>(
-                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                              initialValue: _selectedAcademicYearId,
-                              decoration: const InputDecoration(hintText: "Select Academic Session"),
-                              validator: (v) => v == null ? 'Academic Year is required' : null,
-                              items: years.map((y) => DropdownMenuItem(value: y.id, child: Text(y.name))).toList(),
-                              onChanged: isEdit ? null : (v) => setState(() => _selectedAcademicYearId = v),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 14),
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Course Selector
+                            AcadexFormField(
+                              label: "Course *",
+                              child: coursesAsync.when(
+                                loading: () => const LinearProgressIndicator(),
+                                error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error)),
+                                data: (courses) {
+                                  if (courses.isEmpty) {
+                                    return Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.warningLight,
+                                        borderRadius: AcadexRadius.borderRadiusMd,
+                                        border: Border.all(color: AcadexColors.warning),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text("No Courses Found", style: TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.warning)),
+                                          const SizedBox(height: 4),
+                                          const Text("You must create at least one course before creating a semester."),
+                                          const SizedBox(height: 8),
+                                          ElevatedButton(
+                                            onPressed: () => context.push('/academics/courses/new'),
+                                            child: const Text("Create Course"),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+
+                                  return DropdownButtonFormField<String>(
+                                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                    initialValue: _selectedCourseId,
+                                    decoration: const InputDecoration(hintText: "Select Course"),
+                                    validator: (v) => v == null ? 'Course is required' : null,
+                                    items: courses.map((c) => DropdownMenuItem(value: c.id, child: Text("${c.name} (${c.code})"))).toList(),
+                                    onChanged: isEdit ? null : (v) => setState(() => _selectedCourseId = v),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+
+                            // Academic Year Selector
+                            AcadexFormField(
+                              label: "Academic Session (Year) *",
+                              child: yearsAsync.when(
+                                loading: () => const LinearProgressIndicator(),
+                                error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error)),
+                                data: (years) {
+                                  if (years.isEmpty) {
+                                    return Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.warningLight,
+                                        borderRadius: AcadexRadius.borderRadiusMd,
+                                        border: Border.all(color: AcadexColors.warning),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text("No Academic Years Found", style: TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.warning)),
+                                          const SizedBox(height: 4),
+                                          const Text("You must create at least one academic session/year before adding a semester."),
+                                          const SizedBox(height: 8),
+                                          ElevatedButton(
+                                            onPressed: () => context.push('/academics/academic_years/new'),
+                                            child: const Text("Create Academic Year"),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+
+                                  return DropdownButtonFormField<String>(
+                                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                    initialValue: _selectedAcademicYearId,
+                                    decoration: const InputDecoration(hintText: "Select Academic Session"),
+                                    validator: (v) => v == null ? 'Academic Year is required' : null,
+                                    items: years.map((y) => DropdownMenuItem(value: y.id, child: Text(y.name))).toList(),
+                                    onChanged: isEdit ? null : (v) => setState(() => _selectedAcademicYearId = v),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                          ],
+                        );
+                      }),
 
                       // Name & Number Row
                       Row(
@@ -842,23 +955,26 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
                             color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
                           ),
                         ),
-                        child: SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          value: _isCurrent,
-                          activeThumbColor: AcadexColors.primary,
-                          title: Text(
-                            "Set as Current Ongoing Term",
-                            style: AcadexTypography.body(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                            ).copyWith(fontWeight: FontWeight.w700, fontSize: 13),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: _isCurrent,
+                            activeThumbColor: AcadexColors.primary,
+                            title: Text(
+                              "Set as Current Ongoing Term",
+                              style: AcadexTypography.body(
+                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              ).copyWith(fontWeight: FontWeight.w700, fontSize: 13),
+                            ),
+                            subtitle: Text(
+                              "Indicates this semester is currently active for teaching and section scheduling.",
+                              style: AcadexTypography.caption(
+                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              ).copyWith(fontSize: 11),
+                            ),
+                            onChanged: (v) => setState(() => _isCurrent = v),
                           ),
-                          subtitle: Text(
-                            "Indicates this semester is currently active for teaching and section scheduling.",
-                            style: AcadexTypography.caption(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                            ).copyWith(fontSize: 11),
-                          ),
-                          onChanged: (v) => setState(() => _isCurrent = v),
                         ),
                       ),
                     ],

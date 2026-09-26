@@ -25,7 +25,7 @@ class StudentSessionDetailScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AcadexPageContainer(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       maxWidth: AcadexLayout.contentMaxWidth,
       child: sessionAsync.when(
         loading: () => const AcadexLoadingState(message: 'Loading session details...'),

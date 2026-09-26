@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/navigation/acadex_nav_item.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
+/// Compact, role-aware mobile bottom navigation bar conforming to Prompt 11
+/// Features 4 primary destinations + 1 'More' entry point with zero horizontal overflow at 360px.
 class AcadexBottomNav extends ConsumerWidget {
   final String activeRoute;
   final ValueChanged<String> onTabSelected;
@@ -16,21 +19,6 @@ class AcadexBottomNav extends ConsumerWidget {
     required this.onTabSelected,
   });
 
-  String _dashboardRouteForRole(AppRole role) {
-    switch (role) {
-      case AppRole.superAdmin:
-        return '/dashboard/super_admin';
-      case AppRole.collegeAdmin:
-        return '/dashboard/college_admin';
-      case AppRole.hod:
-        return '/dashboard/hod';
-      case AppRole.faculty:
-        return '/dashboard/faculty';
-      case AppRole.student:
-        return '/dashboard/student';
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
@@ -39,82 +27,62 @@ class AcadexBottomNav extends ConsumerWidget {
       role = authState.user.role;
     }
 
-    final dashboardRoute = _dashboardRouteForRole(role);
+    final primaryItems = AcadexNavigationService.getPrimaryNavItems(role);
 
-    List<_NavDestination> destinations;
-    switch (role) {
-      case AppRole.superAdmin:
-        destinations = [
-          _NavDestination(icon: LucideIcons.layoutDashboard, label: 'Home', route: dashboardRoute),
-          _NavDestination(icon: LucideIcons.building, label: 'Colleges', route: '/academics/colleges'),
-          _NavDestination(icon: LucideIcons.users, label: 'Users', route: '/users'),
-          _NavDestination(icon: LucideIcons.barChart3, label: 'Analytics', route: '/analytics'),
-          _NavDestination(icon: LucideIcons.settings, label: 'Settings', route: '/settings'),
-        ];
+    // Check if any primary item is active
+    bool isAnyPrimaryActive = false;
+    for (final item in primaryItems) {
+      if (item.matchesRoute(activeRoute)) {
+        isAnyPrimaryActive = true;
         break;
-      case AppRole.collegeAdmin:
-        destinations = [
-          _NavDestination(icon: LucideIcons.layoutDashboard, label: 'Home', route: dashboardRoute),
-          _NavDestination(icon: LucideIcons.layers, label: 'Academics', route: '/academics'),
-          _NavDestination(icon: LucideIcons.userCheck, label: 'Faculty', route: '/academics/faculty'),
-          _NavDestination(icon: LucideIcons.clipboardCheck, label: 'Attendance', route: '/attendance'),
-          _NavDestination(icon: LucideIcons.settings, label: 'Settings', route: '/settings'),
-        ];
-        break;
-      case AppRole.hod:
-        destinations = [
-          _NavDestination(icon: LucideIcons.layoutDashboard, label: 'Home', route: dashboardRoute),
-          _NavDestination(icon: LucideIcons.users, label: 'Faculty', route: '/academics/faculty'),
-          _NavDestination(icon: LucideIcons.clipboardCheck, label: 'Attendance', route: '/attendance'),
-          _NavDestination(icon: LucideIcons.calendarDays, label: 'Timetable', route: '/timetable/manage'),
-          _NavDestination(icon: LucideIcons.settings, label: 'Settings', route: '/settings'),
-        ];
-        break;
-      case AppRole.faculty:
-        destinations = [
-          _NavDestination(icon: LucideIcons.layoutDashboard, label: 'Home', route: dashboardRoute),
-          _NavDestination(icon: LucideIcons.bookOpen, label: 'Classes', route: '/my-assignments'),
-          _NavDestination(icon: LucideIcons.clipboardCheck, label: 'Attendance', route: '/attendance'),
-          _NavDestination(icon: LucideIcons.calendarDays, label: 'Timetable', route: '/timetable'),
-          _NavDestination(icon: LucideIcons.fileText, label: 'Notes', route: '/notes'),
-        ];
-        break;
-      case AppRole.student:
-        destinations = [
-          _NavDestination(icon: LucideIcons.layoutDashboard, label: 'Home', route: dashboardRoute),
-          _NavDestination(icon: LucideIcons.calendarDays, label: 'Timetable', route: '/timetable'),
-          _NavDestination(icon: LucideIcons.clipboardCheck, label: 'Attendance', route: '/attendance'),
-          _NavDestination(icon: LucideIcons.fileText, label: 'Notes', route: '/notes'),
-          _NavDestination(icon: LucideIcons.user, label: 'Profile', route: '/profile'),
-        ];
-        break;
+      }
     }
+    final isMoreActive = !isAnyPrimaryActive;
 
     return Container(
       decoration: const BoxDecoration(
-        color: AcadexColors.surface,
+        color: Colors.white,
         border: Border(
           top: BorderSide(
             color: AcadexColors.hairline,
             width: 1,
           ),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0A07111F),
+            blurRadius: 8,
+            offset: Offset(0, -2),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 58,
+          height: 60,
           child: Row(
-            children: destinations.map((dest) {
-              final isActive = activeRoute == dest.route ||
-                  (dest.route != dashboardRoute && activeRoute.startsWith(dest.route));
-              return _NavTab(
-                icon: dest.icon,
-                label: dest.label,
-                isActive: isActive,
-                onTap: () => onTabSelected(dest.route),
-              );
-            }).toList(),
+            children: [
+              ...primaryItems.map((item) {
+                final isActive = item.matchesRoute(activeRoute);
+                return _NavTab(
+                  icon: item.icon,
+                  label: item.label,
+                  isActive: isActive,
+                  onTap: () => onTabSelected(item.route),
+                );
+              }),
+              _NavTab(
+                icon: LucideIcons.ellipsis,
+                label: 'More',
+                isActive: isMoreActive,
+                onTap: () {
+                  final scaffoldState = Scaffold.maybeOf(context);
+                  if (scaffoldState != null && scaffoldState.hasDrawer) {
+                    scaffoldState.openDrawer();
+                  }
+                },
+              ),
+            ],
           ),
         ),
       ),
@@ -122,19 +90,7 @@ class AcadexBottomNav extends ConsumerWidget {
   }
 }
 
-class _NavDestination {
-  final IconData icon;
-  final String label;
-  final String route;
-
-  const _NavDestination({
-    required this.icon,
-    required this.label,
-    required this.route,
-  });
-}
-
-class _NavTab extends ConsumerWidget {
+class _NavTab extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool isActive;
@@ -148,17 +104,9 @@ class _NavTab extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final isGradientRole = authState is AuthAuthenticated &&
-        (authState.user.role == AppRole.superAdmin ||
-            authState.user.role == AppRole.collegeAdmin ||
-            authState.user.role == AppRole.hod ||
-            authState.user.role == AppRole.faculty ||
-            authState.user.role == AppRole.student);
-
-    final activeColor = isGradientRole ? AcadexColors.superAdminDeepAction : AcadexColors.primary;
-    final inactiveColor = isGradientRole ? AcadexColors.inkSecondary : AcadexColors.inkMuted;
+  Widget build(BuildContext context) {
+    const activeColor = AcadexColors.primary;
+    const inactiveColor = AcadexColors.inkMuted;
     final textScaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.15);
 
     return Expanded(

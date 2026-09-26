@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/firebase/firebase_services.dart';
+import '../../../../core/errors/acadex_error.dart';
 import '../../domain/models/academic_models.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../domain/repositories/academic_repository.dart';
@@ -11,12 +12,8 @@ class ApiAcademicRepository implements AcademicRepository {
 
   ApiAcademicRepository([ApiClient? client]) : _client = client ?? apiClient;
 
-  Exception _extractError(DioException e, String fallback) {
-    final message = e.response?.data?['error']?['message'] ??
-        e.response?.data?['message'] ??
-        e.message ??
-        fallback;
-    return Exception(message);
+  AcadexException _extractError(DioException e, String fallback) {
+    return AcadexException.fromDio(e, context: fallback);
   }
 
   // ===========================================================================
@@ -42,9 +39,6 @@ class ApiAcademicRepository implements AcademicRepository {
       }
       return raw.map((e) => College.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return [];
-      }
       throw _extractError(e, 'Failed to fetch colleges');
     }
   }
@@ -73,9 +67,6 @@ class ApiAcademicRepository implements AcademicRepository {
           : (body is Map<String, dynamic> ? body : <String, dynamic>{});
       return data;
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return {};
-      }
       throw _extractError(e, 'Failed to fetch college summary');
     }
   }
@@ -107,9 +98,6 @@ class ApiAcademicRepository implements AcademicRepository {
       }
       return raw.map((e) => e as Map<String, dynamic>).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return [];
-      }
       throw _extractError(e, 'Failed to fetch college admins');
     }
   }
@@ -206,9 +194,6 @@ class ApiAcademicRepository implements AcademicRepository {
 
       return raw.map((e) => Department.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return [];
-      }
       throw _extractError(e, 'Failed to fetch departments');
     }
   }
@@ -237,9 +222,6 @@ class ApiAcademicRepository implements AcademicRepository {
           : (body is Map<String, dynamic> ? body : <String, dynamic>{});
       return data;
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return {};
-      }
       throw _extractError(e, 'Failed to fetch department summary');
     }
   }
@@ -254,7 +236,7 @@ class ApiAcademicRepository implements AcademicRepository {
       }
       return null;
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
+      if (e.response?.statusCode == 404) {
         return null;
       }
       throw _extractError(e, 'Failed to fetch department HOD');
@@ -370,9 +352,6 @@ class ApiAcademicRepository implements AcademicRepository {
 
       return raw.map((e) => UserModel.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return [];
-      }
       throw _extractError(e, 'Failed to fetch HODs');
     }
   }
@@ -460,9 +439,6 @@ class ApiAcademicRepository implements AcademicRepository {
           : (body is Map<String, dynamic> ? body : <String, dynamic>{});
       return data;
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return {};
-      }
       throw _extractError(e, 'Failed to fetch HOD summary');
     }
   }
@@ -496,9 +472,6 @@ class ApiAcademicRepository implements AcademicRepository {
 
       return raw.map((e) => Course.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return [];
-      }
       throw _extractError(e, 'Failed to fetch courses');
     }
   }
@@ -591,9 +564,6 @@ class ApiAcademicRepository implements AcademicRepository {
 
       return raw.map((e) => AcademicYear.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return [];
-      }
       throw _extractError(e, 'Failed to fetch academic years');
     }
   }
@@ -617,8 +587,8 @@ class ApiAcademicRepository implements AcademicRepository {
     try {
       await _client.dio.post('/academics/academic-years', data: {
         'name': academicYear.name,
-        'startDate': academicYear.startDate.toIso8601String(),
-        'endDate': academicYear.endDate.toIso8601String(),
+        'startDate': AcademicYearDateUtils.serialize(academicYear.startDate),
+        'endDate': AcademicYearDateUtils.serialize(academicYear.endDate),
         'isCurrent': academicYear.isCurrent,
         if (academicYear.collegeId.isNotEmpty) 'collegeId': academicYear.collegeId,
       });
@@ -632,8 +602,8 @@ class ApiAcademicRepository implements AcademicRepository {
     try {
       await _client.dio.put('/academics/academic-years/${academicYear.id}', data: {
         'name': academicYear.name,
-        'startDate': academicYear.startDate.toIso8601String(),
-        'endDate': academicYear.endDate.toIso8601String(),
+        'startDate': AcademicYearDateUtils.serialize(academicYear.startDate),
+        'endDate': AcademicYearDateUtils.serialize(academicYear.endDate),
         'isCurrent': academicYear.isCurrent,
         'isActive': academicYear.isActive,
       });
@@ -707,9 +677,6 @@ class ApiAcademicRepository implements AcademicRepository {
 
       return raw.map((e) => Semester.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return [];
-      }
       throw _extractError(e, 'Failed to fetch semesters');
     }
   }
@@ -736,8 +703,8 @@ class ApiAcademicRepository implements AcademicRepository {
         'academicYearId': semester.academicYearId,
         'name': semester.name,
         'number': semester.number,
-        if (semester.startDate != null) 'startDate': semester.startDate!.toIso8601String(),
-        if (semester.endDate != null) 'endDate': semester.endDate!.toIso8601String(),
+        if (semester.startDate != null) 'startDate': AcademicYearDateUtils.serialize(semester.startDate!),
+        if (semester.endDate != null) 'endDate': AcademicYearDateUtils.serialize(semester.endDate!),
         'isCurrent': semester.isCurrent,
         if (semester.collegeId.isNotEmpty) 'collegeId': semester.collegeId,
       });
@@ -752,8 +719,8 @@ class ApiAcademicRepository implements AcademicRepository {
       await _client.dio.put('/academics/semesters/${semester.id}', data: {
         'name': semester.name,
         'number': semester.number,
-        if (semester.startDate != null) 'startDate': semester.startDate!.toIso8601String(),
-        if (semester.endDate != null) 'endDate': semester.endDate!.toIso8601String(),
+        if (semester.startDate != null) 'startDate': AcademicYearDateUtils.serialize(semester.startDate!),
+        if (semester.endDate != null) 'endDate': AcademicYearDateUtils.serialize(semester.endDate!),
         'isCurrent': semester.isCurrent,
         'isActive': semester.isActive,
       });
@@ -836,9 +803,6 @@ class ApiAcademicRepository implements AcademicRepository {
 
       return raw.map((e) => Section.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return [];
-      }
       throw _extractError(e, 'Failed to fetch sections');
     }
   }
@@ -983,9 +947,6 @@ class ApiAcademicRepository implements AcademicRepository {
 
       return raw.map((e) => Subject.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return [];
-      }
       throw _extractError(e, 'Failed to fetch subjects');
     }
   }
@@ -1083,9 +1044,6 @@ class ApiAcademicRepository implements AcademicRepository {
 
       return raw.map((e) => Faculty.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return [];
-      }
       throw _extractError(e, 'Failed to fetch faculty');
     }
   }
@@ -1174,9 +1132,6 @@ class ApiAcademicRepository implements AcademicRepository {
           : (body is Map<String, dynamic> ? body : <String, dynamic>{});
       return data;
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return {};
-      }
       throw _extractError(e, 'Failed to fetch faculty summary');
     }
   }
@@ -1260,9 +1215,6 @@ class ApiAcademicRepository implements AcademicRepository {
 
       return raw.map((e) => FacultyAssignment.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return [];
-      }
       throw _extractError(e, 'Failed to fetch faculty assignments');
     }
   }
@@ -1381,9 +1333,6 @@ class ApiAcademicRepository implements AcademicRepository {
 
       return list.map((e) => Student.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return [];
-      }
       throw _extractError(e, 'Failed to fetch students');
     }
   }
@@ -1510,9 +1459,6 @@ class ApiAcademicRepository implements AcademicRepository {
       }
       return raw.map((e) => StudentEnrollment.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 403 || e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        return [];
-      }
       throw _extractError(e, 'Failed to fetch enrollments');
     }
   }
@@ -1773,7 +1719,6 @@ class ApiAcademicRepository implements AcademicRepository {
       }
       return [];
     } on DioException catch (e) {
-      if (e.response?.statusCode == 404) return [];
       throw _extractError(e, 'Failed to fetch rooms');
     }
   }

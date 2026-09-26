@@ -23,9 +23,10 @@ class AcadexColors {
   static const Color superAdminSoftAction = Color(0xFFE6F2FF); // Soft Blue (Soft Actions / Badges)
   static const Color superAdminVerySoft = Color(0xFFEFF6FF); // Very Soft Blue (Card Tint)
 
-  // Light Canvas & Surface Layers (Calm & Clean)
-  static const Color canvas = Color(0xFFF8FAFC); // Slate 50 neutral canvas
-  static const Color canvasLight = Color(0xFFF8FAFC);
+  // Light Canvas & Surface Layers (Calm & Clean) - Pure White Canvas
+  static const Color canvas = Color(0xFFFFFFFF); // Pure White canonical authenticated background
+  static const Color canvasLight = Color(0xFFFFFFFF);
+  static const Color backgroundLight = Color(0xFFFFFFFF);
   static const Color canvasSoft = Color(0xFFF1F5F9); // Slate 100 soft background
   static const Color surface = Color(0xFFFFFFFF); // Pure White cards
   static const Color surfaceHover = Color(0xFFF8FAFC); // Slate 50

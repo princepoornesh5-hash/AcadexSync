@@ -8,6 +8,8 @@ import '../../domain/models/timetable_models.dart';
 import '../../domain/models/teacher_substitution.dart';
 import '../providers/timetable_providers.dart';
 import '../providers/timetable_lookup_providers.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/errors/acadex_error.dart';
 
 class TeacherSubstitutionDialog extends ConsumerStatefulWidget {
   final String timetableId;
@@ -225,20 +227,24 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Teacher substitution scheduled successfully.'),
-            backgroundColor: AcadexColors.success,
-          ),
+        AcadexSnackBar.showSuccess(
+          context,
+          'Teacher substitution scheduled successfully.',
         );
         widget.onSaved?.call();
       }
     } catch (e) {
       if (mounted) {
+        final sanitized = AcadexException.fromError(e).userMessage;
         setState(() {
           _isLoading = false;
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          _errorMessage = sanitized;
         });
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to schedule substitution',
+        );
       }
     }
   }
@@ -263,20 +269,24 @@ class _TeacherSubstitutionDialogState extends ConsumerState<TeacherSubstitutionD
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Teacher substitution removed. Original faculty restored.'),
-            backgroundColor: AcadexColors.info,
-          ),
+        AcadexSnackBar.showInfo(
+          context,
+          'Teacher substitution removed. Original faculty restored.',
         );
         widget.onDeleted?.call();
       }
     } catch (e) {
       if (mounted) {
+        final sanitized = AcadexException.fromError(e).userMessage;
         setState(() {
           _isLoading = false;
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          _errorMessage = sanitized;
         });
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to remove substitution',
+        );
       }
     }
   }

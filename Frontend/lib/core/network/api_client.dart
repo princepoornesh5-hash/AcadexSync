@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
@@ -7,11 +8,23 @@ class ApiClient {
 
   static String get defaultBaseUrl {
     if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
+    if (kReleaseMode) {
+      return 'https://acadex-backend-main.onrender.com/api/v1';
+    }
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:5050/api/v1';
+    }
     return 'http://localhost:5050/api/v1';
   }
 
   static String get defaultAiUrl {
     if (_envAiUrl.isNotEmpty) return _envAiUrl;
+    if (kReleaseMode) {
+      return 'https://acadex-backend-main.onrender.com/api/v1/ai';
+    }
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:5001/api/v1/ai';
+    }
     return 'http://localhost:5001/api/v1/ai';
   }
 

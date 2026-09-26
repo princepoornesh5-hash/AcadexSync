@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 import '../../../settings/domain/models/settings_models.dart';
 import '../../../settings/presentation/providers/settings_providers.dart';
 
@@ -30,7 +31,7 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
@@ -42,7 +43,7 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
         ),
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: IconThemeData(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
       ),
@@ -282,20 +283,17 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
       await ref.read(notificationPreferencesProvider.notifier).updatePreferences(updated);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Notification preferences saved successfully'),
-            backgroundColor: AcadexColors.success,
-          ),
+        AcadexSnackBar.showSuccess(
+          context,
+          'Notification preferences saved successfully',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save preferences: $e'),
-            backgroundColor: AcadexColors.error,
-          ),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to save preferences',
         );
       }
     } finally {

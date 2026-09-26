@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../design_system/acadex_colors.dart';
 import '../../../features/auth/domain/models/auth_state.dart';
 import '../../../features/auth/domain/models/role_enum.dart';
 import '../../../features/auth/presentation/providers/auth_provider.dart';
@@ -230,9 +231,13 @@ class _AcadexAdaptiveGradientTextState extends ConsumerState<AcadexAdaptiveGradi
 
     // Safe deterministic fallback: when user is not in a gradient role OR content is outside gradient scope
     if (!isGradRole || scope == null) {
+      final defaultColor = widget.isSecondary ? const Color(0xFF475569) : widget.darkColor;
+      final effectiveStyle = (widget.style ?? const TextStyle()).copyWith(
+        color: widget.style?.color ?? defaultColor,
+      );
       return Text(
         widget.text,
-        style: widget.style,
+        style: effectiveStyle,
         textAlign: widget.textAlign,
         overflow: widget.overflow,
         maxLines: widget.maxLines,
@@ -469,7 +474,11 @@ class _AcadexAdaptiveGradientIconState extends ConsumerState<AcadexAdaptiveGradi
     final scope = AcadexGradientScope.maybeOf(context);
 
     if (!isGradRole || scope == null) {
-      return Icon(widget.icon, size: widget.size);
+      return Icon(
+        widget.icon,
+        size: widget.size,
+        color: widget.darkColor,
+      );
     }
 
     final currentScroll = Scrollable.maybeOf(context)?.position;
@@ -656,9 +665,9 @@ class _AcadexAdaptiveGradientBuilderState extends ConsumerState<AcadexAdaptiveGr
     if (!isGradRole || scope == null) {
       return widget.builder(
         context,
-        Theme.of(context).colorScheme.onSurface,
-        Theme.of(context).colorScheme.onSurfaceVariant,
-        Theme.of(context).primaryColor,
+        const Color(0xFF07111F),
+        const Color(0xFF475569),
+        AcadexColors.primary,
       );
     }
 

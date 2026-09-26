@@ -8,7 +8,8 @@ import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
-import '../../../../core/presentation/widgets/acadex_empty_state.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../features/auth/domain/models/auth_state.dart';
 import '../../../../features/auth/domain/models/role_enum.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
@@ -58,21 +59,11 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                 await ref.read(coursesProvider.notifier).toggleCourseStatus(widget.courseId, !isCurrentlyActive);
                 ref.invalidate(courseByIdProvider(widget.courseId));
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Course $action successful!'),
-                      backgroundColor: AcadexColors.success,
-                    ),
-                  );
+                  AcadexSnackBar.showSuccess(context, 'Course $action successful!');
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to update status: $e'),
-                      backgroundColor: AcadexColors.error,
-                    ),
-                  );
+                  AcadexSnackBar.showError(context, e);
                 }
               }
             },
@@ -104,18 +95,12 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
     final bodyContent = courseAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(LucideIcons.circleAlert, color: AcadexColors.error, size: 36),
-            const SizedBox(height: 12),
-            Text('Error loading course: $err', style: const TextStyle(color: AcadexColors.error)),
-            const SizedBox(height: 12),
-            AcadexButton(
-              label: 'Retry',
-              onPressed: () => ref.invalidate(courseByIdProvider(widget.courseId)),
-            ),
-          ],
+        child: AcadexErrorState.fromError(
+          error: err,
+          title: 'Unable to load course',
+          onRetry: () => ref.invalidate(courseByIdProvider(widget.courseId)),
+          actionLabel: 'Go Back',
+          onAction: () => context.safePop(fallbackRoute: '/academics/courses'),
         ),
       ),
       data: (course) {
@@ -124,7 +109,7 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
         final deptCode = dept?.code ?? '';
 
         return AcadexPageContainer(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.white,
           maxWidth: 1080,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,9 +153,9 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
@@ -316,7 +301,7 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
               Icon(LucideIcons.info, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
               const SizedBox(width: 8),
               Text(
-                'Degree Program Details',
+                'Course Details',
                 style: AcadexTypography.body(
                   color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                 ).copyWith(fontWeight: FontWeight.w700),
@@ -326,7 +311,7 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
           const SizedBox(height: 14),
           _infoRow(isDark, LucideIcons.tag, 'Code', course.code),
           const Divider(height: 16),
-          _infoRow(isDark, LucideIcons.bookOpen, 'Program Name', course.name),
+          _infoRow(isDark, LucideIcons.bookOpen, 'Course Name', course.name),
           const Divider(height: 16),
           _infoRow(isDark, LucideIcons.calendar, 'Duration', '${course.duration} ${course.duration == 1 ? "Year" : "Years"}'),
           const Divider(height: 16),
@@ -622,7 +607,7 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
             ),
             if (canManage)
               AcadexButton(
-                label: 'Add Semester',
+                label: 'Create Semester',
                 icon: LucideIcons.plus,
                 size: AcadexButtonSize.sm,
                 variant: AcadexButtonVariant.primary,
@@ -633,10 +618,10 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
         const SizedBox(height: 12),
         if (semesters.isEmpty)
           AcadexEmptyState(
-            title: 'No Semesters Configured',
-            subtitle: 'Establish semesters for this degree program to organize academic terms.',
+            title: 'No Semesters Found',
+            subtitle: 'Establish semesters for this course to organize academic terms.',
             icon: LucideIcons.calendarDays,
-            actionLabel: canManage ? 'Add First Semester' : null,
+            actionLabel: canManage ? 'Create First Semester' : null,
             onActionTap: canManage ? () => context.push('/academics/semesters/new?courseId=${widget.courseId}') : null,
           )
         else
@@ -734,7 +719,7 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
             ),
             if (canManage)
               AcadexButton(
-                label: 'Add Section',
+                label: 'Create Section',
                 icon: LucideIcons.plus,
                 size: AcadexButtonSize.sm,
                 variant: AcadexButtonVariant.primary,
@@ -745,10 +730,10 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
         const SizedBox(height: 12),
         if (sections.isEmpty)
           AcadexEmptyState(
-            title: 'No Sections Established',
-            subtitle: 'Create cohorts and batch divisions under this course for timetable scheduling.',
+            title: 'No Sections Found',
+            subtitle: 'Create sections under this course for timetable scheduling.',
             icon: LucideIcons.users,
-            actionLabel: canManage ? 'Add First Section' : null,
+            actionLabel: canManage ? 'Create First Section' : null,
             onActionTap: canManage ? () => context.push('/academics/sections/new?courseId=${widget.courseId}') : null,
           )
         else
@@ -848,7 +833,7 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
             ),
             if (canManage)
               AcadexButton(
-                label: 'Add Subject',
+                label: 'Create Subject',
                 icon: LucideIcons.plus,
                 size: AcadexButtonSize.sm,
                 variant: AcadexButtonVariant.primary,
@@ -859,10 +844,10 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
         const SizedBox(height: 12),
         if (subjects.isEmpty)
           AcadexEmptyState(
-            title: 'No Subjects Added',
+            title: 'No Subjects Found',
             subtitle: 'Add syllabus subjects with course credits and types (Theory/Lab).',
             icon: LucideIcons.bookCheck,
-            actionLabel: canManage ? 'Add First Subject' : null,
+            actionLabel: canManage ? 'Create First Subject' : null,
             onActionTap: canManage ? () => context.push('/academics/subjects/new?courseId=${widget.courseId}') : null,
           )
         else

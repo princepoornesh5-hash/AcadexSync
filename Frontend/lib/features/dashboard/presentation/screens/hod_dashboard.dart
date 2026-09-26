@@ -20,6 +20,7 @@ import '../widgets/stat_card.dart';
 import '../../../timetable/presentation/providers/timetable_providers.dart';
 import '../../../timetable/presentation/widgets/timetable_widgets.dart';
 import '../../../academic_structure/presentation/widgets/academic_structure_summary_widget.dart';
+import '../../../academic_structure/presentation/widgets/department_setup_card.dart';
 
 class HodDashboard extends ConsumerWidget {
   const HodDashboard({super.key});
@@ -51,7 +52,6 @@ class HodDashboard extends ConsumerWidget {
           final isMobile = AcadexBreakpoints.isMobile(context);
 
           return AcadexPageContainer(
-            backgroundColor: Colors.transparent,
             topPadding: isMobile ? 16 : 24,
             onRefresh: () async {
               ref.invalidate(hodStatsProvider);
@@ -186,6 +186,12 @@ class HodDashboard extends ConsumerWidget {
                   },
                 ),
                 AcadexLayout.sectionSpacer,
+
+                // Department Setup Progressive Onboarding Summary
+                if (departmentId.isNotEmpty) ...[
+                  DepartmentSetupCard(departmentId: departmentId),
+                  AcadexLayout.sectionSpacer,
+                ],
 
                 // Department Academic Structure Summary
                 if (departmentId.isNotEmpty) ...[

@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_theme.dart';
-import '../../../features/auth/domain/models/auth_state.dart';
-import '../../../features/auth/domain/models/role_enum.dart';
-import '../../../features/auth/presentation/providers/auth_provider.dart';
 
 class AcadexSearchBar extends StatefulWidget {
   final String hintText;
@@ -106,12 +103,13 @@ class _AcadexSearchBarState extends State<AcadexSearchBar> {
   }
 }
 
-class AcadexSearchFilterBar extends ConsumerWidget {
+class AcadexSearchFilterBar extends ConsumerStatefulWidget {
   final String searchHint;
   final Function(String) onSearchChanged;
   final VoidCallback? onFilterTap;
   final String actionLabel;
   final VoidCallback? onActionTap;
+  final TextEditingController? controller;
 
   const AcadexSearchFilterBar({
     super.key,
@@ -120,24 +118,53 @@ class AcadexSearchFilterBar extends ConsumerWidget {
     this.onFilterTap,
     this.actionLabel = "Add New",
     this.onActionTap,
+    this.controller,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isSmallMobile = AcadexBreakpoints.isSmallMobile(context);
-    final authState = ref.watch(authProvider);
-    final isGradientRole = authState is AuthAuthenticated &&
-        (authState.user.role == AppRole.superAdmin ||
-            authState.user.role == AppRole.collegeAdmin ||
-            authState.user.role == AppRole.hod ||
-            authState.user.role == AppRole.faculty ||
-            authState.user.role == AppRole.student);
+  ConsumerState<AcadexSearchFilterBar> createState() => _AcadexSearchFilterBarState();
+}
+
+class _AcadexSearchFilterBarState extends ConsumerState<AcadexSearchFilterBar> {
+  late final TextEditingController _controller;
+  bool _hasText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = widget.controller ?? TextEditingController();
+    _hasText = _controller.text.isNotEmpty;
+    _controller.addListener(_handleTextChanged);
+  }
+
+  void _handleTextChanged() {
+    final has = _controller.text.isNotEmpty;
+    if (has != _hasText && mounted) {
+      setState(() => _hasText = has);
+    }
+  }
+
+  @override
+  void dispose() {
+    if (widget.controller == null) {
+      _controller.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final isCompact = AcadexBreakpoints.isSmallMobile(context) ||
+        width < 480 ||
+        (width <= 600 && textScale > 1.1);
 
     const bg = AcadexColors.surface;
     const border = AcadexColors.hairline;
     const textColor = AcadexColors.ink;
     const hintColor = AcadexColors.inkMuted;
-    final actionBtnBg = isGradientRole ? AcadexColors.superAdminDeepAction : AcadexColors.primary;
+    const actionBtnBg = AcadexColors.primary;
 
     return Row(
       children: [
@@ -156,10 +183,13 @@ class AcadexSearchFilterBar extends ConsumerWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: TextField(
-                    onChanged: onSearchChanged,
+                    controller: _controller,
+                    onChanged: (val) {
+                      widget.onSearchChanged(val);
+                    },
                     style: AcadexTypography.body(color: textColor),
                     decoration: InputDecoration(
-                      hintText: searchHint,
+                      hintText: widget.searchHint,
                       hintStyle: AcadexTypography.body(color: hintColor),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
@@ -169,14 +199,25 @@ class AcadexSearchFilterBar extends ConsumerWidget {
                     ),
                   ),
                 ),
+                if (_hasText)
+                  IconButton(
+                    icon: const Icon(LucideIcons.x, size: 16, color: hintColor),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                    tooltip: 'Clear search',
+                    onPressed: () {
+                      _controller.clear();
+                      widget.onSearchChanged('');
+                    },
+                  ),
               ],
             ),
           ),
         ),
-        if (onFilterTap != null) ...[
+        if (widget.onFilterTap != null) ...[
           const SizedBox(width: 8),
           InkWell(
-            onTap: onFilterTap,
+            onTap: widget.onFilterTap,
             borderRadius: AcadexRadius.borderRadiusMd,
             child: Container(
               height: 46,
@@ -189,7 +230,7 @@ class AcadexSearchFilterBar extends ConsumerWidget {
               child: Row(
                 children: [
                   const Icon(LucideIcons.filter, color: textColor, size: 18),
-                  if (!isSmallMobile) ...[
+                  if (!isCompact) ...[
                     const SizedBox(width: 6),
                     Text(
                       "Filter",
@@ -201,26 +242,26 @@ class AcadexSearchFilterBar extends ConsumerWidget {
             ),
           ),
         ],
-        if (onActionTap != null) ...[
+        if (widget.onActionTap != null) ...[
           const SizedBox(width: 8),
           ElevatedButton(
-            onPressed: onActionTap,
+            onPressed: widget.onActionTap,
             style: ElevatedButton.styleFrom(
               backgroundColor: actionBtnBg,
               foregroundColor: Colors.white,
               elevation: 0,
               minimumSize: const Size(44, 46),
-              padding: EdgeInsets.symmetric(horizontal: isSmallMobile ? 12 : 16, vertical: 12),
+              padding: EdgeInsets.symmetric(horizontal: isCompact ? 12 : 16, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(LucideIcons.plus, size: 18, color: Colors.white),
-                if (!isSmallMobile) ...[
+                if (!isCompact) ...[
                   const SizedBox(width: 6),
                   Text(
-                    actionLabel,
+                    widget.actionLabel,
                     style: AcadexTypography.button(color: Colors.white).copyWith(fontSize: 13),
                   ),
                 ],

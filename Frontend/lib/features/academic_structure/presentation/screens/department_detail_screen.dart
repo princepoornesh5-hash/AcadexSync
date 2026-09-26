@@ -7,6 +7,9 @@ import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/errors/acadex_error.dart';
 import '../providers/academic_providers.dart';
 
 class DepartmentDetailScreen extends ConsumerWidget {
@@ -42,21 +45,11 @@ class DepartmentDetailScreen extends ConsumerWidget {
                 ref.invalidate(departmentByIdProvider(departmentId));
                 ref.invalidate(departmentSummaryProvider(departmentId));
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Department $action successful!'),
-                      backgroundColor: AcadexColors.success,
-                    ),
-                  );
+                  AcadexSnackBar.showSuccess(context, 'Department $action successful!');
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to update status: $e'),
-                      backgroundColor: AcadexColors.error,
-                    ),
-                  );
+                  AcadexSnackBar.showError(context, e);
                 }
               }
             },
@@ -79,23 +72,17 @@ class DepartmentDetailScreen extends ConsumerWidget {
     final bodyContent = deptAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(LucideIcons.circleAlert, color: AcadexColors.error, size: 36),
-            const SizedBox(height: 12),
-            Text('Error loading department: $err', style: const TextStyle(color: AcadexColors.error)),
-            const SizedBox(height: 12),
-            AcadexButton(
-              label: 'Retry',
-              onPressed: () => ref.invalidate(departmentByIdProvider(departmentId)),
-            ),
-          ],
+        child: AcadexErrorState.fromError(
+          error: err,
+          title: 'Unable to load department',
+          onRetry: () => ref.invalidate(departmentByIdProvider(departmentId)),
+          actionLabel: 'Go Back',
+          onAction: () => context.safePop(fallbackRoute: '/academics/departments'),
         ),
       ),
       data: (dept) {
         return AcadexPageContainer(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.white,
           maxWidth: 1080,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,9 +122,9 @@ class DepartmentDetailScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
@@ -455,7 +442,7 @@ class DepartmentDetailScreen extends ConsumerWidget {
             loading: () => const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator())),
             error: (err, _) => Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Text('Error loading HOD: $err', style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
+              child: Text(AcadexException.sanitizedMessage(err), style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
             ),
             data: (hod) {
               if (hod == null) {

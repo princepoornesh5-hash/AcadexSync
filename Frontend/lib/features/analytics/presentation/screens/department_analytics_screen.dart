@@ -44,19 +44,9 @@ class _DepartmentAnalyticsScreenState extends ConsumerState<DepartmentAnalyticsS
     final horizontalPadding = screenWidth < 400 ? 12.0 : (isDesktop ? 24.0 : 16.0);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFEFF6FF), // soft pale blue
-              Color(0xFFF8FAFC), // white/slate gradient
-              Colors.white,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        color: Colors.transparent,
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

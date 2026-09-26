@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import '../design_system/acadex_colors.dart';
 
-/// A lightweight translucent white readability surface designed for Super Admin
-/// content placed over the vertical 21-stop blue-to-white gradient.
+/// A lightweight translucent white readability surface designed for content
+/// placed over the canonical white canvas.
 ///
-/// It provides a guaranteed high-contrast reading surface for dark text (#07111F, #334155, #475569)
-/// across the entire gradient (from pitch black #000000 at top to pale #FFFFFF at bottom)
-/// without requiring dynamic text color swapping.
+/// It provides a frosted glass-like surface with soft depth and subtle hairline border
+/// ensuring visual separation and crisp contrast for dark typography.
 class AcadexReadableSurface extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -39,10 +39,10 @@ class AcadexReadableSurface extends StatelessWidget {
       constraints: constraints,
       padding: padding,
       decoration: BoxDecoration(
-        color: backgroundColor ?? const Color.fromRGBO(255, 255, 255, 0.74),
+        color: backgroundColor ?? const Color.fromRGBO(255, 255, 255, 0.85),
         borderRadius: borderRadius ?? BorderRadius.circular(14),
         border: border ?? Border.all(
-          color: const Color.fromRGBO(255, 255, 255, 0.45),
+          color: AcadexColors.hairline,
           width: 1,
         ),
         boxShadow: const [

@@ -221,9 +221,9 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
     final canFacultyEdit = session.isOpen && !isHodOrAdmin;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),

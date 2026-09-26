@@ -8,6 +8,8 @@ import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../providers/academic_providers.dart';
 import '../../domain/models/academic_models.dart';
 
@@ -43,18 +45,11 @@ class SubjectDetailScreen extends ConsumerWidget {
                 await ref.read(subjectsProvider.notifier).toggleStatus(subjectId, !isCurrentlyActive);
                 ref.invalidate(subjectByIdProvider(subjectId));
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Subject $action successful!'),
-                      backgroundColor: AcadexColors.success,
-                    ),
-                  );
+                  AcadexSnackBar.showSuccess(context, 'Subject $action successful!');
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to update status: $e'), backgroundColor: AcadexColors.error),
-                  );
+                  AcadexSnackBar.showError(context, e);
                 }
               }
             },
@@ -85,18 +80,12 @@ class SubjectDetailScreen extends ConsumerWidget {
     final bodyContent = subjectAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(LucideIcons.circleAlert, color: AcadexColors.error, size: 36),
-            const SizedBox(height: 12),
-            Text('Error loading subject: $err', style: const TextStyle(color: AcadexColors.error)),
-            const SizedBox(height: 12),
-            AcadexButton(
-              label: 'Retry',
-              onPressed: () => ref.invalidate(subjectByIdProvider(subjectId)),
-            ),
-          ],
+        child: AcadexErrorState.fromError(
+          error: err,
+          title: 'Unable to load subject',
+          onRetry: () => ref.invalidate(subjectByIdProvider(subjectId)),
+          actionLabel: 'Go Back',
+          onAction: () => context.safePop(fallbackRoute: '/academics/subjects'),
         ),
       ),
       data: (subject) {
@@ -106,7 +95,7 @@ class SubjectDetailScreen extends ConsumerWidget {
         final department = deptsMap[subject.departmentId] ?? (course != null ? deptsMap[course.departmentId] : null);
 
         return AcadexPageContainer(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.white,
           maxWidth: 960,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,9 +122,9 @@ class SubjectDetailScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),

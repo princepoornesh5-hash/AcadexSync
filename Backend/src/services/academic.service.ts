@@ -11,9 +11,11 @@ import { Faculty } from '../models/faculty.model';
 import { FacultyAssignment, IFacultyAssignment } from '../models/facultyAssignment.model';
 import { College } from '../models/college.model';
 import { Department } from '../models/department.model';
+import { AttendanceSession } from '../models/attendanceSession.model';
+import { Timetable } from '../models/timetable.model';
 import { AuditLog } from '../models/auditLog.model';
 import { AppRole } from '../constants/roles';
-import { CollegeStatus, DepartmentStatus, AccountStatus } from '../constants/status';
+import { CollegeStatus, DepartmentStatus, AccountStatus, TimetableStatus } from '../constants/status';
 import { ApiError } from '../utils/apiError';
 import { AuthenticatedUser } from '../types/auth.types';
 
@@ -105,6 +107,12 @@ export class AcademicService {
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
     } else if (requester.role === AppRole.HOD || requester.role === AppRole.FACULTY) {
       if (!requester.collegeId || !requester.departmentId) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
+      if (query.collegeId && query.collegeId !== requester.collegeId) {
+        throw ApiError.forbidden('Cross-college access is strictly prohibited');
+      }
+      if (query.departmentId && query.departmentId !== requester.departmentId) {
+        throw ApiError.forbidden('Cross-department access is strictly prohibited');
+      }
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
       mongoQuery.departmentId = new mongoose.Types.ObjectId(requester.departmentId);
     } else if (requester.role === AppRole.STUDENT) {
@@ -256,11 +264,11 @@ export class AcademicService {
     data: { name: string; startDate: string; endDate: string; isCurrent?: boolean },
     requester: AuthenticatedUser
   ): Promise<IAcademicYear> {
-    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN].includes(requester.role)) {
-      throw ApiError.forbidden('Only administrators have permission to create academic years');
+    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
+      throw ApiError.forbidden('Only administrators and HODs have permission to create academic years');
     }
 
-    if (requester.role === AppRole.COLLEGE_ADMIN && requester.collegeId !== collegeId) {
+    if ((requester.role === AppRole.COLLEGE_ADMIN || requester.role === AppRole.HOD) && requester.collegeId !== collegeId) {
       throw ApiError.forbidden('Cross-college access is strictly prohibited');
     }
 
@@ -346,7 +354,7 @@ export class AcademicService {
     const year = await AcademicYear.findById(id);
     if (!year) throw ApiError.notFound('Academic Year not found');
 
-    if (requester.role === AppRole.COLLEGE_ADMIN && year.collegeId.toString() !== requester.collegeId) {
+    if ((requester.role === AppRole.COLLEGE_ADMIN || requester.role === AppRole.HOD) && year.collegeId.toString() !== requester.collegeId) {
       throw ApiError.forbidden('Cross-college access is strictly prohibited');
     }
 
@@ -358,7 +366,7 @@ export class AcademicService {
     update: { name?: string; startDate?: string; endDate?: string; isCurrent?: boolean; isActive?: boolean },
     requester: AuthenticatedUser
   ): Promise<IAcademicYear> {
-    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN].includes(requester.role)) {
+    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
       throw ApiError.forbidden('Unauthorized to update academic years');
     }
 
@@ -488,6 +496,9 @@ export class AcademicService {
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
     } else if (requester.role === AppRole.HOD || requester.role === AppRole.FACULTY) {
       if (!requester.collegeId || !requester.departmentId) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
+      if (query.collegeId && query.collegeId !== requester.collegeId) {
+        throw ApiError.forbidden('Cross-college access is strictly prohibited');
+      }
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
       mongoQuery.departmentId = new mongoose.Types.ObjectId(requester.departmentId);
     } else if (query.collegeId) {
@@ -688,6 +699,9 @@ export class AcademicService {
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
     } else if (requester.role === AppRole.HOD || requester.role === AppRole.FACULTY) {
       if (!requester.collegeId || !requester.departmentId) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
+      if (query.collegeId && query.collegeId !== requester.collegeId) {
+        throw ApiError.forbidden('Cross-college access is strictly prohibited');
+      }
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
       mongoQuery.departmentId = new mongoose.Types.ObjectId(requester.departmentId);
     } else if (query.collegeId) {
@@ -891,6 +905,9 @@ export class AcademicService {
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
     } else if (requester.role === AppRole.HOD || requester.role === AppRole.FACULTY) {
       if (!requester.collegeId || !requester.departmentId) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
+      if (query.collegeId && query.collegeId !== requester.collegeId) {
+        throw ApiError.forbidden('Cross-college access is strictly prohibited');
+      }
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
       mongoQuery.departmentId = new mongoose.Types.ObjectId(requester.departmentId);
     } else if (query.collegeId) {
@@ -1654,12 +1671,32 @@ export class AcademicService {
     const assignment = await this.getFacultyAssignmentById(id, requester);
     const prev = assignment.toJSON();
 
-    await FacultyAssignment.findByIdAndDelete(id);
+    // Check if historical attendance sessions or published timetables reference this assignment
+    const [hasAttendance, hasPublishedTimetable] = await Promise.all([
+      AttendanceSession.exists({ facultyAssignmentId: assignment._id }),
+      Timetable.exists({ 'entries.facultyAssignmentId': assignment._id, status: TimetableStatus.PUBLISHED }),
+    ]);
 
-    // Check if faculty still has other assignments for this subject/section
+    if (hasAttendance || hasPublishedTimetable) {
+      // Safe deactivation: preserve historical attendance and audit record
+      assignment.isActive = false;
+      await assignment.save();
+    } else {
+      await FacultyAssignment.findByIdAndDelete(id);
+    }
+
+    // Pull assignment from draft timetables so future unpublished authoring does not reference it
+    await Timetable.updateMany(
+      { collegeId: assignment.collegeId, status: TimetableStatus.DRAFT },
+      { $pull: { entries: { facultyAssignmentId: assignment._id } } }
+    );
+
+    // Check if faculty still has other ACTIVE assignments for this subject/section
     const remainingForFacultySubject = await FacultyAssignment.countDocuments({
       facultyId: assignment.facultyId,
       subjectId: assignment.subjectId,
+      isActive: true,
+      _id: { $ne: assignment._id },
     });
     if (remainingForFacultySubject === 0) {
       await Faculty.updateOne({ _id: assignment.facultyId }, { $pull: { subjectIds: assignment.subjectId } });
@@ -1668,6 +1705,8 @@ export class AcademicService {
     const remainingForFacultySection = await FacultyAssignment.countDocuments({
       facultyId: assignment.facultyId,
       sectionId: assignment.sectionId,
+      isActive: true,
+      _id: { $ne: assignment._id },
     });
     if (remainingForFacultySection === 0) {
       await Faculty.updateOne({ _id: assignment.facultyId }, { $pull: { sectionIds: assignment.sectionId } });
@@ -1676,10 +1715,11 @@ export class AcademicService {
     await AuditLog.create({
       collegeId: assignment.collegeId.toString(),
       actorUserId: requester.id,
-      action: 'FACULTY_ASSIGNMENT_DELETED',
+      action: hasAttendance || hasPublishedTimetable ? 'FACULTY_ASSIGNMENT_DEACTIVATED' : 'FACULTY_ASSIGNMENT_DELETED',
       entityType: 'FacultyAssignment',
       entityId: assignment.id,
       previousValue: prev,
+      newValue: hasAttendance || hasPublishedTimetable ? assignment.toJSON() : undefined,
     });
   }
 

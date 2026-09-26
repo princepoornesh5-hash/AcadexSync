@@ -18,6 +18,7 @@ import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
+import '../providers/department_setup_provider.dart';
 
 class AcademicStructureHomeScreen extends ConsumerStatefulWidget {
   const AcademicStructureHomeScreen({super.key});
@@ -52,6 +53,10 @@ class _AcademicStructureHomeScreenState
     final currentUser = authState is AuthAuthenticated ? authState.user : null;
     final userRole = currentUser?.role ?? AppRole.student;
 
+    if (userRole == AppRole.hod && currentUser?.departmentId != null && currentUser!.departmentId!.isNotEmpty) {
+      _selectedDepartmentFilter = currentUser.departmentId!;
+    }
+
     final deptsAsync = ref.watch(departmentsProvider);
     final coursesAsync = ref.watch(coursesProvider);
     final semestersAsync = ref.watch(semestersProvider);
@@ -78,6 +83,9 @@ class _AcademicStructureHomeScreenState
             subtitle: _getSubtitleForRole(userRole),
             actions: _buildHeaderActions(context, userRole),
           ),
+
+          // 0. Setup Guided Banner (For HOD & College Admin)
+          _buildSetupGuidedBanner(context, userRole, currentUser?.departmentId, isDark),
 
           // 1. Personalized Role-Aware Card (For Faculty / Students)
           if (userRole == AppRole.faculty || userRole == AppRole.student)
@@ -110,7 +118,7 @@ class _AcademicStructureHomeScreenState
               if (!isMobile) ...[
                 const SizedBox(width: 12),
                 deptsAsync.maybeWhen(
-                  data: (depts) => _buildDepartmentFilterDropdown(depts, isDark),
+                  data: (depts) => _buildDepartmentFilterDropdown(depts, isDark, userRole, currentUser),
                   orElse: () => const SizedBox.shrink(),
                 ),
               ],
@@ -137,7 +145,7 @@ class _AcademicStructureHomeScreenState
               indicatorWeight: 3,
               tabs: const [
                 Tab(icon: Icon(LucideIcons.building2, size: 16), text: 'Departments'),
-                Tab(icon: Icon(LucideIcons.graduationCap, size: 16), text: 'Programs / Courses'),
+                Tab(icon: Icon(LucideIcons.graduationCap, size: 16), text: 'Courses'),
                 Tab(icon: Icon(LucideIcons.calendarDays, size: 16), text: 'Semesters'),
                 Tab(icon: Icon(LucideIcons.layoutGrid, size: 16), text: 'Sections'),
                 Tab(icon: Icon(LucideIcons.bookOpen, size: 16), text: 'Subjects Catalog'),
@@ -184,7 +192,21 @@ class _AcademicStructureHomeScreenState
     if (role == AppRole.collegeAdmin || role == AppRole.superAdmin) {
       return [
         AcadexButton(
-          label: 'Add Department',
+          label: 'Department Setup',
+          icon: LucideIcons.compass,
+          variant: AcadexButtonVariant.secondary,
+          onPressed: () => context.push('/academics/setup'),
+        ),
+        const SizedBox(width: 8),
+        AcadexButton(
+          label: 'Add Academic Year',
+          icon: LucideIcons.calendarPlus,
+          variant: AcadexButtonVariant.secondary,
+          onPressed: () => context.push('/academics/academic_years/new'),
+        ),
+        const SizedBox(width: 8),
+        AcadexButton(
+          label: 'Create Department',
           icon: LucideIcons.plus,
           onPressed: () => context.push('/academics/departments/new'),
         ),
@@ -192,13 +214,121 @@ class _AcademicStructureHomeScreenState
     } else if (role == AppRole.hod) {
       return [
         AcadexButton(
-          label: 'Add Course',
+          label: 'Department Setup',
+          icon: LucideIcons.compass,
+          variant: AcadexButtonVariant.secondary,
+          onPressed: () => context.push('/academics/setup'),
+        ),
+        const SizedBox(width: 8),
+        AcadexButton(
+          label: 'Create Course',
           icon: LucideIcons.plus,
           onPressed: () => context.push('/academics/courses/new'),
         ),
       ];
     }
     return [];
+  }
+
+  Widget _buildSetupGuidedBanner(
+    BuildContext context,
+    AppRole role,
+    String? departmentId,
+    bool isDark,
+  ) {
+    if (role != AppRole.hod && role != AppRole.collegeAdmin) {
+      return const SizedBox.shrink();
+    }
+
+    final setupAsync = ref.watch(departmentSetupProvider(departmentId));
+    return setupAsync.maybeWhen(
+      data: (setupState) {
+        final isComplete = setupState.isComplete;
+        final next = setupState.nextActionableMilestone;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isComplete
+                ? (isDark ? AcadexColors.successDarkContainer : AcadexColors.successLight)
+                : (isDark ? AcadexColors.primary.withValues(alpha: 0.15) : AcadexColors.primaryLight.withValues(alpha: 0.5)),
+            borderRadius: AcadexRadius.borderRadiusLg,
+            border: Border.all(
+              color: isComplete
+                  ? AcadexColors.success.withValues(alpha: 0.4)
+                  : AcadexColors.primary.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: isComplete ? AcadexColors.success : AcadexColors.primary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  isComplete ? LucideIcons.checkCheck : LucideIcons.compass,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            isComplete ? 'Department Setup Complete' : 'Academic Onboarding in Progress',
+                            style: AcadexTypography.body(
+                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            ).copyWith(fontWeight: FontWeight.w700),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        AcadexBadge(
+                          label: '${setupState.completedCount}/8 Milestones',
+                          variant: isComplete ? AcadexBadgeVariant.success : AcadexBadgeVariant.primary,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isComplete
+                          ? 'All academic milestones are configured. Structure and timetable are operational.'
+                          : (next != null
+                              ? 'Next: ${next.title} — ${next.description}'
+                              : 'Complete remaining milestones to unlock operational timetable and classes.'),
+                      style: AcadexTypography.caption(
+                        color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              AcadexButton(
+                label: isComplete ? 'Setup Workspace' : 'Continue Setup',
+                icon: LucideIcons.arrowRight,
+                size: AcadexButtonSize.sm,
+                variant: isComplete ? AcadexButtonVariant.secondary : AcadexButtonVariant.primary,
+                onPressed: () => context.push('/academics/setup'),
+              ),
+            ],
+          ),
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
   }
 
   Widget _buildPersonalizedRoleCard(
@@ -310,10 +440,10 @@ class _AcademicStructureHomeScreenState
             subtitle: 'Active Units',
           ),
           AcadexStatCard(
-            title: 'Programs',
+            title: 'Courses',
             value: courseCount.toString(),
             icon: LucideIcons.graduationCap,
-            subtitle: 'Degree Tracks',
+            subtitle: 'Degree Programs',
           ),
           AcadexStatCard(
             title: 'Semesters',
@@ -338,7 +468,72 @@ class _AcademicStructureHomeScreenState
     });
   }
 
-  Widget _buildDepartmentFilterDropdown(List<Department> depts, bool isDark) {
+  Widget _buildDepartmentFilterDropdown(
+    List<Department> depts,
+    bool isDark,
+    AppRole role,
+    dynamic currentUser,
+  ) {
+    if (role == AppRole.hod) {
+      final deptName = depts
+          .firstWhere(
+            (d) => d.id == currentUser?.departmentId,
+            orElse: () => depts.firstWhere(
+              (d) => d.id == _selectedDepartmentFilter,
+              orElse: () => Department(
+                id: currentUser?.departmentId ?? '',
+                name: 'Your Department',
+                code: '',
+                collegeId: '',
+                hodId: '',
+                description: '',
+                isActive: true,
+              ),
+            ),
+          )
+          .name;
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+          borderRadius: AcadexRadius.borderRadiusMd,
+          border: Border.all(
+            color: AcadexColors.primary.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(LucideIcons.building2, size: 14, color: AcadexColors.primary),
+            const SizedBox(width: 8),
+            Text(
+              deptName,
+              style: AcadexTypography.body(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ).copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AcadexColors.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'YOUR DEPARTMENT',
+                style: AcadexTypography.caption(color: AcadexColors.primary).copyWith(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
@@ -466,7 +661,7 @@ class _AcademicStructureHomeScreenState
   Widget _buildCoursesTab(AsyncValue<List<Course>> coursesAsync,
       AsyncValue<List<Department>> deptsAsync, AppRole role, bool isDark) {
     return coursesAsync.when(
-      loading: () => const AcadexLoadingState(message: 'Loading degree programs...'),
+      loading: () => const AcadexLoadingState(message: 'Loading courses...'),
       error: (e, _) => AcadexErrorState(message: e.toString()),
       data: (courses) {
         final filtered = courses.where((c) {
@@ -480,8 +675,8 @@ class _AcademicStructureHomeScreenState
 
         if (filtered.isEmpty) {
           return AcadexEmptyState(
-            title: 'No Programs Found',
-            subtitle: 'No academic courses or degree programs available.',
+            title: 'No Courses Found',
+            subtitle: 'No courses available for this academic context.',
             icon: LucideIcons.graduationCap,
             actionLabel: (role == AppRole.collegeAdmin || role == AppRole.hod)
                 ? 'Create Course'
@@ -572,7 +767,7 @@ class _AcademicStructureHomeScreenState
             subtitle: 'No academic terms or semesters configured.',
             icon: LucideIcons.calendarDays,
             actionLabel: (role == AppRole.collegeAdmin || role == AppRole.hod)
-                ? 'Add Semester'
+                ? 'Create Semester'
                 : null,
             onActionTap: () => context.push('/academics/semesters/new'),
           );
@@ -665,7 +860,7 @@ class _AcademicStructureHomeScreenState
             subtitle: 'No classroom sections configured.',
             icon: LucideIcons.layoutGrid,
             actionLabel: (role == AppRole.collegeAdmin || role == AppRole.hod)
-                ? 'Add Section'
+                ? 'Create Section'
                 : null,
             onActionTap: () => context.push('/academics/sections/new'),
           );
@@ -762,7 +957,7 @@ class _AcademicStructureHomeScreenState
             subtitle: 'No academic subjects in the syllabus catalog.',
             icon: LucideIcons.bookOpen,
             actionLabel: (role == AppRole.collegeAdmin || role == AppRole.hod)
-                ? 'Add Subject'
+                ? 'Create Subject'
                 : null,
             onActionTap: () => context.push('/academics/subjects/new'),
           );

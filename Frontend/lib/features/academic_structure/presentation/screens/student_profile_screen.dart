@@ -14,6 +14,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
 import '../widgets/student_bulk_action_dialogs.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 class StudentProfileScreen extends ConsumerStatefulWidget {
   final String studentId;
@@ -97,9 +98,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     final activeDepts = deptsAsync.where((d) => d.id != student.departmentId && d.isActive).toList();
     if (!mounted) return;
     if (activeDepts.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No other active departments available for transfer")),
-      );
+      AcadexSnackBar.showWarning(context, "No other active departments available for transfer");
       return;
     }
 
@@ -142,14 +141,14 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
         ref.invalidate(studentAcademicProfileProvider(widget.studentId));
         ref.invalidate(studentsProvider);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Student transferred to new department successfully")),
-          );
+          AcadexSnackBar.showSuccess(context, "Student transferred to new department successfully");
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Transfer failed: $e")),
+          AcadexSnackBar.showError(
+            context,
+            e,
+            fallbackMessage: "Department transfer failed",
           );
         }
       }
@@ -175,9 +174,9 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     final bodyContent = profileAsync.when(
       loading: () => const Center(child: AcadexLoadingState(message: "Loading academic profile...")),
       error: (err, _) => Center(
-        child: AcadexErrorState(
-          title: "Profile Not Found",
-          message: err.toString(),
+        child: AcadexErrorState.fromError(
+          error: err,
+          title: "Unable to load student profile",
           onRetry: () => ref.invalidate(studentAcademicProfileProvider(widget.studentId)),
         ),
       ),
@@ -190,7 +189,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
         final yr = profile.academicYear;
 
         return AcadexPageContainer(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.white,
           maxWidth: 1400,
           scrollable: true,
           child: Column(
@@ -296,7 +295,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                             OutlinedButton.icon(
                               onPressed: () => context.push('/academics/students/edit/${student.id}'),
                               icon: const Icon(LucideIcons.edit, size: 15),
-                              label: const Text("Edit Profile"),
+                              label: const Text("Edit Student"),
                             ),
                           ],
                         ),
@@ -354,10 +353,10 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
           onPressed: () => context.safePop(fallbackRoute: '/academics/students'),

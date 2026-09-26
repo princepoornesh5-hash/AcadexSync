@@ -54,11 +54,11 @@ class AcadexColors {
   static const Color purpleAccent = Color(0xFF8B5CF6);
   static const Color purpleSurface = Color(0xFFF5F3FF);
 
-  // --- Light Theme Neutral Palette (Permanent Light Theme) ---
-  static const Color canvas = Color(0xFFF8FAFC); // Slate 50
-  static const Color canvasLight = Color(0xFFF8FAFC);
+  // --- Light Theme Neutral Palette (Pure White Canonical Canvas) ---
+  static const Color canvas = Color(0xFFFFFFFF); // Pure White canonical authenticated background
+  static const Color canvasLight = Color(0xFFFFFFFF);
   static const Color canvasSoft = Color(0xFFF1F5F9); // Slate 100
-  static const Color backgroundLight = Color(0xFFF8FAFC);
+  static const Color backgroundLight = Color(0xFFFFFFFF);
   static const Color surface = Color(0xFFFFFFFF); // Pure White
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color surfaceLightElevated = Color(0xFFFFFFFF);

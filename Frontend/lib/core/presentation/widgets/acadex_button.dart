@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_theme.dart';
-import '../../../features/auth/domain/models/auth_state.dart';
-import '../../../features/auth/domain/models/role_enum.dart';
-import '../../../features/auth/presentation/providers/auth_provider.dart';
 
 enum AcadexButtonVariant { primary, secondary, soft, danger, ghost }
 enum AcadexButtonSize { sm, md, lg }
@@ -32,14 +29,6 @@ class AcadexButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final isGradientRole = authState is AuthAuthenticated &&
-        (authState.user.role == AppRole.superAdmin ||
-            authState.user.role == AppRole.collegeAdmin ||
-            authState.user.role == AppRole.hod ||
-            authState.user.role == AppRole.faculty ||
-            authState.user.role == AppRole.student);
-
     Color bg;
     Color fg;
     Color iconColor;
@@ -47,23 +36,23 @@ class AcadexButton extends ConsumerWidget {
 
     switch (variant) {
       case AcadexButtonVariant.primary:
-        bg = isGradientRole ? AcadexColors.superAdminDeepAction : AcadexColors.primary;
+        bg = AcadexColors.primary;
         fg = Colors.white;
         iconColor = Colors.white;
         break;
       case AcadexButtonVariant.secondary:
         bg = Colors.white;
-        fg = isGradientRole ? AcadexColors.superAdminDeepAction : AcadexColors.ink;
-        iconColor = isGradientRole ? AcadexColors.superAdminPrimaryAction : AcadexColors.ink;
-        border = BorderSide(
-          color: isGradientRole ? AcadexColors.superAdminPrimaryAction : AcadexColors.hairline,
-          width: isGradientRole ? 1.2 : 1.0,
+        fg = AcadexColors.ink;
+        iconColor = AcadexColors.ink;
+        border = const BorderSide(
+          color: AcadexColors.hairline,
+          width: 1.0,
         );
         break;
       case AcadexButtonVariant.soft:
-        bg = isGradientRole ? AcadexColors.superAdminSoftAction : AcadexColors.primaryLight;
-        fg = isGradientRole ? AcadexColors.superAdminDeepAction : AcadexColors.primary;
-        iconColor = isGradientRole ? AcadexColors.superAdminPrimaryAction : AcadexColors.primary;
+        bg = AcadexColors.primaryLight;
+        fg = AcadexColors.primary;
+        iconColor = AcadexColors.primary;
         break;
       case AcadexButtonVariant.danger:
         bg = AcadexColors.error;
@@ -72,8 +61,8 @@ class AcadexButton extends ConsumerWidget {
         break;
       case AcadexButtonVariant.ghost:
         bg = Colors.transparent;
-        fg = isGradientRole ? AcadexColors.superAdminPrimaryAction : AcadexColors.primary;
-        iconColor = isGradientRole ? AcadexColors.superAdminPrimaryAction : AcadexColors.primary;
+        fg = AcadexColors.primary;
+        iconColor = AcadexColors.primary;
         break;
     }
 

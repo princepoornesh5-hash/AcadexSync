@@ -3,6 +3,8 @@ import { AttendanceService } from '../../src/services/attendance.service';
 import { TimetableDay, TimetableSessionType, TimetableBreakType, AttendanceStatus, TimetableStatus } from '../../src/constants/status';
 import { setupTestDB, teardownTestDB, clearTestDB } from '../setup';
 import mongoose from 'mongoose';
+import { Student } from '../../src/models/student.model';
+import { StudentEnrollment } from '../../src/models/studentEnrollment.model';
 
 describe('Timetable & Attendance Integration Tests', () => {
   const collegeId = new mongoose.Types.ObjectId().toString();
@@ -91,6 +93,33 @@ describe('Timetable & Attendance Integration Tests', () => {
   });
 
   it('should submit attendance session and compute accurate student summary', async () => {
+    // 0. Seed Student & Enrollment
+    await Student.create({
+      _id: new mongoose.Types.ObjectId(studentId),
+      userId: new mongoose.Types.ObjectId(),
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      departmentId: new mongoose.Types.ObjectId(departmentId),
+      courseId: new mongoose.Types.ObjectId(courseId),
+      academicYearId: new mongoose.Types.ObjectId(academicYearId),
+      semesterId: new mongoose.Types.ObjectId(semesterId),
+      sectionId: new mongoose.Types.ObjectId(sectionId),
+      instituteId: 'CS-042',
+      rollNumber: 'CS-042',
+      name: 'Bob Dylan',
+      status: 'active',
+    });
+
+    await StudentEnrollment.create({
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      departmentId: new mongoose.Types.ObjectId(departmentId),
+      courseId: new mongoose.Types.ObjectId(courseId),
+      academicYearId: new mongoose.Types.ObjectId(academicYearId),
+      semesterId: new mongoose.Types.ObjectId(semesterId),
+      sectionId: new mongoose.Types.ObjectId(sectionId),
+      studentId: new mongoose.Types.ObjectId(studentId),
+      status: 'active',
+    });
+
     // 1. Submit Session 1 (Present)
     await AttendanceService.createOrSubmitSession(
       collegeId,

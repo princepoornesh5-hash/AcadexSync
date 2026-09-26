@@ -6,13 +6,15 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_data_table.dart';
 import '../../../../core/presentation/widgets/acadex_search_bar.dart';
-import '../../../../core/presentation/widgets/acadex_empty_state.dart';
 import '../../../../core/presentation/widgets/acadex_form_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../features/auth/domain/models/auth_state.dart';
 import '../../../../features/auth/domain/models/role_enum.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/errors/acadex_error.dart';
 import '../providers/academic_providers.dart';
 import '../../domain/models/academic_models.dart';
 
@@ -81,8 +83,10 @@ class _DepartmentListScreenState extends ConsumerState<DepartmentListScreen> {
           Expanded(
             child: deptsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(
-                child: Text("Error: $err", style: const TextStyle(color: AcadexColors.error)),
+              error: (err, stack) => AcadexErrorState.fromError(
+                error: err,
+                title: "Unable to load departments",
+                onRetry: () => ref.invalidate(departmentsProvider),
               ),
               data: (depts) {
                 final filtered = depts.where((d) {
@@ -96,14 +100,22 @@ class _DepartmentListScreenState extends ConsumerState<DepartmentListScreen> {
                 }).toList();
 
                 if (filtered.isEmpty) {
-                  return AcadexEmptyState(
-                    title: "No Departments Found",
-                    subtitle: _searchQuery.isNotEmpty
-                        ? "No departments match '$_searchQuery'."
-                        : "Get started by adding the first academic department.",
-                    icon: LucideIcons.layers,
-                    actionLabel: "Add Department",
-                    onActionTap: () => context.push('/academics/departments/new'),
+                  if (depts.isEmpty) {
+                    return AcadexEmptyState(
+                      title: "No Departments Found",
+                      subtitle: "Get started by adding the first academic department.",
+                      icon: LucideIcons.layers,
+                      actionLabel: "Add Department",
+                      onActionTap: () => context.push('/academics/departments/new'),
+                    );
+                  }
+
+                  return AcadexEmptyState.filterEmpty(
+                    filterSummary: _searchQuery.isNotEmpty ? "query '$_searchQuery'" : "selected filter",
+                    onClearFilters: () => setState(() {
+                      _searchQuery = '';
+                      _statusFilter = 'all';
+                    }),
                   );
                 }
 
@@ -313,7 +325,7 @@ class _DepartmentFormScreenState extends ConsumerState<DepartmentFormScreen> {
       _descCtrl.text = _existing!.description;
       _selectedCollegeId = _existing!.collegeId;
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading department: $e')));
+      if (mounted) AcadexSnackBar.showError(context, e);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -336,7 +348,7 @@ class _DepartmentFormScreenState extends ConsumerState<DepartmentFormScreen> {
         : (userCollegeId ?? _selectedCollegeId ?? '');
 
     if (isSuperAdmin && (targetCollegeId == null || targetCollegeId.isEmpty) && _existing == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('College is required for Super Admin')));
+      AcadexSnackBar.showWarning(context, 'College is required for Super Admin');
       return;
     }
 
@@ -361,22 +373,15 @@ class _DepartmentFormScreenState extends ConsumerState<DepartmentFormScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_existing == null ? 'Department created successfully' : 'Department updated successfully'),
-            backgroundColor: AcadexColors.success,
-          ),
+        AcadexSnackBar.showSuccess(
+          context,
+          _existing == null ? 'Department created successfully.' : 'Department updated successfully.',
         );
         context.safePop(fallbackRoute: '/academics/departments');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: AcadexColors.error,
-          ),
-        );
+        AcadexSnackBar.showError(context, e);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -394,9 +399,9 @@ class _DepartmentFormScreenState extends ConsumerState<DepartmentFormScreen> {
     final collegesAsync = ref.watch(collegesProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
@@ -409,14 +414,16 @@ class _DepartmentFormScreenState extends ConsumerState<DepartmentFormScreen> {
           ).copyWith(fontSize: 18),
         ),
       ),
-      body: _isLoading
+      body: (isEdit && _existing == null && _isLoading)
           ? const Center(child: CircularProgressIndicator())
           : AcadexPageContainer(
               maxWidth: AcadexLayout.formMaxWidth,
               child: Form(
                 key: _formKey,
                 child: AcadexFormCard(
-                  title: "Department Details",
+                  title: isEdit ? "Edit Department" : "Department Details",
+                  isSaving: _isLoading,
+                  saveLabel: isEdit ? "Update Department" : "Add Department",
                   onCancel: () => context.safePop(fallbackRoute: '/academics/departments'),
                   onSave: () => _save(userCollegeId, isSuperAdmin),
                   child: Column(
@@ -427,7 +434,7 @@ class _DepartmentFormScreenState extends ConsumerState<DepartmentFormScreen> {
                           label: "College *",
                           child: collegesAsync.when(
                             loading: () => const CircularProgressIndicator(),
-                            error: (e, _) => Text('Error loading colleges', style: const TextStyle(color: AcadexColors.error)),
+                            error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error)),
                             data: (colleges) => DropdownButtonFormField<String>(
                               dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                               initialValue: _selectedCollegeId,

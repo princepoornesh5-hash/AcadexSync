@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/models/timetable_models.dart';
 import '../providers/timetable_authoring_providers.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 /// Clean, responsive modal dialog for managing timetable structure: periods, timings, and breaks.
 /// Supports both uniform schedules ("Same timing every day") and per-day schedules ("Different timing per day").
@@ -455,11 +456,9 @@ class _TimetableStructureEditorDialogState extends ConsumerState<TimetableStruct
                               ),
                               onPressed: isUsed
                                   ? () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Cannot delete Period ${period.name}: currently occupied by scheduled classes.'),
-                                          backgroundColor: AcadexColors.error,
-                                        ),
+                                      AcadexSnackBar.showWarning(
+                                        context,
+                                        'Cannot delete Period ${period.name}: currently occupied by scheduled classes.',
                                       );
                                     }
                                   : () => notifier.deletePeriod(period.id),

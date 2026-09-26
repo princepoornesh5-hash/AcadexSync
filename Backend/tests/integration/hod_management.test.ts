@@ -260,7 +260,7 @@ describe('ACADEX Phase 9F.1 — HOD Management Tests', () => {
         email: 'cross@beta.edu',
       });
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(403);
     expect(res.body.error.message).toContain('does not belong to your college');
   });
 

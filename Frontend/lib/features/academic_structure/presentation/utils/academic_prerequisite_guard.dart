@@ -3,7 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../features/auth/domain/models/role_enum.dart';
 import '../../domain/models/academic_models.dart';
+import '../models/setup_action_decision.dart';
+
+export '../models/setup_action_decision.dart';
 
 enum AcademicPrerequisiteType {
   course,
@@ -50,11 +54,13 @@ class PrerequisiteCheckResult {
   bool get isSatisfied => isAllowed;
 }
 
+
 class AcademicPrerequisiteGuard {
   /// Validates prerequisites before Semester creation.
   static PrerequisiteCheckResult checkSemesterPrerequisites({
     required List<Course> courses,
     required List<AcademicYear> academicYears,
+    AppRole? role,
   }) {
     if (courses.isEmpty) {
       return const PrerequisiteCheckResult.blocked(
@@ -65,14 +71,454 @@ class AcademicPrerequisiteGuard {
       );
     }
     if (academicYears.isEmpty) {
-      return const PrerequisiteCheckResult.blocked(
+      final isHod = role == AppRole.hod;
+      return PrerequisiteCheckResult.blocked(
         missingType: AcademicPrerequisiteType.academicYear,
-        message: 'Please create an academic year first.',
-        actionLabel: 'Create Academic Year',
-        actionRoute: '/academics/academic_years/new',
+        message: isHod
+            ? 'Academic Year is institution-wide and managed by College Administration. Please notify your College Admin.'
+            : 'Please create an academic year first.',
+        actionLabel: isHod ? 'Notify College Admin' : 'Create Academic Year',
+        actionRoute: isHod ? null : '/academics/academic_years/new',
       );
     }
     return const PrerequisiteCheckResult.allowed();
+  }
+
+  /// Centralized setup next-action decision resolver (Prompt 10)
+  static SetupActionDecision resolveMilestoneDecision({
+    required SetupMilestoneId milestoneId,
+    required AppRole currentRole,
+    required String departmentId,
+    required String collegeId,
+    required List<Course> courses,
+    required List<AcademicYear> academicYears,
+    required List<Semester> semesters,
+    required List<Section> sections,
+    required List<Subject> subjects,
+    required List<Faculty> faculty,
+    required List<FacultyAssignment> facultyAssignments,
+    required List<Student> students,
+    required int timetableCount,
+    AcademicYear? currentAcademicYear,
+  }) {
+    final isHod = currentRole == AppRole.hod;
+    final isCollegeAdmin = currentRole == AppRole.collegeAdmin;
+    final isSuperAdmin = currentRole == AppRole.superAdmin;
+    final canManageDept = isHod || isCollegeAdmin || isSuperAdmin;
+
+    final deptCourses = courses.where((c) => c.departmentId == departmentId && c.isActive).toList();
+    final activeCollegeYears = academicYears.where((y) => (collegeId.isEmpty || y.collegeId == collegeId) && y.isActive).toList();
+    final effectiveAy = currentAcademicYear ?? (activeCollegeYears.isNotEmpty ? activeCollegeYears.first : null);
+    final hasAcademicYear = effectiveAy != null;
+
+    final deptSemesters = semesters.where((s) => s.departmentId == departmentId && (s.isCurrent || s.status == 'active')).toList();
+    final deptSections = sections.where((s) => s.departmentId == departmentId && s.isActive).toList();
+    final deptSubjects = subjects.where((s) => s.departmentId == departmentId && s.isActive).toList();
+    final deptAssignments = facultyAssignments.where((a) => a.departmentId == departmentId && a.isActive).toList();
+    final activeFaculty = faculty.where((f) => (f.departmentId.isEmpty || f.departmentId == departmentId) && f.isActive).toList();
+    final enrolledStudents = students.where((s) => s.isActive && s.sectionId.isNotEmpty).toList();
+    final allDeptStudents = students.where((s) => s.isActive).toList();
+
+    final firstCourse = deptCourses.isNotEmpty ? deptCourses.first : null;
+    final firstSemester = deptSemesters.isNotEmpty ? deptSemesters.first : null;
+    final firstSection = deptSections.isNotEmpty ? deptSections.first : null;
+
+    switch (milestoneId) {
+      case SetupMilestoneId.course:
+        if (deptCourses.isNotEmpty) {
+          return SetupActionDecision.complete(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            explanation: '${deptCourses.first.name}${deptCourses.length > 1 ? " (+${deptCourses.length - 1} more)" : ""}',
+            contextParams: {'departmentId': departmentId},
+          );
+        }
+        if (canManageDept) {
+          return SetupActionDecision.ready(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+            actionRoute: '/academics/courses/new?departmentId=$departmentId',
+            actionLabel: 'Create Course',
+            explanation: 'Define degree or diploma programs offered by your department.',
+            contextParams: {'departmentId': departmentId},
+          );
+        }
+        return SetupActionDecision.waitingOnOtherRole(
+          milestoneId: milestoneId,
+          currentRole: currentRole,
+          ownerRole: AppRole.hod,
+          missingDependency: AcademicPrerequisiteType.course,
+          explanation: 'A course must be created before department academic setup can proceed.',
+          waitingReason: 'Course creation is managed by Department Head or College Administration.',
+        );
+
+      case SetupMilestoneId.academicYear:
+        if (hasAcademicYear) {
+          return SetupActionDecision.complete(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            explanation: effectiveAy.name,
+            contextParams: {'academicYearId': effectiveAy.id},
+          );
+        }
+        if (isHod) {
+          // Hard requirement: HOD must never be routed into a 403 page
+          return SetupActionDecision.waitingOnOtherRole(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            ownerRole: AppRole.collegeAdmin,
+            missingDependency: AcademicPrerequisiteType.academicYear,
+            explanation: 'Your college has not configured an academic year yet. Semesters require an active academic year.',
+            waitingReason: 'Academic Year is created by College Admin and is required before semesters can be configured.',
+            notifyActionLabel: 'Notify College Admin',
+          );
+        }
+        if (isCollegeAdmin || isSuperAdmin) {
+          return SetupActionDecision.ready(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            ownerRole: AppRole.collegeAdmin,
+            actionRoute: '/academics/academic_years/new',
+            actionLabel: 'Create Academic Year',
+            explanation: 'Academic Year is required for semester setup across college departments.',
+          );
+        }
+        return SetupActionDecision.waitingOnOtherRole(
+          milestoneId: milestoneId,
+          currentRole: currentRole,
+          ownerRole: AppRole.collegeAdmin,
+          missingDependency: AcademicPrerequisiteType.academicYear,
+          explanation: 'Academic Year is required for semester setup.',
+          waitingReason: 'Academic Year is created by College Admin.',
+        );
+
+      case SetupMilestoneId.semester:
+        if (deptSemesters.isNotEmpty) {
+          return SetupActionDecision.complete(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            explanation: '${deptSemesters.first.name}${deptSemesters.length > 1 ? " (+${deptSemesters.length - 1} more)" : ""}',
+            contextParams: {
+              'departmentId': departmentId,
+              if (firstCourse != null) 'courseId': firstCourse.id,
+              if (effectiveAy != null) 'academicYearId': effectiveAy.id,
+            },
+          );
+        }
+        if (deptCourses.isEmpty) {
+          return SetupActionDecision.blocked(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+            missingDependency: AcademicPrerequisiteType.course,
+            canCurrentUserAct: canManageDept,
+            actionRoute: canManageDept ? '/academics/courses/new?departmentId=$departmentId' : null,
+            actionLabel: canManageDept ? 'Create Course' : null,
+            explanation: 'Create a course first before setting up teaching semesters.',
+          );
+        }
+        if (!hasAcademicYear) {
+          if (isHod) {
+            return SetupActionDecision.waitingOnOtherRole(
+              milestoneId: milestoneId,
+              currentRole: currentRole,
+              ownerRole: AppRole.collegeAdmin,
+              missingDependency: AcademicPrerequisiteType.academicYear,
+              explanation: 'Waiting for College Admin to configure Academic Year before semesters can be created.',
+              waitingReason: 'Academic Year is managed by College Administration.',
+              notifyActionLabel: 'Notify College Admin',
+            );
+          }
+          return SetupActionDecision.blocked(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            ownerRole: AppRole.collegeAdmin,
+            missingDependency: AcademicPrerequisiteType.academicYear,
+            canCurrentUserAct: true,
+            actionRoute: '/academics/academic_years/new',
+            actionLabel: 'Create Academic Year',
+            explanation: 'An Academic Year must be created before adding semesters.',
+          );
+        }
+        // Both Course and Academic Year are present
+        final activeCourse = deptCourses.first;
+        return SetupActionDecision.ready(
+          milestoneId: milestoneId,
+          currentRole: currentRole,
+          ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+          actionRoute: '/academics/semesters/new?courseId=${activeCourse.id}&academicYearId=${effectiveAy.id}',
+          actionLabel: 'Create Semester',
+          explanation: 'Create active teaching terms under your department courses.',
+          contextParams: {
+            'departmentId': departmentId,
+            'courseId': activeCourse.id,
+            'academicYearId': effectiveAy.id,
+          },
+        );
+
+      case SetupMilestoneId.section:
+        if (deptSections.isNotEmpty) {
+          return SetupActionDecision.complete(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            explanation: '${deptSections.first.name} (${deptSections.first.capacity} seats)${deptSections.length > 1 ? " (+${deptSections.length - 1} more)" : ""}',
+            contextParams: {
+              'departmentId': departmentId,
+              if (firstCourse != null) 'courseId': firstCourse.id,
+              if (firstSemester != null) 'semesterId': firstSemester.id,
+            },
+          );
+        }
+        if (deptSemesters.isEmpty) {
+          return SetupActionDecision.blocked(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+            missingDependency: AcademicPrerequisiteType.semester,
+            canCurrentUserAct: canManageDept && deptCourses.isNotEmpty && hasAcademicYear,
+            actionRoute: (canManageDept && deptCourses.isNotEmpty && hasAcademicYear)
+                ? '/academics/semesters/new?courseId=${firstCourse?.id ?? ""}&academicYearId=${effectiveAy.id}'
+                : null,
+            actionLabel: (canManageDept && deptCourses.isNotEmpty && hasAcademicYear) ? 'Create Semester' : null,
+            explanation: 'Create a semester for this course before configuring sections.',
+          );
+        }
+        final activeSectionSemester = deptSemesters.first;
+        return SetupActionDecision.ready(
+          milestoneId: milestoneId,
+          currentRole: currentRole,
+          ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+          actionRoute: '/academics/sections/new?courseId=${firstCourse?.id ?? ""}&semesterId=${activeSectionSemester.id}',
+          actionLabel: 'Create Section',
+          explanation: 'Form classroom student cohorts with designated seat capacity.',
+          contextParams: {
+            'departmentId': departmentId,
+            if (firstCourse != null) 'courseId': firstCourse.id,
+            'semesterId': activeSectionSemester.id,
+          },
+        );
+
+      case SetupMilestoneId.subject:
+        if (deptSubjects.isNotEmpty) {
+          return SetupActionDecision.complete(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            explanation: '${deptSubjects.first.name} (${deptSubjects.first.code})${deptSubjects.length > 1 ? " (+${deptSubjects.length - 1} more)" : ""}',
+            contextParams: {
+              'departmentId': departmentId,
+              if (firstCourse != null) 'courseId': firstCourse.id,
+              if (firstSemester != null) 'semesterId': firstSemester.id,
+            },
+          );
+        }
+        if (deptSemesters.isEmpty) {
+          return SetupActionDecision.blocked(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+            missingDependency: AcademicPrerequisiteType.semester,
+            canCurrentUserAct: canManageDept && deptCourses.isNotEmpty && hasAcademicYear,
+            actionRoute: (canManageDept && deptCourses.isNotEmpty && hasAcademicYear)
+                ? '/academics/semesters/new?courseId=${firstCourse?.id ?? ""}&academicYearId=${effectiveAy.id}'
+                : null,
+            actionLabel: (canManageDept && deptCourses.isNotEmpty && hasAcademicYear) ? 'Create Semester' : null,
+            explanation: 'Create a semester for this course before configuring subjects.',
+          );
+        }
+        final activeSubjectSemester = deptSemesters.first;
+        return SetupActionDecision.ready(
+          milestoneId: milestoneId,
+          currentRole: currentRole,
+          ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+          actionRoute: '/academics/subjects/new?courseId=${firstCourse?.id ?? ""}&semesterId=${activeSubjectSemester.id}',
+          actionLabel: 'Add Subject',
+          explanation: 'Add syllabus courses, theory lectures, and practical labs.',
+          contextParams: {
+            'departmentId': departmentId,
+            if (firstCourse != null) 'courseId': firstCourse.id,
+            'semesterId': activeSubjectSemester.id,
+          },
+        );
+
+      case SetupMilestoneId.facultyAssignment:
+        if (deptAssignments.isNotEmpty) {
+          return SetupActionDecision.complete(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            explanation: '${deptAssignments.length} Teaching Allocations',
+            contextParams: {
+              'departmentId': departmentId,
+              if (firstSection != null) 'sectionId': firstSection.id,
+            },
+          );
+        }
+        if (deptSections.isEmpty) {
+          return SetupActionDecision.blocked(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+            missingDependency: AcademicPrerequisiteType.section,
+            canCurrentUserAct: canManageDept,
+            explanation: 'Create sections before allocating faculty members.',
+          );
+        }
+        if (deptSubjects.isEmpty) {
+          return SetupActionDecision.blocked(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+            missingDependency: AcademicPrerequisiteType.subject,
+            canCurrentUserAct: canManageDept,
+            explanation: 'Add subjects before allocating faculty members.',
+          );
+        }
+        // Section & Subject exist, check active faculty availability (Prompt 10 Section 8)
+        if (activeFaculty.isEmpty) {
+          if (canManageDept) {
+            return SetupActionDecision.blocked(
+              milestoneId: milestoneId,
+              currentRole: currentRole,
+              ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+              missingDependency: AcademicPrerequisiteType.faculty,
+              canCurrentUserAct: true,
+              actionRoute: '/academics/faculty/new?departmentId=$departmentId',
+              actionLabel: 'Provision Faculty',
+              explanation: 'No active faculty is available for this subject. Provision faculty first.',
+            );
+          }
+          return SetupActionDecision.waitingOnOtherRole(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            ownerRole: AppRole.collegeAdmin,
+            missingDependency: AcademicPrerequisiteType.faculty,
+            explanation: 'No active faculty is available for this subject.',
+            waitingReason: 'Faculty creation is handled by College Admin.',
+          );
+        }
+        return SetupActionDecision.ready(
+          milestoneId: milestoneId,
+          currentRole: currentRole,
+          ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+          actionRoute: '/faculty-assignments',
+          actionLabel: 'Assign Faculty',
+          explanation: 'Allocate teachers and professors to subject section batches.',
+          contextParams: {
+            'departmentId': departmentId,
+            if (firstSection != null) 'sectionId': firstSection.id,
+          },
+        );
+
+      case SetupMilestoneId.studentEnrollment:
+        if (enrolledStudents.isNotEmpty) {
+          return SetupActionDecision.complete(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            explanation: '${enrolledStudents.length} Students Enrolled',
+            contextParams: {
+              'departmentId': departmentId,
+              if (firstSection != null) 'sectionId': firstSection.id,
+            },
+          );
+        }
+        if (deptSections.isEmpty) {
+          return SetupActionDecision.blocked(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+            missingDependency: AcademicPrerequisiteType.section,
+            canCurrentUserAct: canManageDept,
+            explanation: 'Create sections before enrolling students.',
+          );
+        }
+        // Sections exist. Check whether any students exist in the department
+        if (allDeptStudents.isEmpty) {
+          if (canManageDept) {
+            return SetupActionDecision.blocked(
+              milestoneId: milestoneId,
+              currentRole: currentRole,
+              ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+              missingDependency: AcademicPrerequisiteType.enrollment,
+              canCurrentUserAct: true,
+              actionRoute: '/academics/students/new?departmentId=$departmentId',
+              actionLabel: 'Provision Student',
+              explanation: 'No admitted students available for enrollment. Student accounts must be provisioned before assigning to sections.',
+            );
+          }
+          return SetupActionDecision.waitingOnOtherRole(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            ownerRole: AppRole.collegeAdmin,
+            missingDependency: AcademicPrerequisiteType.enrollment,
+            explanation: 'No students are available to enroll.',
+            waitingReason: 'Student enrollment requires admitted student records from College Administration.',
+          );
+        }
+        return SetupActionDecision.ready(
+          milestoneId: milestoneId,
+          currentRole: currentRole,
+          ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+          actionRoute: '/academics/students',
+          actionLabel: 'Enroll Students',
+          explanation: 'Assign admitted students to department sections for class rosters.',
+          contextParams: {
+            'departmentId': departmentId,
+            if (firstSection != null) 'sectionId': firstSection.id,
+          },
+        );
+
+      case SetupMilestoneId.timetable:
+        if (timetableCount > 0) {
+          return SetupActionDecision.complete(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            explanation: '$timetableCount Timetables Scheduled',
+            contextParams: {'departmentId': departmentId},
+          );
+        }
+        if (deptSections.isEmpty) {
+          return SetupActionDecision.blocked(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+            missingDependency: AcademicPrerequisiteType.section,
+            canCurrentUserAct: false,
+            actionRoute: null,
+            explanation: 'Create sections before generating timetables.',
+          );
+        }
+        if (deptSubjects.isEmpty) {
+          return SetupActionDecision.blocked(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+            missingDependency: AcademicPrerequisiteType.subject,
+            canCurrentUserAct: false,
+            actionRoute: null,
+            explanation: 'Add subjects before generating timetables.',
+          );
+        }
+        if (deptAssignments.isEmpty) {
+          return SetupActionDecision.blocked(
+            milestoneId: milestoneId,
+            currentRole: currentRole,
+            ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+            missingDependency: AcademicPrerequisiteType.facultyAssignment,
+            canCurrentUserAct: false,
+            actionRoute: null,
+            explanation: 'Assign faculty to subjects before creating timetable schedules.',
+          );
+        }
+        return SetupActionDecision.ready(
+          milestoneId: milestoneId,
+          currentRole: currentRole,
+          ownerRole: isHod ? AppRole.hod : AppRole.collegeAdmin,
+          actionRoute: '/timetable/manage',
+          actionLabel: 'Create Timetable',
+          explanation: 'Build and publish regular class lecture schedule containers.',
+          contextParams: {'departmentId': departmentId},
+        );
+    }
   }
 
   /// Validates prerequisites before Section creation.

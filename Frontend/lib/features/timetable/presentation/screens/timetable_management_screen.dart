@@ -7,6 +7,7 @@ import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -239,12 +240,17 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
 
     final canCreate = user.role == AppRole.collegeAdmin || user.role == AppRole.hod;
     final filters = ref.watch(timetableFilterProvider);
-    final isGradientRole = user.role == AppRole.superAdmin ||
-        user.role == AppRole.collegeAdmin ||
-        user.role == AppRole.hod;
     final width = MediaQuery.of(context).size.width;
     final isMobile = width < 768;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final containersAsync = ref.watch(managementContainersProvider);
+    final containers = containersAsync.valueOrNull ?? [];
+    final hasContainers = containers.isNotEmpty;
+    final activeDraft = containers.cast<TimetableContainerModel?>().firstWhere(
+      (c) => c?.status == TimetableStatus.draft,
+      orElse: () => null,
+    );
 
     return Material(
       color: Colors.transparent,
@@ -262,14 +268,22 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                     subtitle: isMobile ? null : 'Create master timetable containers, configure periods & breaks, and manage live published schedules.',
                     actions: [
                       if (canCreate) ...[
-                        AcadexButton(
-                          label: 'Add Schedule',
-                          icon: LucideIcons.calendarPlus,
-                          variant: AcadexButtonVariant.secondary,
-                          size: isMobile ? AcadexButtonSize.sm : AcadexButtonSize.md,
-                          onPressed: () => _openCreateTimetable(),
-                        ),
-                        const SizedBox(width: 8),
+                        if (hasContainers && activeDraft != null) ...[
+                          AcadexButton(
+                            label: 'Open Designer',
+                            icon: LucideIcons.layoutGrid,
+                            variant: AcadexButtonVariant.secondary,
+                            size: isMobile ? AcadexButtonSize.sm : AcadexButtonSize.md,
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => TimetableDesignerScreen(timetableId: activeDraft.id),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                        ],
                         AcadexButton(
                           label: 'Create Timetable',
                           icon: LucideIcons.sparkles,
@@ -287,7 +301,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                   padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.darkCanvasSoft : (isGradientRole ? AcadexColors.surface : AcadexColors.canvasSoft),
+                      color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
                       borderRadius: AcadexRadius.borderRadiusSm,
                       border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
                     ),
@@ -297,11 +311,11 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                       tabAlignment: TabAlignment.start,
                       indicatorSize: TabBarIndicatorSize.tab,
                       indicator: BoxDecoration(
-                        color: isGradientRole ? const Color(0xFF003366) : AcadexColors.primary,
+                        color: AcadexColors.primary,
                         borderRadius: AcadexRadius.borderRadiusSm,
                       ),
                       labelColor: Colors.white,
-                      unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : (isGradientRole ? const Color(0xFF475569) : AcadexColors.inkMuted),
+                      unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                       tabs: const [
                         Tab(
                           child: Row(
@@ -393,12 +407,46 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
 
     return containersAsync.when(
       loading: () => const AcadexLoadingState(message: 'Loading timetables...'),
-      error: (e, st) => AcadexErrorState(
-        message: 'Failed to load timetables: $e',
+      error: (e, st) => AcadexErrorState.fromError(
+        error: e,
+        title: 'Unable to load timetables',
         onRetry: () => ref.refresh(managementContainersProvider),
       ),
       data: (containers) {
         if (containers.isEmpty) {
+          final courses = ref.watch(coursesProvider).value ?? [];
+          final academicYears = ref.watch(academicYearsProvider).value ?? [];
+          final semesters = ref.watch(semestersProvider).value ?? [];
+          final sections = ref.watch(sectionsProvider).value ?? [];
+          final subjects = ref.watch(subjectsProvider).value ?? [];
+          final facultyAssignments = ref.watch(facultyAssignmentsProvider).value ?? [];
+          final rooms = ref.watch(roomsProvider).value ?? [];
+
+          final prereqCheck = AcademicPrerequisiteGuard.checkTimetablePrerequisites(
+            courses: courses,
+            academicYears: academicYears,
+            semesters: semesters,
+            sections: sections,
+            subjects: subjects,
+            facultyAssignments: facultyAssignments,
+            rooms: rooms,
+          );
+
+          if (!prereqCheck.isSatisfied && canCreate) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 540),
+                  child: AcademicPrerequisiteGuard.buildWarningCard(
+                    context: context,
+                    result: prereqCheck,
+                  ),
+                ),
+              ),
+            );
+          }
+
           return Center(
             child: AcadexEmptyState(
               title: 'No Timetables Found',
@@ -571,14 +619,17 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                   ref.invalidate(dateScheduleProvider);
                   ref.invalidate(weeklyTimetableProvider);
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Timetable published to live schedule!'), backgroundColor: AcadexColors.success),
+                    AcadexSnackBar.showSuccess(
+                      context,
+                      'Timetable published to live schedule!',
                     );
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Cannot publish: $e'), backgroundColor: AcadexColors.error),
+                    AcadexSnackBar.showError(
+                      context,
+                      e,
+                      fallbackMessage: 'Cannot publish timetable',
                     );
                   }
                 }
@@ -619,8 +670,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                 ref.invalidate(dateScheduleProvider);
                 ref.invalidate(weeklyTimetableProvider);
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Timetable unpublished.'), backgroundColor: AcadexColors.warning),
+                  AcadexSnackBar.showWarning(
+                    context,
+                    'Timetable unpublished.',
                   );
                 }
               },
@@ -756,8 +808,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                 await repo.deleteTimetableContainer(container.id);
                 ref.invalidate(managementContainersProvider);
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Timetable draft deleted.'), backgroundColor: AcadexColors.error),
+                  AcadexSnackBar.showInfo(
+                    context,
+                    'Timetable draft deleted.',
                   );
                 }
               } catch (e) {
@@ -793,14 +846,17 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                                 await repo.archiveTimetableContainer(container.id);
                                 ref.invalidate(managementContainersProvider);
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Timetable successfully archived.'), backgroundColor: AcadexColors.success),
+                                  AcadexSnackBar.showSuccess(
+                                    context,
+                                    'Timetable successfully archived.',
                                   );
                                 }
                               } catch (archiveErr) {
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(archiveErr.toString().replaceFirst('Exception: ', '')), backgroundColor: AcadexColors.error),
+                                  AcadexSnackBar.showError(
+                                    context,
+                                    archiveErr,
+                                    fallbackMessage: 'Failed to archive timetable',
                                   );
                                 }
                               }
@@ -812,8 +868,10 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                   }
                 } else {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(errorMsg), backgroundColor: AcadexColors.error),
+                    AcadexSnackBar.showError(
+                      context,
+                      e,
+                      fallbackMessage: errorMsg,
                     );
                   }
                 }
@@ -845,25 +903,35 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
       transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
       child: timetableAsync.when(
         loading: () => const AcadexLoadingState(key: ValueKey('mgt_loading'), message: 'Loading schedule entries...'),
-        error: (e, st) => AcadexErrorState(
+        error: (e, st) => AcadexErrorState.fromError(
           key: const ValueKey('mgt_error'),
-          message: 'Failed to load schedule entries: $e',
+          error: e,
+          title: 'Unable to load schedule entries',
           onRetry: () => ref.refresh(managementTimetableProvider),
         ),
         data: (entries) {
           if (entries.isEmpty) {
+            final authState = ref.watch(authProvider);
+            final userRole = authState is AuthAuthenticated ? authState.user.role : null;
+            final canCreate = userRole == AppRole.hod || userRole == AppRole.collegeAdmin;
+            final hasContainers = (ref.watch(managementContainersProvider).valueOrNull ?? []).isNotEmpty;
+
             return Center(
               key: const ValueKey('mgt_empty'),
               child: AcadexEmptyState(
                 title: filters.hasActiveFilters ? 'No matching schedules found' : 'No timetable entries found',
                 subtitle: filters.hasActiveFilters
                     ? 'Try adjusting your filters or search query.'
-                    : 'Click "Add Schedule" or "Create Timetable" to create timetable schedules.',
+                    : (hasContainers
+                        ? 'Open a master timetable container in Timetable Designer to add and schedule class entries.'
+                        : 'A master timetable container must be created before scheduling class entries.'),
                 icon: LucideIcons.calendarX,
-                actionLabel: filters.hasActiveFilters ? 'Clear All Filters' : null,
+                actionLabel: filters.hasActiveFilters
+                    ? 'Clear All Filters'
+                    : (hasContainers ? 'View Master Timetables' : (canCreate ? 'Create Timetable' : null)),
                 onActionTap: filters.hasActiveFilters
                     ? () => ref.read(timetableFilterProvider.notifier).state = TimetableFilterState()
-                    : null,
+                    : (hasContainers ? () => _tabController.animateTo(0) : (canCreate ? _openCreateTimetable : null)),
               ),
             );
           }
@@ -993,9 +1061,10 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
         Expanded(
           child: subsAsync.when(
             loading: () => const AcadexLoadingState(key: ValueKey('subs_loading'), message: 'Loading substitutions...'),
-            error: (e, _) => AcadexErrorState(
+            error: (e, _) => AcadexErrorState.fromError(
               key: const ValueKey('subs_error'),
-              message: 'Failed to load substitutions: $e',
+              error: e,
+              title: 'Unable to load substitutions',
               onRetry: () => ref.refresh(teacherSubstitutionsProvider(query)),
             ),
             data: (subs) {
@@ -1162,8 +1231,40 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                 ),
                 const SizedBox(width: 12),
 
-                // Department Dropdown
-                if (role != AppRole.hod) ...[
+                // Department Scope
+                if (role == AppRole.hod) ...[
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final deptsAsync = ref.watch(departmentsProvider);
+                      final deptName = deptsAsync.valueOrNull?.firstWhere(
+                        (d) => d.id == filters.departmentId,
+                        orElse: () => Department(id: '', name: 'Your Department', code: '', collegeId: '', hodId: '', description: '', isActive: true),
+                      ).name ?? 'Your Department';
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                          borderRadius: BorderRadius.circular(AcadexRadius.md),
+                          border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(LucideIcons.building2, size: 13, color: AcadexColors.primary),
+                            const SizedBox(width: 6),
+                            Text(
+                              deptName,
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                            ),
+                            const SizedBox(width: 6),
+                            const AcadexBadge(label: "YOUR DEPT", variant: AcadexBadgeVariant.primary),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                ] else ...[
                   Consumer(
                     builder: (context, ref, _) {
                       final deptsAsync = ref.watch(departmentsProvider);
@@ -1352,8 +1453,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
 
     return containersAsync.when(
       loading: () => const AcadexLoadingState(message: 'Loading timetable context...'),
-      error: (e, st) => AcadexErrorState(
-        message: 'Failed to load timetable: $e',
+      error: (e, st) => AcadexErrorState.fromError(
+        error: e,
+        title: 'Unable to load timetable',
         onRetry: () => ref.refresh(managementContainersProvider),
       ),
       data: (containers) {
@@ -1842,11 +1944,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
       ref.invalidate(managementContainersProvider);
       ref.invalidate(managementTimetableProvider);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Timetable published successfully! Live schedules updated.'),
-            backgroundColor: AcadexColors.success,
-          ),
+        AcadexSnackBar.showSuccess(
+          context,
+          'Timetable published successfully! Live schedules updated.',
         );
       }
     } else {
@@ -1892,21 +1992,17 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
       ref.invalidate(managementContainersProvider);
       ref.invalidate(managementTimetableProvider);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Timetable reverted to DRAFT status.'),
-            backgroundColor: AcadexColors.warningDark,
-          ),
+        AcadexSnackBar.showWarning(
+          context,
+          'Timetable reverted to DRAFT status.',
         );
       }
     } else {
       final state = ref.read(timetableAuthoringProvider(container.id));
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.errorMessage ?? 'Failed to unpublish timetable.'),
-            backgroundColor: AcadexColors.error,
-          ),
+        AcadexSnackBar.showError(
+          context,
+          state.errorMessage ?? 'Failed to unpublish timetable.',
         );
       }
     }
@@ -1994,20 +2090,17 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                 ref.invalidate(timetableContainerStreamProvider(targetTimetableId));
 
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Timetable entry deleted successfully.'),
-                      backgroundColor: AcadexColors.success,
-                    ),
+                  AcadexSnackBar.showSuccess(
+                    context,
+                    'Timetable entry deleted successfully.',
                   );
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to delete entry: $e'),
-                      backgroundColor: AcadexColors.error,
-                    ),
+                  AcadexSnackBar.showError(
+                    context,
+                    e,
+                    fallbackMessage: 'Failed to delete entry',
                   );
                 }
               }
@@ -2053,14 +2146,17 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                 ref.invalidate(managementContainersProvider);
                 ref.invalidate(managementTimetableProvider);
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Class entry removed successfully.'), backgroundColor: AcadexColors.success),
+                  AcadexSnackBar.showSuccess(
+                    context,
+                    'Class entry removed successfully.',
                   );
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to delete entry: $e'), backgroundColor: AcadexColors.error),
+                  AcadexSnackBar.showError(
+                    context,
+                    e,
+                    fallbackMessage: 'Failed to delete entry',
                   );
                 }
               }

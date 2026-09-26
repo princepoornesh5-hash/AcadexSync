@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_theme.dart';
-import '../../../features/auth/domain/models/auth_state.dart';
-import '../../../features/auth/domain/models/role_enum.dart';
-import '../../../features/auth/presentation/providers/auth_provider.dart';
 import 'acadex_ambient_background.dart';
 import 'animated_particle_sphere.dart';
 export 'acadex_ambient_background.dart';
@@ -67,14 +64,8 @@ class AcadexPageContainer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final isGradientRole = authState is AuthAuthenticated &&
-        (authState.user.role == AppRole.superAdmin ||
-            authState.user.role == AppRole.collegeAdmin ||
-            authState.user.role == AppRole.hod ||
-            authState.user.role == AppRole.faculty ||
-            authState.user.role == AppRole.student);
-    final defaultBg = isGradientRole ? Colors.transparent : AcadexColors.canvas;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final defaultBg = isDark ? AcadexColors.darkCanvas : AcadexColors.canvas;
     final bgColor = backgroundColor ?? defaultBg;
 
     final isMobile = AcadexBreakpoints.isMobile(context);

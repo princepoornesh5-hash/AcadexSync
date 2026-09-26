@@ -9,6 +9,8 @@ import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../providers/academic_providers.dart';
 
 class AcademicYearDetailScreen extends ConsumerWidget {
@@ -40,18 +42,11 @@ class AcademicYearDetailScreen extends ConsumerWidget {
                 await ref.read(academicYearsProvider.notifier).setAsCurrent(academicYearId);
                 ref.invalidate(academicYearByIdProvider(academicYearId));
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('$yearName is now set as the current academic year.'),
-                      backgroundColor: AcadexColors.success,
-                    ),
-                  );
+                  AcadexSnackBar.showSuccess(context, '$yearName is now set as the current academic year.');
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e'), backgroundColor: AcadexColors.error),
-                  );
+                  AcadexSnackBar.showError(context, e);
                 }
               }
             },
@@ -89,21 +84,11 @@ class AcademicYearDetailScreen extends ConsumerWidget {
                 await ref.read(academicYearsProvider.notifier).toggleStatus(academicYearId, !isCurrentlyActive);
                 ref.invalidate(academicYearByIdProvider(academicYearId));
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Academic Year $action successful!'),
-                      backgroundColor: AcadexColors.success,
-                    ),
-                  );
+                  AcadexSnackBar.showSuccess(context, 'Academic Year $action successful!');
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to update status: $e'),
-                      backgroundColor: AcadexColors.error,
-                    ),
-                  );
+                  AcadexSnackBar.showError(context, e);
                 }
               }
             },
@@ -125,18 +110,12 @@ class AcademicYearDetailScreen extends ConsumerWidget {
     final bodyContent = yearAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(LucideIcons.circleAlert, color: AcadexColors.error, size: 36),
-            const SizedBox(height: 12),
-            Text('Error loading academic year: $err', style: const TextStyle(color: AcadexColors.error)),
-            const SizedBox(height: 12),
-            AcadexButton(
-              label: 'Retry',
-              onPressed: () => ref.invalidate(academicYearByIdProvider(academicYearId)),
-            ),
-          ],
+        child: AcadexErrorState.fromError(
+          error: err,
+          title: 'Unable to load academic year',
+          onRetry: () => ref.invalidate(academicYearByIdProvider(academicYearId)),
+          actionLabel: 'Go Back',
+          onAction: () => context.safePop(fallbackRoute: '/academics/academic-years'),
         ),
       ),
       data: (year) {
@@ -144,7 +123,7 @@ class AcademicYearDetailScreen extends ConsumerWidget {
         final totalMonths = (totalDays / 30.44).round();
 
         return AcadexPageContainer(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.white,
           maxWidth: 960,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,9 +146,9 @@ class AcademicYearDetailScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),

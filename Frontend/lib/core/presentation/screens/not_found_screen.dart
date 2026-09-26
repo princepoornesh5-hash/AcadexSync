@@ -9,6 +9,9 @@ import '../../../features/auth/domain/models/role_enum.dart';
 import '../../../features/auth/presentation/providers/auth_provider.dart';
 import '../widgets/acadex_button.dart';
 
+import '../../observability/logger.dart';
+import '../widgets/acadex_page_container.dart';
+
 class AcadexNotFoundScreen extends ConsumerWidget {
   final String? location;
   final Exception? error;
@@ -39,6 +42,15 @@ class AcadexNotFoundScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Log the actual route error internally for developers without leaking to the user
+    if (error != null || location != null) {
+      AcadexLogger.error(
+        'Route resolution failure: ${location ?? "unknown"}',
+        error: error,
+        extraContext: {'location': location},
+      );
+    }
+
     AppRole? role;
     if (authState is AuthAuthenticated) {
       role = authState.user.role;
@@ -48,11 +60,11 @@ class AcadexNotFoundScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
+      body: AcadexPageContainer(
+        maxWidth: 540,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
             child: Container(
               padding: const EdgeInsets.all(36),
               decoration: BoxDecoration(
@@ -61,7 +73,7 @@ class AcadexNotFoundScreen extends ConsumerWidget {
                 border: Border.all(
                   color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
                 ),
-                boxShadow: AcadexShadows.lightMd,
+                boxShadow: isDark ? AcadexShadows.darkMd : AcadexShadows.lightMd,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -99,7 +111,7 @@ class AcadexNotFoundScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Lost in Campus Space',
+                    'Page unavailable',
                     style: AcadexTypography.heading2(
                       color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                     ),
@@ -107,13 +119,16 @@ class AcadexNotFoundScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'The page or feature you are trying to access does not exist, has been relocated, or is currently unavailable.',
+                    'This page could not be opened. It may have been moved, removed, or is currently unavailable.',
                     style: AcadexTypography.body(
                       color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  if (location != null && location!.isNotEmpty) ...[
+                  if (location != null &&
+                      location!.isNotEmpty &&
+                      !location!.contains('GoException') &&
+                      !location!.contains('Exception:')) ...[
                     const SizedBox(height: 16),
                     Container(
                       width: double.infinity,
@@ -167,7 +182,7 @@ class AcadexNotFoundScreen extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: AcadexButton(
-                          label: 'Dashboard',
+                          label: 'Go to Dashboard',
                           icon: LucideIcons.layoutDashboard,
                           size: AcadexButtonSize.md,
                           onPressed: () => context.go(homeRoute),

@@ -10,6 +10,9 @@ import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_search_bar.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../academic_structure/domain/models/academic_models.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
@@ -113,6 +116,15 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
     final departmentsAsync = ref.watch(departmentsProvider);
 
     final isDesktop = AcadexBreakpoints.isDesktop(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (isHod && currentUser.departmentId != null && currentUser.departmentId!.isNotEmpty) {
+      if (selectedDept != currentUser.departmentId) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(userDeptFilterProvider.notifier).state = currentUser.departmentId;
+        });
+      }
+    }
 
     // Build role filter options depending on user's role
     final roleFilterNames = <String>['All'];
@@ -219,7 +231,32 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
                   },
                 ),
               ),
-              if (departmentsAsync.value != null && departmentsAsync.value!.isNotEmpty && !isHod)
+              if (isHod && currentUser.departmentId != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isDark ? AcadexColors.surfaceDark : AcadexColors.surface,
+                    borderRadius: BorderRadius.circular(AcadexRadius.md),
+                    border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(LucideIcons.building2, size: 14, color: AcadexColors.primary),
+                      const SizedBox(width: 6),
+                      Text(
+                        departmentsAsync.value?.firstWhere(
+                              (d) => d.id == currentUser.departmentId,
+                              orElse: () => Department(id: '', name: 'Your Department', code: '', collegeId: '', hodId: '', description: '', isActive: true),
+                            ).name ?? 'Your Department',
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                      ),
+                      const SizedBox(width: 6),
+                      const AcadexBadge(label: "YOUR DEPT", variant: AcadexBadgeVariant.primary),
+                    ],
+                  ),
+                )
+              else if (departmentsAsync.value != null && departmentsAsync.value!.isNotEmpty)
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 160),
                   child: DropdownButton<String?>(
@@ -249,7 +286,7 @@ class _UserDirectoryScreenState extends ConsumerState<UserDirectoryScreen> {
                     ref.read(userSearchQueryProvider.notifier).state = '';
                     ref.read(userRoleFilterProvider.notifier).state = null;
                     ref.read(userStatusFilterProvider.notifier).state = null;
-                    ref.read(userDeptFilterProvider.notifier).state = null;
+                    ref.read(userDeptFilterProvider.notifier).state = isHod ? currentUser.departmentId : null;
                   },
                 ),
             ],

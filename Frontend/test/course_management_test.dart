@@ -308,7 +308,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Courses (Degree Programs)'), findsOneWidget);
+      expect(find.text('Courses'), findsOneWidget);
       expect(find.text('B.Tech'), findsWidgets);
       expect(find.text('M.Tech'), findsWidgets);
       expect(find.text('BTECH-CS'), findsWidgets);
@@ -850,11 +850,11 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // On Semesters tab, Add Semester button should be present
-      expect(find.text('Add Semester'), findsOneWidget);
+      // On Semesters tab, Create Semester button should be present
+      expect(find.text('Create Semester'), findsOneWidget);
     });
 
-    testWidgets('15. Downstream Add Section action is accessible with prefilled courseId', (tester) async {
+    testWidgets('15. Downstream Create Section action is accessible with prefilled courseId', (tester) async {
       tester.view.physicalSize = const Size(1200, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
@@ -884,10 +884,10 @@ void main() {
       await tester.tap(find.text('Sections'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Add Section'), findsOneWidget);
+      expect(find.text('Create Section'), findsOneWidget);
     });
 
-    testWidgets('16. Downstream Add Subject action is accessible with prefilled courseId', (tester) async {
+    testWidgets('16. Downstream Create Subject action is accessible with prefilled courseId', (tester) async {
       tester.view.physicalSize = const Size(1200, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
@@ -917,7 +917,7 @@ void main() {
       await tester.tap(find.text('Subjects'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Add Subject'), findsOneWidget);
+      expect(find.text('Create Subject'), findsOneWidget);
     });
   });
 }

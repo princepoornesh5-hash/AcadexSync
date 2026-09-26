@@ -11,6 +11,8 @@ import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../providers/academic_providers.dart';
 import '../../domain/models/academic_models.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 
 class HodDetailScreen extends ConsumerWidget {
   final String hodId;
@@ -21,11 +23,9 @@ class HodDetailScreen extends ConsumerWidget {
     final availableDepts = allDepts.where((d) => d.isActive && d.id != hod.departmentId).toList();
 
     if (availableDepts.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No other active departments available to transfer this HOD to.'),
-          backgroundColor: AcadexColors.warning,
-        ),
+      AcadexSnackBar.showWarning(
+        context,
+        'No other active departments available to transfer this HOD to.',
       );
       return;
     }
@@ -74,20 +74,17 @@ class HodDetailScreen extends ConsumerWidget {
                   ref.invalidate(hodByIdProvider(hodId));
                   ref.invalidate(hodSummaryProvider(hodId));
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('HOD successfully transferred to new department!'),
-                        backgroundColor: AcadexColors.success,
-                      ),
+                    AcadexSnackBar.showSuccess(
+                      context,
+                      'HOD successfully transferred to new department!',
                     );
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(e.toString().replaceFirst('Exception: ', '')),
-                        backgroundColor: AcadexColors.error,
-                      ),
+                    AcadexSnackBar.showError(
+                      context,
+                      e,
+                      fallbackMessage: 'Failed to transfer HOD',
                     );
                   }
                 }
@@ -131,20 +128,17 @@ class HodDetailScreen extends ConsumerWidget {
                 ref.invalidate(hodByIdProvider(hodId));
                 ref.invalidate(hodSummaryProvider(hodId));
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('HOD account successfully ${isActive ? "deactivated" : "reactivated"}!'),
-                      backgroundColor: AcadexColors.success,
-                    ),
+                  AcadexSnackBar.showSuccess(
+                    context,
+                    'HOD account successfully ${isActive ? "deactivated" : "reactivated"}!',
                   );
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(e.toString().replaceFirst('Exception: ', '')),
-                      backgroundColor: AcadexColors.error,
-                    ),
+                  AcadexSnackBar.showError(
+                    context,
+                    e,
+                    fallbackMessage: 'Failed to update HOD status',
                   );
                 }
               }
@@ -179,21 +173,18 @@ class HodDetailScreen extends ConsumerWidget {
               try {
                 await ref.read(hodsProvider.notifier).unassignHod(hodId, newRole: 'FACULTY');
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('HOD assignment removed successfully. User reassigned to Faculty.'),
-                      backgroundColor: AcadexColors.success,
-                    ),
+                  AcadexSnackBar.showSuccess(
+                    context,
+                    'HOD assignment removed successfully. User reassigned to Faculty.',
                   );
                   context.safePop(fallbackRoute: '/academics/hods');
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(e.toString().replaceFirst('Exception: ', '')),
-                      backgroundColor: AcadexColors.error,
-                    ),
+                  AcadexSnackBar.showError(
+                    context,
+                    e,
+                    fallbackMessage: 'Failed to remove HOD assignment',
                   );
                 }
               }
@@ -220,27 +211,17 @@ class HodDetailScreen extends ConsumerWidget {
 
     final bodyContent = hodAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(LucideIcons.circleAlert, color: AcadexColors.error, size: 36),
-            const SizedBox(height: 12),
-            Text('Error loading HOD profile: $err', style: const TextStyle(color: AcadexColors.error)),
-            const SizedBox(height: 12),
-            AcadexButton(
-              label: 'Retry',
-              onPressed: () => ref.invalidate(hodByIdProvider(hodId)),
-            ),
-          ],
-        ),
+      error: (err, _) => AcadexErrorState.fromError(
+        error: err,
+        title: "Unable to load HOD profile",
+        onRetry: () => ref.invalidate(hodByIdProvider(hodId)),
       ),
       data: (hod) {
         final dept = deptsMap[hod.departmentId ?? ''];
         final isPending = hod.accountStatus == AccountStatus.pendingActivation;
 
         return AcadexPageContainer(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.white,
           maxWidth: 960,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +239,7 @@ class HodDetailScreen extends ConsumerWidget {
               const SizedBox(height: 20),
 
               // ── Summary Metrics Card ──────────────────────────────────
-              _buildMetricsCard(isDark, summaryAsync),
+              _buildMetricsCard(ref, isDark, summaryAsync),
               const SizedBox(height: 32),
             ],
           ),
@@ -271,9 +252,9 @@ class HodDetailScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
@@ -527,6 +508,7 @@ class HodDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildMetricsCard(
+    WidgetRef ref,
     bool isDark,
     AsyncValue<Map<String, dynamic>> summaryAsync,
   ) {
@@ -550,7 +532,25 @@ class HodDetailScreen extends ConsumerWidget {
           const SizedBox(height: 14),
           summaryAsync.when(
             loading: () => const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())),
-            error: (e, _) => Text('Metrics unavailable: $e', style: const TextStyle(color: AcadexColors.error)),
+            error: (e, _) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  const Icon(LucideIcons.circleAlert, size: 16, color: AcadexColors.error),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Department metrics are currently unavailable.',
+                      style: AcadexTypography.caption(color: AcadexColors.error),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => ref.invalidate(hodSummaryProvider(hodId)),
+                    child: const Text('Retry', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
             data: (summary) {
               final facultyCount = summary['facultyCount'] ?? 0;
               final studentCount = summary['studentCount'] ?? 0;

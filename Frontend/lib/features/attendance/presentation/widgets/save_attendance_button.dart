@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 class SaveAttendanceButton extends StatelessWidget {
   final int remainingCount;
@@ -40,28 +40,16 @@ class SaveAttendanceButton extends StatelessWidget {
       variant: isValid ? AcadexButtonVariant.primary : AcadexButtonVariant.secondary,
       onPressed: () {
         if (hasNoStudents) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                "Cannot save attendance: No students are enrolled in this section.",
-                style: AcadexTypography.bodySmall(color: Colors.white),
-              ),
-              backgroundColor: AcadexColors.warning,
-              behavior: SnackBarBehavior.floating,
-            ),
+          AcadexSnackBar.showWarning(
+            context,
+            "Cannot save attendance: No students are enrolled in this section.",
           );
         } else if (isValid) {
           onSave();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                "Please mark attendance for all $remainingCount remaining student(s) before saving.",
-                style: AcadexTypography.bodySmall(color: Colors.white),
-              ),
-              backgroundColor: AcadexColors.warning,
-              behavior: SnackBarBehavior.floating,
-            ),
+          AcadexSnackBar.showWarning(
+            context,
+            "Please mark attendance for all $remainingCount remaining student(s) before saving.",
           );
         }
       },

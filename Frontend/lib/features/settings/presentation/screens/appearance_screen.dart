@@ -37,7 +37,7 @@ class AppearanceScreen extends ConsumerWidget {
             Text(
               "INTERFACE THEME",
               style: AcadexTypography.eyebrow(
-                color: isSuperAdmin ? const Color(0xFF07111F) : AcadexColors.inkMuted,
+                color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkMuted,
               ),
             ),
             const SizedBox(height: 12),
@@ -141,7 +141,7 @@ class AppearanceScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: isSuperAdmin ? Colors.transparent : (isDark ? AcadexColors.darkCanvas : AcadexColors.canvas),
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(

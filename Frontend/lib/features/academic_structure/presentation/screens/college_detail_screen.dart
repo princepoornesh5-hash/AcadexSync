@@ -8,6 +8,8 @@ import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../providers/academic_providers.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 
 class CollegeDetailScreen extends ConsumerWidget {
   final String collegeId;
@@ -42,20 +44,17 @@ class CollegeDetailScreen extends ConsumerWidget {
                 ref.invalidate(collegeByIdProvider(collegeId));
                 ref.invalidate(collegeSummaryProvider(collegeId));
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('College $action successful!'),
-                      backgroundColor: AcadexColors.success,
-                    ),
+                  AcadexSnackBar.showSuccess(
+                    context,
+                    'College $action successful!',
                   );
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to update status: $e'),
-                      backgroundColor: AcadexColors.error,
-                    ),
+                  AcadexSnackBar.showError(
+                    context,
+                    e,
+                    fallbackMessage: 'Failed to update college status',
                   );
                 }
               }
@@ -79,20 +78,10 @@ class CollegeDetailScreen extends ConsumerWidget {
 
     final bodyContent = collegeAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(LucideIcons.circleAlert, color: AcadexColors.error, size: 36),
-            const SizedBox(height: 12),
-            Text('Error loading college: $err', style: const TextStyle(color: AcadexColors.error)),
-            const SizedBox(height: 12),
-            AcadexButton(
-              label: 'Retry',
-              onPressed: () => ref.invalidate(collegeByIdProvider(collegeId)),
-            ),
-          ],
-        ),
+      error: (err, _) => AcadexErrorState.fromError(
+        error: err,
+        title: "Unable to load college details",
+        onRetry: () => ref.invalidate(collegeByIdProvider(collegeId)),
       ),
       data: (college) {
         return AcadexPageContainer(
@@ -135,9 +124,9 @@ class CollegeDetailScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : Colors.white),
@@ -458,8 +447,23 @@ class CollegeDetailScreen extends ConsumerWidget {
           adminsAsync.when(
             loading: () => const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator())),
             error: (err, _) => Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Text('Failed to load administrators: $err', style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
+              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+              child: Row(
+                children: [
+                  const Icon(LucideIcons.circleAlert, size: 16, color: AcadexColors.error),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Failed to load administrators.',
+                      style: AcadexTypography.caption(color: AcadexColors.error),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => ref.invalidate(collegeAdminsProvider(collegeId)),
+                    child: const Text('Retry', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
             ),
             data: (admins) {
               if (admins.isEmpty) {

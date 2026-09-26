@@ -4,7 +4,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../auth/domain/models/auth_state.dart';
-import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/attendance_report_models.dart';
 import '../../domain/models/attendance_session.dart';
@@ -94,22 +93,16 @@ class _AttendanceSessionAdminScreenState extends ConsumerState<AttendanceSession
       )),
     );
 
-    final isGradientRole = user?.role == AppRole.superAdmin ||
-        user?.role == AppRole.collegeAdmin ||
-        user?.role == AppRole.hod ||
-        user?.role == AppRole.faculty ||
-        user?.role == AppRole.student;
-
     return Scaffold(
-      backgroundColor: isGradientRole ? Colors.transparent : (isDark ? AcadexColors.darkCanvas : AcadexColors.canvas),
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
         title: Text(
           'Attendance Administration & Audit',
-          style: AcadexTypography.heading3(color: isGradientRole ? Colors.white : (isDark ? AcadexColors.darkInk : AcadexColors.ink)),
+          style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
         ),
-        backgroundColor: isGradientRole ? Colors.transparent : (isDark ? AcadexColors.darkSurface : AcadexColors.surface),
+        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         elevation: 0,
-        iconTheme: IconThemeData(color: isGradientRole ? Colors.white : (isDark ? AcadexColors.darkInk : AcadexColors.ink)),
+        iconTheme: IconThemeData(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

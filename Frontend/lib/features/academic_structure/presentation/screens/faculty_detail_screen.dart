@@ -8,6 +8,8 @@ import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/domain/models/user_model.dart';
@@ -24,11 +26,9 @@ class FacultyDetailScreen extends ConsumerWidget {
     final availableDepts = allDepts.where((d) => d.isActive && d.id != faculty.departmentId).toList();
 
     if (availableDepts.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No other active departments available to transfer this faculty member to.'),
-          backgroundColor: AcadexColors.warning,
-        ),
+      AcadexSnackBar.showWarning(
+        context,
+        'No other active departments available to transfer this faculty member to.',
       );
       return;
     }
@@ -78,21 +78,14 @@ class FacultyDetailScreen extends ConsumerWidget {
                   ref.invalidate(facultySummaryProvider(facultyId));
                   ref.invalidate(facultyProvider(null));
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Faculty successfully transferred to new department!'),
-                        backgroundColor: AcadexColors.success,
-                      ),
+                    AcadexSnackBar.showSuccess(
+                      context,
+                      'Faculty successfully transferred to new department!',
                     );
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(e.toString().replaceFirst('Exception: ', '')),
-                        backgroundColor: AcadexColors.error,
-                      ),
-                    );
+                    AcadexSnackBar.showError(context, e);
                   }
                 }
               },
@@ -100,6 +93,56 @@ class FacultyDetailScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showToggleStatusDialog(BuildContext context, WidgetRef ref, Faculty faculty) {
+    final willDeactivate = faculty.isActive;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(willDeactivate ? 'Deactivate Faculty' : 'Activate Faculty'),
+        content: Text(
+          willDeactivate
+              ? 'Are you sure you want to deactivate ${faculty.name}? They will no longer be available for new teaching assignments, but all historical records and attendance data will remain intact.'
+              : 'Are you sure you want to activate ${faculty.name}? They will become available for new teaching assignments.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: willDeactivate ? AcadexColors.error : AcadexColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              try {
+                await ref.read(facultyProvider(null).notifier).toggleFacultyStatus(
+                  faculty.id,
+                  !willDeactivate,
+                  departmentId: faculty.departmentId,
+                );
+                if (context.mounted) {
+                  AcadexSnackBar.showSuccess(
+                    context,
+                    willDeactivate
+                        ? 'Faculty successfully deactivated.'
+                        : 'Faculty successfully activated.',
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  AcadexSnackBar.showError(context, e);
+                }
+              }
+            },
+            child: Text(willDeactivate ? 'Deactivate' : 'Activate'),
+          ),
+        ],
       ),
     );
   }
@@ -114,10 +157,15 @@ class FacultyDetailScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
 
     AppRole userRole = AppRole.faculty;
+    String? userDeptId;
     if (authState is AuthAuthenticated) {
       userRole = authState.user.role;
+      userDeptId = authState.user.departmentId;
     }
     final canTransfer = userRole == AppRole.collegeAdmin || userRole == AppRole.superAdmin;
+    final canManageStatus = userRole == AppRole.collegeAdmin ||
+        userRole == AppRole.superAdmin ||
+        (userRole == AppRole.hod && facultyAsync.valueOrNull?.departmentId == userDeptId);
 
     final dateFormat = DateFormat('MMMM d, yyyy');
     final deptsList = deptsAsync.valueOrNull ?? <Department>[];
@@ -127,36 +175,38 @@ class FacultyDetailScreen extends ConsumerWidget {
     final bodyContent = facultyAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(LucideIcons.circleAlert, color: AcadexColors.error, size: 36),
-            const SizedBox(height: 12),
-            Text('Error loading faculty profile: $err', style: const TextStyle(color: AcadexColors.error)),
-            const SizedBox(height: 12),
-            AcadexButton(
-              label: 'Retry',
-              onPressed: () => ref.invalidate(facultyByIdProvider(facultyId)),
-            ),
-          ],
+        child: AcadexErrorState.fromError(
+          error: err,
+          title: 'Unable to load faculty profile',
+          onRetry: () => ref.invalidate(facultyByIdProvider(facultyId)),
+          actionLabel: 'Go Back',
+          onAction: () => context.safePop(fallbackRoute: '/academics/faculty'),
         ),
       ),
       data: (faculty) {
         if (faculty == null) {
-          return const Center(child: Text('Faculty profile not found'));
+          return Center(
+            child: AcadexErrorState(
+              title: 'Faculty Not Found',
+              message: 'The requested faculty profile could not be found.',
+              icon: LucideIcons.fileQuestion,
+              actionLabel: 'Go Back',
+              onAction: () => context.safePop(fallbackRoute: '/academics/faculty'),
+            ),
+          );
         }
 
         final dept = deptsMap[faculty.departmentId];
         final isPending = faculty.accountStatus == AccountStatus.pendingActivation;
 
         return AcadexPageContainer(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.white,
           maxWidth: 960,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Hero Header Card ──────────────────────────────────────
-              _buildHeroCard(context, ref, isDark, isMobile, faculty, isPending, canTransfer, deptsList),
+              _buildHeroCard(context, ref, isDark, isMobile, faculty, isPending, canTransfer, canManageStatus, deptsList),
               const SizedBox(height: 20),
 
               // ── Department & Leadership Card ──────────────────────────
@@ -185,9 +235,9 @@ class FacultyDetailScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
@@ -212,6 +262,7 @@ class FacultyDetailScreen extends ConsumerWidget {
     Faculty faculty,
     bool isPending,
     bool canTransfer,
+    bool canManageStatus,
     List<Department> allDepts,
   ) {
     return Container(
@@ -291,13 +342,19 @@ class FacultyDetailScreen extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: isPending ? AcadexColors.warningLight : AcadexColors.successLight,
+                            color: !faculty.isActive
+                                ? AcadexColors.error.withValues(alpha: 0.12)
+                                : (isPending ? AcadexColors.warningLight : AcadexColors.successLight),
                             borderRadius: AcadexRadius.borderRadiusFull,
                           ),
                           child: Text(
-                            isPending ? 'Pending Activation' : 'Active Account',
+                            !faculty.isActive
+                                ? 'Inactive'
+                                : (isPending ? 'Pending Activation' : 'Active Account'),
                             style: TextStyle(
-                              color: isPending ? AcadexColors.warning : AcadexColors.success,
+                              color: !faculty.isActive
+                                  ? AcadexColors.error
+                                  : (isPending ? AcadexColors.warning : AcadexColors.success),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -318,18 +375,26 @@ class FacultyDetailScreen extends ConsumerWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              AcadexButton(
-                label: 'Edit Profile',
-                icon: LucideIcons.edit,
-                variant: AcadexButtonVariant.primary,
-                onPressed: () => context.push('/academics/faculty/edit/$facultyId'),
-              ),
+              if (canManageStatus)
+                AcadexButton(
+                  label: 'Edit Faculty',
+                  icon: LucideIcons.edit,
+                  variant: AcadexButtonVariant.primary,
+                  onPressed: () => context.push('/academics/faculty/edit/$facultyId'),
+                ),
               if (canTransfer)
                 AcadexButton(
                   label: 'Transfer Department',
                   icon: LucideIcons.arrowRightLeft,
                   variant: AcadexButtonVariant.secondary,
                   onPressed: () => _showTransferDialog(context, ref, faculty, allDepts),
+                ),
+              if (canManageStatus)
+                AcadexButton(
+                  label: faculty.isActive ? 'Deactivate' : 'Activate',
+                  icon: faculty.isActive ? LucideIcons.userX : LucideIcons.userCheck,
+                  variant: faculty.isActive ? AcadexButtonVariant.danger : AcadexButtonVariant.secondary,
+                  onPressed: () => _showToggleStatusDialog(context, ref, faculty),
                 ),
             ],
           ),

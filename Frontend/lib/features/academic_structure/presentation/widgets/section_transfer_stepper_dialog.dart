@@ -5,6 +5,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
 import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 class SectionTransferStepperDialog extends ConsumerStatefulWidget {
   final List<Student> initialStudents;
@@ -83,11 +84,10 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
         setState(() {
           _isValidating = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Validation error: $e'),
-            backgroundColor: AcadexColors.warning,
-          ),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Transfer validation failed',
         );
       }
     }
@@ -123,11 +123,9 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
       await Future.delayed(const Duration(milliseconds: 500));
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Successfully transferred ${eligibleIds.length} students to target section.'),
-            backgroundColor: AcadexColors.success,
-          ),
+        AcadexSnackBar.showSuccess(
+          context,
+          'Successfully transferred ${eligibleIds.length} students to target section.',
         );
       }
     } catch (e) {
@@ -135,11 +133,10 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
         setState(() {
           _isProcessing = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Transfer failed: $e'),
-            backgroundColor: AcadexColors.warning,
-          ),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Section transfer failed',
         );
       }
     }

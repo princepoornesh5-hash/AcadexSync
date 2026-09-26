@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/errors/acadex_error.dart';
 import '../../domain/models/assigned_class.dart';
 import '../../domain/models/attendance_history_record.dart';
 import '../../domain/models/attendance_record.dart';
@@ -31,50 +32,8 @@ class ApiAttendanceRepository implements AttendanceRepository {
 
   ApiAttendanceRepository([ApiClient? client]) : _client = client ?? apiClient;
 
-  Exception _extractError(DioException e, String fallback) {
-    if (e.response?.statusCode == 403) {
-      final data = e.response?.data;
-      String? backendMsg;
-      if (data is Map) {
-        final err = data['error'];
-        if (err is Map) {
-          backendMsg = err['message']?.toString();
-        } else if (err is String) {
-          backendMsg = err;
-        }
-        backendMsg ??= data['message']?.toString();
-      }
-      return Exception(backendMsg ?? 'You are not authorized to mark attendance for this class.');
-    }
-    if (e.response?.statusCode == 409) {
-      final data = e.response?.data;
-      String? backendMsg;
-      if (data is Map) {
-        final err = data['error'];
-        if (err is Map) {
-          backendMsg = err['message']?.toString();
-        } else if (err is String) {
-          backendMsg = err;
-        }
-        backendMsg ??= data['message']?.toString();
-      }
-      return Exception(backendMsg ?? 'An active attendance session already exists for this class.');
-    }
-    String? message;
-    final data = e.response?.data;
-    if (data is Map) {
-      final err = data['error'];
-      if (err is Map) {
-        message = err['message']?.toString();
-      } else if (err is String) {
-        message = err;
-      }
-      message ??= data['message']?.toString();
-    } else if (data is String && data.isNotEmpty) {
-      message = data;
-    }
-    message ??= e.message ?? fallback;
-    return Exception(message);
+  AcadexException _extractError(DioException e, String fallback) {
+    return AcadexException.fromDio(e, context: fallback);
   }
 
   @override
@@ -130,12 +89,10 @@ class ApiAttendanceRepository implements AttendanceRepository {
       }
       return [];
     } on DioException catch (e) {
-      if (e.response?.statusCode == 404 || (e.response?.statusCode != null && e.response!.statusCode! >= 400) || e.type == DioExceptionType.connectionError) {
+      if (e.response?.statusCode == 404) {
         return [];
       }
       throw _extractError(e, 'Failed to fetch assigned classes');
-    } catch (_) {
-      return [];
     }
   }
 
@@ -252,12 +209,10 @@ class ApiAttendanceRepository implements AttendanceRepository {
       }
       return [];
     } on DioException catch (e) {
-      if (e.response?.statusCode == 404 || (e.response?.statusCode != null && e.response!.statusCode! >= 400) || e.type == DioExceptionType.connectionError) {
+      if (e.response?.statusCode == 404) {
         return [];
       }
       throw _extractError(e, 'Failed to fetch attendance history');
-    } catch (_) {
-      return [];
     }
   }
 

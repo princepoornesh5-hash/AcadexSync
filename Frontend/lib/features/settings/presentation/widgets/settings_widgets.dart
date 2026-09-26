@@ -1,45 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/presentation/widgets/acadex_adaptive_gradient_text.dart';
-import '../../../auth/domain/models/auth_state.dart';
-import '../../../auth/domain/models/role_enum.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 
-class SettingsSection extends ConsumerWidget {
+class SettingsSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
 
   const SettingsSection({super.key, required this.title, required this.children});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final authState = ref.watch(authProvider);
-    final isGradientRole = authState is AuthAuthenticated &&
-        (authState.user.role == AppRole.superAdmin ||
-            authState.user.role == AppRole.collegeAdmin ||
-            authState.user.role == AppRole.hod ||
-            authState.user.role == AppRole.faculty ||
-            authState.user.role == AppRole.student);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: isGradientRole
-              ? AcadexAdaptiveGradientText(
-                  title.toUpperCase(),
-                  style: AcadexTypography.eyebrow().copyWith(fontWeight: FontWeight.w700),
-                )
-              : Text(
-                  title.toUpperCase(),
-                  style: AcadexTypography.eyebrow(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                  ),
-                ),
+          child: Text(
+            title.toUpperCase(),
+            style: AcadexTypography.eyebrow(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ),
+          ),
         ),
         Container(
           decoration: BoxDecoration(

@@ -286,12 +286,8 @@ export class FacultyService {
       mongoQuery.departmentId = new mongoose.Types.ObjectId(query.departmentId);
     }
 
-    if (query.status) {
-      if (query.status.toString().toUpperCase() !== 'ALL') {
-        mongoQuery.accountStatus = query.status;
-      }
-    } else {
-      mongoQuery.accountStatus = AccountStatus.ACTIVE;
+    if (query.status && query.status.toString().toUpperCase() !== 'ALL') {
+      mongoQuery.accountStatus = query.status;
     }
 
     if (query.search && query.search.trim() !== '') {

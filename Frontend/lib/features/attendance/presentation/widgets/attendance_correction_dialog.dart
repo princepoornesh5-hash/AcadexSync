@@ -6,6 +6,8 @@ import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../domain/models/attendance_record.dart';
 import '../../domain/models/attendance_status.dart';
 import '../providers/attendance_providers.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/errors/acadex_error.dart';
 
 class AttendanceCorrectionDialog extends ConsumerStatefulWidget {
   final AttendanceRecord record;
@@ -135,24 +137,24 @@ class _AttendanceCorrectionDialogState extends ConsumerState<AttendanceCorrectio
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Attendance corrected successfully for ${widget.record.studentName}',
-              style: AcadexTypography.bodySmall(color: Colors.white),
-            ),
-            backgroundColor: AcadexColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
+        AcadexSnackBar.showSuccess(
+          context,
+          'Attendance corrected successfully for ${widget.record.studentName}',
         );
         widget.onCorrectionSuccess?.call();
       }
     } catch (e) {
       if (mounted) {
+        final sanitized = AcadexException.fromError(e).userMessage;
         setState(() {
           _isSubmitting = false;
-          _errorMessage = e.toString().replaceAll('Exception:', '').trim();
+          _errorMessage = sanitized;
         });
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to correct attendance',
+        );
       }
     }
   }

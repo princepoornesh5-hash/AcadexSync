@@ -142,9 +142,9 @@ class AssignedClassesScreen extends ConsumerWidget {
     final formattedDate = DateFormat('EEE, MMM d, yyyy').format(date);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       body: AcadexPageContainer(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         maxWidth: AcadexLayout.contentMaxWidth,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/errors/acadex_error.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../domain/models/analytics_models.dart';
 import '../../domain/models/department_analytics_models.dart';
@@ -81,8 +83,13 @@ class ApiAnalyticsRepository implements AnalyticsRepository {
             };
         }
       }
-    } catch (_) {
-      // Fall through to empty semantics
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        return getEmptyMetricsForRole(role);
+      }
+      throw AcadexException.fromDio(e, context: 'Failed to fetch summary metrics');
+    } catch (e) {
+      throw AcadexException.fromError(e, fallback: 'Failed to fetch summary metrics');
     }
 
     return getEmptyMetricsForRole(role);
@@ -146,7 +153,10 @@ class ApiAnalyticsRepository implements AnalyticsRepository {
           }).toList();
         }
       }
-    } catch (_) {}
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return [];
+      throw AcadexException.fromDio(e, context: 'Failed to fetch trend data');
+    }
     return [];
   }
 
@@ -169,7 +179,10 @@ class ApiAnalyticsRepository implements AnalyticsRepository {
           }).toList();
         }
       }
-    } catch (_) {}
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return [];
+      throw AcadexException.fromDio(e, context: 'Failed to fetch comparison data');
+    }
     return [];
   }
 
@@ -198,7 +211,10 @@ class ApiAnalyticsRepository implements AnalyticsRepository {
           }).toList();
         }
       }
-    } catch (_) {}
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return [];
+      throw AcadexException.fromDio(e, context: 'Failed to fetch insights');
+    }
     return [];
   }
 

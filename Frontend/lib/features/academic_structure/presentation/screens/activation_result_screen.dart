@@ -8,6 +8,7 @@ import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../domain/models/academic_models.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 class ActivationResultScreen extends StatefulWidget {
   final ProvisionAdminResult result;
@@ -25,19 +26,7 @@ class _ActivationResultScreenState extends State<ActivationResultScreen> {
   void _copyToClipboard() {
     Clipboard.setData(ClipboardData(text: widget.result.activationCode));
     setState(() => _copied = true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Row(
-          children: [
-            Icon(LucideIcons.check, color: Colors.white, size: 18),
-            SizedBox(width: 8),
-            Text('Activation code copied to clipboard!'),
-          ],
-        ),
-        backgroundColor: AcadexColors.success,
-        duration: Duration(seconds: 3),
-      ),
-    );
+    AcadexSnackBar.showSuccess(context, 'Activation code copied to clipboard!');
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) setState(() => _copied = false);
     });
@@ -62,19 +51,7 @@ class _ActivationResultScreenState extends State<ActivationResultScreen> {
     buf.writeln('========================================');
     Clipboard.setData(ClipboardData(text: buf.toString()));
     setState(() => _allCopied = true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Row(
-          children: [
-            Icon(LucideIcons.check, color: Colors.white, size: 18),
-            SizedBox(width: 8),
-            Text('All credentials copied to clipboard!'),
-          ],
-        ),
-        backgroundColor: AcadexColors.success,
-        duration: Duration(seconds: 3),
-      ),
-    );
+    AcadexSnackBar.showSuccess(context, 'All credentials copied to clipboard!');
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) setState(() => _allCopied = false);
     });
@@ -95,9 +72,9 @@ class _ActivationResultScreenState extends State<ActivationResultScreen> {
     final expiryFormatted = DateFormat('MMM dd, yyyy • hh:mm a').format(res.expiresAt.toLocal());
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),

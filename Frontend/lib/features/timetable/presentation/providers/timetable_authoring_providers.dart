@@ -7,6 +7,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/timetable_models.dart';
 import '../../data/repositories/timetable_repository.dart';
 import 'timetable_providers.dart';
+import '../../../academic_structure/presentation/providers/department_setup_provider.dart';
 
 export 'timetable_authoring_state.dart';
 
@@ -129,6 +130,10 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
     ref!.invalidate(weeklyTimetableProvider);
     ref!.invalidate(todayScheduleProvider);
     ref!.invalidate(dateScheduleProvider);
+    final deptId = state.container?.departmentId;
+    if (deptId != null && deptId.isNotEmpty) {
+      ref!.invalidate(departmentSetupProvider(deptId));
+    }
   }
 
   void _recordHistory() {
@@ -778,6 +783,7 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
 
   /// Persists the current in-memory draft authoring state to Firebase.
   Future<bool> saveDraft() async {
+    if (state.isSaving || state.isPublishing) return false;
     if (state.container == null) return false;
     final errors = validateLocalState();
     if (errors.isNotEmpty) {
@@ -803,6 +809,10 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
         isDirty: false,
         lastSavedAt: now,
       );
+      final deptId = state.container?.departmentId;
+      if (deptId != null && deptId.isNotEmpty) {
+        ref?.invalidate(departmentSetupProvider(deptId));
+      }
       return true;
     } catch (e, st) {
       developer.log('[TimetableAuthoring] saveDraft error: $e\n$st', name: 'Acadex.Timetable');
@@ -816,6 +826,7 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
 
   /// Publishes the timetable container, projecting entries into `/timetable`.
   Future<bool> publish({required String publishedBy}) async {
+    if (state.isPublishing || state.isSaving) return false;
     if (state.container == null) return false;
 
     // Save any pending changes before publishing
@@ -849,6 +860,7 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
 
   /// Reverts a published timetable back to draft status.
   Future<bool> unpublish() async {
+    if (state.isLoading || state.isPublishing || state.isSaving) return false;
     if (state.container == null) return false;
 
     state = state.copyWith(isLoading: true, clearErrorMessage: true);

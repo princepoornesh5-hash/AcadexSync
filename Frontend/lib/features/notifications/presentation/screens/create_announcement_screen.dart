@@ -13,6 +13,7 @@ import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/announcement_model.dart';
 import '../providers/notification_providers.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 class CreateAnnouncementScreen extends ConsumerStatefulWidget {
   const CreateAnnouncementScreen({super.key});
@@ -166,15 +167,11 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
       await ref.read(announcementCreationProvider.notifier).createAnnouncement(payload);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              status == 'PUBLISHED'
-                  ? 'Announcement published and notifications sent successfully!'
-                  : 'Announcement draft saved successfully!',
-            ),
-            backgroundColor: AcadexColors.success,
-          ),
+        AcadexSnackBar.showSuccess(
+          context,
+          status == 'PUBLISHED'
+              ? 'Announcement published and notifications sent successfully!'
+              : 'Announcement draft saved successfully!',
         );
         context.safePop(fallbackRoute: '/announcements');
       }
@@ -198,6 +195,11 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
           _errorMessage = msg;
           _isSubmitting = false;
         });
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: msg,
+        );
       }
     }
   }
@@ -261,10 +263,10 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
 
     if (!isAuthorized) {
       return Scaffold(
-        backgroundColor: AcadexColors.canvas,
+        backgroundColor: Colors.white,
         appBar: AppBar(
           title: Text('Create Announcement', style: AcadexTypography.heading3(color: AcadexColors.ink)),
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.white,
           elevation: 0,
         ),
         body: Center(
@@ -324,13 +326,13 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
         : allSections;
 
     return Scaffold(
-      backgroundColor: AcadexColors.canvas,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
           'Create Announcement',
           style: AcadexTypography.heading3(color: AcadexColors.ink),
         ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft, color: AcadexColors.ink),

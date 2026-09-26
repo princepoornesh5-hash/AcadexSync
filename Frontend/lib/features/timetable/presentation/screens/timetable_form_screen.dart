@@ -14,6 +14,7 @@ import '../../data/repositories/timetable_repository.dart';
 import '../../domain/models/timetable_models.dart';
 import '../providers/timetable_providers.dart';
 import 'timetable_management_screen.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 class TimetableFormScreen extends ConsumerStatefulWidget {
   final TimetableModel? existingEntry;
@@ -149,11 +150,9 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
     final startMinutes = _startTime.hour * 60 + _startTime.minute;
     final endMinutes = _endTime.hour * 60 + _endTime.minute;
     if (startMinutes >= endMinutes) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Invalid Time Range: End time must be strictly after start time.'),
-          backgroundColor: AcadexColors.error,
-        ),
+      AcadexSnackBar.showError(
+        context,
+        'Invalid Time Range: End time must be strictly after start time.',
       );
       return;
     }
@@ -195,12 +194,9 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
       ref.refresh(managementTimetableProvider);
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isEdit ? 'Timetable schedule updated successfully.' : 'Timetable schedule created successfully.'),
-            backgroundColor: AcadexColors.success,
-            duration: const Duration(seconds: 2),
-          ),
+        AcadexSnackBar.showSuccess(
+          context,
+          isEdit ? 'Timetable schedule updated successfully.' : 'Timetable schedule created successfully.',
         );
         context.safePop(fallbackRoute: '/timetable/manage');
       }
@@ -213,8 +209,10 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving schedule: $e'), backgroundColor: AcadexColors.error),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Error saving schedule',
         );
       }
     }
@@ -310,7 +308,7 @@ class _TimetableFormScreenState extends ConsumerState<TimetableFormScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(

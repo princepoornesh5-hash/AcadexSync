@@ -95,8 +95,8 @@ void main() {
 
       expect(find.byType(FreshDepartmentSetupCard), findsOneWidget);
       expect(find.text('Academic Foundation Setup'), findsOneWidget);
-      expect(find.text('Add First Course'), findsOneWidget);
-      expect(find.text('Degree Program / Course'), findsOneWidget);
+      expect(find.text('Create First Course'), findsOneWidget);
+      expect(find.text('Course'), findsWidgets);
     });
 
     testWidgets('2. CourseListScreen renders Course cards when courses exist', (tester) async {

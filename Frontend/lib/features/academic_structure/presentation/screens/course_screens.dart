@@ -6,7 +6,6 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_data_table.dart';
 import '../../../../core/presentation/widgets/acadex_search_bar.dart';
-import '../../../../core/presentation/widgets/acadex_empty_state.dart';
 import '../../../../core/presentation/widgets/acadex_form_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
@@ -14,8 +13,13 @@ import '../../../../features/auth/domain/models/auth_state.dart';
 import '../../../../features/auth/domain/models/role_enum.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/errors/acadex_error.dart';
 import '../widgets/fresh_department_setup_card.dart';
+import '../widgets/setup_continuation_dialog.dart';
 import '../providers/academic_providers.dart';
+import '../providers/department_setup_provider.dart';
 import '../../domain/models/academic_models.dart';
 
 class CourseListScreen extends ConsumerStatefulWidget {
@@ -47,14 +51,14 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const AcadexPageHeader(
-            title: "Courses (Degree Programs)",
-            subtitle: "Manage academic degree programs, duration, and curricula offered across departments.",
+            title: "Courses",
+            subtitle: "Manage academic courses, duration, and curricula offered across departments.",
           ),
           AcadexSearchFilterBar(
             searchHint: "Search courses by name, code, or department...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
             onActionTap: canManageCourses ? () => context.push('/academics/courses/new') : null,
-            actionLabel: "Add Course",
+            actionLabel: "Create Course",
           ),
           const SizedBox(height: 10),
           // Status filter chips
@@ -89,8 +93,10 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
           Expanded(
             child: coursesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(
-                child: Text("Error: $err", style: const TextStyle(color: AcadexColors.error)),
+              error: (err, stack) => AcadexErrorState.fromError(
+                error: err,
+                title: "Unable to load courses",
+                onRetry: () => ref.invalidate(coursesProvider),
               ),
               data: (courses) {
                 final filtered = courses.where((c) {
@@ -107,28 +113,29 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                 }).toList();
 
                 if (filtered.isEmpty) {
-                  if (_searchQuery.isEmpty) {
+                  if (courses.isEmpty) {
                     if (canManageCourses) {
                       return FreshDepartmentSetupCard(
                         currentStep: AcademicSetupStep.course,
-                        actionLabel: "Add First Course",
+                        actionLabel: "Create First Course",
                         customMessage:
                             "Step 1 of 3: Establish your department's initial degree course (e.g. Diploma in Computer Engineering), then select an Academic Year and configure Semesters.",
                         onAction: () => context.push('/academics/courses/new'),
                       );
                     }
                     return const AcadexEmptyState(
-                      title: "No Courses Available",
-                      subtitle: "There are currently no active degree courses configured.",
+                      title: "No Courses Found",
+                      subtitle: "Create a course to begin building the academic structure.",
                       icon: LucideIcons.bookOpen,
                     );
                   }
-                  return AcadexEmptyState(
+                  return AcadexEmptyState.filterEmpty(
                     title: "No Courses Found",
-                    subtitle: "No courses match '$_searchQuery'.",
-                    icon: LucideIcons.bookOpen,
-                    actionLabel: canManageCourses ? "Add Course" : null,
-                    onActionTap: canManageCourses ? () => context.push('/academics/courses/new') : null,
+                    filterSummary: _searchQuery.isNotEmpty ? "query '$_searchQuery'" : "selected filter",
+                    onClearFilters: () => setState(() {
+                      _searchQuery = '';
+                      _statusFilter = 'all';
+                    }),
                   );
                 }
 
@@ -312,7 +319,8 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
 
 class CourseFormScreen extends ConsumerStatefulWidget {
   final String? id;
-  const CourseFormScreen({super.key, this.id});
+  final String? initialDepartmentId;
+  const CourseFormScreen({super.key, this.id, this.initialDepartmentId});
 
   @override
   ConsumerState<CourseFormScreen> createState() => _CourseFormScreenState();
@@ -334,6 +342,7 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
     super.initState();
     _nameCtrl = TextEditingController();
     _codeCtrl = TextEditingController();
+    _selectedDepartmentId = widget.initialDepartmentId;
 
     if (widget.id != null) {
       _loadExisting();
@@ -352,7 +361,7 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
       _selectedDepartmentId = _existing!.departmentId;
       _selectedCollegeId = _existing!.collegeId;
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading course: $e')));
+      if (mounted) AcadexSnackBar.showError(context, e);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -366,9 +375,10 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
   }
 
   Future<void> _save(String? userCollegeId, bool isSuperAdmin) async {
+    if (_isLoading) return;
     if (!_formKey.currentState!.validate()) return;
     if (_selectedDepartmentId == null || _selectedDepartmentId!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a department')));
+      AcadexSnackBar.showWarning(context, 'Please select a department');
       return;
     }
 
@@ -390,28 +400,64 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
 
       if (_existing == null) {
         await ref.read(coursesProvider.notifier).addCourse(course);
+        ref.invalidate(coursesProvider);
+        if (_selectedDepartmentId != null) {
+          ref.invalidate(departmentSetupProvider(_selectedDepartmentId!));
+        }
+
+        final freshCourses = await ref.read(coursesProvider.future);
+        final createdCourse = freshCourses.where((c) =>
+            c.departmentId == course.departmentId &&
+            c.code.toUpperCase() == course.code.toUpperCase()).firstOrNull ?? course;
+
+        if (mounted) {
+          final auth = ref.read(authProvider);
+          final user = auth is AuthAuthenticated ? auth.user : null;
+          final isHod = user?.role == AppRole.hod;
+
+          final activeYears = (ref.read(academicYearsProvider).valueOrNull ?? [])
+              .where((y) => y.isActive)
+              .toList();
+          final effectiveAy = ref.read(currentAcademicYearProvider) ??
+              (activeYears.isNotEmpty ? activeYears.first : null);
+          final hasAy = effectiveAy != null;
+
+          SetupContinuationDialog.show(
+            context,
+            title: 'Course Created Successfully',
+            entityName: '${createdCourse.name} (${createdCourse.code})',
+            message: hasAy
+                ? 'Course is established. Continue to configure its teaching semesters.'
+                : 'Course is established. An Academic Year is required before semesters can be configured.',
+            primaryActionLabel: 'Continue to Semester',
+            isWaitingOnAdmin: !hasAy && isHod,
+            waitingNotice: !hasAy && isHod
+                ? 'Your college has not configured an academic year yet. Academic Year is managed by College Administration.'
+                : null,
+            onContinue: () {
+              context.push(
+                '/academics/semesters/new?courseId=${createdCourse.id}&academicYearId=${effectiveAy?.id ?? ""}',
+              );
+            },
+            secondaryActionLabel: 'Done',
+            onDone: () => context.safePop(fallbackRoute: '/academics/courses'),
+          );
+        }
       } else {
         await ref.read(coursesProvider.notifier).updateCourse(course);
         ref.invalidate(courseByIdProvider(widget.id!));
-      }
+        if (_selectedDepartmentId != null) {
+          ref.invalidate(departmentSetupProvider(_selectedDepartmentId!));
+        }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_existing == null ? 'Course created successfully' : 'Course updated successfully'),
-            backgroundColor: AcadexColors.success,
-          ),
-        );
-        context.safePop(fallbackRoute: '/academics/courses');
+        if (mounted) {
+          AcadexSnackBar.showSuccess(context, 'Course updated successfully.');
+          context.safePop(fallbackRoute: '/academics/courses');
+        }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: AcadexColors.error,
-          ),
-        );
+        AcadexSnackBar.showError(context, e);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -441,9 +487,9 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
         (effectiveDeptId.isNotEmpty ? effectiveDeptId : 'Assigned Department');
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
@@ -456,7 +502,7 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
           ).copyWith(fontSize: 18),
         ),
       ),
-      body: _isLoading
+      body: (isEdit && _existing == null && _isLoading)
           ? const Center(child: CircularProgressIndicator())
           : AcadexPageContainer(
               maxWidth: AcadexLayout.formMaxWidth,
@@ -464,6 +510,7 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
                 key: _formKey,
                 child: AcadexFormCard(
                   title: "Course Details",
+                  isSaving: _isLoading,
                   onCancel: () => context.safePop(fallbackRoute: '/academics/courses'),
                   onSave: () => _save(userCollegeId, isSuperAdmin),
                   child: Column(
@@ -499,7 +546,7 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
                           label: "Department *",
                           child: departmentsAsync.when(
                             loading: () => const CircularProgressIndicator(),
-                            error: (e, _) => Text('Error loading departments: $e', style: const TextStyle(color: AcadexColors.error)),
+                            error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error)),
                             data: (depts) {
                               if (depts.isEmpty) {
                                 return Container(
@@ -520,7 +567,7 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
                                       ),
                                       TextButton(
                                         onPressed: () => context.push('/academics/departments/new'),
-                                        child: const Text('Add Dept'),
+                                        child: const Text('Create Department'),
                                       ),
                                     ],
                                   ),
@@ -581,7 +628,7 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
                         child: DropdownButtonFormField<int>(
                           dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                           value: _duration,
-                          decoration: const InputDecoration(hintText: "Select Program Duration"),
+                          decoration: const InputDecoration(hintText: "Select Course Duration"),
                           items: [1, 2, 3, 4, 5, 6].map((yrs) => DropdownMenuItem(
                             value: yrs,
                             child: Text('$yrs ${yrs == 1 ? "Year" : "Years"}'),

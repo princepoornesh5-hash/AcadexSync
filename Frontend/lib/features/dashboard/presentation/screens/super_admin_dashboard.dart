@@ -40,7 +40,6 @@ class SuperAdminDashboard extends ConsumerWidget {
           final statCols = AcadexLayout.statGridColumns(context);
 
           return AcadexPageContainer(
-            backgroundColor: Colors.transparent,
             topPadding: isMobile ? 16 : 24,
             onRefresh: () async {
               ref.invalidate(superAdminStatsProvider);

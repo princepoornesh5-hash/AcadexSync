@@ -217,7 +217,7 @@ class _TimetableCreationScreenState extends ConsumerState<TimetableCreationScree
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(

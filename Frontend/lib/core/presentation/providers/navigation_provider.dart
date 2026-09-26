@@ -50,30 +50,35 @@ class NavigationNotifier extends Notifier<GlobalNavigationState> {
     if (history.isEmpty || history.last != route) {
       history.add(route);
     }
-    
-    // Determine current module
-    String module = 'Dashboard';
-    if (route.startsWith('/attendance')) {
-      module = 'Attendance';
-    } else if (route.startsWith('/users')) {
-      module = 'Users';
-    } else if (route.startsWith('/academics')) {
-      module = 'Academics';
-    }
 
-    // Determine bottom tab index
-    int tab = 0;
-    if (route.startsWith('/attendance')) {
-      tab = 1;
+    // Determine current module using simplified information architecture
+    String module = 'Dashboard';
+    if (route.startsWith('/academics') ||
+        route.startsWith('/faculty-assignments') ||
+        route.startsWith('/academic-structure')) {
+      module = 'Academics';
+    } else if (route.startsWith('/attendance')) {
+      module = 'Attendance';
+    } else if (route.startsWith('/timetable')) {
+      module = 'Timetable';
+    } else if (route.startsWith('/notes')) {
+      module = 'Notes';
+    } else if (route.startsWith('/users')) {
+      module = 'People';
+    } else if (route.startsWith('/analytics') || route.startsWith('/reports')) {
+      module = 'Reports';
     } else if (route.startsWith('/profile')) {
-      tab = 2;
+      module = 'Profile';
+    } else if (route.startsWith('/settings')) {
+      module = 'Settings';
+    } else if (route.startsWith('/my-assignments')) {
+      module = 'My Classes';
     }
 
     state = state.copyWith(
       currentRoute: route,
       navigationHistory: history,
       currentModule: module,
-      selectedBottomTab: tab,
     );
   }
 
@@ -90,4 +95,3 @@ class NavigationNotifier extends Notifier<GlobalNavigationState> {
 final navigationProvider = NotifierProvider<NavigationNotifier, GlobalNavigationState>(() {
   return NavigationNotifier();
 });
-

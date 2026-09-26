@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/presentation/widgets/acadex_adaptive_gradient_text.dart';
-import '../../../auth/domain/models/auth_state.dart';
-import '../../../auth/domain/models/role_enum.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 
-class SectionHeader extends ConsumerWidget {
+class SectionHeader extends StatelessWidget {
   final String title;
   final String? actionLabel;
   final VoidCallback? onAction;
@@ -27,18 +22,11 @@ class SectionHeader extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final isGradientRole = authState is AuthAuthenticated &&
-        (authState.user.role == AppRole.superAdmin ||
-            authState.user.role == AppRole.collegeAdmin ||
-            authState.user.role == AppRole.hod ||
-            authState.user.role == AppRole.faculty ||
-            authState.user.role == AppRole.student);
-
-    final standardTitleColor = titleColor ?? Theme.of(context).colorScheme.onSurface;
-    final standardActionColor = actionColor ?? Theme.of(context).primaryColor;
-    final effectiveAccentColor = accentColor ?? const Color(0xFF0080FF);
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final standardTitleColor = titleColor ?? (isDark ? AcadexColors.darkInk : AcadexColors.ink);
+    final standardActionColor = actionColor ?? AcadexColors.primary;
+    final effectiveAccentColor = accentColor ?? AcadexColors.primary;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -48,7 +36,7 @@ class SectionHeader extends ConsumerWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (showAccent || isGradientRole) ...[
+              if (showAccent) ...[
                 Container(
                   width: 3,
                   height: 16,
@@ -60,19 +48,13 @@ class SectionHeader extends ConsumerWidget {
                 const SizedBox(width: 8),
               ],
               Flexible(
-                child: isGradientRole && titleColor == null
-                    ? AcadexAdaptiveGradientText(
-                        title,
-                        style: AcadexTypography.title().copyWith(fontWeight: FontWeight.w700),
-                        overflow: TextOverflow.ellipsis,
-                      )
-                    : Text(
-                        title,
-                        style: AcadexTypography.title(
-                          color: standardTitleColor,
-                        ).copyWith(fontWeight: FontWeight.w700),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                child: Text(
+                  title,
+                  style: AcadexTypography.title(
+                    color: standardTitleColor,
+                  ).copyWith(fontWeight: FontWeight.w700),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -86,17 +68,12 @@ class SectionHeader extends ConsumerWidget {
               minimumSize: const Size(48, 44),
               tapTargetSize: MaterialTapTargetSize.padded,
             ),
-            child: isGradientRole && actionColor == null
-                ? AcadexAdaptiveGradientText(
-                    actionLabel!,
-                    style: AcadexTypography.button().copyWith(fontWeight: FontWeight.w600),
-                  )
-                : Text(
-                    actionLabel!,
-                    style: AcadexTypography.button(
-                      color: standardActionColor,
-                    ).copyWith(fontWeight: FontWeight.w600),
-                  ),
+            child: Text(
+              actionLabel!,
+              style: AcadexTypography.button(
+                color: standardActionColor,
+              ).copyWith(fontWeight: FontWeight.w600),
+            ),
           ),
       ],
     );

@@ -11,6 +11,7 @@ import '../widgets/save_attendance_button.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 class MarkAttendanceScreen extends ConsumerStatefulWidget {
   const MarkAttendanceScreen({super.key});
@@ -38,15 +39,9 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
 
     final records = ref.read(markingSessionProvider);
     if (records.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Cannot submit attendance: No students are enrolled in this section.",
-            style: AcadexTypography.bodySmall(color: Colors.white),
-          ),
-          backgroundColor: AcadexColors.warning,
-          behavior: SnackBarBehavior.floating,
-        ),
+      AcadexSnackBar.showWarning(
+        context,
+        "Cannot submit attendance: No students are enrolled in this section.",
       );
       return;
     }
@@ -144,58 +139,29 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
       if (mounted) {
         setState(() => _isSaving = false);
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(LucideIcons.checkCircle2, color: Colors.white, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    activeClass.isAttendanceMarked
-                        ? 'Attendance session updated successfully!'
-                        : 'Attendance session saved successfully!',
-                    style: AcadexTypography.bodySmall(color: Colors.white),
-                  ),
-                ],
-              ),
-              backgroundColor: AcadexColors.success,
-              behavior: SnackBarBehavior.floating,
-            ),
+          AcadexSnackBar.showSuccess(
+            context,
+            activeClass.isAttendanceMarked
+                ? 'Attendance session updated successfully!'
+                : 'Attendance session saved successfully!',
           );
           if (Navigator.of(context).canPop()) {
             Navigator.of(context).pop();
           }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Unable to save attendance. Please try again.',
-                style: AcadexTypography.bodySmall(color: Colors.white),
-              ),
-              backgroundColor: AcadexColors.error,
-              behavior: SnackBarBehavior.floating,
-            ),
+          AcadexSnackBar.showError(
+            context,
+            'Unable to save attendance. Please try again.',
           );
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        final errStr = e.toString();
-        final cleanMsg = errStr.contains('authorized') || errStr.contains('403')
-            ? 'You are not authorized to mark attendance for this class.'
-            : (errStr.contains('already exists') || errStr.contains('409')
-                ? 'An active attendance session already exists for this class.'
-                : errStr.replaceAll('Exception: ', ''));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              cleanMsg,
-              style: AcadexTypography.bodySmall(color: Colors.white),
-            ),
-            backgroundColor: AcadexColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to save attendance session',
         );
       }
     }
@@ -288,7 +254,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
 
     if (hasEnclosingScaffold) {
       return Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         body: Column(
           children: [
             Container(

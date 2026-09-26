@@ -4,6 +4,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
+import '../../../../core/errors/acadex_error.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 class StudentPromotionDialog extends ConsumerStatefulWidget {
   final List<String> studentIds;
@@ -91,7 +93,7 @@ class _StudentPromotionDialogState extends ConsumerState<StudentPromotionDialog>
                   onChanged: (val) => setState(() => _selectedAcademicYearId = val),
                 ),
                 loading: () => const LinearProgressIndicator(),
-                error: (e, _) => Text('Error: $e', style: const TextStyle(color: AcadexColors.error)),
+                error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
               ),
               const SizedBox(height: 16),
 
@@ -113,7 +115,7 @@ class _StudentPromotionDialogState extends ConsumerState<StudentPromotionDialog>
                   }),
                 ),
                 loading: () => const LinearProgressIndicator(),
-                error: (e, _) => Text('Error: $e', style: const TextStyle(color: AcadexColors.error)),
+                error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
               ),
               const SizedBox(height: 16),
 
@@ -138,7 +140,7 @@ class _StudentPromotionDialogState extends ConsumerState<StudentPromotionDialog>
                   );
                 },
                 loading: () => const LinearProgressIndicator(),
-                error: (e, _) => Text('Error: $e', style: const TextStyle(color: AcadexColors.error)),
+                error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
               ),
 
               if (_errorMessage != null) ...[
@@ -178,7 +180,7 @@ class _StudentPromotionDialogState extends ConsumerState<StudentPromotionDialog>
                   } catch (e) {
                     setState(() {
                       _isLoading = false;
-                      _errorMessage = e.toString();
+                      _errorMessage = AcadexException.sanitizedMessage(e, fallback: 'Failed to promote selected students.');
                     });
                   }
                 },
@@ -254,7 +256,7 @@ class _StudentTransferDialogState extends ConsumerState<StudentTransferDialog> {
                   onChanged: (val) => setState(() => _selectedSectionId = val),
                 ),
                 loading: () => const LinearProgressIndicator(),
-                error: (e, _) => Text('Error: $e', style: const TextStyle(color: AcadexColors.error)),
+                error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
               ),
               if (_errorMessage != null) ...[
                 const SizedBox(height: 16),
@@ -291,7 +293,7 @@ class _StudentTransferDialogState extends ConsumerState<StudentTransferDialog> {
                   } catch (e) {
                     setState(() {
                       _isLoading = false;
-                      _errorMessage = e.toString();
+                      _errorMessage = AcadexException.sanitizedMessage(e, fallback: 'Failed to transfer selected students.');
                     });
                   }
                 },
@@ -384,10 +386,21 @@ class _StudentGraduationDialogState extends ConsumerState<StudentGraduationDialo
               ? null
               : () async {
                   setState(() => _isLoading = true);
-                  await ref.read(studentsProvider((sectionId: null, departmentId: null)).notifier).bulkGraduate(
-                    studentIds: widget.studentIds,
-                  );
-                  if (context.mounted) Navigator.pop(context, true);
+                  try {
+                    await ref.read(studentsProvider((sectionId: null, departmentId: null)).notifier).bulkGraduate(
+                      studentIds: widget.studentIds,
+                    );
+                    if (context.mounted) Navigator.pop(context, true);
+                  } catch (e) {
+                    if (mounted) {
+                      setState(() => _isLoading = false);
+                      AcadexSnackBar.showError(
+                        context,
+                        e,
+                        fallbackMessage: 'Failed to graduate selected students',
+                      );
+                    }
+                  }
                 },
           child: _isLoading
               ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))

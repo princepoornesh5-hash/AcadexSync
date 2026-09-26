@@ -23,6 +23,8 @@ import '../../domain/models/user_profile_model.dart';
 import '../providers/user_providers.dart';
 import '../widgets/user_role_badge.dart';
 import '../widgets/user_status_badge.dart';
+import '../widgets/profile/profile_picture_confirm_dialog.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 class UserDetailScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -76,20 +78,17 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
           await ref.read(userManagementProvider.notifier).deactivateUser(user.id);
         }
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('User account ${isDeactivated ? 'reactivated' : 'deactivated'} successfully.'),
-              backgroundColor: AcadexColors.emerald,
-            ),
+          AcadexSnackBar.showSuccess(
+            context,
+            'User account ${isDeactivated ? 'reactivated' : 'deactivated'} successfully.',
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to update account status: $e'),
-              backgroundColor: AcadexColors.coral,
-            ),
+          AcadexSnackBar.showError(
+            context,
+            e,
+            fallbackMessage: 'Failed to update account status',
           );
         }
       } finally {
@@ -131,21 +130,18 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
       try {
         await ref.read(userManagementProvider.notifier).deleteUserPermanently(user.id);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('User "${user.name}" permanently deleted.'),
-              backgroundColor: AcadexColors.success,
-            ),
+          AcadexSnackBar.showSuccess(
+            context,
+            'User "${user.name}" permanently deleted.',
           );
           context.safePop(fallbackRoute: '/users');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to permanently delete user: $e'),
-              backgroundColor: AcadexColors.error,
-            ),
+          AcadexSnackBar.showError(
+            context,
+            e,
+            fallbackMessage: 'Failed to permanently delete user',
           );
         }
       } finally {
@@ -187,11 +183,10 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to reissue activation code: $e'),
-            backgroundColor: AcadexColors.coral,
-          ),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to reissue activation code',
         );
       }
     } finally {
@@ -236,9 +231,7 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
                     tooltip: 'Copy Code',
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: code));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Activation code copied to clipboard')),
-                      );
+                      AcadexSnackBar.showSuccess(context, 'Activation code copied to clipboard');
                     },
                   ),
                 ],
@@ -257,59 +250,61 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen> {
   }
 
   Future<void> _pickAndUploadProfileImage(UserProfileModel targetUser) async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ProfileRepository.allowedImageExtensions,
-      withData: true,
-      allowMultiple: false,
-    );
+    final uploadState = ref.read(profileImageUploadProvider);
+    if (uploadState.isUploading) return;
 
-    if (result != null && result.files.isNotEmpty) {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ProfileRepository.allowedImageExtensions,
+        withData: true,
+        allowMultiple: false,
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
       final file = result.files.first;
-      if (file.bytes == null) return;
-
-      if (file.size > ProfileRepository.maxProfileImageSizeBytes) {
+      if (file.bytes == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Image must be under 5MB (JPG, PNG, or WebP)'),
-              backgroundColor: AcadexColors.coral,
-            ),
-          );
+          AcadexSnackBar.showWarning(context, 'Unable to read the selected file.');
         }
         return;
       }
 
-      setState(() => _isActionInProgress = true);
-      try {
-        await ref.read(profileImageUploadProvider.notifier).uploadProfileImage(
+      if (!ProfileRepository.isImageExtensionSupported(file.name)) {
+        if (mounted) {
+          AcadexSnackBar.showWarning(context, 'Unsupported image format. Allowed: JPG, JPEG, PNG, WebP.');
+        }
+        return;
+      }
+
+      if (file.size > ProfileRepository.maxProfileImageSizeBytes) {
+        if (mounted) {
+          AcadexSnackBar.showWarning(context, 'Image must be under 5MB (JPG, PNG, or WebP)');
+        }
+        return;
+      }
+
+      if (mounted) {
+        await ProfilePictureConfirmDialog.show(
+          context: context,
+          imageBytes: file.bytes!,
           fileName: file.name,
-          bytes: file.bytes!,
+          fileSize: file.size,
           targetUserId: targetUser.id,
+          onSuccess: () {
+            ref.invalidate(userDetailProvider(widget.userId));
+            ref.invalidate(usersListProvider);
+          },
         );
-
-        ref.invalidate(userDetailProvider(widget.userId));
-        ref.invalidate(usersListProvider);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile picture updated successfully via ImageKit'),
-              backgroundColor: AcadexColors.emerald,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to upload image: $e'),
-              backgroundColor: AcadexColors.coral,
-            ),
-          );
-        }
-      } finally {
-        if (mounted) setState(() => _isActionInProgress = false);
+      }
+    } catch (e) {
+      if (mounted) {
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Unable to select profile image',
+        );
       }
     }
   }

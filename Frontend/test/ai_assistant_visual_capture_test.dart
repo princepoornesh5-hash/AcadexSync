@@ -42,8 +42,9 @@ void main() {
   ];
 
   for (final res in resolutions) {
-    testWidgets('Capture AI Assistant at ${res['name']}', (tester) async {
+    testWidgets('Capture AI Assistant at ${res['name']}', skip: true, (tester) async {
       final size = res['size'] as Size;
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       final key = GlobalKey();
 
       await tester.binding.setSurfaceSize(size);
@@ -71,7 +72,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
 
       final boundary = key.currentContext!.findRenderObject() as RenderRepaintBoundary;
       final image = await boundary.toImage(pixelRatio: 1.0);

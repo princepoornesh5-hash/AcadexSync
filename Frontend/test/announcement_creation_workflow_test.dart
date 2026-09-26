@@ -2,13 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
-import 'package:campus_management/app/router/app_router.dart';
 import 'package:campus_management/features/auth/domain/models/auth_state.dart';
 import 'package:campus_management/features/auth/domain/models/role_enum.dart';
 import 'package:campus_management/features/auth/domain/models/user_model.dart';
 import 'package:campus_management/features/auth/presentation/providers/auth_provider.dart';
-import 'package:campus_management/features/notifications/domain/models/announcement_model.dart';
-import 'package:campus_management/features/notifications/domain/models/notification_models.dart';
 import 'package:campus_management/features/notifications/presentation/providers/notification_providers.dart';
 import 'package:campus_management/features/notifications/presentation/screens/create_announcement_screen.dart';
 import 'package:campus_management/features/notifications/data/repositories/api_notification_repository.dart';
@@ -225,10 +222,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('404 — PAGE NOT FOUND'), findsOneWidget);
-      expect(find.text('Lost in Campus Space'), findsOneWidget);
+      expect(find.text('Page unavailable'), findsOneWidget);
       expect(find.text('/unknown/dead/route'), findsOneWidget);
       expect(find.text('Go Back'), findsOneWidget);
-      expect(find.text('Dashboard'), findsOneWidget);
+      expect(find.text('Go to Dashboard'), findsOneWidget);
       expect(find.textContaining('GoException'), findsNothing);
     });
 

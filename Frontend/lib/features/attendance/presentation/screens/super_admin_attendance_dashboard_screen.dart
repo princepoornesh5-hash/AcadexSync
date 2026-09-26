@@ -22,7 +22,7 @@ class SuperAdminAttendanceDashboardScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 6,
       child: AcadexPageContainer(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         scrollable: true,
         maxWidth: AcadexLayout.contentMaxWidth,
         child: Column(

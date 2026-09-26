@@ -7,10 +7,12 @@ import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../users/presentation/providers/user_profile_providers.dart';
 import '../widgets/settings_widgets.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_form_controls.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 class LanguageScreen extends StatelessWidget {
   const LanguageScreen({super.key});
@@ -36,21 +38,21 @@ class LanguageScreen extends StatelessWidget {
                 title: "English",
                 iconColor: AcadexColors.success,
                 trailing: const Icon(LucideIcons.check, color: AcadexColors.success),
-                onTap: () {},
+                onTap: () => AcadexSnackBar.showInfo(context, 'English is your active interface language.'),
               ),
               SettingsTile(
                 icon: LucideIcons.globe,
                 title: "Telugu",
                 subtitle: "Coming Soon",
                 iconColor: AcadexColors.inkMuted,
-                onTap: () {},
+                onTap: () => AcadexSnackBar.showInfo(context, 'Telugu language pack is scheduled for an upcoming release.'),
               ),
               SettingsTile(
                 icon: LucideIcons.globe,
                 title: "Hindi",
                 subtitle: "Coming Soon",
                 iconColor: AcadexColors.inkMuted,
-                onTap: () {},
+                onTap: () => AcadexSnackBar.showInfo(context, 'Hindi language pack is scheduled for an upcoming release.'),
               ),
             ],
           ),
@@ -94,18 +96,12 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       _currentPasswordController.clear();
       _newPasswordController.clear();
       _confirmPasswordController.clear();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password changed successfully.'),
-          backgroundColor: AcadexColors.success,
-        ),
-      );
+      AcadexSnackBar.showSuccess(context, 'Password changed successfully.');
     } else if (result.status == ProfileEditStatus.error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.error ?? 'Failed to change password.'),
-          backgroundColor: AcadexColors.error,
-        ),
+      AcadexSnackBar.showError(
+        context,
+        result.error ?? 'Failed to change password.',
+        fallbackMessage: 'Failed to change password.',
       );
     }
   }
@@ -297,11 +293,56 @@ class AboutScreen extends StatelessWidget {
           Text("Version 1.0.0 (Build 42)", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
           const SizedBox(height: 32),
           SettingsSection(
-            title: "Legal",
+            title: "Legal & Licenses",
             children: [
-              SettingsTile(icon: LucideIcons.fileText, title: "Terms & Conditions", onTap: () {}),
-              SettingsTile(icon: LucideIcons.shield, title: "Privacy Policy", onTap: () {}),
-              SettingsTile(icon: LucideIcons.book, title: "Open Source Licenses", onTap: () {}),
+              SettingsTile(
+                icon: LucideIcons.fileText,
+                title: "Terms & Conditions",
+                subtitle: "Institutional terms and acceptable use policy",
+                onTap: () => showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Terms & Conditions'),
+                    content: const SingleChildScrollView(
+                      child: Text(
+                        'Acadex Campus Management System is licensed for accredited institutional operations. '
+                        'All academic data, student records, and attendance logs are governed by institutional policy '
+                        'and applicable data privacy standards.',
+                      ),
+                    ),
+                    actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
+                  ),
+                ),
+              ),
+              SettingsTile(
+                icon: LucideIcons.shield,
+                title: "Privacy Policy",
+                subtitle: "Student and staff data protection principles",
+                onTap: () => showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Privacy Policy'),
+                    content: const SingleChildScrollView(
+                      child: Text(
+                        'Acadex enforces strict multi-tenant isolation and role-based access control. '
+                        'Personal data, profile images, and academic evaluations are restricted to authorized campus staff '
+                        'and never shared across tenant boundaries.',
+                      ),
+                    ),
+                    actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
+                  ),
+                ),
+              ),
+              SettingsTile(
+                icon: LucideIcons.book,
+                title: "Open Source Licenses",
+                subtitle: "Third-party software libraries and dependencies",
+                onTap: () => showLicensePage(
+                  context: context,
+                  applicationName: 'Acadex',
+                  applicationVersion: '1.0.0 (Build 42)',
+                ),
+              ),
             ],
           )
         ],
@@ -329,11 +370,59 @@ class SupportScreen extends StatelessWidget {
           SettingsSection(
             title: "Contact & Resources",
             children: [
-              SettingsTile(icon: LucideIcons.helpCircle, title: "FAQs", subtitle: "Frequently asked questions", onTap: () {}),
-              SettingsTile(icon: LucideIcons.mail, title: "Contact Support", subtitle: "Email our support team", onTap: () {}),
-              SettingsTile(icon: LucideIcons.bug, title: "Report a Bug", subtitle: "Help us improve the app", onTap: () {}),
-              SettingsTile(icon: LucideIcons.messageSquare, title: "Feedback", subtitle: "Share your thoughts", onTap: () {}),
-              SettingsTile(icon: LucideIcons.messageCircle, title: "Live Chat", subtitle: "Coming Soon", onTap: () {}),
+              SettingsTile(
+                icon: LucideIcons.helpCircle,
+                title: "FAQs",
+                subtitle: "Frequently asked questions",
+                onTap: () => showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Frequently Asked Questions'),
+                    content: const SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Q: How do I request class substitution?\nA: Faculty can initiate substitution requests through the Timetable Schedule view.\n', style: TextStyle(fontWeight: FontWeight.w600)),
+                          Text('Q: How do I export attendance registers?\nA: Department HODs and College Admins can download monthly attendance reports from the Attendance section.\n', style: TextStyle(fontWeight: FontWeight.w600)),
+                          Text('Q: Who do I contact for role upgrades?\nA: Please contact your designated College Administrator or Campus Super Admin.', style: TextStyle(fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                    actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
+                  ),
+                ),
+              ),
+              SettingsTile(
+                icon: LucideIcons.mail,
+                title: "Contact Support",
+                subtitle: "support@acadex.edu",
+                onTap: () {
+                  Clipboard.setData(const ClipboardData(text: 'support@acadex.edu'));
+                  AcadexSnackBar.showSuccess(context, 'Support email (support@acadex.edu) copied to clipboard');
+                },
+              ),
+              SettingsTile(
+                icon: LucideIcons.bug,
+                title: "Report an Issue",
+                subtitle: "Submit bug report or error logs to the IT desk",
+                onTap: () {
+                  Clipboard.setData(const ClipboardData(text: 'helpdesk@acadex.edu'));
+                  AcadexSnackBar.showInfo(context, 'IT Helpdesk email copied to clipboard. Please forward your issue details.');
+                },
+              ),
+              SettingsTile(
+                icon: LucideIcons.messageSquare,
+                title: "Campus Feedback",
+                subtitle: "Share feedback with the administration",
+                onTap: () => AcadexSnackBar.showInfo(context, 'Feedback portal opens during the end-of-semester evaluation period.'),
+              ),
+              SettingsTile(
+                icon: LucideIcons.messageCircle,
+                title: "Live Chat",
+                subtitle: "Available for authorized staff during office hours",
+                onTap: () => AcadexSnackBar.showInfo(context, 'Live chat desk is currently offline. Operating hours: Mon-Fri 9AM-5PM IST.'),
+              ),
             ],
           ),
         ],

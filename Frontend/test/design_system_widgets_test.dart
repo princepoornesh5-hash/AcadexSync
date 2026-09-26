@@ -162,7 +162,7 @@ void main() {
         ),
       ));
 
-      expect(find.text('Server connection timeout'), findsOneWidget);
+      expect(find.text('Server connection timeout.'), findsOneWidget);
       await tester.tap(find.text('Try Again'));
       expect(retryTriggered, isTrue);
     });

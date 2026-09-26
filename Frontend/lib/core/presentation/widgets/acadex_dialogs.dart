@@ -96,14 +96,15 @@ class AcadexDialog extends StatelessWidget {
               Flexible(child: SingleChildScrollView(child: content)),
               if (actions != null && actions!.isNotEmpty) ...[
                 const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    for (int i = 0; i < actions!.length; i++) ...[
-                      actions![i],
-                      if (i < actions!.length - 1) const SizedBox(width: 10),
-                    ],
-                  ],
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Wrap(
+                    alignment: WrapAlignment.end,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 10,
+                    runSpacing: 8,
+                    children: actions!,
+                  ),
                 ),
               ],
             ],

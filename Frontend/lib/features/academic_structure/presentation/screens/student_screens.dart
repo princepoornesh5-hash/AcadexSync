@@ -18,9 +18,12 @@ import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
+import '../providers/department_setup_provider.dart';
 import '../widgets/import_data_dialog.dart';
 import '../widgets/student_bulk_action_dialogs.dart';
 import '../widgets/student_promotion_stepper_dialog.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/errors/acadex_error.dart';
 
 // =============================================================================
 // 1. STUDENT LIST SCREEN
@@ -38,6 +41,15 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
   String _searchQuery = '';
   String? _statusFilter; // null = all, 'active', 'pending_activation', etc.
   String? _departmentFilter;
+
+  @override
+  void initState() {
+    super.initState();
+    final authState = ref.read(authProvider);
+    if (authState is AuthAuthenticated && authState.user.role == AppRole.hod) {
+      _departmentFilter = authState.user.departmentId;
+    }
+  }
 
   void _showBulkPromotionDialog() async {
     if (_selectedIds.isEmpty) return;
@@ -283,22 +295,43 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
             searchHint: "Search students by name, roll no, PIN number, or department...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
             onActionTap: () => context.push('/academics/students/new'),
-            actionLabel: "Provision Student",
+            actionLabel: "Add Student",
           ),
           const SizedBox(height: 14),
           Expanded(
             child: studentsState.isLoading && studentsState.items.isEmpty
                 ? const Center(child: AcadexLoadingState(message: "Loading students..."))
                 : studentsState.error != null
-                    ? Center(
-                        child: Text(
-                          "Error: ${studentsState.error}",
-                          style: const TextStyle(color: AcadexColors.error),
-                        ),
+                    ? AcadexErrorState.fromError(
+                        error: studentsState.error,
+                        title: "Unable to load students",
+                        onRetry: () => ref.read(studentsProvider((sectionId: null, departmentId: _departmentFilter)).notifier).loadInitial(),
                       )
-                    : isMobile
-                        ? _buildMobileList(filteredStudents, deptMap, semMap, secMap, isDark)
-                        : _buildDesktopTable(filteredStudents, deptMap, semMap, secMap, theme),
+                    : filteredStudents.isEmpty
+                        ? (studentsState.items.isNotEmpty
+                            ? AcadexEmptyState.filterEmpty(
+                                title: "No students match criteria",
+                                subtitle: "Try clearing search or filters to see all students.",
+                                onClearFilters: () {
+                                  final authState = ref.read(authProvider);
+                                  final isHod = authState is AuthAuthenticated && authState.user.role == AppRole.hod;
+                                  setState(() {
+                                    _searchQuery = '';
+                                    _statusFilter = null;
+                                    _departmentFilter = isHod ? authState.user.departmentId : null;
+                                  });
+                                },
+                              )
+                            : AcadexEmptyState(
+                                title: "No students have been added yet.",
+                                subtitle: "Add students to manage admissions and academic enrollments.",
+                                icon: LucideIcons.users,
+                                actionLabel: "Add Student",
+                                onActionTap: () => context.push('/academics/students/new'),
+                              ))
+                        : isMobile
+                            ? _buildMobileList(filteredStudents, deptMap, semMap, secMap, isDark)
+                            : _buildDesktopTable(filteredStudents, deptMap, semMap, secMap, theme),
           ),
           if (studentsState.isFetchingMore)
             const Padding(
@@ -335,12 +368,12 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
   ) {
     if (students.isEmpty) {
       return AcadexEmptyState(
-        title: "No Students Found",
+        title: "No students have been added yet.",
         subtitle: _searchQuery.isNotEmpty
             ? "No students match '$_searchQuery'."
-            : "Provision students to get started with admissions.",
+            : "Add students to manage admissions and academic enrollments.",
         icon: LucideIcons.users,
-        actionLabel: "Provision Student",
+        actionLabel: "Add Student",
         onActionTap: () => context.push('/academics/students/new'),
       );
     }
@@ -531,10 +564,10 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
         );
       }).toList(),
       emptyState: AcadexEmptyState(
-        title: "No Students Found",
-        subtitle: "Provision students to get started with admissions.",
+        title: "No students have been added yet.",
+        subtitle: "Add students to manage admissions and academic enrollments.",
         icon: LucideIcons.users,
-        actionLabel: "Provision Student",
+        actionLabel: "Add Student",
         onActionTap: () => context.push('/academics/students/new'),
       ),
     );
@@ -547,8 +580,9 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
 
 class StudentFormScreen extends ConsumerStatefulWidget {
   final String? id;
+  final String? initialDepartmentId;
 
-  const StudentFormScreen({super.key, this.id});
+  const StudentFormScreen({super.key, this.id, this.initialDepartmentId});
 
   @override
   ConsumerState<StudentFormScreen> createState() => _StudentFormScreenState();
@@ -585,6 +619,7 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedDeptId = widget.initialDepartmentId;
     if (widget.id != null) {
       _loadExistingStudent();
     } else {
@@ -652,9 +687,7 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
     final collegeId = authState is AuthAuthenticated ? (authState.user.collegeId ?? 'c1') : 'c1';
 
     if (_selectedCourseId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a Course first.")),
-      );
+      AcadexSnackBar.showWarning(context, "Please select a Course first.");
       return;
     }
 
@@ -667,8 +700,10 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
           );
       setState(() => _rollNumberController.text = roll);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to generate roll number: $e")),
+      AcadexSnackBar.showError(
+        context,
+        e,
+        fallbackMessage: "Failed to generate roll number",
       );
     } finally {
       setState(() => _isAutoGenerating = false);
@@ -697,6 +732,7 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
   }
 
   void _saveStudent() async {
+    if (_isLoading) return;
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedDeptId == null || _selectedDeptId!.isEmpty) {
@@ -741,10 +777,16 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
 
         await repo.updateStudent(student);
         ref.invalidate(studentsProvider);
+        if (student.departmentId.isNotEmpty) {
+          ref.invalidate(studentsByDepartmentProvider(student.departmentId));
+          ref.invalidate(departmentSetupProvider(student.departmentId));
+        }
+        if (student.sectionId.isNotEmpty) {
+          ref.invalidate(studentsBySectionProvider(student.sectionId));
+          ref.invalidate(sectionStudentCountProvider(student.sectionId));
+        }
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Student profile updated successfully")),
-          );
+          AcadexSnackBar.showSuccess(context, "Student profile updated successfully");
           context.safePop(fallbackRoute: '/academics/students');
         }
       } else {
@@ -771,6 +813,14 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
 
         final result = await repo.provisionStudent(req);
         ref.invalidate(studentsProvider);
+        if (_selectedDeptId != null && _selectedDeptId!.isNotEmpty) {
+          ref.invalidate(studentsByDepartmentProvider(_selectedDeptId!));
+          ref.invalidate(departmentSetupProvider(_selectedDeptId!));
+        }
+        if (_selectedSectionId != null && _selectedSectionId!.isNotEmpty) {
+          ref.invalidate(studentsBySectionProvider(_selectedSectionId!));
+          ref.invalidate(sectionStudentCountProvider(_selectedSectionId!));
+        }
 
         if (mounted) {
           setState(() => _isLoading = false);
@@ -783,10 +833,14 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
         }
       }
     } catch (e) {
+      final sanitized = AcadexException.fromError(e).userMessage;
       setState(() {
         _isLoading = false;
-        _errorMessage = e.toString().replaceAll('Exception:', '').trim();
+        _errorMessage = sanitized;
       });
+      if (mounted) {
+        AcadexSnackBar.showError(context, e, fallbackMessage: "Failed to save student");
+      }
     }
   }
 
@@ -807,16 +861,16 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
     final sectionsAsync = ref.watch(sectionsProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft),
           onPressed: () => context.safePop(fallbackRoute: '/academics/students'),
         ),
         title: Text(
-          isEdit ? "Edit Student Profile" : "Provision Student Account",
+          isEdit ? "Edit Student" : "Add Student",
           style: AcadexTypography.title(color: theme.colorScheme.onSurface),
         ),
       ),
@@ -1236,7 +1290,7 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                     )
                                   : Icon(isEdit ? LucideIcons.save : LucideIcons.userPlus, size: 18),
-                              label: Text(isEdit ? "Save Profile Changes" : "Provision Student & Generate Code"),
+                              label: Text(isEdit ? "Save Changes" : "Add Student"),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AcadexColors.primary,
                                 foregroundColor: Colors.white,
@@ -1366,9 +1420,7 @@ class StudentActivationResultDialog extends StatelessWidget {
                     icon: const Icon(LucideIcons.copy, size: 18, color: AcadexColors.primary),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: result.activationCode));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Activation code copied to clipboard!")),
-                      );
+                      AcadexSnackBar.showSuccess(context, "Activation code copied to clipboard!");
                     },
                   ),
                 ],

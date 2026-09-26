@@ -162,8 +162,8 @@ void main() {
 
       expect(find.byType(FreshDepartmentSetupCard), findsOneWidget);
       expect(find.text('Academic Foundation Setup'), findsOneWidget);
-      expect(find.text('Add First Section'), findsOneWidget);
-      expect(find.text('Sections & Batches'), findsWidgets);
+      expect(find.text('Create First Section'), findsOneWidget);
+      expect(find.text('Sections'), findsWidgets);
     });
 
     testWidgets('2. SectionListScreen renders contextual filters and Section cards when sections exist', (tester) async {
@@ -219,8 +219,8 @@ void main() {
 
       expect(find.byType(FreshDepartmentSetupCard), findsOneWidget);
       expect(find.text('Academic Foundation Setup'), findsOneWidget);
-      expect(find.text('Add First Subject'), findsOneWidget);
-      expect(find.text('Curriculum Subjects'), findsWidgets);
+      expect(find.text('Create First Subject'), findsOneWidget);
+      expect(find.text('Subjects'), findsWidgets);
     });
 
     testWidgets('4. SubjectListScreen renders contextual filters and Subject cards when subjects exist', (tester) async {
@@ -324,7 +324,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Add Section'), findsOneWidget);
+      expect(find.text('Create Section'), findsOneWidget);
       expect(find.text('YOUR DEPARTMENT'), findsOneWidget);
       expect(find.text('Computer Engineering'), findsOneWidget);
       expect(find.text('Section Name *'), findsOneWidget);
@@ -352,7 +352,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Add Subject'), findsOneWidget);
+      expect(find.text('Create Subject'), findsOneWidget);
       expect(find.text('YOUR DEPARTMENT'), findsOneWidget);
       expect(find.text('Computer Engineering'), findsOneWidget);
       expect(find.text('Subject Name *'), findsOneWidget);

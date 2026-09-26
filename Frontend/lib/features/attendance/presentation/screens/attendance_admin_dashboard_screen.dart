@@ -31,20 +31,18 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
       attendanceDateRangeSummaryProvider(DateRangeSummaryQuery(departmentId: deptId, dateRange: null)),
     );
 
-    final isSuperAdmin = user?.role == AppRole.superAdmin;
-
     return Scaffold(
-      backgroundColor: isSuperAdmin ? Colors.transparent : (isDark ? AcadexColors.darkCanvas : AcadexColors.canvas),
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
         title: Text(
           user?.role == AppRole.hod
               ? 'Department Attendance Administration'
               : (user?.role == AppRole.superAdmin ? 'Super Admin Attendance System' : 'College Attendance Administration'),
-          style: AcadexTypography.heading3(color: isSuperAdmin ? Colors.white : (isDark ? AcadexColors.darkInk : AcadexColors.ink)),
+          style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
         ),
-        backgroundColor: isSuperAdmin ? Colors.transparent : (isDark ? AcadexColors.darkSurface : AcadexColors.surface),
+        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         elevation: 0,
-        iconTheme: IconThemeData(color: isSuperAdmin ? Colors.white : (isDark ? AcadexColors.darkInk : AcadexColors.ink)),
+        iconTheme: IconThemeData(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
         actions: [
           IconButton(
             icon: const Icon(LucideIcons.fileSpreadsheet),

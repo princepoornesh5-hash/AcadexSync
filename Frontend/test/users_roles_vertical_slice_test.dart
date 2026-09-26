@@ -255,10 +255,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Register New User'), findsOneWidget);
-      expect(find.text('Full Name'), findsOneWidget);
-      expect(find.text('Email Address'), findsOneWidget);
-      expect(find.text('Phone Number'), findsOneWidget);
-      expect(find.text('Employee / Institutional ID'), findsOneWidget);
+      expect(find.textContaining('Full Name'), findsOneWidget);
+      expect(find.textContaining('Email Address'), findsOneWidget);
+      expect(find.textContaining('Phone Number'), findsOneWidget);
+      expect(find.textContaining('Employee ID'), findsOneWidget);
       expect(find.text('Register User'), findsOneWidget);
     });
 
@@ -290,10 +290,10 @@ void main() {
       await tester.pumpWidget(createTestWidget(const UserFormScreen(), customRepo: customRepo));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.widgetWithText(TextFormField, 'Full Name'), 'Prof. Charles Babbage');
-      await tester.enterText(find.widgetWithText(TextFormField, 'Email Address'), 'babbage@campus.edu');
-      await tester.enterText(find.widgetWithText(TextFormField, 'Phone Number'), '+91 9123456780');
-      await tester.enterText(find.widgetWithText(TextFormField, 'Employee / Institutional ID'), 'EMP-CS-99');
+      await tester.enterText(find.byType(TextFormField).at(0), 'Prof. Charles Babbage');
+      await tester.enterText(find.byType(TextFormField).at(1), 'babbage@campus.edu');
+      await tester.enterText(find.byType(TextFormField).at(2), '+91 9123456780');
+      await tester.enterText(find.byType(TextFormField).at(3), 'EMP-CS-99');
 
       final submitBtn = find.text('Register User');
       await tester.ensureVisible(submitBtn);

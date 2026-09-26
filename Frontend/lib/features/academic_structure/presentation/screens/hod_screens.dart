@@ -6,7 +6,6 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_data_table.dart';
 import '../../../../core/presentation/widgets/acadex_search_bar.dart';
-import '../../../../core/presentation/widgets/acadex_empty_state.dart';
 import '../../../../core/presentation/widgets/acadex_form_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
@@ -14,6 +13,9 @@ import '../../../auth/domain/models/user_model.dart';
 import '../providers/academic_providers.dart';
 import '../../domain/models/academic_models.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/errors/acadex_error.dart';
 import 'activation_result_screen.dart';
 
 class HodListScreen extends ConsumerStatefulWidget {
@@ -36,21 +38,17 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
         .toList();
 
     if (depts.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No active departments available to assign an HOD to.'),
-          backgroundColor: AcadexColors.warning,
-        ),
+      AcadexSnackBar.showWarning(
+        context,
+        'No active departments available to assign an HOD to.',
       );
       return;
     }
 
     if (facultyList.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No active faculty members available to promote to HOD.'),
-          backgroundColor: AcadexColors.warning,
-        ),
+      AcadexSnackBar.showWarning(
+        context,
+        'No active faculty members available to promote to HOD.',
       );
       return;
     }
@@ -116,20 +114,17 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
                         departmentId: selectedDeptId!,
                       );
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Faculty successfully promoted to Department Head!'),
-                        backgroundColor: AcadexColors.success,
-                      ),
+                    AcadexSnackBar.showSuccess(
+                      context,
+                      'Faculty successfully promoted to Department Head!',
                     );
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(e.toString().replaceFirst('Exception: ', '')),
-                        backgroundColor: AcadexColors.error,
-                      ),
+                    AcadexSnackBar.showError(
+                      context,
+                      e,
+                      fallbackMessage: 'Failed to assign HOD',
                     );
                   }
                 }
@@ -217,8 +212,10 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
           Expanded(
             child: hodsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(
-                child: Text("Error: $err", style: const TextStyle(color: AcadexColors.error)),
+              error: (err, stack) => AcadexErrorState.fromError(
+                error: err,
+                title: "Unable to load department heads",
+                onRetry: () => ref.invalidate(hodsProvider),
               ),
               data: (hods) {
                 final filtered = hods.where((h) {
@@ -235,11 +232,21 @@ class _HodListScreenState extends ConsumerState<HodListScreen> {
                 }).toList();
 
                 if (filtered.isEmpty) {
+                  if (hods.isNotEmpty) {
+                    return AcadexEmptyState.filterEmpty(
+                      title: "No department heads match criteria",
+                      subtitle: "Try clearing search or filters to see all department heads.",
+                      onClearFilters: () {
+                        setState(() {
+                          _searchQuery = '';
+                          _filter = 'all';
+                        });
+                      },
+                    );
+                  }
                   return AcadexEmptyState(
                     title: "No Department Heads Found",
-                    subtitle: _searchQuery.isNotEmpty
-                        ? "No HODs match '$_searchQuery'."
-                        : "Provision a Head of Department to lead academic departments and curriculum.",
+                    subtitle: "Provision a Head of Department to lead academic departments and curriculum.",
                     icon: LucideIcons.userCheck,
                     actionLabel: "Provision HOD",
                     onActionTap: () => context.push('/academics/hods/provision'),
@@ -505,9 +512,7 @@ class _ProvisionHodScreenState extends ConsumerState<ProvisionHodScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedDepartmentId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an active department'), backgroundColor: AcadexColors.error),
-      );
+      AcadexSnackBar.showError(context, 'Please select an active department');
       return;
     }
 
@@ -560,12 +565,7 @@ class _ProvisionHodScreenState extends ConsumerState<ProvisionHodScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: AcadexColors.error,
-          ),
-        );
+        AcadexSnackBar.showError(context, e);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -578,9 +578,9 @@ class _ProvisionHodScreenState extends ConsumerState<ProvisionHodScreen> {
     final departmentsAsync = ref.watch(departmentsProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
@@ -593,14 +593,14 @@ class _ProvisionHodScreenState extends ConsumerState<ProvisionHodScreen> {
           ).copyWith(fontSize: 18),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : AcadexPageContainer(
+      body: AcadexPageContainer(
               maxWidth: AcadexLayout.formMaxWidth,
               child: Form(
                 key: _formKey,
                 child: AcadexFormCard(
                   title: "HOD Credentials & Department Assignment",
+                  isSaving: _isLoading,
+                  saveLabel: "Provision HOD",
                   onCancel: () => context.safePop(fallbackRoute: '/academics/hods'),
                   onSave: _submit,
                   child: Column(
@@ -611,7 +611,7 @@ class _ProvisionHodScreenState extends ConsumerState<ProvisionHodScreen> {
                         label: "Assigned Department *",
                         child: departmentsAsync.when(
                           loading: () => const LinearProgressIndicator(),
-                          error: (e, _) => Text('Error loading departments: $e', style: const TextStyle(color: AcadexColors.error)),
+                          error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error)),
                           data: (depts) {
                             final activeDepts = depts.where((d) => d.isActive).toList();
                             if (activeDepts.isEmpty) {
@@ -763,7 +763,7 @@ class _HodEditScreenState extends ConsumerState<HodEditScreen> {
       _emailCtrl.text = hod.email;
       _phoneCtrl.text = hod.phone ?? '';
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading HOD: $e')));
+      if (mounted) AcadexSnackBar.showError(context, e);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -789,22 +789,15 @@ class _HodEditScreenState extends ConsumerState<HodEditScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('HOD profile updated successfully'),
-            backgroundColor: AcadexColors.success,
-          ),
+        AcadexSnackBar.showSuccess(
+          context,
+          'HOD profile updated successfully.',
         );
         context.safePop(fallbackRoute: '/academics/hods');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: AcadexColors.error,
-          ),
-        );
+        AcadexSnackBar.showError(context, e);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -816,9 +809,9 @@ class _HodEditScreenState extends ConsumerState<HodEditScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
@@ -831,7 +824,7 @@ class _HodEditScreenState extends ConsumerState<HodEditScreen> {
           ).copyWith(fontSize: 18),
         ),
       ),
-      body: _isLoading
+      body: (_isLoading && _nameCtrl.text.isEmpty)
           ? const Center(child: CircularProgressIndicator())
           : AcadexPageContainer(
               maxWidth: AcadexLayout.formMaxWidth,
@@ -839,6 +832,8 @@ class _HodEditScreenState extends ConsumerState<HodEditScreen> {
                 key: _formKey,
                 child: AcadexFormCard(
                   title: "Update Contact Information",
+                  isSaving: _isLoading,
+                  saveLabel: "Update Profile",
                   onCancel: () => context.safePop(fallbackRoute: '/academics/hods'),
                   onSave: _save,
                   child: Column(

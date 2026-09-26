@@ -40,6 +40,15 @@ void main() {
     sectionId: 'sec-a',
   );
 
+  const testHodUser = UserModel(
+    id: 'user-hod-01',
+    name: 'Prof. Hopper',
+    email: 'hod@alpha.edu',
+    role: AppRole.hod,
+    collegeId: 'col-alpha',
+    departmentId: 'dept-cse',
+  );
+
   group('ACADEX Phase 9Q.2 — Academic Structure Home Screen UI/UX Tests', () {
     testWidgets('Renders Page Title, KPI Stat Deck and all 5 Hierarchy Tabs', (tester) async {
       tester.view.physicalSize = const Size(1200, 1000);
@@ -66,20 +75,20 @@ void main() {
       // Title & Subtitle
       expect(find.text('Academic Structure'), findsOneWidget);
       expect(find.text('Departments'), findsWidgets);
-      expect(find.text('Programs / Courses'), findsWidgets);
+      expect(find.text('Courses'), findsWidgets);
       expect(find.text('Semesters'), findsWidgets);
       expect(find.text('Sections'), findsWidgets);
       expect(find.text('Subjects Catalog'), findsWidgets);
 
       // KPI Metric Cards
       expect(find.text('Active Units'), findsOneWidget);
-      expect(find.text('Degree Tracks'), findsOneWidget);
+      expect(find.text('Degree Programs'), findsOneWidget);
       expect(find.text('Academic Terms'), findsOneWidget);
       expect(find.text('Classrooms'), findsOneWidget);
       expect(find.text('Curriculum Items'), findsOneWidget);
     });
 
-    testWidgets('College Admin sees Add Department action button', (tester) async {
+    testWidgets('College Admin sees Create Department action button', (tester) async {
       tester.view.physicalSize = const Size(1200, 1000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
@@ -100,7 +109,32 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-      expect(find.text('Add Department'), findsOneWidget);
+      expect(find.text('Create Department'), findsOneWidget);
+    });
+
+    testWidgets('HOD sees Department Setup and Create Course action buttons', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authProvider.overrideWith((ref) => MockAuthNotifier(const AuthAuthenticated(
+                  user: testHodUser,
+                  token: 'test-token',
+                ))),
+            academicRepositoryProvider.overrideWithValue(mockAcademicRepo),
+          ],
+          child: const MaterialApp(
+            home: AcademicStructureHomeScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      expect(find.text('Department Setup'), findsOneWidget);
+      expect(find.text('Create Course'), findsOneWidget);
     });
 
     testWidgets('Faculty sees personalized Workload & Class Schedule banner', (tester) async {

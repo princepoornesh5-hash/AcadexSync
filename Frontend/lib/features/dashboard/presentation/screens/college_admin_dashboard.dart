@@ -20,6 +20,7 @@ import '../widgets/stat_card.dart';
 import '../../../timetable/presentation/providers/timetable_providers.dart';
 import '../../../timetable/presentation/widgets/timetable_widgets.dart';
 import '../../../academic_structure/presentation/widgets/academic_structure_summary_widget.dart';
+import '../../../academic_structure/presentation/widgets/department_setup_card.dart';
 import '../../../reports/presentation/providers/reports_providers.dart';
 
 class CollegeAdminDashboard extends ConsumerWidget {
@@ -44,7 +45,6 @@ class CollegeAdminDashboard extends ConsumerWidget {
           final statCols = AcadexLayout.statGridColumns(context);
 
           return AcadexPageContainer(
-            backgroundColor: Colors.transparent,
             topPadding: isMobile ? 16 : 24,
             onRefresh: () async {
               ref.invalidate(collegeAdminStatsProvider);
@@ -127,7 +127,11 @@ class CollegeAdminDashboard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // ── 5. Academic Hierarchy Summary Deck ─────────────────────
+                // ── 5. Progressive Department Setup Summary ──────────────
+                const DepartmentSetupCard(),
+                const SizedBox(height: 24),
+
+                // ── 6. Academic Hierarchy Summary Deck ─────────────────────
                 const AcademicStructureSummaryWidget(),
                 const SizedBox(height: 24),
 

@@ -49,7 +49,6 @@ class StudentDashboard extends ConsumerWidget {
           final isMobile = AcadexBreakpoints.isMobile(context);
 
           return AcadexPageContainer(
-            backgroundColor: Colors.transparent,
             topPadding: isMobile ? 16 : 24,
             onRefresh: () async {
               ref.invalidate(studentStatsProvider);

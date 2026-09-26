@@ -21,7 +21,7 @@ class CollegeAttendanceDashboardScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 5,
       child: AcadexPageContainer(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         scrollable: true,
         maxWidth: AcadexLayout.contentMaxWidth,
         child: Column(

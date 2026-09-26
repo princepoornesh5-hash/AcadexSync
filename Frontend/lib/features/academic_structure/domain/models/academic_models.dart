@@ -1,4 +1,7 @@
 import '../../../auth/domain/models/user_model.dart';
+import '../utils/academic_date_utils.dart';
+
+export '../utils/academic_date_utils.dart';
 
 class College {
   final String id;
@@ -352,14 +355,15 @@ class AcademicYear {
     required this.id,
     required this.collegeId,
     required this.name,
-    required this.startDate,
-    required this.endDate,
+    required DateTime startDate,
+    required DateTime endDate,
     this.status = 'upcoming',
     this.isCurrent = false,
     this.createdAt,
     this.updatedAt,
     this.isActive = true,
-  });
+  })  : startDate = AcademicYearDateUtils.toUtcDate(startDate),
+        endDate = AcademicYearDateUtils.toUtcDate(endDate);
 
   AcademicYear copyWith({
     String? id,
@@ -392,8 +396,8 @@ class AcademicYear {
       id: json['id'] as String? ?? json['_id'] as String? ?? '',
       collegeId: json['collegeId']?.toString() ?? '',
       name: json['name'] as String? ?? '',
-      startDate: json['startDate'] != null ? DateTime.parse(json['startDate'] as String) : DateTime.now(),
-      endDate: json['endDate'] != null ? DateTime.parse(json['endDate'] as String) : DateTime.now(),
+      startDate: AcademicYearDateUtils.parse(json['startDate']),
+      endDate: AcademicYearDateUtils.parse(json['endDate']),
       status: json['status'] as String? ?? (json['isActive'] == true ? 'active' : 'upcoming'),
       isCurrent: json['isCurrent'] as bool? ?? false,
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'] as String) : null,
@@ -407,8 +411,8 @@ class AcademicYear {
       'id': id,
       'collegeId': collegeId,
       'name': name,
-      'startDate': startDate.toIso8601String(),
-      'endDate': endDate.toIso8601String(),
+      'startDate': AcademicYearDateUtils.serialize(startDate),
+      'endDate': AcademicYearDateUtils.serialize(endDate),
       'status': status,
       'isCurrent': isCurrent,
       'createdAt': createdAt?.toIso8601String(),
@@ -496,8 +500,8 @@ class Semester {
       academicYearId: json['academicYearId']?.toString() ?? '',
       name: json['name'] as String? ?? '',
       number: json['number'] as int? ?? 1,
-      startDate: json['startDate'] != null ? DateTime.tryParse(json['startDate'] as String) : null,
-      endDate: json['endDate'] != null ? DateTime.tryParse(json['endDate'] as String) : null,
+      startDate: AcademicYearDateUtils.tryParse(json['startDate']),
+      endDate: AcademicYearDateUtils.tryParse(json['endDate']),
       status: json['status'] as String? ?? (json['isActive'] == true ? 'active' : 'upcoming'),
       isCurrent: json['isCurrent'] as bool? ?? false,
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'] as String) : null,
@@ -515,8 +519,8 @@ class Semester {
       'academicYearId': academicYearId,
       'name': name,
       'number': number,
-      'startDate': startDate?.toIso8601String(),
-      'endDate': endDate?.toIso8601String(),
+      'startDate': AcademicYearDateUtils.serializeNullable(startDate),
+      'endDate': AcademicYearDateUtils.serializeNullable(endDate),
       'status': status,
       'isCurrent': isCurrent,
       'createdAt': createdAt?.toIso8601String(),

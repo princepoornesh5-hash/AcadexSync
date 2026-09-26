@@ -205,3 +205,24 @@ class _SuperAdminGradientBackgroundState extends State<SuperAdminGradientBackgro
   }
 }
 
+/// Canonical ACADEX authenticated gradient definition (Historical Super Admin prototype).
+typedef AcadexAuthenticatedGradient = AcadexSuperAdminGradient;
+
+/// Canonical ACADEX authenticated default background component.
+/// Strictly enforces pure white #FFFFFF for all authenticated screens (Prompt 8 & Prompt 12).
+class AcadexAuthenticatedBackground extends StatelessWidget {
+  final Widget child;
+
+  const AcadexAuthenticatedBackground({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: Colors.white,
+      child: child,
+    );
+  }
+}
+

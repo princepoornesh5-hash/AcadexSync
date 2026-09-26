@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/errors/acadex_error.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../domain/models/user_profile_model.dart';
@@ -26,6 +27,10 @@ class ApiUserRepository implements UserRepository {
   final ApiClient _client;
 
   ApiUserRepository([ApiClient? client]) : _client = client ?? apiClient;
+
+  AcadexException _extractError(DioException e, String fallback) {
+    return AcadexException.fromDio(e, context: fallback);
+  }
 
   @override
   Future<List<UserProfileModel>> getUsers({
@@ -98,10 +103,7 @@ class ApiUserRepository implements UserRepository {
 
       return users;
     } on DioException catch (e) {
-      final message = e.response?.data?['error']?['message'] ??
-          e.response?.data?['message'] ??
-          'Failed to load users from backend';
-      throw Exception(message);
+      throw _extractError(e, 'Failed to load users');
     }
   }
 
@@ -158,10 +160,7 @@ class ApiUserRepository implements UserRepository {
         expiresAt: expiresAt,
       );
     } on DioException catch (e) {
-      final message = e.response?.data?['error']?['message'] ??
-          e.response?.data?['message'] ??
-          'Failed to create user invitation';
-      throw Exception(message);
+      throw _extractError(e, 'Failed to create user invitation');
     }
   }
 
@@ -198,10 +197,7 @@ class ApiUserRepository implements UserRepository {
       final data = body['data'] as Map<String, dynamic>? ?? body;
       return UserProfileModel.fromJson(data);
     } on DioException catch (e) {
-      final message = e.response?.data?['error']?['message'] ??
-          e.response?.data?['message'] ??
-          'Failed to update user record';
-      throw Exception(message);
+      throw _extractError(e, 'Failed to update user record');
     }
   }
 
@@ -212,10 +208,7 @@ class ApiUserRepository implements UserRepository {
         'accountStatus': 'deactivated', // Backend AccountStatus.DEACTIVATED
       });
     } on DioException catch (e) {
-      final message = e.response?.data?['error']?['message'] ??
-          e.response?.data?['message'] ??
-          'Failed to deactivate user account';
-      throw Exception(message);
+      throw _extractError(e, 'Failed to deactivate user account');
     }
   }
 
@@ -226,10 +219,7 @@ class ApiUserRepository implements UserRepository {
         'accountStatus': 'active', // Backend AccountStatus.ACTIVE
       });
     } on DioException catch (e) {
-      final message = e.response?.data?['error']?['message'] ??
-          e.response?.data?['message'] ??
-          'Failed to reactivate user account';
-      throw Exception(message);
+      throw _extractError(e, 'Failed to reactivate user account');
     }
   }
 
@@ -238,10 +228,7 @@ class ApiUserRepository implements UserRepository {
     try {
       await _client.dio.delete('/users/$id');
     } on DioException catch (e) {
-      final message = e.response?.data?['error']?['message'] ??
-          e.response?.data?['message'] ??
-          'Failed to permanently delete user';
-      throw Exception(message);
+      throw _extractError(e, 'Failed to permanently delete user');
     }
   }
 
@@ -300,10 +287,7 @@ class ApiUserRepository implements UserRepository {
 
       throw Exception('No valid pending invitation found to reissue for this user.');
     } on DioException catch (e) {
-      final message = e.response?.data?['error']?['message'] ??
-          e.response?.data?['message'] ??
-          'Failed to reissue activation code';
-      throw Exception(message);
+      throw _extractError(e, 'Failed to reissue activation code');
     }
   }
 
@@ -328,10 +312,7 @@ class ApiUserRepository implements UserRepository {
       final body = response.data as Map<String, dynamic>;
       return (body['data'] as Map<String, dynamic>?) ?? body;
     } on DioException catch (e) {
-      final message = e.response?.data?['error']?['message'] ??
-          e.response?.data?['message'] ??
-          'Failed to get upload authorization';
-      throw Exception(message);
+      throw _extractError(e, 'Failed to get upload authorization');
     }
   }
 
@@ -354,10 +335,7 @@ class ApiUserRepository implements UserRepository {
       final data = (body['data'] as Map<String, dynamic>?) ?? body;
       return UserProfileModel.fromJson(data);
     } on DioException catch (e) {
-      final message = e.response?.data?['error']?['message'] ??
-          e.response?.data?['message'] ??
-          'Failed to complete profile picture update';
-      throw Exception(message);
+      throw _extractError(e, 'Failed to complete profile picture update');
     }
   }
 }

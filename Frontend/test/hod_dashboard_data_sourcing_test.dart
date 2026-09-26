@@ -222,7 +222,7 @@ void main() {
       );
 
       final stats = await container.read(hodStatsProvider.future);
-      final facultyStat = stats.firstWhere((s) => s.title == 'Dept Faculty');
+      final facultyStat = stats.firstWhere((s) => s.title == 'Department Faculty');
 
       expect(facultyStat.value, equals('3'));
       container.dispose();

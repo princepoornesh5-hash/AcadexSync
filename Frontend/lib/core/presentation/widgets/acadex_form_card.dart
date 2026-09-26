@@ -41,9 +41,11 @@ class AcadexFormCard extends StatelessWidget {
                   Icon(icon, color: Theme.of(context).primaryColor, size: 24),
                   const SizedBox(width: 12),
                 ],
-                Text(
-                  title,
-                  style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface),
+                  ),
                 ),
               ],
             ),
@@ -61,27 +63,32 @@ class AcadexFormCard extends StatelessWidget {
             Divider(height: 1, thickness: 1, color: Theme.of(context).dividerColor),
             Padding(
               padding: const EdgeInsets.all(24.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (onCancel != null)
-                    TextButton(
-                      onPressed: isSaving ? null : onCancel,
-                      child: Text("Cancel", style: AcadexTypography.button(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)),
-                    ),
-                  const SizedBox(width: 16),
-                  if (onSave != null)
-                    ElevatedButton(
-                      onPressed: isSaving ? null : onSave,
-                      child: isSaving
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                            )
-                          : Text(saveLabel ?? "Save Changes"),
-                    ),
-                ],
+              child: SizedBox(
+                width: double.infinity,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 16,
+                  runSpacing: 12,
+                  children: [
+                    if (onCancel != null)
+                      TextButton(
+                        onPressed: isSaving ? null : onCancel,
+                        child: Text("Cancel", style: AcadexTypography.button(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)),
+                      ),
+                    if (onSave != null)
+                      ElevatedButton(
+                        onPressed: isSaving ? null : onSave,
+                        child: isSaving
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              )
+                            : Text(saveLabel ?? "Save Changes"),
+                      ),
+                  ],
+                ),
               ),
             ),
           ]

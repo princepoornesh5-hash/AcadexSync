@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
@@ -10,20 +11,49 @@ import '../../../../features/auth/domain/models/user_model.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart' as auth;
 import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
+import '../providers/department_setup_provider.dart';
+import 'setup_continuation_dialog.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_workflow_context_banner.dart';
 
 class FacultyAssignmentDialog extends ConsumerStatefulWidget {
   final Faculty? preselectedFaculty;
+  final String? initialCourseId;
+  final String? initialSemesterId;
+  final String? initialSectionId;
+  final String? initialSubjectId;
+  final String? initialAcademicYearId;
 
   const FacultyAssignmentDialog({
     super.key,
     this.preselectedFaculty,
+    this.initialCourseId,
+    this.initialSemesterId,
+    this.initialSectionId,
+    this.initialSubjectId,
+    this.initialAcademicYearId,
   });
 
-  static Future<void> show(BuildContext context, {Faculty? faculty}) {
+  static Future<void> show(
+    BuildContext context, {
+    Faculty? faculty,
+    String? initialCourseId,
+    String? initialSemesterId,
+    String? initialSectionId,
+    String? initialSubjectId,
+    String? initialAcademicYearId,
+  }) {
     return showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (ctx) => FacultyAssignmentDialog(preselectedFaculty: faculty),
+      builder: (ctx) => FacultyAssignmentDialog(
+        preselectedFaculty: faculty,
+        initialCourseId: initialCourseId,
+        initialSemesterId: initialSemesterId,
+        initialSectionId: initialSectionId,
+        initialSubjectId: initialSubjectId,
+        initialAcademicYearId: initialAcademicYearId,
+      ),
     );
   }
 
@@ -39,6 +69,7 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
   String? _selectedSectionId;
   String? _selectedSubjectId;
   String? _selectedAcademicYearId;
+  bool _showManualContext = false;
   bool _isSubmitting = false;
 
   @override
@@ -48,18 +79,22 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
       _selectedFacultyId = widget.preselectedFaculty!.id;
       _selectedDepartmentId = widget.preselectedFaculty!.departmentId;
     }
+    if (widget.initialCourseId != null) _selectedCourseId = widget.initialCourseId;
+    if (widget.initialSemesterId != null) _selectedSemesterId = widget.initialSemesterId;
+    if (widget.initialSectionId != null) _selectedSectionId = widget.initialSectionId;
+    if (widget.initialSubjectId != null) _selectedSubjectId = widget.initialSubjectId;
+    if (widget.initialAcademicYearId != null) _selectedAcademicYearId = widget.initialAcademicYearId;
   }
 
   Future<void> _handleAssign() async {
+    if (_isSubmitting) return;
     if (_selectedFacultyId == null ||
         _selectedDepartmentId == null ||
         _selectedCourseId == null ||
         _selectedSemesterId == null ||
         _selectedSectionId == null ||
         _selectedSubjectId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select all required fields (Faculty, Department, Course, Semester, Section, Subject)')),
-      );
+      AcadexSnackBar.showWarning(context, 'Please select all required fields (Faculty, Department, Course, Semester, Section, Subject)');
       return;
     }
 
@@ -81,11 +116,9 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
     );
 
     if (existing.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This faculty member is already assigned to this subject and section.'),
-          backgroundColor: AcadexColors.warning,
-        ),
+      AcadexSnackBar.showWarning(
+        context,
+        'This faculty member is already assigned to this subject and section.',
       );
       return;
     }
@@ -123,23 +156,40 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
       );
 
       await ref.read(facultyAssignmentsProvider.notifier).createAssignment(assignment);
+      ref.invalidate(facultyAssignmentsProvider);
+      if (_selectedDepartmentId != null) {
+        ref.invalidate(departmentSetupProvider(_selectedDepartmentId!));
+      }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Assigned ${faculty.name} successfully'),
-            backgroundColor: AcadexColors.success,
-          ),
+        AcadexSnackBar.showSuccess(
+          context,
+          'Assigned ${faculty.name} successfully',
         );
-        setState(() {
-          _selectedSubjectId = null;
-          _selectedSectionId = null;
-        });
+        Navigator.of(context).pop();
+        SetupContinuationDialog.show(
+          context,
+          title: 'Faculty Assigned Successfully',
+          entityName: faculty.name,
+          message: 'Teaching allocation active. Continue to enroll admitted students into section cohorts.',
+          primaryActionLabel: 'Continue to Enrollment',
+          onContinue: () {
+            final queryParts = <String>[];
+            if (_selectedCourseId != null) queryParts.add('courseId=$_selectedCourseId');
+            if (_selectedSemesterId != null) queryParts.add('semesterId=$_selectedSemesterId');
+            if (_selectedSectionId != null) queryParts.add('sectionId=$_selectedSectionId');
+            final q = queryParts.isNotEmpty ? '?${queryParts.join('&')}' : '';
+            context.push('/academics/students$q');
+          },
+          secondaryActionLabel: 'Done',
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AcadexColors.warning),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Faculty assignment failed',
         );
       }
     } finally {
@@ -276,171 +326,235 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
                     Text('Select Scope & Assignment', style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
                     const SizedBox(height: 12),
                     
-                    // Row 1: Department + Course
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            key: ValueKey('dept_$_selectedDepartmentId'),
-                            dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
-                            initialValue: _selectedDepartmentId,
-                            decoration: InputDecoration(
-                              labelText: isHod ? 'Department (Locked)' : 'Department *',
-                              hintText: 'Choose department',
-                            ),
-                            items: departments.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name, overflow: TextOverflow.ellipsis))).toList(),
-                            onChanged: isHod
-                                ? null
-                                : (val) {
-                                    setState(() {
-                                      _selectedDepartmentId = val;
-                                      _selectedCourseId = null;
-                                      _selectedSemesterId = null;
-                                      _selectedSectionId = null;
-                                      _selectedSubjectId = null;
-                                      _selectedFacultyId = null;
-                                    });
-                                  },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            key: ValueKey('course_${_selectedDepartmentId}_$_selectedCourseId'),
-                            dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
-                            initialValue: _selectedCourseId,
-                            decoration: InputDecoration(
-                              labelText: 'Course *',
-                              hintText: _selectedDepartmentId == null ? 'Select Department first' : 'Choose course',
-                            ),
-                            items: filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name, overflow: TextOverflow.ellipsis))).toList(),
-                            onChanged: _selectedDepartmentId == null
-                                ? null
-                                : (val) {
-                                    setState(() {
-                                      _selectedCourseId = val;
-                                      _selectedSemesterId = null;
-                                      _selectedSectionId = null;
-                                      _selectedSubjectId = null;
-                                    });
-                                  },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
+                    if (widget.initialCourseId != null && !_showManualContext) ...[
+                      Builder(builder: (context) {
+                        final selectedCourse = filteredCourses.where((c) => c.id == _selectedCourseId).firstOrNull;
+                        final selectedSemester = filteredSemesters.where((s) => s.id == _selectedSemesterId).firstOrNull;
+                        final selectedSection = filteredSections.where((s) => s.id == _selectedSectionId).firstOrNull;
+                        final selectedSubject = filteredSubjects.where((s) => s.id == _selectedSubjectId).firstOrNull;
 
-                    // Row 2: Academic Year + Semester + Section
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            key: ValueKey('ay_$_selectedAcademicYearId'),
-                            dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
-                            initialValue: _selectedAcademicYearId,
-                            decoration: const InputDecoration(labelText: 'Academic Year', hintText: 'Current Active'),
-                            items: academicYears
-                                .map((y) => DropdownMenuItem(value: y.id, child: Text(y.name, overflow: TextOverflow.ellipsis)))
-                                .toList(),
-                            onChanged: (val) => setState(() => _selectedAcademicYearId = val),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            key: ValueKey('sem_${_selectedCourseId}_$_selectedSemesterId'),
-                            dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
-                            initialValue: _selectedSemesterId,
-                            decoration: InputDecoration(
-                              labelText: 'Semester *',
-                              hintText: _selectedCourseId == null ? 'Select Course first' : 'Choose semester',
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AcadexWorkflowContextBanner(
+                              targetEntityName: 'Faculty Assignment',
+                              contextItems: [
+                                if (selectedCourse != null)
+                                  AcadexContextItem(
+                                    label: 'Course',
+                                    value: selectedCourse.name,
+                                    icon: LucideIcons.bookOpen,
+                                  ),
+                                if (selectedSemester != null)
+                                  AcadexContextItem(
+                                    label: 'Semester',
+                                    value: selectedSemester.name,
+                                    icon: LucideIcons.calendar,
+                                  ),
+                                if (selectedSection != null)
+                                  AcadexContextItem(
+                                    label: 'Section',
+                                    value: 'Section ${selectedSection.name}',
+                                    icon: LucideIcons.users,
+                                  ),
+                                if (selectedSubject != null)
+                                  AcadexContextItem(
+                                    label: 'Subject',
+                                    value: '${selectedSubject.code} - ${selectedSubject.name}',
+                                    icon: LucideIcons.fileText,
+                                  ),
+                              ],
+                              onChangeContext: () => setState(() => _showManualContext = true),
                             ),
-                            items: filteredSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))).toList(),
-                            onChanged: _selectedCourseId == null
-                                ? null
-                                : (val) {
-                                    setState(() {
-                                      _selectedSemesterId = val;
-                                      _selectedSectionId = null;
-                                      _selectedSubjectId = null;
-                                    });
-                                  },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            key: ValueKey('sec_${_selectedSemesterId}_$_selectedSectionId'),
-                            dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
-                            initialValue: _selectedSectionId,
-                            decoration: InputDecoration(
-                              labelText: 'Section *',
-                              hintText: _selectedSemesterId == null ? 'Select Semester first' : 'Choose section',
+                            const SizedBox(height: 14),
+                            DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              key: ValueKey('fac_context_${_selectedDepartmentId}_$_selectedFacultyId'),
+                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                              initialValue: _selectedFacultyId,
+                              decoration: InputDecoration(
+                                labelText: 'Faculty Member *',
+                                hintText: availableFaculty.isEmpty ? 'No active faculty available' : 'Choose faculty',
+                              ),
+                              items: availableFaculty.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name, overflow: TextOverflow.ellipsis))).toList(),
+                              onChanged: availableFaculty.isEmpty
+                                  ? null
+                                  : (val) {
+                                      setState(() {
+                                        _selectedFacultyId = val;
+                                      });
+                                    },
                             ),
-                            items: filteredSections.map((sec) => DropdownMenuItem(value: sec.id, child: Text('Section ${sec.name}', overflow: TextOverflow.ellipsis))).toList(),
-                            onChanged: _selectedSemesterId == null
-                                ? null
-                                : (val) => setState(() => _selectedSectionId = val),
+                          ],
+                        );
+                      }),
+                    ] else ...[
+                      // Row 1: Department + Course
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              key: ValueKey('dept_$_selectedDepartmentId'),
+                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                              initialValue: _selectedDepartmentId,
+                              decoration: InputDecoration(
+                                labelText: isHod ? 'Department (Locked)' : 'Department *',
+                                hintText: 'Choose department',
+                              ),
+                              items: departments.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name, overflow: TextOverflow.ellipsis))).toList(),
+                              onChanged: isHod
+                                  ? null
+                                  : (val) {
+                                      setState(() {
+                                        _selectedDepartmentId = val;
+                                        _selectedCourseId = null;
+                                        _selectedSemesterId = null;
+                                        _selectedSectionId = null;
+                                        _selectedSubjectId = null;
+                                        _selectedFacultyId = null;
+                                      });
+                                    },
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              key: ValueKey('course_${_selectedDepartmentId}_$_selectedCourseId'),
+                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                              initialValue: _selectedCourseId,
+                              decoration: InputDecoration(
+                                labelText: 'Course *',
+                                hintText: _selectedDepartmentId == null ? 'Select Department first' : 'Choose course',
+                              ),
+                              items: filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name, overflow: TextOverflow.ellipsis))).toList(),
+                              onChanged: _selectedDepartmentId == null
+                                  ? null
+                                  : (val) {
+                                      setState(() {
+                                        _selectedCourseId = val;
+                                        _selectedSemesterId = null;
+                                        _selectedSectionId = null;
+                                        _selectedSubjectId = null;
+                                      });
+                                    },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
 
-                    // Row 3: Subject + Faculty
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            key: ValueKey('sub_${_selectedCourseId}_${_selectedSemesterId}_$_selectedSubjectId'),
-                            dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
-                            initialValue: _selectedSubjectId,
-                            decoration: InputDecoration(
-                              labelText: 'Subject *',
-                              hintText: _selectedCourseId == null
-                                  ? 'Select Course first'
-                                  : (_selectedSemesterId == null
-                                      ? 'Select Semester first'
-                                      : (filteredSubjects.isEmpty ? 'No subjects in this semester' : 'Choose subject')),
+                      // Row 2: Academic Year + Semester + Section
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              key: ValueKey('ay_$_selectedAcademicYearId'),
+                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                              initialValue: _selectedAcademicYearId,
+                              decoration: const InputDecoration(labelText: 'Academic Year', hintText: 'Current Active'),
+                              items: academicYears
+                                  .map((y) => DropdownMenuItem(value: y.id, child: Text(y.name, overflow: TextOverflow.ellipsis)))
+                                  .toList(),
+                              onChanged: (val) => setState(() => _selectedAcademicYearId = val),
                             ),
-                            items: filteredSubjects.map((sub) => DropdownMenuItem(value: sub.id, child: Text('${sub.code} - ${sub.name}', overflow: TextOverflow.ellipsis))).toList(),
-                            onChanged: (_selectedCourseId == null || _selectedSemesterId == null || filteredSubjects.isEmpty)
-                                ? null
-                                : (val) => setState(() => _selectedSubjectId = val),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            key: ValueKey('fac_${_selectedDepartmentId}_$_selectedFacultyId'),
-                            dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
-                            initialValue: _selectedFacultyId,
-                            decoration: InputDecoration(
-                              labelText: 'Faculty Member *',
-                              hintText: availableFaculty.isEmpty ? 'No active faculty available' : 'Choose faculty',
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              key: ValueKey('sem_${_selectedCourseId}_$_selectedSemesterId'),
+                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                              initialValue: _selectedSemesterId,
+                              decoration: InputDecoration(
+                                labelText: 'Semester *',
+                                hintText: _selectedCourseId == null ? 'Select Course first' : 'Choose semester',
+                              ),
+                              items: filteredSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))).toList(),
+                              onChanged: _selectedCourseId == null
+                                  ? null
+                                  : (val) {
+                                      setState(() {
+                                        _selectedSemesterId = val;
+                                        _selectedSectionId = null;
+                                        _selectedSubjectId = null;
+                                      });
+                                    },
                             ),
-                            items: availableFaculty.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name, overflow: TextOverflow.ellipsis))).toList(),
-                            onChanged: availableFaculty.isEmpty
-                                ? null
-                                : (val) {
-                                    setState(() {
-                                      _selectedFacultyId = val;
-                                    });
-                                  },
                           ),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              key: ValueKey('sec_${_selectedSemesterId}_$_selectedSectionId'),
+                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                              initialValue: _selectedSectionId,
+                              decoration: InputDecoration(
+                                labelText: 'Section *',
+                                hintText: _selectedSemesterId == null ? 'Select Semester first' : 'Choose section',
+                              ),
+                              items: filteredSections.map((sec) => DropdownMenuItem(value: sec.id, child: Text('Section ${sec.name}', overflow: TextOverflow.ellipsis))).toList(),
+                              onChanged: _selectedSemesterId == null
+                                  ? null
+                                  : (val) => setState(() => _selectedSectionId = val),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Row 3: Subject + Faculty
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              key: ValueKey('sub_${_selectedCourseId}_${_selectedSemesterId}_$_selectedSubjectId'),
+                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                              initialValue: _selectedSubjectId,
+                              decoration: InputDecoration(
+                                labelText: 'Subject *',
+                                hintText: _selectedCourseId == null
+                                    ? 'Select Course first'
+                                    : (_selectedSemesterId == null
+                                        ? 'Select Semester first'
+                                        : (filteredSubjects.isEmpty ? 'No subjects in this semester' : 'Choose subject')),
+                              ),
+                              items: filteredSubjects.map((sub) => DropdownMenuItem(value: sub.id, child: Text('${sub.code} - ${sub.name}', overflow: TextOverflow.ellipsis))).toList(),
+                              onChanged: (_selectedCourseId == null || _selectedSemesterId == null || filteredSubjects.isEmpty)
+                                  ? null
+                                  : (val) => setState(() => _selectedSubjectId = val),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              key: ValueKey('fac_${_selectedDepartmentId}_$_selectedFacultyId'),
+                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                              initialValue: _selectedFacultyId,
+                              decoration: InputDecoration(
+                                labelText: 'Faculty Member *',
+                                hintText: availableFaculty.isEmpty ? 'No active faculty available' : 'Choose faculty',
+                              ),
+                              items: availableFaculty.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name, overflow: TextOverflow.ellipsis))).toList(),
+                              onChanged: availableFaculty.isEmpty
+                                  ? null
+                                  : (val) {
+                                      setState(() {
+                                        _selectedFacultyId = val;
+                                      });
+                                    },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 16),
 
                     // Faculty workload summary badge (if faculty selected)
@@ -537,7 +651,7 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
                         label: _isSubmitting ? 'Assigning...' : 'Assign Faculty to Class',
                         icon: LucideIcons.plus,
                         isLoading: _isSubmitting,
-                        onPressed: _handleAssign,
+                        onPressed: _isSubmitting ? null : _handleAssign,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -564,7 +678,7 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
                         padding: EdgeInsets.all(24),
                         child: Center(
                           child: AcadexEmptyState(
-                            title: 'No Active Assignments',
+                            title: 'No faculty assignments yet.',
                             subtitle: 'Assignments created above will appear here.',
                             icon: LucideIcons.userCheck,
                           ),

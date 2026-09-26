@@ -14,6 +14,8 @@ import '../widgets/acadex_timetable_calendar.dart';
 import '../widgets/daily_timeline_view.dart';
 import '../widgets/student_attendance_summary.dart';
 import '../widgets/timetable_widgets.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/errors/acadex_error.dart';
 
 class TimetableDashboardScreen extends ConsumerWidget {
   const TimetableDashboardScreen({super.key});
@@ -161,7 +163,7 @@ class TimetableDashboardScreen extends ConsumerWidget {
                             error: (err, _) => DailyTimelineView(
                               entries: const [],
                               selectedDate: selectedDate,
-                              errorMessage: 'Failed to load timetable: $err',
+                              errorMessage: AcadexException.fromError(err).userMessage,
                               onRetry: () => ref.refresh(weeklyTimetableProvider),
                             ),
                             data: (weeklyData) {
@@ -178,23 +180,10 @@ class TimetableDashboardScreen extends ConsumerWidget {
                   : (viewMode == TimetableViewMode.week
                       ? weeklyAsync.when(
                           loading: () => const Center(child: CircularProgressIndicator()),
-                          error: (err, _) => Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 40),
-                                  const SizedBox(height: 12),
-                                  Text('Error loading weekly timetable: $err'),
-                                  const SizedBox(height: 12),
-                                  ElevatedButton(
-                                    onPressed: () => ref.refresh(weeklyTimetableProvider),
-                                    child: const Text('Retry'),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          error: (err, _) => AcadexErrorState.fromError(
+                            error: err,
+                            title: 'Unable to load weekly timetable',
+                            onRetry: () => ref.refresh(weeklyTimetableProvider),
                           ),
                           data: (weeklyData) => SingleChildScrollView(
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -204,23 +193,10 @@ class TimetableDashboardScreen extends ConsumerWidget {
                         )
                       : weeklyAsync.when(
                           loading: () => const Center(child: CircularProgressIndicator()),
-                          error: (err, _) => Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 40),
-                                  const SizedBox(height: 12),
-                                  Text('Error loading list timetable: $err'),
-                                  const SizedBox(height: 12),
-                                  ElevatedButton(
-                                    onPressed: () => ref.refresh(weeklyTimetableProvider),
-                                    child: const Text('Retry'),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          error: (err, _) => AcadexErrorState.fromError(
+                            error: err,
+                            title: 'Unable to load timetable list',
+                            onRetry: () => ref.refresh(weeklyTimetableProvider),
                           ),
                           data: (weeklyData) => TimetableListView(weeklyData: weeklyData),
                         )),

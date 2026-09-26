@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -40,10 +41,10 @@ class _AnnouncementDetailScreenState extends ConsumerState<AnnouncementDetailScr
         user?.role == AppRole.hod;
 
     return Scaffold(
-      backgroundColor: AcadexColors.canvas,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text('Announcement Details', style: AcadexTypography.heading3(color: AcadexColors.ink)),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft, color: AcadexColors.ink),
@@ -370,14 +371,17 @@ class _AnnouncementDetailScreenState extends ConsumerState<AnnouncementDetailScr
       await ref.read(announcementCreationProvider.notifier).publishAnnouncement(announcement.id);
       ref.invalidate(announcementByIdProvider(announcement.id));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Announcement published successfully!'), backgroundColor: AcadexColors.success),
+        AcadexSnackBar.showSuccess(
+          context,
+          'Announcement published successfully!',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: AcadexColors.error),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to publish announcement',
         );
       }
     } finally {
@@ -391,14 +395,17 @@ class _AnnouncementDetailScreenState extends ConsumerState<AnnouncementDetailScr
       await ref.read(announcementCreationProvider.notifier).archiveAnnouncement(announcement.id);
       ref.invalidate(announcementByIdProvider(announcement.id));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Announcement archived successfully!')),
+        AcadexSnackBar.showSuccess(
+          context,
+          'Announcement archived successfully!',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: AcadexColors.error),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to archive announcement',
         );
       }
     } finally {
@@ -411,15 +418,18 @@ class _AnnouncementDetailScreenState extends ConsumerState<AnnouncementDetailScr
     try {
       await ref.read(announcementCreationProvider.notifier).deleteAnnouncement(announcement.id);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Announcement deleted successfully!')),
+        AcadexSnackBar.showSuccess(
+          context,
+          'Announcement deleted successfully!',
         );
         context.go('/announcements');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: AcadexColors.error),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to delete announcement',
         );
       }
     } finally {

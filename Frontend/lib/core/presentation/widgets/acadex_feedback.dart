@@ -8,6 +8,8 @@ import '../../../features/auth/presentation/providers/auth_provider.dart';
 import 'acadex_button.dart';
 import 'acadex_readable_surface.dart';
 
+import '../../errors/acadex_error.dart';
+
 class AcadexEmptyState extends ConsumerWidget {
   final String title;
   final String? subtitle;
@@ -17,6 +19,7 @@ class AcadexEmptyState extends ConsumerWidget {
   final VoidCallback? onAction;
   final String? actionLabel;
   final IconData? actionIcon;
+  final bool isFilterEmpty;
 
   const AcadexEmptyState({
     super.key,
@@ -28,12 +31,38 @@ class AcadexEmptyState extends ConsumerWidget {
     this.onAction,
     this.actionLabel,
     this.actionIcon,
+    this.isFilterEmpty = false,
   });
+
+  /// Factory for filter or search empty state with predefined action to clear filters
+  factory AcadexEmptyState.filterEmpty({
+    Key? key,
+    String title = 'No Matching Results',
+    String? subtitle,
+    String? filterSummary,
+    VoidCallback? onClearFilters,
+    String clearLabel = 'Clear Filters',
+  }) {
+    return AcadexEmptyState(
+      key: key,
+      title: title,
+      subtitle: subtitle ??
+          (filterSummary != null
+              ? 'No records match $filterSummary.'
+              : 'No records match the current filter criteria.'),
+      icon: LucideIcons.filterX,
+      actionLabel: clearLabel,
+      actionIcon: LucideIcons.rotateCcw,
+      onActionTap: onClearFilters,
+      isFilterEmpty: true,
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final effectiveSubtitle = subtitle ?? description ?? '';
     final effectiveOnAction = onActionTap ?? onAction;
+    final effectiveIcon = isFilterEmpty && icon == LucideIcons.inbox ? LucideIcons.filterX : icon;
     final authState = ref.watch(authProvider);
     final isSuperAdmin = authState is AuthAuthenticated && authState.user.role == AppRole.superAdmin;
 
@@ -56,7 +85,7 @@ class AcadexEmptyState extends ConsumerWidget {
               ),
             ),
             child: Icon(
-              icon,
+              effectiveIcon,
               size: 28,
               color: isSuperAdmin ? const Color(0xFF003366) : AcadexColors.inkMuted,
             ),
@@ -123,6 +152,9 @@ class AcadexErrorState extends ConsumerWidget {
   final String message;
   final VoidCallback? onRetry;
   final String retryLabel;
+  final IconData icon;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   const AcadexErrorState({
     super.key,
@@ -130,12 +162,66 @@ class AcadexErrorState extends ConsumerWidget {
     required this.message,
     this.onRetry,
     this.retryLabel = 'Try Again',
+    this.icon = LucideIcons.alertTriangle,
+    this.actionLabel,
+    this.onAction,
   });
+
+  /// Factory constructor that automatically sanitizes and classifies any raw error
+  factory AcadexErrorState.fromError({
+    Key? key,
+    required dynamic error,
+    String? title,
+    VoidCallback? onRetry,
+    String retryLabel = 'Try Again',
+    String? actionLabel,
+    VoidCallback? onAction,
+    String? context,
+  }) {
+    final parsed = AcadexException.fromError(error, context: context);
+    String defaultTitle;
+    IconData defaultIcon;
+
+    switch (parsed.category) {
+      case ErrorCategory.forbidden:
+        defaultTitle = 'Access Restricted';
+        defaultIcon = LucideIcons.shieldAlert;
+        break;
+      case ErrorCategory.notFound:
+        defaultTitle = context != null ? '$context Not Found' : 'Resource Not Found';
+        defaultIcon = LucideIcons.fileQuestion;
+        break;
+      case ErrorCategory.offline:
+      case ErrorCategory.networkTimeout:
+        defaultTitle = 'Connection Problem';
+        defaultIcon = LucideIcons.wifiOff;
+        break;
+      case ErrorCategory.validation:
+        defaultTitle = 'Validation Error';
+        defaultIcon = LucideIcons.alertCircle;
+        break;
+      default:
+        defaultTitle = context != null ? 'Unable to load $context' : 'Unable to load data';
+        defaultIcon = LucideIcons.alertTriangle;
+    }
+
+    return AcadexErrorState(
+      key: key,
+      title: title ?? defaultTitle,
+      message: parsed.userMessage,
+      onRetry: onRetry,
+      retryLabel: retryLabel,
+      actionLabel: actionLabel,
+      onAction: onAction,
+      icon: defaultIcon,
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final isSuperAdmin = authState is AuthAuthenticated && authState.user.role == AppRole.superAdmin;
+    final sanitizedMessage = AcadexException.sanitizedMessage(message, fallback: message);
 
     final content = ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 440),
@@ -155,8 +241,8 @@ class AcadexErrorState extends ConsumerWidget {
                 width: 1,
               ),
             ),
-            child: const Icon(
-              LucideIcons.alertTriangle,
+            child: Icon(
+              icon,
               size: 28,
               color: AcadexColors.error,
             ),
@@ -171,19 +257,33 @@ class AcadexErrorState extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            message,
+            sanitizedMessage,
             textAlign: TextAlign.center,
             style: AcadexTypography.body(
               color: isSuperAdmin ? const Color(0xFF334155) : AcadexColors.inkSecondary,
             ),
           ),
-          if (onRetry != null) ...[
+          if (onRetry != null || onAction != null) ...[
             const SizedBox(height: 24),
-            AcadexButton(
-              label: retryLabel,
-              icon: LucideIcons.refreshCw,
-              variant: AcadexButtonVariant.secondary,
-              onPressed: onRetry,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (onAction != null && actionLabel != null) ...[
+                  AcadexButton(
+                    label: actionLabel!,
+                    variant: AcadexButtonVariant.secondary,
+                    onPressed: onAction,
+                  ),
+                  if (onRetry != null) const SizedBox(width: 12),
+                ],
+                if (onRetry != null)
+                  AcadexButton(
+                    label: retryLabel,
+                    icon: LucideIcons.refreshCw,
+                    variant: AcadexButtonVariant.secondary,
+                    onPressed: onRetry,
+                  ),
+              ],
             ),
           ],
         ],

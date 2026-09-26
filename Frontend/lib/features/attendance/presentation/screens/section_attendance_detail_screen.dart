@@ -104,10 +104,12 @@ class _SectionAttendanceDetailScreenState
       ),
     );
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1400),
-        child: SingleChildScrollView(
+    return Material(
+      type: MaterialType.transparency,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1400),
+          child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(
             horizontal: isMobile ? 16 : 24,
             vertical: 16,
@@ -570,6 +572,7 @@ class _SectionAttendanceDetailScreenState
               ),
             ),
           ),
-        );
+        ),
+      );
   }
 }

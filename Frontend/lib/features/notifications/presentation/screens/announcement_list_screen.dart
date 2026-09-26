@@ -13,6 +13,8 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/announcement_model.dart';
 import '../../domain/models/notification_models.dart';
 import '../providers/notification_providers.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 class AnnouncementListScreen extends ConsumerStatefulWidget {
   const AnnouncementListScreen({super.key});
@@ -47,7 +49,7 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
         user.role == AppRole.hod;
 
     return Scaffold(
-      backgroundColor: AcadexColors.canvas,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: AcadexPageContainer(
           maxWidth: AcadexLayout.contentMaxWidth,
@@ -189,7 +191,7 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => _buildErrorState(err.toString(), () => ref.invalidate(adminAnnouncementsProvider)),
+      error: (err, stack) => _buildErrorState(err, () => ref.invalidate(adminAnnouncementsProvider)),
     );
   }
 
@@ -222,7 +224,7 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => _buildErrorState(err.toString(), () => ref.invalidate(announcementsProvider)),
+      error: (err, stack) => _buildErrorState(err, () => ref.invalidate(announcementsProvider)),
     );
   }
 
@@ -256,32 +258,11 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
     );
   }
 
-  Widget _buildErrorState(String message, VoidCallback onRetry) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(LucideIcons.alertTriangle, size: 40, color: AcadexColors.error),
-            const SizedBox(height: 12),
-            Text('Failed to load announcements', style: AcadexTypography.heading3(color: AcadexColors.ink)),
-            const SizedBox(height: 6),
-            Text(
-              message.replaceAll('Exception: ', ''),
-              textAlign: TextAlign.center,
-              style: AcadexTypography.bodySmall(color: AcadexColors.error),
-            ),
-            const SizedBox(height: 16),
-            AcadexButton(
-              label: 'Retry',
-              icon: LucideIcons.refreshCw,
-              onPressed: onRetry,
-              size: AcadexButtonSize.sm,
-            ),
-          ],
-        ),
-      ),
+  Widget _buildErrorState(dynamic error, VoidCallback onRetry) {
+    return AcadexErrorState.fromError(
+      error: error,
+      title: 'Unable to load announcements',
+      onRetry: onRetry,
     );
   }
 
@@ -306,14 +287,17 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
       try {
         await ref.read(announcementCreationProvider.notifier).publishAnnouncement(announcement.id);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Announcement published successfully!'), backgroundColor: AcadexColors.success),
+          AcadexSnackBar.showSuccess(
+            context,
+            'Announcement published successfully!',
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: AcadexColors.error),
+          AcadexSnackBar.showError(
+            context,
+            e,
+            fallbackMessage: 'Failed to publish announcement',
           );
         }
       }
@@ -341,14 +325,17 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
       try {
         await ref.read(announcementCreationProvider.notifier).archiveAnnouncement(announcement.id);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Announcement archived successfully!')),
+          AcadexSnackBar.showSuccess(
+            context,
+            'Announcement archived successfully!',
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: AcadexColors.error),
+          AcadexSnackBar.showError(
+            context,
+            e,
+            fallbackMessage: 'Failed to archive announcement',
           );
         }
       }
@@ -376,14 +363,17 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
       try {
         await ref.read(announcementCreationProvider.notifier).deleteAnnouncement(announcement.id);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Announcement deleted successfully!')),
+          AcadexSnackBar.showSuccess(
+            context,
+            'Announcement deleted successfully!',
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: AcadexColors.error),
+          AcadexSnackBar.showError(
+            context,
+            e,
+            fallbackMessage: 'Failed to delete announcement',
           );
         }
       }

@@ -81,6 +81,7 @@ class AcadexAvatar extends StatelessWidget {
         child: imageUrl != null && imageUrl!.isNotEmpty
             ? Image.network(
                 imageUrl!,
+                key: ValueKey(imageUrl),
                 width: size,
                 height: size,
                 fit: BoxFit.cover,

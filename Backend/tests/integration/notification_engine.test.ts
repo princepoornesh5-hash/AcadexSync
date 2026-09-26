@@ -1,5 +1,4 @@
 import request from 'supertest';
-import mongoose from 'mongoose';
 import { app } from '../../src/app';
 import {
   College,
@@ -496,10 +495,19 @@ describe('ACADEX Phase 9M.1 — Notifications Engine Integration Tests', () => {
     });
 
     // User in College B
+    const userB = await User.create({
+      collegeId: collegeB._id,
+      instituteId: 'B-STU-01',
+      name: 'College B Student',
+      email: 'stu_colb@colb.edu',
+      role: AppRole.STUDENT,
+      status: 'active',
+    });
+
     const collegeBAuth = createTestAuthHeader({
       role: AppRole.STUDENT,
-      userId: new mongoose.Types.ObjectId().toString(),
-      instituteId: 'B-STU-01',
+      userId: userB._id.toString(),
+      instituteId: userB.instituteId,
       collegeId: collegeB.id,
     });
 

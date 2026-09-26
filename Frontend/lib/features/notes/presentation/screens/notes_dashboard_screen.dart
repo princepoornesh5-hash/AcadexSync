@@ -66,7 +66,7 @@ class NotesDashboardScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       body: SafeArea(child: bodyContent),
     );
   }

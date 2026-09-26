@@ -189,46 +189,32 @@ final collegeAdminStatsProvider = FutureProvider.autoDispose<List<DashboardStatM
 
 final collegeAdminQuickActionsProvider = Provider<List<QuickActionModel>>((ref) => [
       const QuickActionModel(
-        label: 'Add Dept',
-        icon: LucideIcons.plusCircle,
+        label: 'Department Setup',
+        icon: LucideIcons.compass,
         iconColor: DashboardColors.primary,
         iconBackground: DashboardColors.primaryLight,
+        route: '/academics/setup',
+      ),
+      const QuickActionModel(
+        label: 'Create Department',
+        icon: LucideIcons.plusCircle,
+        iconColor: DashboardColors.purple,
+        iconBackground: DashboardColors.purpleLight,
         route: '/academics/departments/new',
       ),
       const QuickActionModel(
-        label: 'Add Faculty',
+        label: 'Provision Faculty',
         icon: LucideIcons.userPlus,
-        iconColor: DashboardColors.purple,
-        iconBackground: DashboardColors.purpleLight,
+        iconColor: DashboardColors.teal,
+        iconBackground: DashboardColors.tealLight,
         route: '/academics/faculty/new',
       ),
       const QuickActionModel(
-        label: 'Add HOD',
-        icon: LucideIcons.userCheck,
-        iconColor: DashboardColors.teal,
-        iconBackground: DashboardColors.tealLight,
-        route: '/academics/departments',
-      ),
-      const QuickActionModel(
-        label: 'Add Student',
+        label: 'Admit Student',
         icon: LucideIcons.graduationCap,
         iconColor: DashboardColors.success,
         iconBackground: DashboardColors.successLight,
         route: '/academics/students/new',
-      ),
-      const QuickActionModel(
-        label: 'Timetable',
-        icon: LucideIcons.calendarDays,
-        iconColor: DashboardColors.warning,
-        iconBackground: DashboardColors.warningLight,
-        route: '/timetable/manage',
-      ),
-      const QuickActionModel(
-        label: 'Attendance',
-        icon: LucideIcons.clipboardCheck,
-        iconColor: DashboardColors.primary,
-        iconBackground: DashboardColors.primaryLight,
-        route: '/attendance',
       ),
     ]);
 
@@ -280,7 +266,7 @@ final hodStatsProvider = FutureProvider.autoDispose<List<DashboardStatModel>>((r
 
   return [
     DashboardStatModel(
-      title: 'Dept Faculty',
+      title: 'Department Faculty',
       value: '$facultyCount',
       subtitle: 'In your department',
       icon: LucideIcons.userCheck,
@@ -288,7 +274,7 @@ final hodStatsProvider = FutureProvider.autoDispose<List<DashboardStatModel>>((r
       iconBackground: DashboardColors.purpleLight,
     ),
     DashboardStatModel(
-      title: 'Dept Students',
+      title: 'Department Students',
       value: '$studentsCount',
       subtitle: 'Enrolled this semester',
       icon: LucideIcons.users,
@@ -296,7 +282,7 @@ final hodStatsProvider = FutureProvider.autoDispose<List<DashboardStatModel>>((r
       iconBackground: DashboardColors.primaryLight,
     ),
     DashboardStatModel(
-      title: 'Dept Subjects',
+      title: 'Department Subjects',
       value: '$subjectsCount',
       subtitle: 'Active curriculum',
       icon: LucideIcons.bookOpen,
@@ -304,7 +290,7 @@ final hodStatsProvider = FutureProvider.autoDispose<List<DashboardStatModel>>((r
       iconBackground: DashboardColors.tealLight,
     ),
     DashboardStatModel(
-      title: 'Dept Attendance',
+      title: 'Department Attendance',
       value: '${(summary?.overallPercentage ?? 0.0).toStringAsFixed(1)}%',
       subtitle: 'Department average',
       icon: LucideIcons.clipboardCheck,
@@ -316,39 +302,32 @@ final hodStatsProvider = FutureProvider.autoDispose<List<DashboardStatModel>>((r
 
 final hodQuickActionsProvider = Provider<List<QuickActionModel>>((ref) => [
       const QuickActionModel(
-        label: 'Faculty',
-        icon: LucideIcons.userCheck,
-        iconColor: DashboardColors.purple,
-        iconBackground: DashboardColors.purpleLight,
-        route: '/academics/faculty',
-      ),
-      const QuickActionModel(
-        label: 'Students',
-        icon: LucideIcons.graduationCap,
+        label: 'Continue Setup',
+        icon: LucideIcons.compass,
         iconColor: DashboardColors.primary,
         iconBackground: DashboardColors.primaryLight,
-        route: '/academics/students',
+        route: '/academics/setup',
       ),
       const QuickActionModel(
-        label: 'Attendance',
-        icon: LucideIcons.clipboardCheck,
+        label: 'Assign Faculty',
+        icon: LucideIcons.briefcase,
+        iconColor: DashboardColors.purple,
+        iconBackground: DashboardColors.purpleLight,
+        route: '/faculty-assignments',
+      ),
+      const QuickActionModel(
+        label: 'Upload Note',
+        icon: LucideIcons.filePlus,
         iconColor: DashboardColors.teal,
         iconBackground: DashboardColors.tealLight,
-        route: '/attendance',
+        route: '/notes/new',
       ),
       const QuickActionModel(
-        label: 'Timetable',
-        icon: LucideIcons.calendarDays,
+        label: 'Department Analytics',
+        icon: LucideIcons.barChart3,
         iconColor: DashboardColors.warning,
         iconBackground: DashboardColors.warningLight,
-        route: '/timetable/manage',
-      ),
-      const QuickActionModel(
-        label: 'Notes',
-        icon: LucideIcons.fileText,
-        iconColor: DashboardColors.teal,
-        iconBackground: DashboardColors.tealLight,
-        route: '/notes',
+        route: '/analytics',
       ),
     ]);
 
@@ -523,28 +502,28 @@ final studentStatsProvider = FutureProvider.autoDispose<List<DashboardStatModel>
 
 final studentQuickActionsProvider = Provider<List<QuickActionModel>>((ref) => [
       const QuickActionModel(
-        label: 'Timetable',
+        label: 'My Schedule',
         icon: LucideIcons.calendarDays,
         iconColor: DashboardColors.purple,
         iconBackground: DashboardColors.purpleLight,
         route: '/timetable',
       ),
       const QuickActionModel(
-        label: 'Attendance',
+        label: 'Attendance History',
         icon: LucideIcons.clipboardCheck,
         iconColor: DashboardColors.primary,
         iconBackground: DashboardColors.primaryLight,
         route: '/attendance',
       ),
       const QuickActionModel(
-        label: 'Notes',
+        label: 'Study Materials',
         icon: LucideIcons.fileText,
         iconColor: DashboardColors.teal,
         iconBackground: DashboardColors.tealLight,
         route: '/notes',
       ),
       const QuickActionModel(
-        label: 'Subjects',
+        label: 'Course Syllabus',
         icon: LucideIcons.bookOpen,
         iconColor: DashboardColors.warning,
         iconBackground: DashboardColors.warningLight,

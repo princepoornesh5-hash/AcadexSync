@@ -113,7 +113,7 @@ class FreshDepartmentSetupCard extends StatelessWidget {
               _buildStepItem(
                 context,
                 stepNumber: 1,
-                title: "Degree Program / Course",
+                title: "Course",
                 description: "Define courses offered by your department (e.g. Diploma in Computer Engineering).",
                 icon: LucideIcons.graduationCap,
                 isCompleted: currentStep.index > AcademicSetupStep.course.index,
@@ -124,7 +124,7 @@ class FreshDepartmentSetupCard extends StatelessWidget {
               _buildStepItem(
                 context,
                 stepNumber: 2,
-                title: "Academic Year (Session)",
+                title: "Academic Year",
                 description: "Associate or confirm the active institutional academic calendar (e.g. 2026–27).",
                 icon: LucideIcons.calendar,
                 isCompleted: currentStep.index > AcademicSetupStep.academicYear.index,
@@ -135,8 +135,8 @@ class FreshDepartmentSetupCard extends StatelessWidget {
               _buildStepItem(
                 context,
                 stepNumber: 3,
-                title: "Academic Semesters (Terms)",
-                description: "Create sequential semesters (Term 1 to 6) for your course and academic year.",
+                title: "Semesters",
+                description: "Create sequential semesters for your course and academic year.",
                 icon: LucideIcons.calendarClock,
                 isCompleted: currentStep.index > AcademicSetupStep.semester.index,
                 isCurrent: currentStep == AcademicSetupStep.semester,
@@ -146,7 +146,7 @@ class FreshDepartmentSetupCard extends StatelessWidget {
               _buildStepItem(
                 context,
                 stepNumber: 4,
-                title: "Sections & Batches",
+                title: "Sections",
                 description: "Create student cohorts (e.g. Section A, B) with seat capacity under each semester.",
                 icon: LucideIcons.users,
                 isCompleted: currentStep.index > AcademicSetupStep.section.index,
@@ -157,7 +157,7 @@ class FreshDepartmentSetupCard extends StatelessWidget {
               _buildStepItem(
                 context,
                 stepNumber: 5,
-                title: "Curriculum Subjects",
+                title: "Subjects",
                 description: "Add theory and lab curriculum subjects with credit hours for your semesters.",
                 icon: LucideIcons.bookOpen,
                 isCompleted: currentStep.index > AcademicSetupStep.subject.index,

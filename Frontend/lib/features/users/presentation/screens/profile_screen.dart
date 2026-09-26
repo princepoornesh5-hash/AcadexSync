@@ -4,22 +4,26 @@ import 'package:file_picker/file_picker.dart';
 import '../../../../core/presentation/design_system/acadex_colors.dart';
 import '../../../../core/presentation/design_system/acadex_spacing.dart';
 import '../../../../core/presentation/design_system/acadex_typography.dart';
+import '../../../../core/presentation/design_system/acadex_breakpoints.dart';
 import '../../../../core/presentation/widgets/acadex_avatar.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/errors/acadex_error.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
+import '../../../profile/data/repositories/profile_repository.dart';
 import '../../../profile/presentation/providers/profile_providers.dart';
 import '../../domain/models/user_profile_model.dart';
 import '../providers/user_providers.dart';
 import '../widgets/user_role_badge.dart';
 import '../widgets/user_status_badge.dart';
-
+import '../widgets/profile/profile_picture_confirm_dialog.dart';
 import '../providers/user_profile_providers.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -63,44 +67,63 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _pickAndUploadProfileImage(String userId) async {
+    final uploadState = ref.read(profileImageUploadProvider);
+    if (uploadState.isUploading) return;
+
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+        allowedExtensions: ProfileRepository.allowedImageExtensions,
         withData: true,
       );
 
-      if (result != null && result.files.isNotEmpty) {
-        final file = result.files.first;
-        if (file.bytes != null) {
-          final notifier = ref.read(profileImageUploadProvider.notifier);
-          await notifier.uploadProfileImage(
-            targetUserId: userId,
-            bytes: file.bytes!,
-            fileName: file.name,
-          );
+      if (result == null || result.files.isEmpty) return;
 
-          ref.invalidate(authProvider);
-          ref.invalidate(usersListProvider);
-          ref.invalidate(userDetailProvider(userId));
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Profile picture updated successfully!'),
-                backgroundColor: AcadexColors.present,
-              ),
-            );
-          }
+      final file = result.files.first;
+      if (file.bytes == null) {
+        if (mounted) {
+          AcadexSnackBar.showWarning(context, 'Unable to read the selected file. Please select another image.');
         }
+        return;
+      }
+
+      // 1. Extension validation
+      if (!ProfileRepository.isImageExtensionSupported(file.name)) {
+        if (mounted) {
+          AcadexSnackBar.showWarning(context, 'Unsupported image format. Please select a JPG, JPEG, PNG, or WebP image.');
+        }
+        return;
+      }
+
+      // 2. Size validation (max 5MB)
+      if (file.size > ProfileRepository.maxProfileImageSizeBytes) {
+        if (mounted) {
+          AcadexSnackBar.showWarning(context, 'The selected image exceeds the 5MB size limit. Please choose a smaller image.');
+        }
+        return;
+      }
+
+      // 3. Show preview and confirm dialog
+      if (mounted) {
+        await ProfilePictureConfirmDialog.show(
+          context: context,
+          imageBytes: file.bytes!,
+          fileName: file.name,
+          fileSize: file.size,
+          targetUserId: userId,
+          onSuccess: () {
+            ref.invalidate(authProvider);
+            ref.invalidate(usersListProvider);
+            ref.invalidate(userDetailProvider(userId));
+          },
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Upload failed: $e'),
-            backgroundColor: AcadexColors.absent,
-          ),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Unable to select profile picture',
         );
       }
     }
@@ -134,19 +157,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _isSaving = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Profile updated: ${updatedUser.name}'),
-            backgroundColor: AcadexColors.present,
-          ),
+        AcadexSnackBar.showSuccess(
+          context,
+          'Profile updated successfully!',
         );
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isSaving = false;
-          _errorMessage = e.toString();
+          _errorMessage = AcadexException.sanitizedMessage(
+            e,
+            fallback: 'Failed to save profile changes. Please try again.',
+          );
         });
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to save profile changes',
+        );
       }
     }
   }
@@ -256,6 +285,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Stack(
                   children: [
                     AcadexAvatar(
+                      key: ValueKey('avatar_${user.id}_${user.profilePictureUrl}'),
                       name: user.name,
                       imageUrl: user.profilePictureUrl,
                       size: 80,
@@ -382,29 +412,48 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildDetailRow(String label, String value) {
+    final isMobile = AcadexBreakpoints.isMobile(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AcadexSpacing.xs),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 160,
-            child: Text(
-              label,
-              style: AcadexTypography.caption.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade600,
-              ),
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AcadexTypography.caption.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: AcadexTypography.body.copyWith(fontWeight: FontWeight.w500),
+                ),
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 160,
+                  child: Text(
+                    label,
+                    style: AcadexTypography.caption.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    value,
+                    style: AcadexTypography.body.copyWith(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
             ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: AcadexTypography.body.copyWith(fontWeight: FontWeight.w500),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

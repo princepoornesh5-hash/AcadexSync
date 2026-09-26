@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_theme.dart';
-import '../../../features/auth/domain/models/auth_state.dart';
-import '../../../features/auth/domain/models/role_enum.dart';
-import '../../../features/auth/presentation/providers/auth_provider.dart';
-import 'acadex_adaptive_gradient_text.dart';
 
-class AcadexPageHeader extends ConsumerWidget {
+class AcadexPageHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
   final List<Widget>? actions;
@@ -26,16 +21,9 @@ class AcadexPageHeader extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = AcadexBreakpoints.isMobile(context);
-    final authState = ref.watch(authProvider);
-    final isGradientRole = authState is AuthAuthenticated &&
-        (authState.user.role == AppRole.superAdmin ||
-            authState.user.role == AppRole.collegeAdmin ||
-            authState.user.role == AppRole.hod ||
-            authState.user.role == AppRole.faculty ||
-            authState.user.role == AppRole.student);
 
     final standardTitleColor = isDark ? AcadexColors.darkInk : AcadexColors.ink;
     final standardSubtitleColor = isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted;
@@ -47,35 +35,23 @@ class AcadexPageHeader extends ConsumerWidget {
           Row(
             children: [
               for (int i = 0; i < breadcrumbs!.length; i++) ...[
-                if (isGradientRole)
-                  AcadexAdaptiveGradientText(
-                    breadcrumbs![i],
-                    style: AcadexTypography.caption().copyWith(
-                      fontWeight: i == breadcrumbs!.length - 1 ? FontWeight.w600 : FontWeight.w400,
-                    ),
-                    isSecondary: i < breadcrumbs!.length - 1,
-                  )
-                else
-                  Text(
-                    breadcrumbs![i],
-                    style: AcadexTypography.caption(
-                      color: i == breadcrumbs!.length - 1
-                          ? standardTitleColor
-                          : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                    ).copyWith(
-                      fontWeight: i == breadcrumbs!.length - 1 ? FontWeight.w600 : FontWeight.w400,
-                    ),
+                Text(
+                  breadcrumbs![i],
+                  style: AcadexTypography.caption(
+                    color: i == breadcrumbs!.length - 1
+                        ? standardTitleColor
+                        : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  ).copyWith(
+                    fontWeight: i == breadcrumbs!.length - 1 ? FontWeight.w600 : FontWeight.w400,
                   ),
+                ),
                 if (i < breadcrumbs!.length - 1) ...[
                   const SizedBox(width: 6),
-                  if (isGradientRole)
-                    const AcadexAdaptiveGradientIcon(LucideIcons.chevronRight, size: 12)
-                  else
-                    Icon(
-                      LucideIcons.chevronRight,
-                      size: 12,
-                      color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
-                    ),
+                  Icon(
+                    LucideIcons.chevronRight,
+                    size: 12,
+                    color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
+                  ),
                   const SizedBox(width: 6),
                 ],
               ],
@@ -91,9 +67,7 @@ class AcadexPageHeader extends ConsumerWidget {
                 children: [
                   if (onBack != null) ...[
                     IconButton(
-                      icon: isGradientRole
-                          ? const AcadexAdaptiveGradientIcon(LucideIcons.arrowLeft, size: 20)
-                          : Icon(LucideIcons.arrowLeft, size: 20, color: standardTitleColor),
+                      icon: Icon(LucideIcons.arrowLeft, size: 20, color: standardTitleColor),
                       onPressed: onBack,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -104,35 +78,23 @@ class AcadexPageHeader extends ConsumerWidget {
                     const SizedBox(width: 12),
                   ],
                   Expanded(
-                    child: isGradientRole
-                        ? AcadexAdaptiveGradientText(
-                            title,
-                            style: AcadexTypography.heading1(),
-                          )
-                        : Text(
-                            title,
-                            style: AcadexTypography.heading1(
-                              color: standardTitleColor,
-                            ),
-                          ),
+                    child: Text(
+                      title,
+                      style: AcadexTypography.heading1(
+                        color: standardTitleColor,
+                      ),
+                    ),
                   ),
                 ],
               ),
               if (subtitle != null) ...[
                 const SizedBox(height: 4),
-                if (isGradientRole)
-                  AcadexAdaptiveGradientText(
-                    subtitle!,
-                    style: AcadexTypography.bodySmall(),
-                    isSecondary: true,
-                  )
-                else
-                  Text(
-                    subtitle!,
-                    style: AcadexTypography.bodySmall(
-                      color: standardSubtitleColor,
-                    ),
+                Text(
+                  subtitle!,
+                  style: AcadexTypography.bodySmall(
+                    color: standardSubtitleColor,
                   ),
+                ),
               ],
               if (actions != null && actions!.isNotEmpty) ...[
                 const SizedBox(height: 16),
@@ -154,9 +116,7 @@ class AcadexPageHeader extends ConsumerWidget {
                   children: [
                     if (onBack != null) ...[
                       IconButton(
-                        icon: isGradientRole
-                            ? const AcadexAdaptiveGradientIcon(LucideIcons.arrowLeft, size: 20)
-                            : Icon(LucideIcons.arrowLeft, size: 20, color: standardTitleColor),
+                        icon: Icon(LucideIcons.arrowLeft, size: 20, color: standardTitleColor),
                         onPressed: onBack,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -170,33 +130,20 @@ class AcadexPageHeader extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (isGradientRole)
-                            AcadexAdaptiveGradientText(
-                              title,
-                              style: AcadexTypography.heading1(),
-                            )
-                          else
-                            Text(
-                              title,
-                              style: AcadexTypography.heading1(
-                                color: standardTitleColor,
-                              ),
+                          Text(
+                            title,
+                            style: AcadexTypography.heading1(
+                              color: standardTitleColor,
                             ),
+                          ),
                           if (subtitle != null) ...[
                             const SizedBox(height: 4),
-                            if (isGradientRole)
-                              AcadexAdaptiveGradientText(
-                                subtitle!,
-                                style: AcadexTypography.bodySmall(),
-                                isSecondary: true,
-                              )
-                            else
-                              Text(
-                                subtitle!,
-                                style: AcadexTypography.bodySmall(
-                                  color: standardSubtitleColor,
-                                ),
+                            Text(
+                              subtitle!,
+                              style: AcadexTypography.bodySmall(
+                                color: standardSubtitleColor,
                               ),
+                            ),
                           ],
                         ],
                       ),
@@ -219,16 +166,17 @@ class AcadexPageHeader extends ConsumerWidget {
       ],
     );
 
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: AcadexSpacing.space20,
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: AcadexSpacing.space16,
+        bottom: AcadexSpacing.space24,
       ),
       child: headerContent,
     );
   }
 }
 
-class AcadexSectionHeader extends ConsumerWidget {
+class AcadexSectionHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
   final Widget? action;
@@ -247,16 +195,8 @@ class AcadexSectionHeader extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final authState = ref.watch(authProvider);
-    final isGradientRole = authState is AuthAuthenticated &&
-        (authState.user.role == AppRole.superAdmin ||
-            authState.user.role == AppRole.collegeAdmin ||
-            authState.user.role == AppRole.hod ||
-            authState.user.role == AppRole.faculty ||
-            authState.user.role == AppRole.student);
-
     final standardHeaderColor = isDark ? AcadexColors.darkInk : AcadexColors.ink;
     final standardSubtitleColor = isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted;
 
@@ -271,78 +211,56 @@ class AcadexSectionHeader extends ConsumerWidget {
           ),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          foregroundColor: isGradientRole ? const Color(0xFF0066CC) : AcadexColors.primary,
+          foregroundColor: AcadexColors.primary,
         ),
-        child: isGradientRole
-            ? AcadexAdaptiveGradientText(
-                actionLabel!,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              )
-            : Text(
-                actionLabel!,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AcadexColors.primary,
-                ),
-              ),
+        child: Text(
+          actionLabel!,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AcadexColors.primary,
+          ),
+        ),
       );
     }
 
     final headerTitleRow = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (isGradientRole) ...[
-          Container(
-            width: 3,
-            height: 16,
-            decoration: BoxDecoration(
-              color: const Color(0xFF0080FF),
-              borderRadius: BorderRadius.circular(2),
-            ),
+        Container(
+          width: 3,
+          height: 16,
+          decoration: BoxDecoration(
+            color: AcadexColors.primary,
+            borderRadius: BorderRadius.circular(2),
           ),
-          const SizedBox(width: 8),
-        ],
+        ),
+        const SizedBox(width: 8),
         Flexible(
-          child: isGradientRole
-              ? AcadexAdaptiveGradientText(
-                  title,
-                  style: AcadexTypography.heading3().copyWith(fontWeight: FontWeight.w700),
-                  overflow: TextOverflow.ellipsis,
-                )
-              : Text(
-                  title,
-                  style: AcadexTypography.heading3(
-                    color: standardHeaderColor,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+          child: Text(
+            title,
+            style: AcadexTypography.heading3(
+              color: standardHeaderColor,
+            ).copyWith(fontWeight: FontWeight.w700),
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         if (count != null) ...[
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: isGradientRole
-                  ? const Color(0xFFE6F2FF)
-                  : (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft),
+              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
               borderRadius: AcadexRadius.borderRadiusFull,
               border: Border.all(
-                color: isGradientRole
-                    ? const Color(0xFFCCE6FF)
-                    : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
                 width: 1,
               ),
             ),
             child: Text(
               count.toString(),
               style: AcadexTypography.eyebrow(
-                color: isGradientRole
-                    ? const Color(0xFF003366)
-                    : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
               ),
             ),
           ),
@@ -362,19 +280,12 @@ class AcadexSectionHeader extends ConsumerWidget {
               headerTitleRow,
               if (subtitle != null) ...[
                 const SizedBox(height: 4),
-                if (isGradientRole)
-                  AcadexAdaptiveGradientText(
-                    subtitle!,
-                    style: AcadexTypography.bodySmall(),
-                    isSecondary: true,
-                  )
-                else
-                  Text(
-                    subtitle!,
-                    style: AcadexTypography.bodySmall(
-                      color: standardSubtitleColor,
-                    ),
+                Text(
+                  subtitle!,
+                  style: AcadexTypography.bodySmall(
+                    color: standardSubtitleColor,
                   ),
+                ),
               ],
             ],
           ),

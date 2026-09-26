@@ -5,6 +5,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 class AssignHodDialog extends ConsumerStatefulWidget {
   final Department department;
@@ -38,9 +39,7 @@ class _AssignHodDialogState extends ConsumerState<AssignHodDialog> {
 
   Future<void> _handleSave() async {
     if (_selectedFacultyId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a faculty member to assign as HOD')),
-      );
+      AcadexSnackBar.showWarning(context, 'Please select a faculty member to assign as HOD');
       return;
     }
 
@@ -52,18 +51,15 @@ class _AssignHodDialogState extends ConsumerState<AssignHodDialog> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('HOD assigned successfully'),
-            backgroundColor: AcadexColors.success,
-          ),
-        );
+        AcadexSnackBar.showSuccess(context, 'HOD assigned successfully');
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AcadexColors.warning),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to assign HOD',
         );
       }
     } finally {
@@ -143,7 +139,7 @@ class _AssignHodDialogState extends ConsumerState<AssignHodDialog> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'No faculty found in this department. Please add faculty first.',
+                        'No faculty found in this department. Please create faculty first.',
                         style: AcadexTypography.caption(color: theme.colorScheme.onSurface),
                       ),
                     ),

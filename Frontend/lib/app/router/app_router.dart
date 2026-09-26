@@ -46,6 +46,7 @@ import '../../features/academic_structure/presentation/screens/faculty_workload_
 import '../../features/academic_structure/presentation/screens/my_assignments_screen.dart';
 import '../../features/academic_structure/presentation/screens/student_profile_screen.dart';
 import '../../features/academic_structure/presentation/screens/academic_structure_home_screen.dart';
+import '../../features/academic_structure/presentation/screens/department_setup_screen.dart';
 
 import '../../features/attendance/presentation/screens/attendance_dashboard_router.dart';
 import '../../features/attendance/presentation/screens/mark_attendance_screen.dart';
@@ -85,6 +86,7 @@ import '../../features/notifications/presentation/screens/create_announcement_sc
 import '../../features/notifications/presentation/screens/announcement_list_screen.dart';
 import '../../features/notifications/presentation/screens/announcement_detail_screen.dart';
 import '../../core/presentation/screens/not_found_screen.dart';
+import '../../core/presentation/screens/access_restricted_screen.dart';
 
 import '../../features/timetable/presentation/screens/timetable_dashboard_screen.dart';
 import '../../features/timetable/presentation/screens/timetable_management_screen.dart';
@@ -133,6 +135,7 @@ String _getRouteTitle(String route) {
   if (route.startsWith('/academics/academic_years')) return 'Academic Years';
   if (route.startsWith('/academics/colleges')) return 'Colleges';
   if (route.startsWith('/academics/departments')) return 'Departments';
+  if (route.startsWith('/academics/setup')) return 'Department Setup';
   if (route == '/academics') return 'Academic Structure';
 
   if (route.startsWith('/academics/hods')) return 'Department Heads (HODs)';
@@ -201,7 +204,7 @@ class ShellWrapper extends ConsumerWidget {
     final pageTitle = _getRouteTitle(activeRoute);
 
     final scaffold = Scaffold(
-      backgroundColor: AcadexColors.canvas,
+      backgroundColor: Colors.white,
       appBar: AcadexAppBar(
         title: pageTitle,
         showDrawerButton: isMobile && isAtRootDashboard,
@@ -374,6 +377,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return isGoingToAuth ? null : '/login';
       }
 
+      if (loc == '/access-restricted') return null;
+
       if (isGoingToAuth || isSplash) {
         return getHomeRouteForRole(role);
       }
@@ -396,38 +401,54 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return '/academics/$rest';
       }
 
+      // Normalize hyphenated academic-years alias
+      if (loc.startsWith('/academics/academic-years')) {
+        return loc.replaceFirst('/academics/academic-years', '/academics/academic_years');
+      }
+
+      if (loc == '/department/setup' || loc.startsWith('/department/setup?')) {
+        return loc.replaceFirst('/department/setup', '/academics/setup');
+      }
+
       // Academic routes & role protection
       if (loc.startsWith('/academics') || loc.startsWith('/academic')) {
         if (loc.startsWith('/academics/assignments/my') || loc.startsWith('/academic/assignments/my') || loc == '/my-assignments') {
           if (role != AppRole.faculty && role != AppRole.hod && role != AppRole.collegeAdmin) {
-            return getHomeRouteForRole(role);
+            return '/access-restricted';
           }
         } else if (loc.startsWith('/academics/workload') || loc.startsWith('/academic/workload') || loc == '/faculty-workload') {
           if (role != AppRole.faculty && role != AppRole.hod && role != AppRole.collegeAdmin && role != AppRole.superAdmin) {
-            return getHomeRouteForRole(role);
+            return '/access-restricted';
           }
         } else if (loc.startsWith('/academics/colleges') || loc.startsWith('/academic/colleges')) {
           if (role != AppRole.superAdmin) {
-            return getHomeRouteForRole(role);
+            return '/access-restricted';
           }
-        } else if (loc.startsWith('/academics/departments') || loc.startsWith('/academic/departments') ||
-                   loc.startsWith('/academics/courses') || loc.startsWith('/academic/courses') ||
-                   loc.startsWith('/academics/academic_years') || loc.startsWith('/academic/years') ||
-                   loc.startsWith('/academics/semesters') || loc.startsWith('/academic/semesters')) {
+        } else if (loc.startsWith('/academics/departments') || loc.startsWith('/academic/departments')) {
           if (role != AppRole.superAdmin && role != AppRole.collegeAdmin) {
-            return getHomeRouteForRole(role);
+            return '/access-restricted';
+          }
+        } else if (loc.startsWith('/academics/academic_years') || loc.startsWith('/academic/years') ||
+                   loc.startsWith('/academics/academic-years')) {
+          if (role != AppRole.superAdmin && role != AppRole.collegeAdmin && role != AppRole.hod) {
+            return '/access-restricted';
+          }
+        } else if (loc.startsWith('/academics/courses') || loc.startsWith('/academic/courses') ||
+                   loc.startsWith('/academics/semesters') || loc.startsWith('/academic/semesters')) {
+          if (role != AppRole.superAdmin && role != AppRole.collegeAdmin && role != AppRole.hod) {
+            return '/access-restricted';
           }
         } else {
           // Subjects, Sections, Faculty, Students, Assignments (HOD, College Admin, Super Admin)
           if (role == AppRole.student) {
-            return getHomeRouteForRole(role);
+            return '/access-restricted';
           }
         }
       }
       
       if (loc.startsWith('/users')) {
         if (role == AppRole.student || role == AppRole.faculty) {
-          return getHomeRouteForRole(role);
+          return '/access-restricted';
         }
       }
 
@@ -519,6 +540,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: const GlobalSearchScreen(),
         ),
       ),
+      GoRoute(
+        path: '/access-restricted',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          context: context,
+          state: state,
+          child: AcadexAccessRestrictedScreen(
+            message: state.uri.queryParameters['message'],
+          ),
+        ),
+      ),
       
       // Dashboards (Primary Navigation: Instant Replacement)
       GoRoute(
@@ -604,6 +635,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/academics/departments/edit/:id', builder: (context, state) => DepartmentFormScreen(id: state.pathParameters['id'])),
       GoRoute(path: '/academics/departments/:id', builder: (context, state) => DepartmentDetailScreen(departmentId: state.pathParameters['id']!)),
 
+      // Department Setup Workspace
+      GoRoute(
+        path: '/academics/setup',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: ShellWrapper(
+            activeRoute: '/academics/setup',
+            child: DepartmentSetupScreen(
+              initialDepartmentId: state.uri.queryParameters['departmentId'],
+            ),
+          ),
+        ),
+      ),
+
       GoRoute(
         path: '/academics/courses',
         pageBuilder: (context, state) => noTransitionPage(
@@ -612,7 +658,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: const ShellWrapper(activeRoute: '/academics/courses', child: CourseListScreen()),
         ),
       ),
-      GoRoute(path: '/academics/courses/new', builder: (context, state) => const CourseFormScreen()),
+      GoRoute(
+        path: '/academics/courses/new',
+        builder: (context, state) => CourseFormScreen(
+          initialDepartmentId: state.uri.queryParameters['departmentId'],
+        ),
+      ),
       GoRoute(path: '/academics/courses/edit/:id', builder: (context, state) => CourseFormScreen(id: state.pathParameters['id'])),
       GoRoute(path: '/academics/courses/:id', builder: (context, state) => CourseDetailScreen(courseId: state.pathParameters['id']!)),
 
@@ -636,7 +687,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: const ShellWrapper(activeRoute: '/academics/semesters', child: SemesterListScreen()),
         ),
       ),
-      GoRoute(path: '/academics/semesters/new', builder: (context, state) => SemesterFormScreen(initialCourseId: state.uri.queryParameters['courseId'])),
+      GoRoute(
+        path: '/academics/semesters/new',
+        builder: (context, state) => SemesterFormScreen(
+          initialCourseId: state.uri.queryParameters['courseId'],
+          initialAcademicYearId: state.uri.queryParameters['academicYearId'],
+        ),
+      ),
       GoRoute(path: '/academics/semesters/edit/:id', builder: (context, state) => SemesterFormScreen(id: state.pathParameters['id'])),
       GoRoute(path: '/academics/semesters/:id', builder: (context, state) => SemesterDetailScreen(semesterId: state.pathParameters['id']!)),
 
@@ -648,7 +705,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: const ShellWrapper(activeRoute: '/academics/sections', child: SectionListScreen()),
         ),
       ),
-      GoRoute(path: '/academics/sections/new', builder: (context, state) => SectionFormScreen(initialCourseId: state.uri.queryParameters['courseId'])),
+      GoRoute(
+        path: '/academics/sections/new',
+        builder: (context, state) => SectionFormScreen(
+          initialCourseId: state.uri.queryParameters['courseId'],
+          initialSemesterId: state.uri.queryParameters['semesterId'],
+        ),
+      ),
       GoRoute(path: '/academics/sections/edit/:id', builder: (context, state) => SectionFormScreen(id: state.pathParameters['id'])),
       GoRoute(path: '/academics/sections/:id', builder: (context, state) => SectionDetailScreen(sectionId: state.pathParameters['id']!)),
 
@@ -684,7 +747,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: const ShellWrapper(activeRoute: '/academics/faculty', child: FacultyListScreen()),
         ),
       ),
-      GoRoute(path: '/academics/faculty/new', builder: (context, state) => const FacultyFormScreen()),
+      GoRoute(path: '/academics/faculty/new', builder: (context, state) => FacultyFormScreen(initialDepartmentId: state.uri.queryParameters['departmentId'])),
       GoRoute(path: '/academics/faculty/edit/:id', builder: (context, state) => FacultyFormScreen(id: state.pathParameters['id'])),
       GoRoute(path: '/academics/faculty/:id', builder: (context, state) => FacultyDetailScreen(facultyId: state.pathParameters['id']!)),
 
@@ -694,7 +757,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
-          child: const ShellWrapper(activeRoute: '/faculty-assignments', child: FacultyAssignmentsManagementScreen()),
+          child: ShellWrapper(
+            activeRoute: '/faculty-assignments',
+            child: FacultyAssignmentsManagementScreen(
+              initialSubjectId: state.uri.queryParameters['subjectId'],
+              initialCourseId: state.uri.queryParameters['courseId'],
+              initialSemesterId: state.uri.queryParameters['semesterId'],
+              initialSectionId: state.uri.queryParameters['sectionId'],
+            ),
+          ),
         ),
       ),
       GoRoute(
@@ -702,7 +773,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => noTransitionPage(
           context: context,
           state: state,
-          child: const ShellWrapper(activeRoute: '/faculty-assignments', child: FacultyAssignmentsManagementScreen()),
+          child: ShellWrapper(
+            activeRoute: '/faculty-assignments',
+            child: FacultyAssignmentsManagementScreen(
+              initialSubjectId: state.uri.queryParameters['subjectId'],
+              initialCourseId: state.uri.queryParameters['courseId'],
+              initialSemesterId: state.uri.queryParameters['semesterId'],
+              initialSectionId: state.uri.queryParameters['sectionId'],
+            ),
+          ),
         ),
       ),
       GoRoute(
@@ -738,7 +817,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: const ShellWrapper(activeRoute: '/academics/students', child: StudentListScreen()),
         ),
       ),
-      GoRoute(path: '/academics/students/new', builder: (context, state) => const StudentFormScreen()),
+      GoRoute(path: '/academics/students/new', builder: (context, state) => StudentFormScreen(initialDepartmentId: state.uri.queryParameters['departmentId'])),
       GoRoute(path: '/academics/students/edit/:id', builder: (context, state) => StudentFormScreen(id: state.pathParameters['id'])),
       GoRoute(path: '/academics/students/:id', builder: (context, state) => StudentProfileScreen(studentId: state.pathParameters['id']!)),
 

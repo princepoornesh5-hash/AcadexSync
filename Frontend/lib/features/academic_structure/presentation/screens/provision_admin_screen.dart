@@ -9,6 +9,7 @@ import '../../../../core/presentation/widgets/acadex_form_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../providers/academic_providers.dart';
 import 'activation_result_screen.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 
 class ProvisionAdminScreen extends ConsumerStatefulWidget {
   final String collegeId;
@@ -73,19 +74,10 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSubmitting = false);
-        final errText = e.toString().replaceFirst('Exception: ', '').replaceAll('DioException [bad response]: ', '');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(LucideIcons.circleAlert, color: Colors.white, size: 18),
-                const SizedBox(width: 8),
-                Expanded(child: Text(errText)),
-              ],
-            ),
-            backgroundColor: AcadexColors.error,
-            duration: const Duration(seconds: 4),
-          ),
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to provision administrator',
         );
       }
     }
@@ -97,9 +89,9 @@ class _ProvisionAdminScreenState extends ConsumerState<ProvisionAdminScreen> {
     final collegeAsync = ref.watch(collegeByIdProvider(widget.collegeId));
 
     return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),

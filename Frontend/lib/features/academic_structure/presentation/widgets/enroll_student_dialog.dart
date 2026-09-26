@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
+import '../providers/department_setup_provider.dart';
+import '../../../auth/domain/models/auth_state.dart';
+import '../../../auth/domain/models/role_enum.dart';
+import '../../../auth/domain/models/user_model.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import 'setup_continuation_dialog.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_workflow_context_banner.dart';
 
 class EnrollStudentDialog extends ConsumerStatefulWidget {
   final Section section;
@@ -58,8 +67,17 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
     final enrollmentsAsync = ref.watch(sectionEnrollmentsNotifierProvider(widget.section.id));
     final enrolledStudentIds = (enrollmentsAsync.valueOrNull ?? []).map((e) => e.studentId).toSet();
 
+    final authState = ref.watch(authProvider);
+    final canAddStudent = authState is AuthAuthenticated &&
+        (authState.user.role == AppRole.collegeAdmin ||
+         authState.user.role == AppRole.superAdmin ||
+         authState.user.role == AppRole.hod);
+
     final allStudents = studentsState.items;
     final availableStudents = allStudents.where((s) {
+      if (!s.isActive || s.accountStatus != AccountStatus.active || s.lifecycleState != StudentLifecycleState.active) {
+        return false;
+      }
       if (enrolledStudentIds.contains(s.id)) return false;
       if (_searchQuery.isEmpty) return true;
       final query = _searchQuery.toLowerCase();
@@ -69,9 +87,12 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
       return nameMatches || rollMatches || emailMatches;
     }).toList();
 
+    final isSelectionValid = _selectedStudentId != null &&
+        availableStudents.any((s) => s.id == _selectedStudentId);
+
     Student? selectedStudent;
-    if (_selectedStudentId != null) {
-      for (final s in allStudents) {
+    if (isSelectionValid) {
+      for (final s in availableStudents) {
         if (s.id == _selectedStudentId) {
           selectedStudent = s;
           break;
@@ -129,8 +150,30 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
               ],
             ),
             const SizedBox(height: 16),
-            const Divider(height: 1),
-            const SizedBox(height: 16),
+            // Context Banner
+            AcadexWorkflowContextBanner(
+              targetEntityName: 'Student Enrollment',
+              contextItems: [
+                if (widget.course != null)
+                  AcadexContextItem(
+                    label: 'Course',
+                    value: widget.course!.name,
+                    icon: LucideIcons.bookOpen,
+                  ),
+                if (widget.semester != null)
+                  AcadexContextItem(
+                    label: 'Semester',
+                    value: widget.semester!.name,
+                    icon: LucideIcons.calendar,
+                  ),
+                AcadexContextItem(
+                  label: 'Section',
+                  value: widget.section.name,
+                  icon: LucideIcons.users,
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
 
             // Search Existing Students
             TextField(
@@ -160,11 +203,33 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
                                 const SizedBox(height: 8),
                                 Text(
                                   _searchQuery.isNotEmpty
-                                      ? 'No matching unenrolled students found'
-                                      : 'All department students are already enrolled or none exist.',
+                                      ? 'No matching eligible students found'
+                                      : 'No eligible students are available.',
+                                  style: AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _searchQuery.isNotEmpty
+                                      ? 'No active unenrolled students match "$_searchQuery".'
+                                      : 'All active department students are already enrolled or none exist.',
                                   style: AcadexTypography.caption(color: AcadexColors.inkMuted),
                                   textAlign: TextAlign.center,
                                 ),
+                                if (canAddStudent && _searchQuery.isEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  OutlinedButton.icon(
+                                    icon: const Icon(LucideIcons.userPlus, size: 14),
+                                    label: const Text('Add Student'),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      final deptQuery = widget.section.departmentId.isNotEmpty
+                                          ? '?departmentId=${widget.section.departmentId}'
+                                          : '';
+                                      context.push('/academics/students/new$deptQuery');
+                                    },
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -290,34 +355,52 @@ class _EnrollStudentDialogState extends ConsumerState<EnrollStudentDialog> {
                   label: _isSubmitting ? 'Enrolling...' : 'Enroll in Section',
                   icon: LucideIcons.userCheck,
                   isLoading: _isSubmitting,
-                  onPressed: _selectedStudentId == null || _isSubmitting
+                  onPressed: !isSelectionValid || _isSubmitting
                       ? null
                       : () async {
                           setState(() => _isSubmitting = true);
                           try {
+                            final effectiveCourseId = widget.course?.id.isNotEmpty == true
+                                ? widget.course!.id
+                                : widget.section.courseId;
+                            final effectiveSemesterId = widget.semester?.id.isNotEmpty == true
+                                ? widget.semester!.id
+                                : widget.section.semesterId;
+                            final effectiveAcademicYearId = widget.academicYear?.id.isNotEmpty == true
+                                ? widget.academicYear!.id
+                                : widget.section.academicYearId;
+
                             await ref.read(sectionEnrollmentsNotifierProvider(widget.section.id).notifier).enrollStudent(
                               studentId: _selectedStudentId!,
-                              courseId: widget.section.courseId,
-                              academicYearId: widget.section.academicYearId,
-                              semesterId: widget.section.semesterId,
+                              courseId: effectiveCourseId,
+                              academicYearId: effectiveAcademicYearId,
+                              semesterId: effectiveSemesterId,
                               sectionId: widget.section.id,
                             );
+                            if (widget.section.departmentId.isNotEmpty) {
+                              ref.invalidate(departmentSetupProvider(widget.section.departmentId));
+                            }
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Student successfully enrolled in section!'),
-                                  backgroundColor: AcadexColors.success,
-                                ),
+                              AcadexSnackBar.showSuccess(
+                                context,
+                                'Student successfully enrolled in section!',
                               );
                               Navigator.of(context).pop();
+                              SetupContinuationDialog.show(
+                                context,
+                                title: 'Student Enrolled Successfully',
+                                message: 'Student assigned to section cohort. Continue to timetable scheduling.',
+                                primaryActionLabel: 'Continue to Timetable',
+                                onContinue: () => context.push('/timetable/manage'),
+                                secondaryActionLabel: 'Done',
+                              );
                             }
                           } catch (e) {
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Enrollment failed: $e'),
-                                  backgroundColor: AcadexColors.error,
-                                ),
+                              AcadexSnackBar.showError(
+                                context,
+                                e,
+                                fallbackMessage: 'Student is already enrolled in this section.',
                               );
                             }
                           } finally {

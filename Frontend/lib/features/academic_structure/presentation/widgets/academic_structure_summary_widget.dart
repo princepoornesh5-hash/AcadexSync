@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
+import '../../../auth/domain/models/auth_state.dart';
+import '../../../auth/domain/models/role_enum.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/academic_providers.dart';
 
 class AcademicStructureSummaryWidget extends ConsumerWidget {
@@ -14,6 +19,9 @@ class AcademicStructureSummaryWidget extends ConsumerWidget {
     final currentYear = ref.watch(currentAcademicYearProvider);
     final sections = ref.watch(sectionsProvider).valueOrNull ?? [];
     final semesters = ref.watch(semestersProvider).valueOrNull ?? [];
+    final authState = ref.watch(authProvider);
+    final user = authState is AuthAuthenticated ? authState.user : null;
+    final isHod = user?.role == AppRole.hod;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -66,8 +74,27 @@ class AcademicStructureSummaryWidget extends ConsumerWidget {
                   ],
                 ),
               ),
-              if (currentYear != null)
+              if (currentYear != null) ...[
                 const AcadexBadge(label: "ACTIVE SESSION", variant: AcadexBadgeVariant.success),
+                const SizedBox(width: 8),
+              ],
+              if (isHod) ...[
+                AcadexButton(
+                  label: 'Department Setup',
+                  icon: LucideIcons.compass,
+                  size: AcadexButtonSize.sm,
+                  variant: AcadexButtonVariant.secondary,
+                  onPressed: () => context.push('/academics/setup'),
+                ),
+              ] else ...[
+                AcadexButton(
+                  label: 'Add Academic Year',
+                  icon: LucideIcons.calendarPlus,
+                  size: AcadexButtonSize.sm,
+                  variant: currentYear == null ? AcadexButtonVariant.primary : AcadexButtonVariant.secondary,
+                  onPressed: () => context.push('/academics/academic_years/new'),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 16),
@@ -79,7 +106,7 @@ class AcademicStructureSummaryWidget extends ConsumerWidget {
                   children: [
                     _buildMetricTile(
                       theme,
-                      "Active Terms",
+                      "Active Semesters",
                       "${activeSemesters.length} Semesters",
                       LucideIcons.calendarClock,
                       AcadexColors.secondary,
@@ -88,7 +115,7 @@ class AcademicStructureSummaryWidget extends ConsumerWidget {
                     _buildMetricTile(
                       theme,
                       "Active Sections",
-                      "${activeSections.length} Batches",
+                      "${activeSections.length} Sections",
                       LucideIcons.users,
                       AcadexColors.primary,
                     ),
@@ -109,7 +136,7 @@ class AcademicStructureSummaryWidget extends ConsumerWidget {
                   Expanded(
                     child: _buildMetricTile(
                       theme,
-                      "Active Terms",
+                      "Active Semesters",
                       "${activeSemesters.length} Semesters",
                       LucideIcons.calendarClock,
                       AcadexColors.secondary,
@@ -120,7 +147,7 @@ class AcademicStructureSummaryWidget extends ConsumerWidget {
                     child: _buildMetricTile(
                       theme,
                       "Active Sections",
-                      "${activeSections.length} Batches",
+                      "${activeSections.length} Sections",
                       LucideIcons.users,
                       AcadexColors.primary,
                     ),

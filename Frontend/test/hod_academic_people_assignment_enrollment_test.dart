@@ -474,7 +474,8 @@ void main() {
           );
 
           await tester.pumpAndSettle();
-          expect(tester.takeException(), isNull);
+          final ex = tester.takeException();
+          expect(ex, isNull);
           expect(find.text('Faculty Assignments'), findsWidgets);
         }
       }
