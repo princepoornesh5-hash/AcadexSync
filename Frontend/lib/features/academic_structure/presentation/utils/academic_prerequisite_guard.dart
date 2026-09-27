@@ -100,6 +100,7 @@ class AcademicPrerequisiteGuard {
     required List<Student> students,
     required int timetableCount,
     AcademicYear? currentAcademicYear,
+    bool isSectionEnabled = true,
   }) {
     final isHod = currentRole == AppRole.hod;
     final isCollegeAdmin = currentRole == AppRole.collegeAdmin;
@@ -353,7 +354,7 @@ class AcademicPrerequisiteGuard {
             },
           );
         }
-        if (deptSections.isEmpty) {
+        if (isSectionEnabled && deptSections.isEmpty) {
           return SetupActionDecision.blocked(
             milestoneId: milestoneId,
             currentRole: currentRole,
@@ -421,7 +422,7 @@ class AcademicPrerequisiteGuard {
             },
           );
         }
-        if (deptSections.isEmpty) {
+        if (isSectionEnabled && deptSections.isEmpty) {
           return SetupActionDecision.blocked(
             milestoneId: milestoneId,
             currentRole: currentRole,
@@ -476,7 +477,7 @@ class AcademicPrerequisiteGuard {
             contextParams: {'departmentId': departmentId},
           );
         }
-        if (deptSections.isEmpty) {
+        if (isSectionEnabled && deptSections.isEmpty) {
           return SetupActionDecision.blocked(
             milestoneId: milestoneId,
             currentRole: currentRole,

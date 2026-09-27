@@ -524,12 +524,18 @@ class _AcademicYearFormScreenState extends ConsumerState<AcademicYearFormScreen>
                           controller: _nameCtrl,
                           validator: (v) {
                             if (v == null || v.trim().isEmpty) return 'Academic Year Name is required';
-                            if (v.trim().length < 4) return 'Must be at least 4 characters (e.g. 2026-2027)';
+                            if (v.trim().length < 4) return 'Must be at least 4 characters (e.g. 2026–2027)';
+                            if (v.trim().toLowerCase().contains('batch')) {
+                              return 'Academic Year represents the operational cycle (e.g. 2026–2027), not an intake batch';
+                            }
                             if (v.trim().length > 50) return 'Must be at most 50 characters';
                             return null;
                           },
                           style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                          decoration: const InputDecoration(hintText: "e.g. 2026–2027"),
+                          decoration: const InputDecoration(
+                            hintText: "e.g. 2026–2027",
+                            helperText: "Operational academic cycle (e.g. 2026–2027), distinct from intake cohorts/batches",
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),

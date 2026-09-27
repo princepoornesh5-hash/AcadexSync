@@ -4,44 +4,49 @@ import { ApiResponse } from '../utils/apiResponse';
 
 export class NotificationController {
   static listNotifications = async (req: Request, res: Response): Promise<void> => {
+    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
     const result = await NotificationService.listNotifications(
       req.user!.id,
-      req.collegeId || 'global',
+      collegeId,
       req.query as any
     );
     ApiResponse.success(res, result, 'Notifications retrieved successfully');
   };
 
   static getUnreadCount = async (req: Request, res: Response): Promise<void> => {
+    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
     const count = await NotificationService.getUnreadCount(
       req.user!.id,
-      req.collegeId || 'global'
+      collegeId
     );
     ApiResponse.success(res, { unreadCount: count }, 'Unread count retrieved');
   };
 
   static getById = async (req: Request, res: Response): Promise<void> => {
+    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
     const notification = await NotificationService.getNotificationById(
       req.params.id,
       req.user!.id,
-      req.collegeId || 'global'
+      collegeId
     );
     ApiResponse.success(res, notification, 'Notification retrieved');
   };
 
   static markAsRead = async (req: Request, res: Response): Promise<void> => {
+    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
     const notification = await NotificationService.markAsRead(
       req.params.id,
       req.user!.id,
-      req.collegeId || 'global'
+      collegeId
     );
     ApiResponse.success(res, notification, 'Notification marked as read');
   };
 
   static markAllAsRead = async (req: Request, res: Response): Promise<void> => {
+    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
     const result = await NotificationService.markAllAsRead(
       req.user!.id,
-      req.collegeId || 'global'
+      collegeId
     );
     ApiResponse.success(res, result, 'All notifications marked as read');
   };

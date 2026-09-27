@@ -871,12 +871,14 @@ class MockAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> addSubject(Subject subject) async {
+  Future<Subject> addSubject(Subject subject) async {
     await _delay();
     final dept = _departments.firstWhere((d) => d.id == subject.departmentId, orElse: () => throw Exception("Invalid Department"));
     _semesters.firstWhere((s) => s.id == subject.semesterId, orElse: () => throw Exception("Invalid Semester"));
     _validateScope(dept.collegeId, dept.id);
-    _subjects.add(subject);
+    final created = subject.id.isEmpty ? subject.copyWith(id: 'sub-${DateTime.now().millisecondsSinceEpoch}') : subject;
+    _subjects.add(created);
+    return created;
   }
   @override
   Future<void> updateSubject(Subject subject) async {
@@ -1957,6 +1959,90 @@ class MockAcademicRepository implements AcademicRepository {
     final newRoom = room.copyWith(id: 'room_${DateTime.now().millisecondsSinceEpoch}');
     _rooms.add(newRoom);
     return newRoom;
+  }
+
+  @override
+  Future<CurrentAcademicContext> getCurrentAcademicContext({String? departmentId, String? courseId}) async {
+    await _delay();
+    final currentAy = _academicYears.firstWhere(
+      (ay) => ay.isCurrent && ay.isActive,
+      orElse: () => _academicYears.firstWhere((ay) => ay.isActive, orElse: () => _academicYears.first),
+    );
+    final match = RegExp(r'(\d{4})').firstMatch(currentAy.name);
+    final ayStartYear = match != null ? int.tryParse(match.group(1)!) ?? 2026 : 2026;
+
+    final targetCourses = _courses.where((c) {
+      if (departmentId != null && c.departmentId != departmentId) return false;
+      if (courseId != null && c.id != courseId) return false;
+      return c.isActive;
+    }).toList();
+
+    final activeCohorts = <ActiveCohortInfo>[];
+    for (final course in targetCourses) {
+      final duration = course.duration;
+      final courseSems = _semesters.where((s) => s.courseId == course.id && s.isActive).toList();
+      for (var stage = 1; stage <= duration; stage++) {
+        final entryYear = ayStartYear - (stage - 1);
+        final gradYear = entryYear + duration;
+        final cohort = '$entryYear–${gradYear.toString().length == 4 ? gradYear.toString().substring(2) : gradYear}';
+        final stageName = '$stage${stage == 1 ? 'st' : stage == 2 ? 'nd' : stage == 3 ? 'rd' : 'th'} Year';
+
+        final matchedSems = courseSems.where((s) => s.number == (stage * 2 - 1) || s.number == (stage * 2)).toList();
+        final periods = matchedSems.map((sem) {
+          final semSecs = _sections
+              .where((sec) => sec.semesterId == sem.id && sec.isActive)
+              .map((sec) => CohortSectionInfo(sectionId: sec.id, name: sec.name, capacity: sec.capacity))
+              .toList();
+          return AcademicPeriodInfo(
+            semesterId: sem.id,
+            name: sem.name,
+            number: sem.number,
+            isCurrent: sem.isCurrent,
+            status: sem.status,
+            sections: semSecs,
+          );
+        }).toList();
+
+        activeCohorts.add(ActiveCohortInfo(
+          cohort: cohort,
+          courseId: course.id,
+          courseName: course.name,
+          courseCode: course.code,
+          departmentId: course.departmentId,
+          academicStage: stageName,
+          stageNumber: stage,
+          entryYear: entryYear,
+          expectedGraduationYear: gradYear,
+          progressionType: course.progressionType,
+          periods: periods,
+        ));
+      }
+    }
+
+    return CurrentAcademicContext(
+      collegeId: currentAy.collegeId,
+      academicYear: currentAy,
+      isCurrentAuthoritative: true,
+      activeCohorts: activeCohorts,
+      totalActiveCohorts: activeCohorts.length,
+      departmentScope: departmentId,
+    );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAcademicHistory({String? departmentId, String? courseId}) async {
+    await _delay();
+    return _academicYears
+        .where((ay) => !ay.isCurrent)
+        .map((ay) => {
+              'academicYear': ay.toJson(),
+              'isCurrent': false,
+              'name': ay.name,
+              'startDate': ay.startDate.toIso8601String(),
+              'endDate': ay.endDate.toIso8601String(),
+              'status': ay.status,
+            })
+        .toList();
   }
 }
 

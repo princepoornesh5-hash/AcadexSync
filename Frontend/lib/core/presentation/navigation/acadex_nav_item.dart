@@ -140,6 +140,16 @@ class AcadexNavigationService {
       isPrimary: true,
       matchingPrefixes: const ['/timetable'],
     ),
+    AcadexNavItem(
+      id: 'calendar',
+      label: 'Calendar',
+      icon: LucideIcons.calendar,
+      route: '/calendar',
+      group: AcadexNavGroup.academics,
+      allowedRoles: AppRole.values,
+      isPrimary: false,
+      matchingPrefixes: const ['/calendar'],
+    ),
 
     // ── OPERATIONS ─────────────────────────────────────────
     AcadexNavItem(
@@ -163,6 +173,16 @@ class AcadexNavigationService {
       matchingPrefixes: const ['/notes'],
     ),
     AcadexNavItem(
+      id: 'assignments',
+      label: 'Assignments',
+      icon: LucideIcons.fileSpreadsheet,
+      route: '/assignments',
+      group: AcadexNavGroup.operations,
+      allowedRoles: const [AppRole.faculty, AppRole.student, AppRole.hod],
+      isPrimary: false,
+      matchingPrefixes: const ['/assignments'],
+    ),
+    AcadexNavItem(
       id: 'people',
       label: 'People',
       icon: LucideIcons.users,
@@ -171,6 +191,16 @@ class AcadexNavigationService {
       allowedRoles: const [AppRole.superAdmin, AppRole.collegeAdmin],
       isPrimary: true,
       matchingPrefixes: const ['/users', '/academics/faculty', '/academics/students'],
+    ),
+    AcadexNavItem(
+      id: 'requests',
+      label: 'Request Center',
+      icon: LucideIcons.inbox,
+      route: '/requests',
+      group: AcadexNavGroup.operations,
+      allowedRoles: const [AppRole.collegeAdmin, AppRole.hod, AppRole.faculty, AppRole.student],
+      isPrimary: false,
+      matchingPrefixes: const ['/requests'],
     ),
 
     // ── INSIGHTS ───────────────────────────────────────────

@@ -40,6 +40,14 @@ export interface ITimetableGridEntry {
   roomNumber?: string;
   building?: string;
   sessionType: TimetableSessionType;
+  subjectName?: string;
+  subjectCode?: string;
+  sectionName?: string;
+  semesterName?: string;
+  courseName?: string;
+  cohort?: string;
+  academicStage?: string;
+  contextualDescription?: string;
 }
 
 export interface ITimetable extends Document {

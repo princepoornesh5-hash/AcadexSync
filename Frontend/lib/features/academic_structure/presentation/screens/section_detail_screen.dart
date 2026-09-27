@@ -104,6 +104,30 @@ class SectionDetailScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Page-Level Consistent Back Navigation ───────────────────
+              InkWell(
+                onTap: () => context.safePop(fallbackRoute: '/academics/sections'),
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(LucideIcons.arrowLeft, size: 16, color: AcadexColors.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Back to Sections',
+                        style: AcadexTypography.body(color: AcadexColors.primary).copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
               // ── Hero Header Card ──────────────────────────────────────
               _buildHeroCard(context, ref, isDark, isMobile, section, course, semester, academicYear),
               const SizedBox(height: 20),
@@ -125,8 +149,11 @@ class SectionDetailScreen extends ConsumerWidget {
       },
     );
 
-    if (hasEnclosingScaffold) {
-      return bodyContent;
+    if (hasEnclosingScaffold || !isMobile) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: bodyContent,
+      );
     }
 
     return Scaffold(

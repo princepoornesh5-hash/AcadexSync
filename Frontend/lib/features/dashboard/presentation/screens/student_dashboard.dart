@@ -20,6 +20,9 @@ import '../../../notifications/presentation/widgets/notification_preview_list.da
 import '../../../timetable/presentation/providers/timetable_providers.dart';
 import '../../../timetable/presentation/widgets/timetable_widgets.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
+import '../../../auth/domain/models/role_enum.dart';
+import 'package:campus_management/features/requests/presentation/widgets/dashboard_request_card.dart';
+import 'package:campus_management/features/requests/presentation/providers/requests_providers.dart';
 
 class StudentDashboard extends ConsumerWidget {
   const StudentDashboard({super.key});
@@ -55,6 +58,7 @@ class StudentDashboard extends ConsumerWidget {
               ref.invalidate(studentActivityProvider);
               ref.invalidate(currentStudentAcademicProfileProvider);
               ref.invalidate(todayScheduleProvider);
+              ref.invalidate(requestSummaryCountsProvider);
             },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,6 +148,10 @@ class StudentDashboard extends ConsumerWidget {
                   secondaryActionLabel: 'Full Timetable',
                   onSecondaryAction: () => context.go('/timetable'),
                 ),
+                const SizedBox(height: 14),
+
+                // Request Center Status Card (Prompt 29)
+                const DashboardRequestCard(role: AppRole.student),
                 AcadexLayout.sectionSpacer,
 
                 // Overview Stat Cards (Attendance, Classes Missed, etc.)

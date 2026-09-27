@@ -349,4 +349,25 @@ export class AcademicController {
     const assignment = await AcademicService.createFacultyAssignment(collegeId, validatedData, req.user);
     return ApiResponse.created(res, assignment, 'Faculty assigned successfully');
   });
+
+  // =========================================================================
+  // 8. AUTHORITATIVE CURRENT ACADEMIC CONTEXT & HISTORY (PROMPT 24)
+  // =========================================================================
+
+  static getCurrentAcademicContext = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const departmentId = req.query.departmentId as string | undefined;
+    const courseId = req.query.courseId as string | undefined;
+    const context = await AcademicService.getCurrentAcademicContext(req.user, { departmentId, courseId });
+    return ApiResponse.success(res, context, 'Current academic context retrieved successfully');
+  });
+
+  static getAcademicHistory = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const departmentId = req.query.departmentId as string | undefined;
+    const courseId = req.query.courseId as string | undefined;
+    const history = await AcademicService.getAcademicHistory(req.user, { departmentId, courseId });
+    return ApiResponse.success(res, history, 'Academic history retrieved successfully');
+  });
 }
+

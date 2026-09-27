@@ -65,6 +65,8 @@ class ApiAttendanceRepository implements AttendanceRepository {
           final endTime = item['endTime']?.toString();
           final roomNumber = (item['roomNumber'] ?? item['room'] ?? '101').toString();
           final building = item['building']?.toString();
+          final cohort = item['cohort']?.toString();
+          final academicStage = item['academicStage']?.toString();
 
           return AssignedClass(
             id: entryId,
@@ -76,12 +78,14 @@ class ApiAttendanceRepository implements AttendanceRepository {
             subjectId: subjectId,
             sectionName: sectionName,
             sectionId: sectionId,
-            semester: (item['semester'] ?? item['semesterId'] ?? 'Semester 1').toString(),
+            semester: (item['semesterName'] ?? item['semester'] ?? item['semesterId'] ?? 'Semester 1').toString(),
             timeSlot: timeSlot,
             startTime: startTime,
             endTime: endTime,
             roomNumber: roomNumber,
             building: building,
+            cohort: cohort,
+            academicStage: academicStage,
             date: date,
             isAttendanceMarked: item['isAttendanceMarked'] == true,
           );

@@ -75,7 +75,6 @@ class SubjectDetailScreen extends ConsumerWidget {
     final semsMap = {for (final s in semestersAsync.valueOrNull ?? <Semester>[]) s.id: s};
     final yearsMap = {for (final y in yearsAsync.valueOrNull ?? <AcademicYear>[]) y.id: y};
     final deptsMap = {for (final d in deptsAsync.valueOrNull ?? <Department>[]) d.id: d};
-    final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
 
     final bodyContent = subjectAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -95,11 +94,34 @@ class SubjectDetailScreen extends ConsumerWidget {
         final department = deptsMap[subject.departmentId] ?? (course != null ? deptsMap[course.departmentId] : null);
 
         return AcadexPageContainer(
-          backgroundColor: Colors.white,
           maxWidth: 960,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Page-Level Consistent Back Navigation ───────────────────
+              InkWell(
+                onTap: () => context.safePop(fallbackRoute: '/academics/subjects'),
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(LucideIcons.arrowLeft, size: 16, color: AcadexColors.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Back to Subjects',
+                        style: AcadexTypography.body(color: AcadexColors.primary).copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
               // ── Hero Header Card ──────────────────────────────────────
               _buildHeroCard(context, ref, isDark, isMobile, subject),
               const SizedBox(height: 20),
@@ -117,28 +139,7 @@ class SubjectDetailScreen extends ConsumerWidget {
       },
     );
 
-    if (hasEnclosingScaffold) {
-      return bodyContent;
-    }
-
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-          onPressed: () => context.safePop(fallbackRoute: '/academics/subjects'),
-        ),
-        title: Text(
-          'Curriculum Subject Overview',
-          style: AcadexTypography.heading2(
-            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-          ).copyWith(fontSize: 18),
-        ),
-      ),
-      body: bodyContent,
-    );
+    return bodyContent;
   }
 
   Widget _buildHeroCard(

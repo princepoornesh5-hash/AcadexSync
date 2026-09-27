@@ -19,6 +19,8 @@ export interface INotification extends Document {
   priority: NotificationPriority;
   entityType?: string;
   entityId?: string;
+  relatedEntityType?: string;
+  relatedEntityId?: string;
   deepLink?: string;
   navigationTarget?: string;
   metadata?: Record<string, unknown>;
@@ -70,10 +72,14 @@ const NotificationSchema = new Schema<INotification>(
       virtuals: true,
       transform: (_: unknown, ret: Record<string, any>) => {
         ret.id = ret._id?.toString();
+        ret.notificationId = ret.id;
         if (ret.recipientUserId) ret.recipientUserId = ret.recipientUserId.toString();
         if (ret.collegeId) ret.collegeId = ret.collegeId.toString();
         if (ret.departmentId) ret.departmentId = ret.departmentId.toString();
         ret.message = ret.body;
+        ret.type = ret.notificationType;
+        ret.relatedEntityType = ret.entityType;
+        ret.relatedEntityId = ret.entityId;
         ret.navigationTarget = ret.deepLink;
         delete ret.__v;
         return ret;
@@ -85,7 +91,7 @@ const NotificationSchema = new Schema<INotification>(
 // High performance compound indexes for fast inbox & unread counts
 NotificationSchema.index({ recipientUserId: 1, isRead: 1, createdAt: -1 });
 NotificationSchema.index({ collegeId: 1, recipientUserId: 1, createdAt: -1 });
-NotificationSchema.index({ recipientUserId: 1, idempotencyKey: 1 }, { sparse: true });
+NotificationSchema.index({ recipientUserId: 1, idempotencyKey: 1 }, { unique: true, sparse: true });
 
 export const Notification = mongoose.model<INotification>(
   'Notification',

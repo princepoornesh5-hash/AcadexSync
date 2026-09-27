@@ -9,6 +9,7 @@ import '../../domain/models/timetable_models.dart';
 import '../providers/timetable_authoring_providers.dart';
 import '../providers/timetable_lookup_providers.dart';
 import 'timetable_widgets.dart';
+import '../../../institution_config/presentation/providers/institution_config_providers.dart';
 
 /// Clean, responsive modal dialog for creating and editing timetable class assignments.
 /// Supports single-period and multi-period merged horizontal classes with real-time local conflict validation.
@@ -75,6 +76,10 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     final authoringState = ref.watch(timetableAuthoringProvider(widget.timetableId));
     final container = authoringState.container;
     final periods = authoringState.getPeriodsForDay(_day);
+
+    final termHelper = ref.watch(terminologyProvider);
+    final isRoomEnabled = termHelper.isRoomEnabled;
+    final isBuildingEnabled = termHelper.isBuildingEnabled;
 
     // Section-scoped active faculty assignments
     final sectionAssignments = container != null
@@ -339,6 +344,12 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                         yearMap[selectedAssignment.academicYearId]?.name ?? (container?.academicYearId ?? ''),
                         isDark,
                       ),
+                      if (selectedAssignment.cohort != null && selectedAssignment.cohort!.isNotEmpty)
+                        _buildSummaryRow(
+                          'Cohort / Batch:',
+                          selectedAssignment.cohort!,
+                          isDark,
+                        ),
                       _buildSummaryRow(
                         'Semester:',
                         semMap[selectedAssignment.semesterId]?.name ?? (container != null ? 'Semester ${container.semesterId}' : ''),
@@ -483,87 +494,95 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                   ),
                 ],
 
-                const SizedBox(height: 16),
-
-                // =============================================================
-                // 6. LOCATION DETAILS (ROOM & BUILDING)
-                // =============================================================
-                if (isMobile) ...[
-                  _buildFieldLabel('Room Number', isDark),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: _roomController,
-                    decoration: _buildInputDecoration(
-                      hintText: 'e.g. LH-101, Lab-2',
-                      prefixIcon: LucideIcons.doorOpen,
-                      isDark: isDark,
-                    ),
-                    style: AcadexTypography.bodyMedium(
-                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                    ),
-                    onChanged: (_) => setState(() {}),
-                  ),
+                if (isRoomEnabled || isBuildingEnabled) ...[
                   const SizedBox(height: 16),
-                  _buildFieldLabel('Building (Optional)', isDark),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: _buildingController,
-                    decoration: _buildInputDecoration(
-                      hintText: 'e.g. Main Block',
-                      prefixIcon: LucideIcons.building,
-                      isDark: isDark,
-                    ),
-                    style: AcadexTypography.bodyMedium(
-                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                    ),
-                  ),
-                ] else ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildFieldLabel('Room Number', isDark),
-                            const SizedBox(height: 6),
-                            TextFormField(
-                              controller: _roomController,
-                              decoration: _buildInputDecoration(
-                                hintText: 'e.g. LH-101, Lab-2',
-                                prefixIcon: LucideIcons.doorOpen,
-                                isDark: isDark,
-                              ),
-                              style: AcadexTypography.bodyMedium(
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                              ),
-                              onChanged: (_) => setState(() {}),
-                            ),
-                          ],
+
+                  // =============================================================
+                  // 6. LOCATION DETAILS (ROOM & BUILDING)
+                  // =============================================================
+                  if (isMobile) ...[
+                    if (isRoomEnabled) ...[
+                      _buildFieldLabel('Room Number', isDark),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _roomController,
+                        decoration: _buildInputDecoration(
+                          hintText: 'e.g. LH-101, Lab-2',
+                          prefixIcon: LucideIcons.doorOpen,
+                          isDark: isDark,
                         ),
+                        style: AcadexTypography.bodyMedium(
+                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                        ),
+                        onChanged: (_) => setState(() {}),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildFieldLabel('Building (Optional)', isDark),
-                            const SizedBox(height: 6),
-                            TextFormField(
-                              controller: _buildingController,
-                              decoration: _buildInputDecoration(
-                                hintText: 'e.g. Main Block',
-                                prefixIcon: LucideIcons.building,
-                                isDark: isDark,
-                              ),
-                              style: AcadexTypography.bodyMedium(
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                              ),
-                            ),
-                          ],
+                      if (isBuildingEnabled) const SizedBox(height: 16),
+                    ],
+                    if (isBuildingEnabled) ...[
+                      _buildFieldLabel('Building (Optional)', isDark),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _buildingController,
+                        decoration: _buildInputDecoration(
+                          hintText: 'e.g. Main Block',
+                          prefixIcon: LucideIcons.building,
+                          isDark: isDark,
+                        ),
+                        style: AcadexTypography.bodyMedium(
+                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                         ),
                       ),
                     ],
-                  ),
+                  ] else ...[
+                    Row(
+                      children: [
+                        if (isRoomEnabled)
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildFieldLabel('Room Number', isDark),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _roomController,
+                                  decoration: _buildInputDecoration(
+                                    hintText: 'e.g. LH-101, Lab-2',
+                                    prefixIcon: LucideIcons.doorOpen,
+                                    isDark: isDark,
+                                  ),
+                                  style: AcadexTypography.bodyMedium(
+                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  ),
+                                  onChanged: (_) => setState(() {}),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (isRoomEnabled && isBuildingEnabled) const SizedBox(width: 12),
+                        if (isBuildingEnabled)
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildFieldLabel('Building (Optional)', isDark),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _buildingController,
+                                  decoration: _buildInputDecoration(
+                                    hintText: 'e.g. Main Block',
+                                    prefixIcon: LucideIcons.building,
+                                    isDark: isDark,
+                                  ),
+                                  style: AcadexTypography.bodyMedium(
+                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
                 ],
 
                 // =============================================================

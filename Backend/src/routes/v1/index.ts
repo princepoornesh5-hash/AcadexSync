@@ -15,6 +15,10 @@ import { analyticsRouter } from './analytics.routes';
 import { calendarOverrideRouter } from './calendarOverride.routes';
 import { teacherSubstitutionRouter } from './teacherSubstitution.routes';
 import { announcementRouter } from './announcement.routes';
+import { requestRouter } from './request.routes';
+import { assignmentRouter } from './assignment.routes';
+import institutionConfigRouter from './institutionConfig.routes';
+import { academicCalendarRouter } from './academicCalendar.routes';
 
 const router = Router();
 
@@ -26,6 +30,7 @@ router.use('/auth', authRouter);
 router.use('/colleges', collegeRouter);
 router.use('/departments', departmentRouter);
 router.use('/academics', academicRouter);
+router.use('/institution-config', institutionConfigRouter);
 router.use('/users', userRouter);
 router.use('/timetables', timetableRouter);
 router.use('/calendar-overrides', calendarOverrideRouter);
@@ -34,6 +39,9 @@ router.use('/attendance', attendanceRouter);
 router.use('/notes', noteRouter);
 router.use('/notifications', notificationRouter);
 router.use('/announcements', announcementRouter);
+router.use('/requests', requestRouter);
+router.use('/assignments', assignmentRouter);
+router.use('/calendar', academicCalendarRouter);
 router.use('/audit', auditRouter);
 router.use('/reports', reportRouter);
 router.use('/analytics', analyticsRouter);

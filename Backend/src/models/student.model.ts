@@ -15,6 +15,8 @@ export interface IStudent extends Document {
   academicYearId?: mongoose.Types.ObjectId;
   semesterId?: mongoose.Types.ObjectId;
   sectionId?: mongoose.Types.ObjectId;
+  cohort?: string;
+  academicStage?: string;
   lifecycleState: StudentLifecycleState;
   admissionDate?: Date;
   graduationDate?: Date;
@@ -45,6 +47,8 @@ const StudentSchema = new Schema<IStudent>(
     academicYearId: { type: Schema.Types.ObjectId, ref: 'AcademicYear', default: null },
     semesterId: { type: Schema.Types.ObjectId, ref: 'Semester', default: null },
     sectionId: { type: Schema.Types.ObjectId, ref: 'Section', default: null },
+    cohort: { type: String, default: null, trim: true },
+    academicStage: { type: String, default: null, trim: true },
     lifecycleState: {
       type: String,
       enum: Object.values(StudentLifecycleState),

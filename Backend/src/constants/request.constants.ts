@@ -1,0 +1,143 @@
+import { AppRole } from './roles';
+
+export enum RequestStatus {
+  SUBMITTED = 'SUBMITTED',
+  RECEIVED = 'RECEIVED',
+  IN_REVIEW = 'IN_REVIEW',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  RESOLVED = 'RESOLVED',
+  CLOSED = 'CLOSED',
+}
+
+export enum StudentRequestType {
+  LEAVE = 'LEAVE',
+  ATTENDANCE_CORRECTION = 'ATTENDANCE_CORRECTION',
+  ACADEMIC_ISSUE = 'ACADEMIC_ISSUE',
+  GENERAL_REQUEST = 'GENERAL_REQUEST',
+  COMPLAINT_ISSUE = 'COMPLAINT_ISSUE',
+  DOCUMENT_REQUEST = 'DOCUMENT_REQUEST',
+}
+
+export enum FacultyRequestType {
+  LEAVE = 'LEAVE',
+  ON_DUTY = 'ON_DUTY',
+  PERMISSION = 'PERMISSION',
+  TIMETABLE_CHANGE = 'TIMETABLE_CHANGE',
+  RESOURCE_REQUEST = 'RESOURCE_REQUEST',
+  CLASSROOM_LAB_ISSUE = 'CLASSROOM_LAB_ISSUE',
+  WORKLOAD_CONCERN = 'WORKLOAD_CONCERN',
+  GENERAL_REQUEST = 'GENERAL_REQUEST',
+}
+
+export enum HodRequestType {
+  LEAVE = 'LEAVE',
+  FACULTY_REQUIREMENT = 'FACULTY_REQUIREMENT',
+  RESOURCE_REQUEST = 'RESOURCE_REQUEST',
+  INFRASTRUCTURE_ISSUE = 'INFRASTRUCTURE_ISSUE',
+  ACADEMIC_APPROVAL = 'ACADEMIC_APPROVAL',
+  EVENT_WORKSHOP_APPROVAL = 'EVENT_WORKSHOP_APPROVAL',
+  TIMETABLE_CHANGE = 'TIMETABLE_CHANGE',
+  GENERAL_ADMIN_REQUEST = 'GENERAL_ADMIN_REQUEST',
+}
+
+export const ALL_REQUEST_TYPES = [
+  'LEAVE',
+  'ATTENDANCE_CORRECTION',
+  'ACADEMIC_ISSUE',
+  'GENERAL_REQUEST',
+  'COMPLAINT_ISSUE',
+  'DOCUMENT_REQUEST',
+  'ON_DUTY',
+  'PERMISSION',
+  'TIMETABLE_CHANGE',
+  'RESOURCE_REQUEST',
+  'CLASSROOM_LAB_ISSUE',
+  'WORKLOAD_CONCERN',
+  'FACULTY_REQUIREMENT',
+  'INFRASTRUCTURE_ISSUE',
+  'ACADEMIC_APPROVAL',
+  'EVENT_WORKSHOP_APPROVAL',
+  'GENERAL_ADMIN_REQUEST',
+] as const;
+
+export type RequestType = typeof ALL_REQUEST_TYPES[number];
+
+/**
+ * Role-specific allowed request types for creation
+ */
+export const ALLOWED_REQUEST_TYPES_BY_ROLE: Record<AppRole, string[]> = {
+  [AppRole.STUDENT]: [
+    'LEAVE',
+    'ATTENDANCE_CORRECTION',
+    'ACADEMIC_ISSUE',
+    'GENERAL_REQUEST',
+    'COMPLAINT_ISSUE',
+    'DOCUMENT_REQUEST',
+  ],
+  [AppRole.FACULTY]: [
+    'LEAVE',
+    'ON_DUTY',
+    'PERMISSION',
+    'TIMETABLE_CHANGE',
+    'RESOURCE_REQUEST',
+    'CLASSROOM_LAB_ISSUE',
+    'WORKLOAD_CONCERN',
+    'GENERAL_REQUEST',
+  ],
+  [AppRole.HOD]: [
+    'LEAVE',
+    'FACULTY_REQUIREMENT',
+    'RESOURCE_REQUEST',
+    'INFRASTRUCTURE_ISSUE',
+    'ACADEMIC_APPROVAL',
+    'EVENT_WORKSHOP_APPROVAL',
+    'TIMETABLE_CHANGE',
+    'GENERAL_ADMIN_REQUEST',
+  ],
+  [AppRole.COLLEGE_ADMIN]: [
+    'GENERAL_REQUEST',
+    'RESOURCE_REQUEST',
+    'INFRASTRUCTURE_ISSUE',
+  ],
+  [AppRole.SUPER_ADMIN]: [
+    'GENERAL_REQUEST',
+  ],
+};
+
+/**
+ * Valid transitions between lifecycle states
+ */
+export const VALID_STATUS_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
+  [RequestStatus.SUBMITTED]: [
+    RequestStatus.RECEIVED,
+    RequestStatus.IN_REVIEW,
+    RequestStatus.APPROVED,
+    RequestStatus.REJECTED,
+    RequestStatus.RESOLVED,
+    RequestStatus.CLOSED,
+  ],
+  [RequestStatus.RECEIVED]: [
+    RequestStatus.IN_REVIEW,
+    RequestStatus.APPROVED,
+    RequestStatus.REJECTED,
+    RequestStatus.RESOLVED,
+    RequestStatus.CLOSED,
+  ],
+  [RequestStatus.IN_REVIEW]: [
+    RequestStatus.APPROVED,
+    RequestStatus.REJECTED,
+    RequestStatus.RESOLVED,
+    RequestStatus.CLOSED,
+  ],
+  [RequestStatus.APPROVED]: [
+    RequestStatus.CLOSED,
+  ],
+  [RequestStatus.REJECTED]: [
+    RequestStatus.CLOSED,
+  ],
+  [RequestStatus.RESOLVED]: [
+    RequestStatus.CLOSED,
+  ],
+  [RequestStatus.CLOSED]: [],
+};

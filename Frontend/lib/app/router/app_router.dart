@@ -47,6 +47,7 @@ import '../../features/academic_structure/presentation/screens/my_assignments_sc
 import '../../features/academic_structure/presentation/screens/student_profile_screen.dart';
 import '../../features/academic_structure/presentation/screens/academic_structure_home_screen.dart';
 import '../../features/academic_structure/presentation/screens/department_setup_screen.dart';
+import '../../features/institution_config/presentation/screens/institution_configuration_screen.dart';
 
 import '../../features/attendance/presentation/screens/attendance_dashboard_router.dart';
 import '../../features/attendance/presentation/screens/mark_attendance_screen.dart';
@@ -88,6 +89,16 @@ import '../../features/notifications/presentation/screens/announcement_detail_sc
 import '../../core/presentation/screens/not_found_screen.dart';
 import '../../core/presentation/screens/access_restricted_screen.dart';
 
+import '../../features/requests/presentation/screens/request_center_screen.dart';
+import '../../features/requests/presentation/screens/new_request_screen.dart';
+import '../../features/requests/presentation/screens/request_detail_screen.dart';
+import '../../features/requests/domain/models/request_model.dart';
+
+import '../../features/assignments/presentation/screens/assignments_screen.dart';
+import '../../features/assignments/presentation/screens/new_assignment_screen.dart';
+import '../../features/assignments/presentation/screens/assignment_detail_screen.dart';
+import '../../features/assignments/presentation/screens/assignment_activity_screen.dart';
+
 import '../../features/timetable/presentation/screens/timetable_dashboard_screen.dart';
 import '../../features/timetable/presentation/screens/timetable_management_screen.dart';
 import '../../features/timetable/presentation/screens/timetable_setup_screen.dart';
@@ -109,6 +120,7 @@ import '../../features/dashboard/presentation/widgets/acadex_drawer.dart';
 import '../../features/dashboard/presentation/widgets/acadex_bottom_nav.dart';
 import '../../features/dashboard/presentation/widgets/acadex_nav_rail.dart';
 import '../../features/dashboard/presentation/widgets/acadex_app_bar.dart';
+import '../../features/calendar/presentation/screens/calendar_screen.dart';
 import '../theme/app_theme.dart';
 
 String _getRouteTitle(String route) {
@@ -132,6 +144,7 @@ String _getRouteTitle(String route) {
   if (RegExp(r'^/academics/subjects/[^/]+$').hasMatch(route)) return 'Subject Details';
   if (route.startsWith('/academics/subjects')) return 'Subjects';
 
+  if (route.startsWith('/academics/configuration')) return 'Institution Configuration';
   if (route.startsWith('/academics/academic_years')) return 'Academic Years';
   if (route.startsWith('/academics/colleges')) return 'Colleges';
   if (route.startsWith('/academics/departments')) return 'Departments';
@@ -153,6 +166,7 @@ String _getRouteTitle(String route) {
   if (route.startsWith('/settings')) return 'Settings';
   if (route.startsWith('/announcements')) return 'Announcements';
   if (route.startsWith('/notifications')) return 'Notifications';
+  if (route.startsWith('/calendar')) return 'Academic Calendar';
   if (route.startsWith('/analytics')) return 'Analytics & Reports';
   if (route.startsWith('/reports')) return 'Reports';
   if (route.startsWith('/search')) return 'Search';
@@ -202,9 +216,11 @@ class ShellWrapper extends ConsumerWidget {
     }
 
     final pageTitle = _getRouteTitle(activeRoute);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final scaffold = Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF0B0F19) : const Color(0xFFF8FAFC),
+      extendBodyBehindAppBar: true,
       appBar: AcadexAppBar(
         title: pageTitle,
         showDrawerButton: isMobile && isAtRootDashboard,
@@ -650,6 +666,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
+      // Institution Academic Configuration (College Admin owned)
+      GoRoute(
+        path: '/academics/configuration',
+        pageBuilder: (context, state) => fadeTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(
+            activeRoute: '/academics',
+            child: InstitutionConfigurationScreen(),
+          ),
+        ),
+      ),
+
       GoRoute(
         path: '/academics/courses',
         pageBuilder: (context, state) => noTransitionPage(
@@ -713,7 +742,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(path: '/academics/sections/edit/:id', builder: (context, state) => SectionFormScreen(id: state.pathParameters['id'])),
-      GoRoute(path: '/academics/sections/:id', builder: (context, state) => SectionDetailScreen(sectionId: state.pathParameters['id']!)),
+      GoRoute(path: '/academics/sections/:id', builder: (context, state) => SectionDetailScreen(key: ValueKey(state.pathParameters['id']), sectionId: state.pathParameters['id']!)),
 
       GoRoute(
         path: '/academics/subjects',
@@ -725,7 +754,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/academics/subjects/new', builder: (context, state) => SubjectFormScreen(initialCourseId: state.uri.queryParameters['courseId'], initialSemesterId: state.uri.queryParameters['semesterId'])),
       GoRoute(path: '/academics/subjects/edit/:id', builder: (context, state) => SubjectFormScreen(id: state.pathParameters['id'])),
-      GoRoute(path: '/academics/subjects/:id', builder: (context, state) => SubjectDetailScreen(subjectId: state.pathParameters['id']!)),
+      GoRoute(path: '/academics/subjects/:id', builder: (context, state) => SubjectDetailScreen(key: ValueKey(state.pathParameters['id']), subjectId: state.pathParameters['id']!)),
 
       GoRoute(
         path: '/academics/hods',
@@ -1199,6 +1228,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
+      // Centralized Academic Calendar module (Prompt 23)
+      GoRoute(
+        path: '/calendar',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/calendar', child: CalendarScreen()),
+        ),
+      ),
+
       // Notes module (Primary Navigation: Instant Replacement)
       GoRoute(
         path: '/notes',
@@ -1229,6 +1268,75 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 child: NoteDetailScreen(note: note),
               );
             },
+          ),
+        ],
+      ),
+
+      // Request Center module
+      GoRoute(
+        path: '/requests',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/requests', child: RequestCenterScreen()),
+        ),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (context, state) {
+              final qp = state.uri.queryParameters;
+              final extra = state.extra as Map<String, dynamic>?;
+              final typeStr = qp['type'] ?? extra?['type'] as String?;
+              final type = typeStr != null ? RequestTypeExtension.fromString(typeStr) : null;
+              return NewRequestScreen(
+                initialType: type,
+                initialSubjectId: qp['subjectId'] ?? extra?['subjectId'] as String?,
+                initialSubjectName: qp['subjectName'] ?? extra?['subjectName'] as String?,
+                initialSectionId: qp['sectionId'] ?? extra?['sectionId'] as String?,
+                initialSectionName: qp['sectionName'] ?? extra?['sectionName'] as String?,
+                initialCourseId: qp['courseId'] ?? extra?['courseId'] as String?,
+                initialCourseName: qp['courseName'] ?? extra?['courseName'] as String?,
+              );
+            },
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return RequestDetailScreen(requestId: id);
+            },
+          ),
+        ],
+      ),
+
+      // Coursework Assignments & Deadlines module
+      GoRoute(
+        path: '/assignments',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/assignments', child: AssignmentsScreen()),
+        ),
+        routes: [
+          GoRoute(
+            path: 'create',
+            builder: (context, state) => const NewAssignmentScreen(),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return AssignmentDetailScreen(assignmentId: id);
+            },
+            routes: [
+              GoRoute(
+                path: 'activity',
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return AssignmentActivityScreen(assignmentId: id);
+                },
+              ),
+            ],
           ),
         ],
       ),

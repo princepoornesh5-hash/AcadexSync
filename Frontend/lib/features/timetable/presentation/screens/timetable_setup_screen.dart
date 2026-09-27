@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -488,26 +489,55 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
 
           const SizedBox(height: 24),
 
-          // Department Dropdown
-          DropdownButtonFormField<String>(
-            value: _selectedDepartmentId,
-            decoration: const InputDecoration(labelText: 'Department *'),
-            items: availableDepts.map((d) {
-              return DropdownMenuItem(value: d.id, child: Text('${d.name} (${d.code})'));
-            }).toList(),
-            onChanged: isHod
-                ? null
-                : (val) {
-                    setState(() {
-                      _selectedDepartmentId = val;
-                      _selectedCourseId = null;
-                      _selectedSemesterId = null;
-                      _selectedSectionId = null;
-                    });
-                    _autoGenerateName();
-                    _checkExistingContainers();
-                  },
-          ),
+          // Department Context
+          if (isHod && availableDepts.length <= 1) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft,
+                borderRadius: AcadexRadius.borderRadiusMd,
+                border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+              ),
+              child: Row(
+                children: [
+                  const Icon(LucideIcons.building2, size: 18, color: AcadexColors.primary),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Department: ',
+                    style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  ),
+                  Text(
+                    availableDepts.isNotEmpty
+                        ? '${availableDepts.first.name} (${availableDepts.first.code})'
+                        : 'Department Context Auto-Resolved',
+                    style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const Spacer(),
+                  const AcadexBadge(label: 'AUTO-RESOLVED', variant: AcadexBadgeVariant.success),
+                ],
+              ),
+            ),
+          ] else ...[
+            DropdownButtonFormField<String>(
+              value: _selectedDepartmentId,
+              decoration: const InputDecoration(labelText: 'Department *'),
+              items: availableDepts.map((d) {
+                return DropdownMenuItem(value: d.id, child: Text('${d.name} (${d.code})'));
+              }).toList(),
+              onChanged: isHod
+                  ? null
+                  : (val) {
+                      setState(() {
+                        _selectedDepartmentId = val;
+                        _selectedCourseId = null;
+                        _selectedSemesterId = null;
+                        _selectedSectionId = null;
+                      });
+                      _autoGenerateName();
+                      _checkExistingContainers();
+                    },
+            ),
+          ],
 
           const SizedBox(height: 16),
 

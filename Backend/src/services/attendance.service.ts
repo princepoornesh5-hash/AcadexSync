@@ -22,7 +22,12 @@ import {
   TimetableDay,
 } from '../constants/status';
 import { NotificationService } from './notification.service';
-import { NotificationType, NotificationCategory } from '../constants/notification.constants';
+import {
+  NotificationType,
+  NotificationCategory,
+  NotificationPriority,
+} from '../constants/notification.constants';
+import { institutionConfigService } from './institutionConfig.service';
 import { CalendarOverrideService } from './calendarOverride.service';
 import { CalendarOverrideType } from '../models/calendarOverride.model';
 import { TeacherSubstitutionService } from './teacherSubstitution.service';
@@ -739,6 +744,12 @@ export class AttendanceService {
       },
     });
 
+    if (populatedItems.length > 0) {
+      await this.dispatchAttendanceNotifications(session, populatedItems).catch((err) =>
+        logger.warn(`Failed to dispatch attendance notifications: ${err.message}`)
+      );
+    }
+
     return session;
   }
 
@@ -1337,6 +1348,27 @@ export class AttendanceService {
     records: IAttendanceRecordItem[]
   ): Promise<void> {
     try {
+      // 1. Retrieve institution configuration for alert thresholds and terminology
+      const config = await institutionConfigService.getEffectiveConfiguration(
+        session.collegeId.toString()
+      );
+
+      // Check if attendance alerts are enabled globally for this institution
+      if (config.attendanceAlerts && config.attendanceAlerts.enabled === false) {
+        return;
+      }
+
+      const absenceAlertsEnabled = config.attendanceAlerts?.absenceAlertsEnabled ?? true;
+      const warningThreshold = config.attendanceAlerts?.warningPercentage ?? 75;
+      const criticalThreshold = config.attendanceAlerts?.criticalPercentage ?? 65;
+
+      // Academic structure & terminology awareness
+      const sectionEnabled = config.academicStructure?.section ?? true;
+      const contextName =
+        sectionEnabled && session.sectionName
+          ? `${session.subjectName || 'Class'} • ${session.sectionName}`
+          : `${session.subjectName || 'Class'}`;
+
       const studentIds = records.map((r) => r.studentId);
       const students = await Student.find({ _id: { $in: studentIds } }).select('userId');
       const studentMap = new Map<string, string>();
@@ -1345,34 +1377,136 @@ export class AttendanceService {
       });
 
       const notifInputs: any[] = [];
+      const deepLink = `/attendance/student/subject/${session.subjectId?.toString() || ''}`;
+
+      // 2. Absence Alert Generation (per-event semantics)
+      if (absenceAlertsEnabled) {
+        for (const record of records) {
+          const userId = studentMap.get(record.studentId.toString());
+          if (!userId) continue;
+
+          if (record.status === AttendanceStatus.ABSENT) {
+            notifInputs.push({
+              collegeId: session.collegeId.toString(),
+              departmentId: session.departmentId?.toString(),
+              recipientUserId: userId,
+              recipientRole: AppRole.STUDENT,
+              title: 'Attendance Update',
+              body: `You were marked absent for ${contextName} today.`,
+              notificationType: NotificationType.ATTENDANCE_ABSENT,
+              category: NotificationCategory.ATTENDANCE,
+              priority: NotificationPriority.NORMAL,
+              entityType: 'AttendanceSession',
+              entityId: session.id,
+              deepLink,
+              idempotencyKey: `att_abs_${session.id}_${record.studentId.toString()}`,
+              metadata: {
+                sessionId: session.id,
+                subjectId: session.subjectId?.toString(),
+                subjectName: session.subjectName,
+                status: AttendanceStatus.ABSENT,
+              },
+            });
+          }
+        }
+      }
+
+      // 3. Threshold Crossing Alerts (aggregate attendance state)
+      const studentObjIds = records.map(
+        (r) => new mongoose.Types.ObjectId(r.studentId.toString())
+      );
+      const allSubjectRecords = await AttendanceRecord.find({
+        collegeId: session.collegeId,
+        subjectId: session.subjectId,
+        studentId: { $in: studentObjIds },
+        isCancelled: { $ne: true },
+      });
+
+      const recordsByStudent = new Map<string, IAttendanceRecord[]>();
+      allSubjectRecords.forEach((rec) => {
+        const sid = rec.studentId.toString();
+        if (!recordsByStudent.has(sid)) recordsByStudent.set(sid, []);
+        recordsByStudent.get(sid)!.push(rec);
+      });
 
       for (const record of records) {
-        const userId = studentMap.get(record.studentId.toString());
+        const studentId = record.studentId.toString();
+        const userId = studentMap.get(studentId);
         if (!userId) continue;
 
-        if (record.status === AttendanceStatus.ABSENT || record.status === AttendanceStatus.LATE) {
+        const allRecs = recordsByStudent.get(studentId) || [];
+        const priorRecs = allRecs.filter(
+          (r) => r.sessionId.toString() !== session._id.toString()
+        );
+
+        const priorTotal = priorRecs.length;
+        const priorAttended = priorRecs.filter(
+          (r) => r.status === AttendanceStatus.PRESENT || r.status === AttendanceStatus.LATE
+        ).length;
+        const priorPercentage =
+          priorTotal === 0 ? 100 : Math.round((priorAttended / priorTotal) * 10000) / 100;
+
+        const newTotal = allRecs.length;
+        const newAttended = allRecs.filter(
+          (r) => r.status === AttendanceStatus.PRESENT || r.status === AttendanceStatus.LATE
+        ).length;
+        const newPercentage =
+          newTotal === 0 ? 0 : Math.round((newAttended / newTotal) * 10000) / 100;
+
+        // Detect meaningful threshold crossings:
+        // A. Critical Threshold Crossing:
+        if (priorPercentage >= criticalThreshold && newPercentage < criticalThreshold) {
           notifInputs.push({
             collegeId: session.collegeId.toString(),
             departmentId: session.departmentId?.toString(),
             recipientUserId: userId,
             recipientRole: AppRole.STUDENT,
-            title: record.status === AttendanceStatus.ABSENT ? 'Marked Absent' : 'Marked Late',
-            body: `You were marked ${record.status} for ${session.subjectName || 'Class'} on ${new Date(
-              session.date
-            ).toLocaleDateString()}.`,
-            notificationType:
-              record.status === AttendanceStatus.ABSENT
-                ? NotificationType.ATTENDANCE_ABSENT
-                : NotificationType.ATTENDANCE_LATE,
+            title: 'Attendance Alert',
+            body: `Your ${session.subjectName || 'attendance'} attendance has fallen to ${newPercentage}%. Please review your attendance details.`,
+            notificationType: NotificationType.ATTENDANCE_ALERT,
             category: NotificationCategory.ATTENDANCE,
+            priority: NotificationPriority.CRITICAL,
             entityType: 'AttendanceSession',
             entityId: session.id,
-            deepLink: '/attendance',
-            idempotencyKey: `att_${session.id}_${userId}_${record.status}`,
+            deepLink,
+            idempotencyKey: `att_crit_${session.id}_${studentId}_${session.subjectId?.toString() || ''}`,
+            metadata: {
+              sessionId: session.id,
+              subjectId: session.subjectId?.toString(),
+              subjectName: session.subjectName,
+              percentage: newPercentage,
+              threshold: criticalThreshold,
+            },
+          });
+        }
+        // B. Warning Threshold Crossing:
+        else if (priorPercentage >= warningThreshold && newPercentage < warningThreshold) {
+          notifInputs.push({
+            collegeId: session.collegeId.toString(),
+            departmentId: session.departmentId?.toString(),
+            recipientUserId: userId,
+            recipientRole: AppRole.STUDENT,
+            title: 'Attendance Warning',
+            body: `Your ${session.subjectName || 'attendance'} attendance is now ${newPercentage}%.`,
+            notificationType: NotificationType.ATTENDANCE_LOW,
+            category: NotificationCategory.ATTENDANCE,
+            priority: NotificationPriority.HIGH,
+            entityType: 'AttendanceSession',
+            entityId: session.id,
+            deepLink,
+            idempotencyKey: `att_warn_${session.id}_${studentId}_${session.subjectId?.toString() || ''}`,
+            metadata: {
+              sessionId: session.id,
+              subjectId: session.subjectId?.toString(),
+              subjectName: session.subjectName,
+              percentage: newPercentage,
+              threshold: warningThreshold,
+            },
           });
         }
       }
 
+      // 4. Batch Dispatch Persistent In-App Notifications
       if (notifInputs.length > 0) {
         await NotificationService.createBatchNotifications(notifInputs);
       }

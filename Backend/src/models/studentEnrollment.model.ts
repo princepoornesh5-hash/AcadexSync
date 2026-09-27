@@ -8,6 +8,8 @@ export interface IStudentEnrollment extends Document {
   academicYearId: mongoose.Types.ObjectId;
   semesterId: mongoose.Types.ObjectId;
   sectionId: mongoose.Types.ObjectId;
+  cohort?: string;
+  academicStage?: string;
   enrollmentDate: Date;
   status: string;
   createdAt: Date;
@@ -23,6 +25,8 @@ const StudentEnrollmentSchema = new Schema<IStudentEnrollment>(
     academicYearId: { type: Schema.Types.ObjectId, ref: 'AcademicYear', required: true },
     semesterId: { type: Schema.Types.ObjectId, ref: 'Semester', required: true },
     sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: true, index: true },
+    cohort: { type: String, default: null, trim: true },
+    academicStage: { type: String, default: null, trim: true },
     enrollmentDate: { type: Date, default: Date.now },
     status: { type: String, default: 'active' },
   },

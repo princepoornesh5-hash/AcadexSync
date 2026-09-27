@@ -15,6 +15,7 @@ import '../providers/department_setup_provider.dart';
 import 'setup_continuation_dialog.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 import '../../../../core/presentation/widgets/acadex_workflow_context_banner.dart';
+import '../../../../core/errors/acadex_error.dart';
 
 class FacultyAssignmentDialog extends ConsumerStatefulWidget {
   final Faculty? preselectedFaculty;
@@ -98,10 +99,13 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
       return;
     }
 
+    final sections = ref.read(sectionsProvider).valueOrNull ?? [];
+    final selectedSection = sections.where((s) => s.id == _selectedSectionId).firstOrNull;
     final academicYears = ref.read(academicYearsProvider).valueOrNull ?? [];
-    final activeYearId = _selectedAcademicYearId ??
+    final String activeYearId = _selectedAcademicYearId ??
+        (selectedSection != null && selectedSection.academicYearId.isNotEmpty ? selectedSection.academicYearId : null) ??
         academicYears.where((y) => y.isActive).firstOrNull?.id ??
-        (academicYears.isNotEmpty ? academicYears.first.id : 'ay_current');
+        (academicYears.isNotEmpty ? academicYears.first.id : '');
 
     // Check duplicate in active assignments
     final existing = (ref.read(facultyAssignmentsProvider).valueOrNull ?? []).where(
@@ -112,7 +116,7 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
           a.sectionId == _selectedSectionId &&
           a.semesterId == _selectedSemesterId &&
           a.courseId == _selectedCourseId &&
-          a.academicYearId == activeYearId,
+          (activeYearId.isEmpty || a.academicYearId == activeYearId),
     );
 
     if (existing.isNotEmpty) {
@@ -139,9 +143,13 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
         ),
       );
 
+      final authState = ref.read(auth.authProvider);
+      final String fallbackCollegeId = (authState is AuthAuthenticated ? authState.user.collegeId : '') ?? '';
+      final String collegeId = faculty.collegeId.isNotEmpty ? faculty.collegeId : fallbackCollegeId;
+
       final assignment = FacultyAssignment(
         id: 'fa_${DateTime.now().millisecondsSinceEpoch}',
-        collegeId: faculty.collegeId,
+        collegeId: collegeId,
         departmentId: _selectedDepartmentId!,
         facultyId: _selectedFacultyId!,
         facultyName: faculty.name,
@@ -157,6 +165,7 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
 
       await ref.read(facultyAssignmentsProvider.notifier).createAssignment(assignment);
       ref.invalidate(facultyAssignmentsProvider);
+      ref.invalidate(myFacultyAssignmentsProvider);
       if (_selectedDepartmentId != null) {
         ref.invalidate(departmentSetupProvider(_selectedDepartmentId!));
       }
@@ -186,9 +195,13 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
       }
     } catch (e) {
       if (mounted) {
+        final message = AcadexException.sanitizedMessage(
+          e,
+          fallback: "We couldn't complete this faculty assignment. The selected faculty record is unavailable. Please refresh the faculty list and try again.",
+        );
         AcadexSnackBar.showError(
           context,
-          e,
+          message,
           fallbackMessage: 'Faculty assignment failed',
         );
       }
@@ -242,7 +255,15 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
 
     final filteredSemesters = _selectedCourseId == null
         ? <Semester>[]
-        : semesters.where((s) => s.courseId == _selectedCourseId && s.isActive).toList();
+        : semesters.where((s) {
+            if (s.courseId != _selectedCourseId || !s.isActive) return false;
+            if (_selectedAcademicYearId != null &&
+                s.academicYearId.isNotEmpty &&
+                s.academicYearId != _selectedAcademicYearId) {
+              return false;
+            }
+            return true;
+          }).toList();
 
     final filteredSections = _selectedSemesterId == null
         ? <Section>[]
@@ -428,7 +449,7 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
                                 labelText: 'Course *',
                                 hintText: _selectedDepartmentId == null ? 'Select Department first' : 'Choose course',
                               ),
-                              items: filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name, overflow: TextOverflow.ellipsis))).toList(),
+                              items: filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.code})', overflow: TextOverflow.ellipsis))).toList(),
                               onChanged: _selectedDepartmentId == null
                                   ? null
                                   : (val) {
@@ -459,7 +480,19 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
                               items: academicYears
                                   .map((y) => DropdownMenuItem(value: y.id, child: Text(y.name, overflow: TextOverflow.ellipsis)))
                                   .toList(),
-                              onChanged: (val) => setState(() => _selectedAcademicYearId = val),
+                              onChanged: (val) {
+                                setState(() {
+                                  _selectedAcademicYearId = val;
+                                  if (_selectedSemesterId != null) {
+                                    final currentSem = semesters.where((s) => s.id == _selectedSemesterId).firstOrNull;
+                                    if (currentSem != null && val != null && currentSem.academicYearId.isNotEmpty && currentSem.academicYearId != val) {
+                                      _selectedSemesterId = null;
+                                      _selectedSectionId = null;
+                                      _selectedSubjectId = null;
+                                    }
+                                  }
+                                });
+                              },
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -561,6 +594,31 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
                     if (_selectedFacultyId != null) ...[
                       Builder(
                         builder: (context) {
+                          if (assignmentsAsync.isLoading) {
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: AcadexColors.primary.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(AcadexRadius.md),
+                              ),
+                              child: Row(
+                                children: [
+                                  const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: AcadexColors.primary),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    'Calculating faculty teaching workload...',
+                                    style: AcadexTypography.caption(color: AcadexColors.primary),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
                           final selectedFacAssignments = (assignmentsAsync.valueOrNull ?? [])
                               .where((a) => a.facultyId == _selectedFacultyId && a.isActive)
                               .toList();
@@ -631,8 +689,8 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
                                 runSpacing: 6,
                                 children: [
                                   _buildSummaryPill('Faculty', fac?.name ?? 'None', LucideIcons.user),
-                                  _buildSummaryPill('Subject', sub != null ? '${sub.code} - ${sub.name}' : 'None', LucideIcons.bookOpen),
-                                  _buildSummaryPill('Course', crs?.code ?? crs?.name ?? 'None', LucideIcons.graduationCap),
+                                  _buildSummaryPill('Subject', sub != null ? '${sub.code} · ${sub.name}' : 'None', LucideIcons.bookOpen),
+                                  _buildSummaryPill('Course', crs != null ? '${crs.name} (${crs.code})' : 'None', LucideIcons.graduationCap),
                                   _buildSummaryPill('Session', ay?.name ?? 'Active Session', LucideIcons.calendar),
                                   _buildSummaryPill('Semester', sem?.name ?? 'None', LucideIcons.calendarClock),
                                   _buildSummaryPill('Section', sec != null ? 'Section ${sec.name}' : 'None', LucideIcons.users),
@@ -704,11 +762,11 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
                               child: const Icon(LucideIcons.bookOpen, color: AcadexColors.primary, size: 18),
                             ),
                             title: Text(
-                              '${a.facultyName} • ${sub?.name ?? a.subjectId}',
+                              '${a.facultyName} • ${sub?.name ?? 'Subject'}',
                               style: AcadexTypography.body(color: theme.colorScheme.onSurface).copyWith(fontWeight: FontWeight.w600),
                             ),
                             subtitle: Text(
-                              '${crs?.name ?? a.courseId} • ${sem?.name ?? a.semesterId} • Section ${sec?.name ?? a.sectionId} • ${sub?.code ?? ''}',
+                              '${crs?.name ?? 'Course'} • ${sem?.name ?? 'Semester'} • Section ${sec?.name ?? '—'}${sub != null && sub.code.isNotEmpty ? ' • ${sub.code}' : ''}',
                               style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
                             ),
                             trailing: IconButton(

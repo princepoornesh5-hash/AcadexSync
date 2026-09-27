@@ -113,26 +113,20 @@ class AssignedClassCard extends StatelessWidget {
                             color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            assignedClass.sectionName,
-                            style: AcadexTypography.bodySmall(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                            ),
-                          ),
-                          if (assignedClass.semester.isNotEmpty) ...[
-                            Text(
-                              ' • ',
-                              style: TextStyle(
-                                color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
-                              ),
-                            ),
-                            Text(
-                              assignedClass.semester,
+                          Expanded(
+                            child: Text(
+                              assignedClass.contextualDescription.isNotEmpty
+                                  ? assignedClass.contextualDescription
+                                  : (assignedClass.semester.isNotEmpty
+                                      ? '${assignedClass.sectionName} • ${assignedClass.semester}'
+                                      : assignedClass.sectionName),
                               style: AcadexTypography.bodySmall(
                                 color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ],
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),

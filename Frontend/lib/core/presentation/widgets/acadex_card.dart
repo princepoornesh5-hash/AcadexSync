@@ -25,8 +25,9 @@ class AcadexCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = backgroundColor ?? AcadexColors.surface;
-    final border = borderColor ?? AcadexColors.hairline;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = backgroundColor ?? (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface);
+    final border = borderColor ?? (isDark ? AcadexColors.darkHairline : AcadexColors.hairline);
     final radius = borderRadius ?? AcadexRadius.borderRadiusLg;
 
     final content = Container(
@@ -37,7 +38,7 @@ class AcadexCard extends StatelessWidget {
         color: bg,
         borderRadius: radius,
         border: Border.all(color: border, width: 1),
-        boxShadow: AcadexShadows.lightSm,
+        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
       ),
       child: child,
     );
@@ -85,8 +86,9 @@ class AcadexStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final defaultIconColor = iconColor ?? AcadexColors.primary;
-    final defaultIconBg = iconBackgroundColor ?? AcadexColors.primaryLight;
+    final defaultIconBg = iconBackgroundColor ?? (isDark ? AcadexColors.primary.withValues(alpha: 0.15) : AcadexColors.primaryLight);
 
     return AcadexCard(
       onTap: onTap,
@@ -102,7 +104,7 @@ class AcadexStatCard extends StatelessWidget {
                 child: Text(
                   title,
                   style: AcadexTypography.caption(
-                    color: AcadexColors.inkMuted,
+                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                   ).copyWith(fontWeight: FontWeight.w600),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -123,7 +125,7 @@ class AcadexStatCard extends StatelessWidget {
           Text(
             value,
             style: AcadexTypography.heading1(
-              color: AcadexColors.ink,
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
             ),
           ),
           if (subtitle != null || trend != null) ...[
@@ -154,7 +156,7 @@ class AcadexStatCard extends StatelessWidget {
                     child: Text(
                       subtitle!,
                       style: AcadexTypography.caption(
-                        color: AcadexColors.inkSecondary,
+                        color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),

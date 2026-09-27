@@ -70,7 +70,9 @@ class AcadexPageContainer extends ConsumerWidget {
 
     final isMobile = AcadexBreakpoints.isMobile(context);
     final hPad = horizontalPadding ?? _responsiveHorizontalPadding(context);
-    final tPad = topPadding ?? (isMobile ? AcadexSpacing.space16 : AcadexSpacing.space24);
+    final mediaTop = MediaQuery.paddingOf(context).top;
+    final baseTop = topPadding ?? (isMobile ? AcadexSpacing.space16 : AcadexSpacing.space24);
+    final effectiveTop = baseTop + mediaTop;
     final bPad = bottomPadding ?? (isMobile ? AcadexSpacing.space24 : AcadexSpacing.space32);
 
     final content = Center(
@@ -85,7 +87,7 @@ class AcadexPageContainer extends ConsumerWidget {
       final scrollContent = SingleChildScrollView(
         controller: scrollController,
         physics: physics ?? (onRefresh != null ? const AlwaysScrollableScrollPhysics() : null),
-        padding: EdgeInsets.fromLTRB(hPad, tPad, hPad, bPad),
+        padding: EdgeInsets.fromLTRB(hPad, effectiveTop, hPad, bPad),
         child: content,
       );
       if (onRefresh != null) {
@@ -98,7 +100,7 @@ class AcadexPageContainer extends ConsumerWidget {
       }
     } else {
       containerBody = Padding(
-        padding: EdgeInsets.fromLTRB(hPad, tPad, hPad, bPad),
+        padding: EdgeInsets.fromLTRB(hPad, effectiveTop, hPad, bPad),
         child: content,
       );
     }

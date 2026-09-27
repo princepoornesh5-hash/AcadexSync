@@ -53,6 +53,10 @@ router.get('/students/:id/summary', StudentController.getSummary);
 // Academic Structure & Tree (Phase 9I.1)
 router.get('/tree', AcademicController.getAcademicTree);
 
+// Current Academic Context & History (Prompt 24)
+router.get('/current-context', AcademicController.getCurrentAcademicContext);
+router.get('/context/history', AcademicController.getAcademicHistory);
+
 // Courses
 router.get('/courses', AcademicController.listCourses);
 router.post('/courses', requireHodOrAbove, AcademicController.createCourse);

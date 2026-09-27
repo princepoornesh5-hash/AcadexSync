@@ -966,9 +966,9 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<void> addSubject(Subject subject) async {
+  Future<Subject> addSubject(Subject subject) async {
     try {
-      await _client.dio.post('/academics/subjects', data: {
+      final response = await _client.dio.post('/academics/subjects', data: {
         'courseId': subject.courseId,
         'semesterId': subject.semesterId,
         'name': subject.name,
@@ -977,6 +977,14 @@ class ApiAcademicRepository implements AcademicRepository {
         'type': subject.type,
         if (subject.collegeId.isNotEmpty) 'collegeId': subject.collegeId,
       });
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : (body is Map<String, dynamic> ? body : <String, dynamic>{});
+      if (data.isNotEmpty) {
+        return Subject.fromJson(data);
+      }
+      return subject;
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to create subject');
     }
@@ -1732,6 +1740,39 @@ class ApiAcademicRepository implements AcademicRepository {
       return Room.fromJson(data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to create room');
+    }
+  }
+
+  @override
+  Future<CurrentAcademicContext> getCurrentAcademicContext({String? departmentId, String? courseId}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (departmentId != null && departmentId.isNotEmpty) queryParams['departmentId'] = departmentId;
+      if (courseId != null && courseId.isNotEmpty) queryParams['courseId'] = courseId;
+      final response = await _client.dio.get('/academics/current-context', queryParameters: queryParams.isNotEmpty ? queryParams : null);
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      return CurrentAcademicContext.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch current academic context');
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAcademicHistory({String? departmentId, String? courseId}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (departmentId != null && departmentId.isNotEmpty) queryParams['departmentId'] = departmentId;
+      if (courseId != null && courseId.isNotEmpty) queryParams['courseId'] = courseId;
+      final response = await _client.dio.get('/academics/context/history', queryParameters: queryParams.isNotEmpty ? queryParams : null);
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      if (data is List) {
+        return data.map((e) => e as Map<String, dynamic>).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch academic history');
     }
   }
 }

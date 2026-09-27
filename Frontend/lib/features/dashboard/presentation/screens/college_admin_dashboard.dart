@@ -20,7 +20,7 @@ import '../widgets/stat_card.dart';
 import '../../../timetable/presentation/providers/timetable_providers.dart';
 import '../../../timetable/presentation/widgets/timetable_widgets.dart';
 import '../../../academic_structure/presentation/widgets/academic_structure_summary_widget.dart';
-import '../../../academic_structure/presentation/widgets/department_setup_card.dart';
+import '../../../academic_structure/presentation/widgets/institution_setup_card.dart';
 import '../../../reports/presentation/providers/reports_providers.dart';
 
 class CollegeAdminDashboard extends ConsumerWidget {
@@ -127,8 +127,8 @@ class CollegeAdminDashboard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // ── 5. Progressive Department Setup Summary ──────────────
-                const DepartmentSetupCard(),
+                // ── 5. Core Institution Setup Summary ──────────────────────
+                const InstitutionSetupCard(),
                 const SizedBox(height: 24),
 
                 // ── 6. Academic Hierarchy Summary Deck ─────────────────────

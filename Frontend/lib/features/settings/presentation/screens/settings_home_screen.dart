@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../features/auth/domain/models/auth_state.dart';
+import '../../../../features/auth/domain/models/role_enum.dart';
 import '../widgets/settings_widgets.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
@@ -15,6 +17,9 @@ class SettingsHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final authState = ref.watch(authProvider);
+    final user = authState is AuthAuthenticated ? authState.user : null;
+    final isCollegeAdmin = user?.role == AppRole.collegeAdmin || user?.role == AppRole.superAdmin;
 
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
@@ -28,7 +33,20 @@ class SettingsHomeScreen extends ConsumerWidget {
               subtitle: "Manage your preferences, security, and institutional application configurations.",
             ),
             const SizedBox(height: 12),
-            
+
+            if (isCollegeAdmin)
+              SettingsSection(
+                title: "Institution Management",
+                children: [
+                  SettingsTile(
+                    icon: LucideIcons.sliders,
+                    title: "Academic Configuration",
+                    subtitle: "Configure academic structure, terminology, and starter presets",
+                    onTap: () => context.push('/academics/configuration'),
+                  ),
+                ],
+              ),
+
             SettingsSection(
               title: "User Profile",
               children: [

@@ -327,6 +327,21 @@ class AcadexException implements Exception {
     if (lower.contains('timetable') && (lower.contains('conflict') || lower.contains('overlap') || lower.contains('already exist'))) {
       return 'A timetable schedule conflict exists for this time slot.';
     }
+    // Map technical runtime crashes to friendly user messages
+    if (lower.contains('singletickerproviderstatemixin') ||
+        lower.contains('multiple tickers created') ||
+        lower.contains('animationcontroller') ||
+        lower.contains('tickerprovider') ||
+        lower.contains('component load error')) {
+      return 'Something went wrong while loading this section.';
+    }
+    if (lower.contains('circulardependencyerror')) {
+      return 'We could not complete this operation due to a temporary state update conflict. Please try again.';
+    }
+    if (lower.contains('faculty') && (lower.contains('not found') || lower.contains('unavailable') || lower.contains('no longer available'))) {
+      return "We couldn't complete this faculty assignment. The selected faculty record is unavailable. Please refresh the faculty list and try again.";
+    }
+
     final technicalKeywords = [
       'dioexception',
       'formatexception',
@@ -339,6 +354,13 @@ class AcadexException implements Exception {
       'stacktrace',
       'mongodb',
       'objectid',
+      'facultyid',
+      'subjectid',
+      'sectionid',
+      'semesterid',
+      'courseid',
+      'collegeid',
+      'departmentid',
       'cast to objectid failed',
       'e11000 duplicate key error',
       'cannot read properties of undefined',
@@ -353,6 +375,14 @@ class AcadexException implements Exception {
       'sqlstate',
       'relation "',
       'internal server error',
+      'circulardependencyerror',
+      'singletickerproviderstatemixin',
+      'multiple tickers created',
+      'animationcontroller',
+      'tickerprovider',
+      'component load error',
+      'instance of \'',
+      'instance of',
     ];
 
     for (final kw in technicalKeywords) {

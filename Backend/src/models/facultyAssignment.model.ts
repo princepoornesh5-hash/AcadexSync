@@ -10,6 +10,8 @@ export interface IFacultyAssignment extends Document {
   sectionId: mongoose.Types.ObjectId;
   subjectId: mongoose.Types.ObjectId;
   academicYearId: mongoose.Types.ObjectId;
+  cohort?: string;
+  academicStage?: string;
   roomId?: string;
   maxStudents?: number;
   assignmentType?: string;
@@ -31,6 +33,8 @@ const FacultyAssignmentSchema = new Schema<IFacultyAssignment>(
     sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: true, index: true },
     subjectId: { type: Schema.Types.ObjectId, ref: 'Subject', required: true, index: true },
     academicYearId: { type: Schema.Types.ObjectId, ref: 'AcademicYear', required: true },
+    cohort: { type: String, default: null, trim: true },
+    academicStage: { type: String, default: null, trim: true },
     roomId: { type: String, default: null },
     maxStudents: { type: Number, default: null },
     assignmentType: { type: String, default: 'lecture' },

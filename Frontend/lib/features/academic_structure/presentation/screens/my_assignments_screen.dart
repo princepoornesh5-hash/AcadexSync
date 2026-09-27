@@ -9,6 +9,8 @@ import '../../../../core/presentation/widgets/acadex_empty_state.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../providers/academic_providers.dart';
+import '../../../attendance/domain/models/assigned_class.dart';
+import '../../../attendance/presentation/providers/attendance_providers.dart';
 
 class MyAssignmentsScreen extends ConsumerWidget {
   const MyAssignmentsScreen({super.key});
@@ -113,12 +115,22 @@ class MyAssignmentsScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
 
-                        // Course & Semester
-                        Text(
-                          '${crs?.name ?? a.courseId} • ${sem?.name ?? a.semesterId} • ${yr?.name ?? a.academicYearId}',
-                          style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        // Course & Context
+                        Builder(
+                          builder: (context) {
+                            final parts = <String>[];
+                            if (a.cohort != null && a.cohort!.isNotEmpty) parts.add(a.cohort!);
+                            if (a.academicStage != null && a.academicStage!.isNotEmpty) parts.add(a.academicStage!);
+                            if (sem?.name != null) parts.add(sem!.name);
+                            if (yr?.name != null) parts.add(yr!.name);
+
+                            return Text(
+                              parts.isNotEmpty ? parts.join(' · ') : '${crs?.name ?? a.courseId} • ${sem?.name ?? a.semesterId} • ${yr?.name ?? a.academicYearId}',
+                              style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          },
                         ),
                         const SizedBox(height: 12),
 
@@ -175,14 +187,35 @@ class MyAssignmentsScreen extends ConsumerWidget {
                         const Divider(height: 1),
                         const SizedBox(height: 8),
 
-                        // Quick Action Buttons (Attendance, Timetable, Notes)
+                        // Quick Action Buttons (Attendance, Assignments, Timetable, Notes)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             IconButton(
-                              tooltip: "Mark Attendance",
+                              tooltip: "Take Attendance Now",
                               icon: const Icon(LucideIcons.clipboardCheck, size: 18, color: AcadexColors.primary),
-                              onPressed: () => context.push('/attendance'),
+                              onPressed: () {
+                                final assignedClass = AssignedClass(
+                                  id: a.id,
+                                  facultyAssignmentId: a.id,
+                                  subjectId: a.subjectId,
+                                  subjectName: sub?.name ?? a.subjectId,
+                                  sectionId: a.sectionId,
+                                  sectionName: sec?.name ?? a.sectionId,
+                                  semester: sem?.name ?? a.semesterId,
+                                  cohort: a.cohort,
+                                  academicStage: a.academicStage,
+                                  timeSlot: 'Regular Session',
+                                  date: DateTime.now(),
+                                );
+                                ref.read(activeClassProvider.notifier).state = assignedClass;
+                                context.push('/attendance/mark');
+                              },
+                            ),
+                            IconButton(
+                              tooltip: "Coursework Assignments",
+                              icon: const Icon(LucideIcons.fileSpreadsheet, size: 18, color: AcadexColors.accentOrange),
+                              onPressed: () => context.push('/assignments'),
                             ),
                             IconButton(
                               tooltip: "View Timetable",

@@ -14,13 +14,17 @@ import '../../../academic_structure/presentation/providers/academic_providers.da
 import '../providers/dashboard_providers.dart';
 import '../widgets/acadex_hero_card.dart';
 import '../widgets/activity_feed.dart';
-import '../widgets/quick_action_card.dart';
 import '../widgets/section_header.dart';
 import '../widgets/stat_card.dart';
 import '../../../timetable/presentation/providers/timetable_providers.dart';
 import '../../../timetable/presentation/widgets/timetable_widgets.dart';
 import '../../../academic_structure/presentation/widgets/academic_structure_summary_widget.dart';
 import '../../../academic_structure/presentation/widgets/department_setup_card.dart';
+import '../../../auth/domain/models/role_enum.dart';
+import 'package:campus_management/features/requests/presentation/widgets/dashboard_request_card.dart';
+import 'package:campus_management/features/requests/presentation/providers/requests_providers.dart';
+import '../../../institution_config/domain/models/institution_config_models.dart';
+import '../../../institution_config/presentation/providers/institution_config_providers.dart';
 
 class HodDashboard extends ConsumerWidget {
   const HodDashboard({super.key});
@@ -28,9 +32,9 @@ class HodDashboard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(hodStatsProvider);
-    final quickActions = ref.watch(hodQuickActionsProvider);
     final activity = ref.watch(hodActivityProvider);
     final authState = ref.watch(authProvider);
+    final terminology = ref.watch(terminologyProvider);
 
     UserModel? user;
     if (authState is AuthAuthenticated) user = authState.user;
@@ -60,6 +64,7 @@ class HodDashboard extends ConsumerWidget {
               ref.invalidate(todayScheduleProvider);
               ref.invalidate(weeklyTimetableProvider);
               ref.invalidate(facultyAssignmentsProvider);
+              ref.invalidate(requestSummaryCountsProvider);
             },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,6 +140,14 @@ class HodDashboard extends ConsumerWidget {
                   secondaryActionLabel: 'Faculty Workload',
                   onSecondaryAction: () => context.go('/academics/faculty'),
                 ),
+                const SizedBox(height: 14),
+
+                // Quick Operations (Dynamic HOD actions + Continue Setup)
+                _buildQuickOperations(context, isDark, isMobile, width, terminology, departmentId),
+                AcadexLayout.sectionSpacer,
+
+                // Request Center Status Card (Prompt 29)
+                const DashboardRequestCard(role: AppRole.hod),
                 AcadexLayout.sectionSpacer,
 
                 // Department Key Metrics
@@ -316,12 +329,6 @@ class HodDashboard extends ConsumerWidget {
                 ),
                 AcadexLayout.sectionSpacer,
 
-                // Quick Navigation Actions
-                const SectionHeader(title: 'Quick Operations'),
-                AcadexLayout.headerGap,
-                QuickActionsRow(actions: quickActions),
-                AcadexLayout.sectionSpacer,
-
                 // Recent Notifications
                 SectionHeader(
                   title: 'Recent Activity & Notifications',
@@ -342,5 +349,154 @@ class HodDashboard extends ConsumerWidget {
           );
         },
       );
+  }
+
+  Widget _buildQuickOperations(
+    BuildContext context,
+    bool isDark,
+    bool isMobile,
+    double width,
+    TerminologyHelper terminology,
+    String departmentId,
+  ) {
+    final courseTerm = terminology.label(AcademicConcept.program);
+    final subjectTerm = terminology.label(AcademicConcept.subject);
+
+    final operations = [
+      (
+        label: 'Add $courseTerm',
+        icon: LucideIcons.graduationCap,
+        color: AcadexColors.primary,
+        onTap: () => context.push('/academics/courses/new'),
+      ),
+      (
+        label: 'Add $subjectTerm',
+        icon: LucideIcons.bookOpen,
+        color: AcadexColors.accentGreen,
+        onTap: () => context.push('/academics/subjects/new'),
+      ),
+      (
+        label: 'Add Student',
+        icon: LucideIcons.userPlus,
+        color: const Color(0xFF2563EB),
+        onTap: () => context.push(
+          '/academics/students/new${departmentId.isNotEmpty ? '?departmentId=$departmentId' : ''}',
+        ),
+      ),
+      (
+        label: 'Assign Faculty',
+        icon: LucideIcons.userCheck,
+        color: AcadexColors.warning,
+        onTap: () => context.push('/faculty-assignments'),
+      ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Quick Operations',
+          actionLabel: 'Continue Setup',
+          actionIcon: LucideIcons.compass,
+          onAction: () => context.push('/academics/setup'),
+        ),
+        AcadexLayout.headerGap,
+        if (isMobile)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: operations.map((op) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: InkWell(
+                    onTap: op.onTap,
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                        borderRadius: AcadexRadius.borderRadiusMd,
+                        border: Border.all(
+                          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                        ),
+                        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(op.icon, size: 16, color: op.color),
+                          const SizedBox(width: 8),
+                          Text(
+                            op.label,
+                            style: AcadexTypography.bodySmall(
+                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            ).copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          )
+        else
+          LayoutBuilder(
+            builder: (context, boxConstraints) {
+              final availableWidth = boxConstraints.maxWidth;
+              final itemWidth = availableWidth > 900
+                  ? (availableWidth - 36) / 4
+                  : (availableWidth - 12) / 2;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: operations.map((op) {
+                  return SizedBox(
+                    width: itemWidth,
+                    child: InkWell(
+                  onTap: op.onTap,
+                  borderRadius: AcadexRadius.borderRadiusMd,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                      border: Border.all(
+                        color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      ),
+                      boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: op.color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(op.icon, size: 18, color: op.color),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            op.label,
+                            style: AcadexTypography.body(
+                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            ).copyWith(fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const Icon(LucideIcons.arrowUpRight, size: 16, color: AcadexColors.inkMuted),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          );
+        },
+      ),
+    ],
+    );
   }
 }

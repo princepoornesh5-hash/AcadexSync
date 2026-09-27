@@ -31,16 +31,28 @@ class NotificationCard extends StatelessWidget {
 
   IconData _getIconForCategory(NotificationCategory category) {
     if (category == NotificationCategory.attendance) {
+      if (notification.notificationType == NotificationType.attendanceAbsent) return LucideIcons.userX;
+      if (notification.notificationType == NotificationType.attendanceAlert || notification.priority == NotificationPriority.critical) return LucideIcons.shieldAlert;
+      if (notification.notificationType == NotificationType.attendanceLow) return LucideIcons.alertTriangle;
       final titleLower = notification.title.toLowerCase();
       if (titleLower.contains('recovered')) return LucideIcons.circleCheck;
       if (titleLower.contains('drop')) return LucideIcons.trendingDown;
-      if (titleLower.contains('absence')) return LucideIcons.userX;
+      if (titleLower.contains('absence') || titleLower.contains('absent')) return LucideIcons.userX;
       if (titleLower.contains('unmarked') || titleLower.contains('missing')) return LucideIcons.calendarX;
       if (notification.priority == NotificationPriority.critical) return LucideIcons.shieldAlert;
       return LucideIcons.calendarCheck;
     }
 
     switch (category) {
+      case NotificationCategory.request:
+        if (notification.notificationType == NotificationType.requestApproved) {
+          return LucideIcons.checkCircle;
+        } else if (notification.notificationType == NotificationType.requestRejected) {
+          return LucideIcons.xCircle;
+        } else if (notification.notificationType == NotificationType.requestReceived) {
+          return LucideIcons.inbox;
+        }
+        return LucideIcons.fileCheck2;
       case NotificationCategory.attendance: return LucideIcons.calendarCheck;
       case NotificationCategory.academic: return LucideIcons.bookOpen;
       case NotificationCategory.system: return LucideIcons.settings;
@@ -50,6 +62,7 @@ class NotificationCard extends StatelessWidget {
       case NotificationCategory.certificates: return LucideIcons.award;
       case NotificationCategory.timetable: return LucideIcons.calendarDays;
       case NotificationCategory.announcement: return LucideIcons.megaphone;
+      case NotificationCategory.assignment: return LucideIcons.bookMarked;
       case NotificationCategory.general: return LucideIcons.bell;
     }
   }
@@ -58,6 +71,13 @@ class NotificationCard extends StatelessWidget {
     if (notification.category == NotificationCategory.attendance &&
         notification.title.toLowerCase().contains('recovered')) {
       return AcadexColors.success;
+    }
+    if (notification.category == NotificationCategory.request) {
+      if (notification.notificationType == NotificationType.requestApproved) {
+        return AcadexColors.success;
+      } else if (notification.notificationType == NotificationType.requestRejected) {
+        return AcadexColors.error;
+      }
     }
     switch (priority) {
       case NotificationPriority.critical: return AcadexColors.error;
@@ -86,8 +106,18 @@ class NotificationCard extends StatelessWidget {
       child: InkWell(
         onTap: () {
           if (isUnread) onReadToggle();
-          if (notification.navigationTarget != null) {
-            context.push(notification.navigationTarget!);
+          final target = notification.navigationTarget ??
+              (notification.relatedEntityType?.toUpperCase() == 'REQUEST' && notification.relatedEntityId != null
+                  ? '/requests/${notification.relatedEntityId}'
+                  : null);
+          if (target != null && target.isNotEmpty) {
+            try {
+              context.push(target);
+            } catch (_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('This item is no longer available.')),
+              );
+            }
           }
         },
         child: Container(

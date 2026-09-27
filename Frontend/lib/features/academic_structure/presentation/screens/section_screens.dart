@@ -23,6 +23,9 @@ import '../widgets/setup_continuation_dialog.dart';
 import '../utils/academic_prerequisite_guard.dart';
 import '../../../../core/presentation/widgets/acadex_workflow_context_banner.dart';
 import '../../domain/models/academic_models.dart';
+import '../widgets/context_program_selector.dart';
+import '../../../institution_config/domain/models/institution_config_models.dart';
+import '../../../institution_config/presentation/providers/institution_config_providers.dart';
 
 class SectionListScreen extends ConsumerStatefulWidget {
   const SectionListScreen({super.key});
@@ -231,6 +234,7 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
               error: (err, stack) => AcadexErrorState.fromError(
                 error: err,
                 title: "Unable to load sections",
+                retryLabel: "Retry",
                 onRetry: () => ref.invalidate(sectionsProvider),
               ),
               data: (sections) {
@@ -738,51 +742,21 @@ class _SectionFormScreenState extends ConsumerState<SectionFormScreen> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Course Selector
+                            // Course / Program Selector with Auto-resolution (Requirement 9)
                             AcadexFormField(
-                              label: "Course *",
+                              label: "${ref.watch(terminologyProvider).label(AcademicConcept.program)} *",
                               child: coursesAsync.when(
                                 loading: () => const LinearProgressIndicator(),
                                 error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error)),
-                                data: (courses) {
-                                  if (courses.isEmpty) {
-                                    return Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.warningLight,
-                                        borderRadius: AcadexRadius.borderRadiusMd,
-                                        border: Border.all(color: AcadexColors.warning),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text("No Courses Found", style: TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.warning)),
-                                          const SizedBox(height: 4),
-                                          const Text("You must create a course before creating a section."),
-                                          const SizedBox(height: 8),
-                                          ElevatedButton(
-                                            onPressed: () => context.push('/academics/courses/new'),
-                                            child: const Text("Create Course"),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }
-
-                                  return DropdownButtonFormField<String>(
-                                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                                    initialValue: _selectedCourseId,
-                                    decoration: const InputDecoration(hintText: "Select Course"),
-                                    validator: (v) => v == null ? 'Course is required' : null,
-                                    items: courses.map((c) => DropdownMenuItem(value: c.id, child: Text("${c.name} (${c.code})"))).toList(),
-                                    onChanged: isEdit
-                                        ? null
-                                        : (v) => setState(() {
-                                              _selectedCourseId = v;
-                                              _selectedSemesterId = null;
-                                            }),
-                                  );
-                                },
+                                data: (courses) => ContextProgramSelector(
+                                  courses: courses,
+                                  selectedCourseId: _selectedCourseId,
+                                  isEdit: isEdit,
+                                  onCourseChanged: (v) => setState(() {
+                                    _selectedCourseId = v;
+                                    _selectedSemesterId = null;
+                                  }),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 14),

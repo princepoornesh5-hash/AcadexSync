@@ -21,6 +21,7 @@ class NotificationCenterScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final notificationsAsync = ref.watch(notificationsProvider);
     final filteredNotifications = ref.watch(filteredNotificationsProvider);
+    final unreadCount = ref.watch(unreadNotificationCountProvider);
     final authState = ref.watch(authProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -30,7 +31,8 @@ class NotificationCenterScreen extends ConsumerWidget {
       loading: () => const AcadexLoadingState(message: "Loading notifications..."),
       error: (err, stack) => Center(
         child: AcadexErrorState(
-          message: 'Failed to load notifications: $err',
+          message: "Couldn't load notifications.",
+          retryLabel: 'Retry',
           onRetry: () => ref.refresh(notificationsProvider),
         ),
       ),
@@ -45,8 +47,8 @@ class NotificationCenterScreen extends ConsumerWidget {
                 Center(
                   child: AcadexEmptyState(
                     icon: LucideIcons.bellRing,
-                    title: "All caught up!",
-                    subtitle: "You don't have any notifications right now.",
+                    title: "No new notifications",
+                    subtitle: "You're all caught up with your updates and requests.",
                   ),
                 ),
               ],
@@ -131,28 +133,29 @@ class NotificationCenterScreen extends ConsumerWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        TextButton.icon(
-                          onPressed: () {
-                            ref.read(notificationsProvider.notifier).markAllAsRead();
-                            AcadexSnackBar.showSuccess(
-                              context,
-                              'All notifications marked as read',
-                            );
-                          },
-                          icon: const Icon(
-                            LucideIcons.checkCheck,
-                            size: 16,
-                            color: AcadexColors.primary,
-                          ),
-                          label: const Text(
-                            'Mark all read',
-                            style: TextStyle(
+                        if (unreadCount > 0)
+                          TextButton.icon(
+                            onPressed: () {
+                              ref.read(notificationsProvider.notifier).markAllAsRead();
+                              AcadexSnackBar.showSuccess(
+                                context,
+                                'All notifications marked as read',
+                              );
+                            },
+                            icon: const Icon(
+                              LucideIcons.checkCheck,
+                              size: 16,
                               color: AcadexColors.primary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
+                            ),
+                            label: const Text(
+                              'Mark all as read',
+                              style: TextStyle(
+                                color: AcadexColors.primary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
-                        ),
                         IconButton(
                           icon: Icon(
                             LucideIcons.settings,
@@ -195,27 +198,28 @@ class NotificationCenterScreen extends ConsumerWidget {
           ),
         ),
         actions: [
-          TextButton.icon(
-            onPressed: () {
-              ref.read(notificationsProvider.notifier).markAllAsRead();
-              AcadexSnackBar.showSuccess(
-                context,
-                'All notifications marked as read',
-              );
-            },
-            icon: const Icon(
-              LucideIcons.checkCheck,
-              size: 16,
-              color: AcadexColors.primary,
-            ),
-            label: const Text(
-              'Mark all read',
-              style: TextStyle(
+          if (unreadCount > 0)
+            TextButton.icon(
+              onPressed: () {
+                ref.read(notificationsProvider.notifier).markAllAsRead();
+                AcadexSnackBar.showSuccess(
+                  context,
+                  'All notifications marked as read',
+                );
+              },
+              icon: const Icon(
+                LucideIcons.checkCheck,
+                size: 16,
                 color: AcadexColors.primary,
-                fontWeight: FontWeight.w600,
+              ),
+              label: const Text(
+                'Mark all as read',
+                style: TextStyle(
+                  color: AcadexColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
           IconButton(
             icon: Icon(
               LucideIcons.settings,

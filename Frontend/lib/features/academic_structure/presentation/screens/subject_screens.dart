@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_data_table.dart';
 import '../../../../core/presentation/widgets/acadex_search_bar.dart';
 import '../../../../core/presentation/widgets/acadex_form_card.dart';
@@ -23,6 +24,9 @@ import '../widgets/setup_continuation_dialog.dart';
 import '../utils/academic_prerequisite_guard.dart';
 import '../../../../core/presentation/widgets/acadex_workflow_context_banner.dart';
 import '../../domain/models/academic_models.dart';
+import '../widgets/context_program_selector.dart';
+import '../../../institution_config/domain/models/institution_config_models.dart';
+import '../../../institution_config/presentation/providers/institution_config_providers.dart';
 
 class SubjectListScreen extends ConsumerStatefulWidget {
   const SubjectListScreen({super.key});
@@ -234,6 +238,7 @@ class _SubjectListScreenState extends ConsumerState<SubjectListScreen> {
               error: (err, stack) => AcadexErrorState.fromError(
                 error: err,
                 title: "Unable to load subjects",
+                retryLabel: "Retry",
                 onRetry: () => ref.invalidate(subjectsProvider),
               ),
               data: (subjects) {
@@ -409,24 +414,11 @@ class _SubjectListScreenState extends ConsumerState<SubjectListScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  IconButton(
-                                    icon: const Icon(LucideIcons.arrowRight, size: 16, color: AcadexColors.primary),
-                                    tooltip: "View Details",
+                                  AcadexButton(
+                                    label: "View",
+                                    icon: LucideIcons.arrowRight,
+                                    variant: AcadexButtonVariant.secondary,
                                     onPressed: () => context.push('/academics/subjects/${s.id}'),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  IconButton(
-                                    icon: Icon(
-                                      LucideIcons.edit,
-                                      size: 18,
-                                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                                    ),
-                                    tooltip: "Edit Subject",
-                                    onPressed: () => context.push('/academics/subjects/edit/${s.id}'),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
                                   ),
                                 ],
                               ),
@@ -439,8 +431,11 @@ class _SubjectListScreenState extends ConsumerState<SubjectListScreen> {
                 }
 
                 return AcadexDataTable(
-                  columns: const ["Subject Name", "Code", "Course", "Semester", "Credits", "Type", "Status", "Actions"],
+                  columns: const ["Subject Name", "Code", "Course", "Semester", "Credits", "Type", "Status", "Action"],
                   rows: filtered.map((s) {
+                    final courseLabel = coursesMap[s.courseId] ?? (s.courseId.isNotEmpty ? 'Course' : '—');
+                    final semLabel = semsMap[s.semesterId] ?? (s.semesterId.isNotEmpty ? 'Semester' : '—');
+
                     return DataRow(
                       onSelectChanged: (_) => context.push('/academics/subjects/${s.id}'),
                       cells: [
@@ -466,8 +461,8 @@ class _SubjectListScreenState extends ConsumerState<SubjectListScreen> {
                             ),
                           ),
                         ),
-                        DataCell(Text(coursesMap[s.courseId] ?? s.courseId)),
-                        DataCell(Text(semsMap[s.semesterId] ?? s.semesterId)),
+                        DataCell(Text(courseLabel)),
+                        DataCell(Text(semLabel)),
                         DataCell(Text("${s.credits} Credits", style: const TextStyle(fontWeight: FontWeight.w600))),
                         DataCell(Text(s.type)),
                         DataCell(
@@ -488,19 +483,11 @@ class _SubjectListScreenState extends ConsumerState<SubjectListScreen> {
                           ),
                         ),
                         DataCell(
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(LucideIcons.eye, size: 18),
-                                tooltip: "View Details",
-                                onPressed: () => context.push('/academics/subjects/${s.id}'),
-                              ),
-                              IconButton(
-                                icon: const Icon(LucideIcons.edit, size: 18),
-                                tooltip: "Edit",
-                                onPressed: () => context.push('/academics/subjects/edit/${s.id}'),
-                              ),
-                            ],
+                          AcadexButton(
+                            label: "View",
+                            icon: LucideIcons.arrowRight,
+                            variant: AcadexButtonVariant.secondary,
+                            onPressed: () => context.push('/academics/subjects/${s.id}'),
                           ),
                         ),
                       ],
@@ -608,14 +595,7 @@ class _SubjectFormScreenState extends ConsumerState<SubjectFormScreen> {
       );
 
       if (_existing == null) {
-        await ref.read(subjectsProvider.notifier).addSubject(subject);
-        ref.invalidate(subjectsProvider);
-        final freshSubjects = await ref.read(subjectsProvider.future).catchError((_) => <Subject>[]);
-        final createdSubject = freshSubjects.where((s) => s.code == subject.code).firstOrNull ?? subject;
-
-        if (subject.departmentId.isNotEmpty) {
-          ref.invalidate(departmentSetupProvider(subject.departmentId));
-        }
+        final createdSubject = await ref.read(subjectsProvider.notifier).addSubject(subject);
 
         if (mounted) {
           AcadexSnackBar.showSuccess(context, 'Subject created successfully.');
@@ -769,51 +749,21 @@ class _SubjectFormScreenState extends ConsumerState<SubjectFormScreen> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Course Selector
+                            // Course / Program Selector with Auto-resolution (Requirement 9)
                             AcadexFormField(
-                              label: "Course *",
+                              label: "${ref.watch(terminologyProvider).label(AcademicConcept.program)} *",
                               child: coursesAsync.when(
                                 loading: () => const LinearProgressIndicator(),
                                 error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error)),
-                                data: (courses) {
-                                  if (courses.isEmpty) {
-                                    return Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.warningLight,
-                                        borderRadius: AcadexRadius.borderRadiusMd,
-                                        border: Border.all(color: AcadexColors.warning),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text("No Courses Found", style: TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.warning)),
-                                          const SizedBox(height: 4),
-                                          const Text("You must create a course before creating a subject."),
-                                          const SizedBox(height: 8),
-                                          ElevatedButton(
-                                            onPressed: () => context.push('/academics/courses/new'),
-                                            child: const Text("Create Course"),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }
-
-                                  return DropdownButtonFormField<String>(
-                                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                                    initialValue: _selectedCourseId,
-                                    decoration: const InputDecoration(hintText: "Select Course"),
-                                    validator: (v) => v == null ? 'Course is required' : null,
-                                    items: courses.map((c) => DropdownMenuItem(value: c.id, child: Text("${c.name} (${c.code})"))).toList(),
-                                    onChanged: isEdit
-                                        ? null
-                                        : (v) => setState(() {
-                                              _selectedCourseId = v;
-                                              _selectedSemesterId = null;
-                                            }),
-                                  );
-                                },
+                                data: (courses) => ContextProgramSelector(
+                                  courses: courses,
+                                  selectedCourseId: _selectedCourseId,
+                                  isEdit: isEdit,
+                                  onCourseChanged: (v) => setState(() {
+                                    _selectedCourseId = v;
+                                    _selectedSemesterId = null;
+                                  }),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 14),

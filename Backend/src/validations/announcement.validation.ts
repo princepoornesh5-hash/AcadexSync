@@ -10,7 +10,7 @@ import { AppRole } from '../constants/roles';
 export const createAnnouncementSchema = z.object({
   title: z.string().min(2, 'Title must be at least 2 characters').max(200, 'Title cannot exceed 200 characters'),
   body: z.string().min(2, 'Body must be at least 2 characters').max(10000, 'Body cannot exceed 10000 characters'),
-  category: z.nativeEnum(NotificationCategory).optional(),
+  category: z.preprocess((val) => typeof val === 'string' ? val.toLowerCase() : val, z.nativeEnum(NotificationCategory)).optional(),
   audienceScope: z.nativeEnum(AudienceScope, {
     errorMap: () => ({ message: 'Valid audienceScope is required (COLLEGE, DEPARTMENT, COURSE, SEMESTER, SECTION, ROLE, INDIVIDUAL)' }),
   }),
@@ -24,7 +24,7 @@ export const createAnnouncementSchema = z.object({
   status: z.string().optional(),
   publishAt: z.string().datetime().optional().nullable().or(z.date().optional()),
   expiresAt: z.string().datetime().optional().nullable().or(z.date().optional()),
-  priority: z.nativeEnum(NotificationPriority).optional(),
+  priority: z.preprocess((val) => typeof val === 'string' ? val.toLowerCase() : val, z.nativeEnum(NotificationPriority)).optional(),
   isPinned: z.boolean().optional(),
   publishNow: z.boolean().optional(),
 });
@@ -32,7 +32,7 @@ export const createAnnouncementSchema = z.object({
 export const updateAnnouncementSchema = z.object({
   title: z.string().min(2).max(200).optional(),
   body: z.string().min(2).max(10000).optional(),
-  category: z.nativeEnum(NotificationCategory).optional(),
+  category: z.preprocess((val) => typeof val === 'string' ? val.toLowerCase() : val, z.nativeEnum(NotificationCategory)).optional(),
   audienceScope: z.nativeEnum(AudienceScope).optional(),
   departmentId: z.string().optional().nullable(),
   targetRole: z.nativeEnum(AppRole).optional().nullable(),
@@ -44,7 +44,7 @@ export const updateAnnouncementSchema = z.object({
   status: z.string().optional(),
   publishAt: z.string().datetime().optional().nullable().or(z.date().optional()),
   expiresAt: z.string().datetime().optional().nullable().or(z.date().optional()),
-  priority: z.nativeEnum(NotificationPriority).optional(),
+  priority: z.preprocess((val) => typeof val === 'string' ? val.toLowerCase() : val, z.nativeEnum(NotificationPriority)).optional(),
   isPinned: z.boolean().optional(),
 });
 

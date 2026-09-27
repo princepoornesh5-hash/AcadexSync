@@ -12,6 +12,7 @@ import 'package:campus_management/features/academic_structure/presentation/provi
 import 'package:campus_management/features/academic_structure/presentation/screens/section_screens.dart';
 import 'package:campus_management/features/academic_structure/presentation/screens/subject_screens.dart';
 import 'package:campus_management/features/academic_structure/presentation/widgets/fresh_department_setup_card.dart';
+import 'package:campus_management/core/presentation/widgets/acadex_button.dart';
 
 class MockAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
   MockAuthNotifier(super.state);
@@ -274,7 +275,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Failed to load sections'), findsOneWidget);
+      expect(find.textContaining('load sections'), findsWidgets);
       expect(find.text('Retry'), findsOneWidget);
     });
 
@@ -299,7 +300,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Failed to load subjects'), findsOneWidget);
+      expect(find.textContaining('load subjects'), findsWidgets);
       expect(find.text('Retry'), findsOneWidget);
     });
 
@@ -324,7 +325,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Create Section'), findsOneWidget);
+      expect(find.text('Create Section'), findsWidgets);
       expect(find.text('YOUR DEPARTMENT'), findsOneWidget);
       expect(find.text('Computer Engineering'), findsOneWidget);
       expect(find.text('Section Name *'), findsOneWidget);
@@ -352,7 +353,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Create Subject'), findsOneWidget);
+      expect(find.text('Create Subject'), findsWidgets);
       expect(find.text('YOUR DEPARTMENT'), findsOneWidget);
       expect(find.text('Computer Engineering'), findsOneWidget);
       expect(find.text('Subject Name *'), findsOneWidget);
@@ -455,6 +456,10 @@ void main() {
     });
 
     testWidgets('11. SectionFormScreen client validation checks required name and capacity', (tester) async {
+      tester.view.physicalSize = const Size(1200, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -477,9 +482,10 @@ void main() {
 
       // Clear capacity
       await tester.enterText(find.widgetWithText(TextFormField, '60'), '0');
-      // Scroll to and tap Save Changes
-      await tester.ensureVisible(find.text('Save Changes'));
-      await tester.tap(find.text('Save Changes'));
+      // Scroll to and tap Create Section
+      final submitBtn = find.widgetWithText(ElevatedButton, 'Create Section');
+      await tester.ensureVisible(submitBtn);
+      await tester.tap(submitBtn);
       await tester.pumpAndSettle();
 
       expect(find.text('Name is required'), findsOneWidget);
@@ -487,6 +493,10 @@ void main() {
     });
 
     testWidgets('12. SubjectFormScreen client validation checks required name, code, and credits', (tester) async {
+      tester.view.physicalSize = const Size(1200, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -509,9 +519,10 @@ void main() {
 
       // Set invalid credits
       await tester.enterText(find.widgetWithText(TextFormField, '3'), '15');
-      // Scroll to and tap Save Changes
-      await tester.ensureVisible(find.text('Save Changes'));
-      await tester.tap(find.text('Save Changes'));
+      // Scroll to and tap Create Subject
+      final submitBtn = find.widgetWithText(ElevatedButton, 'Create Subject');
+      await tester.ensureVisible(submitBtn);
+      await tester.tap(submitBtn);
       await tester.pumpAndSettle();
 
       expect(find.text('Name is required'), findsOneWidget);

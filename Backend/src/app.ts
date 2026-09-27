@@ -9,9 +9,13 @@ import { errorHandler } from './middleware/error.middleware';
 import { notFoundHandler } from './middleware/notFound.middleware';
 import { generalApiRateLimiter } from './middleware/rateLimiter.middleware';
 import { Logger } from './utils/logger';
+import { initRequestNotificationListener } from './events/requestNotification.listener';
 
 export function createApp(): Express {
   const app = express();
+
+  // Initialize event listeners
+  initRequestNotificationListener();
 
   // 1. Security Headers via Helmet
   app.use(

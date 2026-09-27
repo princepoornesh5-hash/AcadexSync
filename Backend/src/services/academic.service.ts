@@ -15,7 +15,7 @@ import { AttendanceSession } from '../models/attendanceSession.model';
 import { Timetable } from '../models/timetable.model';
 import { AuditLog } from '../models/auditLog.model';
 import { AppRole } from '../constants/roles';
-import { CollegeStatus, DepartmentStatus, AccountStatus, TimetableStatus } from '../constants/status';
+import { CollegeStatus, DepartmentStatus, AccountStatus, TimetableStatus, AcademicYearStatus } from '../constants/status';
 import { ApiError } from '../utils/apiError';
 import { AuthenticatedUser } from '../types/auth.types';
 
@@ -39,7 +39,7 @@ export class AcademicService {
 
     const dept = await Department.findById(data.departmentId);
     if (!dept) {
-      throw ApiError.notFound(`Department with ID "${data.departmentId}" not found`);
+      throw ApiError.notFound('Department not found or is no longer available');
     }
 
     if (dept.status === DepartmentStatus.INACTIVE || !dept.isActive) {
@@ -1122,6 +1122,19 @@ export class AcademicService {
       throw ApiError.conflict('Student is already actively enrolled in this semester and academic year');
     }
 
+    let cohort = (data as any).cohort;
+    let academicStage = (data as any).academicStage;
+    if (!cohort || !academicStage) {
+      const match = academicYear.name.match(/(\d{4})/);
+      const ayStartYear = match ? parseInt(match[1], 10) : new Date(academicYear.startDate).getFullYear();
+      const duration = course.duration || 3;
+      const stageNumber = Math.max(1, Math.ceil(semester.number / 2));
+      const entryYear = ayStartYear - (stageNumber - 1);
+      const gradYear = entryYear + duration;
+      if (!cohort) cohort = `${entryYear}–${gradYear.toString().slice(-2)}`;
+      if (!academicStage) academicStage = `${stageNumber}${stageNumber === 1 ? 'st' : stageNumber === 2 ? 'nd' : stageNumber === 3 ? 'rd' : 'th'} Year`;
+    }
+
     const enrollment = await StudentEnrollment.create({
       collegeId: new mongoose.Types.ObjectId(effectiveCollegeId),
       studentId: student._id,
@@ -1130,6 +1143,8 @@ export class AcademicService {
       academicYearId: academicYear._id,
       semesterId: semester._id,
       sectionId: section._id,
+      cohort,
+      academicStage,
       enrollmentDate: data.enrollmentDate ? new Date(data.enrollmentDate) : new Date(),
       status: 'active',
     });
@@ -1139,6 +1154,8 @@ export class AcademicService {
     student.academicYearId = academicYear._id;
     student.semesterId = semester._id;
     student.sectionId = section._id;
+    student.cohort = cohort;
+    student.academicStage = academicStage;
     await student.save();
 
     await AuditLog.create({
@@ -1425,15 +1442,42 @@ export class AcademicService {
     if (!mongoose.Types.ObjectId.isValid(data.subjectId)) throw ApiError.badRequest('Invalid subjectId format');
     if (!mongoose.Types.ObjectId.isValid(data.sectionId)) throw ApiError.badRequest('Invalid sectionId format');
 
-    const [faculty, subject, section] = await Promise.all([
-      Faculty.findById(data.facultyId),
+    let faculty = await Faculty.findById(data.facultyId);
+    if (!faculty) {
+      faculty = await Faculty.findOne({ userId: data.facultyId });
+    }
+    if (!faculty && mongoose.Types.ObjectId.isValid(data.facultyId)) {
+      faculty = await Faculty.findOne({
+        $or: [{ userId: new mongoose.Types.ObjectId(data.facultyId) }, { _id: new mongoose.Types.ObjectId(data.facultyId) }],
+      });
+    }
+    if (!faculty) {
+      const userDoc = await User.findOne({ _id: data.facultyId, role: AppRole.FACULTY });
+      if (userDoc) {
+        faculty = await Faculty.create({
+          collegeId: userDoc.collegeId,
+          departmentId: userDoc.departmentId,
+          userId: userDoc._id,
+          instituteId: userDoc.instituteId,
+          name: userDoc.name,
+          email: userDoc.email,
+          phone: userDoc.phone,
+          status: 'active',
+          isActive: true,
+          subjectIds: [],
+          sectionIds: [],
+        });
+      }
+    }
+
+    const [subject, section] = await Promise.all([
       Subject.findById(data.subjectId),
       Section.findById(data.sectionId),
     ]);
 
-    if (!faculty) throw ApiError.notFound(`Faculty with ID "${data.facultyId}" not found`);
-    if (!subject) throw ApiError.notFound(`Subject with ID "${data.subjectId}" not found`);
-    if (!section) throw ApiError.notFound(`Section with ID "${data.sectionId}" not found`);
+    if (!faculty) throw ApiError.notFound('Faculty record was not found or is no longer available. Please refresh the faculty list and try again.');
+    if (!subject) throw ApiError.notFound('Selected subject was not found or is no longer available. Please refresh the subject list.');
+    if (!section) throw ApiError.notFound('Selected section was not found or is no longer available. Please refresh the section list.');
 
     if (
       faculty.collegeId.toString() !== effectiveCollegeId ||
@@ -1509,6 +1553,27 @@ export class AcademicService {
       );
     }
 
+    let cohort = (data as any).cohort;
+    let academicStage = (data as any).academicStage;
+    const ayId = data.academicYearId || section.academicYearId;
+    if (!cohort || !academicStage) {
+      if (ayId && section.courseId) {
+        const ayDoc = await AcademicYear.findById(ayId);
+        const courseDoc = await Course.findById(section.courseId);
+        const semDoc = await Semester.findById(section.semesterId);
+        if (ayDoc && courseDoc && semDoc) {
+          const match = ayDoc.name.match(/(\d{4})/);
+          const ayStartYear = match ? parseInt(match[1], 10) : new Date(ayDoc.startDate).getFullYear();
+          const duration = courseDoc.duration || 3;
+          const stageNumber = Math.max(1, Math.ceil(semDoc.number / 2));
+          const entryYear = ayStartYear - (stageNumber - 1);
+          const gradYear = entryYear + duration;
+          if (!cohort) cohort = `${entryYear}–${gradYear.toString().slice(-2)}`;
+          if (!academicStage) academicStage = `${stageNumber}${stageNumber === 1 ? 'st' : stageNumber === 2 ? 'nd' : stageNumber === 3 ? 'rd' : 'th'} Year`;
+        }
+      }
+    }
+
     const assignment = await FacultyAssignment.create({
       collegeId: new mongoose.Types.ObjectId(effectiveCollegeId),
       departmentId: faculty.departmentId,
@@ -1518,7 +1583,9 @@ export class AcademicService {
       semesterId: section.semesterId,
       sectionId: section._id,
       subjectId: subject._id,
-      academicYearId: section.academicYearId,
+      academicYearId: ayId || section.academicYearId,
+      cohort,
+      academicStage,
       roomId: data.roomId || null,
       maxStudents: data.maxStudents || section.capacity,
       assignmentType: data.assignmentType || 'lecture',
@@ -1601,10 +1668,24 @@ export class AcademicService {
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
       mongoQuery.sectionId = studentProfile.sectionId;
     } else if (requester.role === AppRole.FACULTY) {
-      const facultyProfile = await Faculty.findOne({ userId: requester.id });
+      let facultyProfile = await Faculty.findOne({ userId: requester.id });
+      if (!facultyProfile && mongoose.Types.ObjectId.isValid(requester.id)) {
+        facultyProfile = await Faculty.findOne({
+          $or: [{ userId: new mongoose.Types.ObjectId(requester.id) }, { _id: new mongoose.Types.ObjectId(requester.id) }],
+        });
+      }
+      if (!facultyProfile && requester.email) {
+        facultyProfile = await Faculty.findOne({ email: requester.email.toLowerCase() });
+      }
       if (!facultyProfile) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
-      mongoQuery.facultyId = facultyProfile._id;
+      mongoQuery.facultyId = {
+        $in: [
+          facultyProfile._id,
+          ...(facultyProfile.userId ? [facultyProfile.userId] : []),
+          ...(mongoose.Types.ObjectId.isValid(requester.id) ? [new mongoose.Types.ObjectId(requester.id)] : []),
+        ],
+      };
     } else if (requester.role === AppRole.HOD) {
       if (!requester.collegeId || !requester.departmentId) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
@@ -1627,8 +1708,14 @@ export class AcademicService {
       mongoQuery.sectionId = new mongoose.Types.ObjectId(query.sectionId);
     }
     if (query.subjectId) mongoQuery.subjectId = new mongoose.Types.ObjectId(query.subjectId);
-    if (query.academicYearId) mongoQuery.academicYearId = new mongoose.Types.ObjectId(query.academicYearId);
-    if (query.isActive !== undefined) mongoQuery.isActive = query.isActive;
+    if (query.academicYearId) {
+      mongoQuery.academicYearId = new mongoose.Types.ObjectId(query.academicYearId);
+    }
+    if (query.isActive !== undefined) {
+      mongoQuery.isActive = query.isActive;
+    } else if (requester.role === AppRole.FACULTY) {
+      mongoQuery.isActive = true;
+    }
 
     const page = Math.max(1, query.page || 1);
     const limit = Math.min(100, Math.max(1, query.limit || 50));
@@ -1638,6 +1725,28 @@ export class AcademicService {
       FacultyAssignment.find(mongoQuery).sort({ createdAt: -1 }).skip(skip).limit(limit),
       FacultyAssignment.countDocuments(mongoQuery),
     ]);
+
+    // Ensure all items return resolved cohort and academicStage for clear teaching context identification
+    for (const item of items) {
+      if (!item.cohort || !item.academicStage) {
+        if (item.academicYearId && item.courseId && item.semesterId) {
+          const [ay, crs, sem] = await Promise.all([
+            AcademicYear.findById(item.academicYearId),
+            Course.findById(item.courseId),
+            Semester.findById(item.semesterId),
+          ]);
+          if (ay && crs && sem) {
+            const match = ay.name.match(/(\d{4})/);
+            const ayStart = match ? parseInt(match[1], 10) : new Date(ay.startDate).getFullYear();
+            const stage = Math.max(1, Math.ceil(sem.number / 2));
+            const entry = ayStart - (stage - 1);
+            const grad = entry + (crs.duration || 3);
+            item.cohort = `${entry}–${grad.toString().slice(-2)}`;
+            item.academicStage = `${stage}${stage === 1 ? 'st' : stage === 2 ? 'nd' : stage === 3 ? 'rd' : 'th'} Year`;
+          }
+        }
+      }
+    }
 
     return { items, page, limit, total, totalPages: Math.ceil(total / limit) };
   }
@@ -1767,5 +1876,226 @@ export class AcademicService {
     );
 
     return workloads;
+  }
+
+  // =========================================================================
+  // AUTHORITATIVE CURRENT ACADEMIC CONTEXT & PROGRESSION ARCHITECTURE (PROMPT 24)
+  // =========================================================================
+
+  static async getCurrentAcademicContext(
+    requester: AuthenticatedUser,
+    options: { departmentId?: string; courseId?: string } = {}
+  ): Promise<{
+    collegeId: string;
+    academicYear: IAcademicYear | null;
+    isCurrentAuthoritative: boolean;
+    activeCohorts: any[];
+    totalActiveCohorts: number;
+    departmentScope?: string | null;
+  }> {
+    const collegeId = requester.role === AppRole.SUPER_ADMIN
+      ? (requester.collegeId && requester.collegeId !== 'global'
+          ? requester.collegeId
+          : options.departmentId
+          ? (await Department.findById(options.departmentId))?.collegeId.toString()
+          : null)
+      : requester.collegeId;
+
+    if (!collegeId) {
+      return {
+        collegeId: '',
+        academicYear: null,
+        isCurrentAuthoritative: false,
+        activeCohorts: [],
+        totalActiveCohorts: 0,
+      };
+    }
+
+    let departmentId = options.departmentId;
+    if (requester.role === AppRole.HOD) {
+      departmentId = requester.departmentId || undefined;
+    } else if (requester.role === AppRole.FACULTY || requester.role === AppRole.STUDENT) {
+      departmentId = requester.departmentId || undefined;
+    }
+
+    // Find authoritative current academic year
+    let academicYear = await AcademicYear.findOne({
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      isCurrent: true,
+      isActive: true,
+    });
+
+    let isCurrentAuthoritative = true;
+
+    if (!academicYear) {
+      academicYear = await AcademicYear.findOne({
+        collegeId: new mongoose.Types.ObjectId(collegeId),
+        status: AcademicYearStatus.ACTIVE,
+        isActive: true,
+      }).sort({ startDate: -1 });
+      isCurrentAuthoritative = false;
+    }
+
+    if (!academicYear) {
+      academicYear = await AcademicYear.findOne({
+        collegeId: new mongoose.Types.ObjectId(collegeId),
+        isActive: true,
+      }).sort({ startDate: -1 });
+      isCurrentAuthoritative = false;
+    }
+
+    if (!academicYear) {
+      return {
+        collegeId,
+        academicYear: null,
+        isCurrentAuthoritative: false,
+        activeCohorts: [],
+        totalActiveCohorts: 0,
+        departmentScope: departmentId || null,
+      };
+    }
+
+    // Determine start year
+    const match = academicYear.name.match(/(\d{4})/);
+    const ayStartYear = match ? parseInt(match[1], 10) : new Date(academicYear.startDate).getFullYear();
+
+    // Query courses for this institution/department
+    const courseQuery: Record<string, unknown> = {
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      isActive: true,
+    };
+    if (departmentId && mongoose.Types.ObjectId.isValid(departmentId)) {
+      courseQuery.departmentId = new mongoose.Types.ObjectId(departmentId);
+    }
+    if (options.courseId && mongoose.Types.ObjectId.isValid(options.courseId)) {
+      courseQuery._id = new mongoose.Types.ObjectId(options.courseId);
+    }
+
+    const courses = await Course.find(courseQuery).sort({ name: 1 });
+    const activeCohorts: any[] = [];
+
+    for (const course of courses) {
+      const duration = course.duration || 3;
+      const progressionType = course.progressionType || 'YEAR_SEMESTER';
+
+      // Find semesters for this course
+      const semesters = await Semester.find({
+        collegeId: new mongoose.Types.ObjectId(collegeId),
+        courseId: course._id,
+        isActive: true,
+      }).sort({ number: 1 });
+
+      const semesterIds = semesters.map((s) => s._id);
+      const sections = await Section.find({
+        collegeId: new mongoose.Types.ObjectId(collegeId),
+        courseId: course._id,
+        semesterId: { $in: semesterIds },
+        isActive: true,
+      }).sort({ name: 1 });
+
+      for (let stage = 1; stage <= duration; stage++) {
+        const entryYear = ayStartYear - (stage - 1);
+        const gradYear = entryYear + duration;
+        const cohort = `${entryYear}–${gradYear.toString().length === 4 ? gradYear.toString().slice(-2) : gradYear}`;
+        const stageName = `${stage}${stage === 1 ? 'st' : stage === 2 ? 'nd' : stage === 3 ? 'rd' : 'th'} Year`;
+
+        // Match periods (semesters/terms) based on progression structure
+        let matchedSemesters: any[] = [];
+        if (progressionType === 'COMBINED_FIRST_YEAR') {
+          if (stage === 1) {
+            matchedSemesters = semesters.filter(
+              (s) => s.number === 1 || s.name.toLowerCase().includes('combined') || s.name.toLowerCase().includes('first year')
+            );
+          } else {
+            const oddNum = stage * 2 - 1;
+            const evenNum = stage * 2;
+            matchedSemesters = semesters.filter((s) => s.number === oddNum || s.number === evenNum);
+          }
+        } else if (progressionType === 'YEAR_ONLY') {
+          matchedSemesters = semesters.filter((s) => s.number === stage);
+        } else if (progressionType === 'YEAR_TERM') {
+          const t1 = (stage - 1) * 3 + 1;
+          const t2 = (stage - 1) * 3 + 2;
+          const t3 = (stage - 1) * 3 + 3;
+          matchedSemesters = semesters.filter((s) => [t1, t2, t3].includes(s.number));
+        } else {
+          // Standard YEAR_SEMESTER
+          const oddNum = stage * 2 - 1;
+          const evenNum = stage * 2;
+          matchedSemesters = semesters.filter((s) => s.number === oddNum || s.number === evenNum);
+        }
+
+        const periods = matchedSemesters.map((sem) => {
+          const semSections = sections
+            .filter((sec) => sec.semesterId.toString() === sem._id.toString())
+            .map((sec) => ({
+              sectionId: sec.id,
+              name: sec.name,
+              capacity: sec.capacity,
+            }));
+
+          return {
+            semesterId: sem.id,
+            name: sem.name,
+            number: sem.number,
+            isCurrent: sem.isCurrent,
+            status: sem.status,
+            sections: semSections,
+          };
+        });
+
+        activeCohorts.push({
+          cohort,
+          courseId: course.id,
+          courseName: course.name,
+          courseCode: course.code,
+          departmentId: course.departmentId.toString(),
+          academicStage: stageName,
+          stageNumber: stage,
+          entryYear,
+          expectedGraduationYear: gradYear,
+          progressionType,
+          periods,
+        });
+      }
+    }
+
+    return {
+      collegeId,
+      academicYear,
+      isCurrentAuthoritative,
+      activeCohorts,
+      totalActiveCohorts: activeCohorts.length,
+      departmentScope: departmentId || null,
+    };
+  }
+
+  static async getAcademicHistory(
+    requester: AuthenticatedUser,
+    options: { departmentId?: string; courseId?: string } = {}
+  ): Promise<any[]> {
+    const collegeId = requester.role === AppRole.SUPER_ADMIN
+      ? (requester.collegeId && requester.collegeId !== 'global'
+          ? requester.collegeId
+          : options.departmentId
+          ? (await Department.findById(options.departmentId))?.collegeId.toString()
+          : null)
+      : requester.collegeId;
+
+    if (!collegeId) return [];
+
+    const historicalYears = await AcademicYear.find({
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      isCurrent: false,
+    }).sort({ startDate: -1 });
+
+    return historicalYears.map((ay) => ({
+      academicYear: ay.toJSON(),
+      isCurrent: false,
+      name: ay.name,
+      startDate: ay.startDate,
+      endDate: ay.endDate,
+      status: ay.status,
+    }));
   }
 }

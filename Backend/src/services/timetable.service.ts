@@ -388,8 +388,16 @@ export class TimetableService {
       }
 
       // Validate Faculty
-      const faculty = await Faculty.findById(entry.facultyId);
-      if (!faculty) throw ApiError.notFound(`Faculty with ID "${entry.facultyId}" not found`);
+      let faculty = await Faculty.findById(entry.facultyId);
+      if (!faculty) {
+        faculty = await Faculty.findOne({ userId: entry.facultyId });
+      }
+      if (!faculty && mongoose.Types.ObjectId.isValid(entry.facultyId)) {
+        faculty = await Faculty.findOne({
+          $or: [{ userId: new mongoose.Types.ObjectId(entry.facultyId) }, { _id: new mongoose.Types.ObjectId(entry.facultyId) }],
+        });
+      }
+      if (!faculty) throw ApiError.notFound('Selected faculty record was not found or is no longer available');
       if (faculty.collegeId.toString() !== collegeId) {
         throw ApiError.badRequest(`Faculty "${faculty.name}" does not belong to this college`);
       }
@@ -1138,7 +1146,71 @@ export class TimetableService {
       }
     }
 
-    return entries.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    const enriched = await this.enrichTimetableEntries(entries);
+    return enriched.sort((a, b) => a.startTime.localeCompare(b.startTime));
+  }
+
+  /**
+   * Helper to enrich raw timetable grid entries with human-readable academic context
+   * Resolves subject name/code, section name, semester name, course name, cohort, and academic stage.
+   */
+  private static async enrichTimetableEntries(entries: ITimetableGridEntry[]): Promise<ITimetableGridEntry[]> {
+    if (entries.length === 0) return [];
+
+    const subjectIds = Array.from(new Set(entries.map((e) => e.subjectId?.toString()).filter(Boolean)));
+    const sectionIds = Array.from(new Set(entries.map((e) => (e as any).sectionId?.toString()).filter(Boolean)));
+    const semesterIds = Array.from(new Set(entries.map((e) => (e as any).semesterId?.toString()).filter(Boolean)));
+    const courseIds = Array.from(new Set(entries.map((e) => (e as any).courseId?.toString()).filter(Boolean)));
+    const faIds = Array.from(new Set(entries.map((e) => e.facultyAssignmentId?.toString()).filter(Boolean)));
+
+    const [subjects, sections, semesters, courses, facultyAssignments] = await Promise.all([
+      Subject.find({ _id: { $in: subjectIds } }).lean(),
+      Section.find({ _id: { $in: sectionIds } }).lean(),
+      Semester.find({ _id: { $in: semesterIds } }).lean(),
+      Course.find({ _id: { $in: courseIds } }).lean(),
+      FacultyAssignment.find({ _id: { $in: faIds } }).lean(),
+    ]);
+
+    const subjectMap = new Map(subjects.map((s: any) => [s._id.toString(), s]));
+    const sectionMap = new Map(sections.map((s: any) => [s._id.toString(), s]));
+    const semesterMap = new Map(semesters.map((s: any) => [s._id.toString(), s]));
+    const courseMap = new Map(courses.map((c: any) => [c._id.toString(), c]));
+    const faMap = new Map(facultyAssignments.map((fa: any) => [fa._id.toString(), fa]));
+
+    return entries.map((e: any) => {
+      const subject = e.subjectId ? subjectMap.get(e.subjectId.toString()) : null;
+      const section = e.sectionId ? sectionMap.get(e.sectionId.toString()) : null;
+      const semester = e.semesterId ? semesterMap.get(e.semesterId.toString()) : null;
+      const course = e.courseId ? courseMap.get(e.courseId.toString()) : null;
+      const fa = e.facultyAssignmentId ? faMap.get(e.facultyAssignmentId.toString()) : null;
+
+      const cohort = fa?.cohort || null;
+      const academicStage = fa?.academicStage || null;
+      const subjectName = subject?.name || 'Subject';
+      const subjectCode = subject?.code || '';
+      const sectionName = section?.name || 'A';
+      const semesterName = semester?.name || 'Semester';
+      const courseName = course?.name || '';
+
+      const descParts = [
+        cohort,
+        academicStage,
+        semesterName,
+        `Class ${sectionName}`,
+      ].filter(Boolean);
+
+      return {
+        ...e,
+        subjectName,
+        subjectCode,
+        sectionName,
+        semesterName,
+        courseName,
+        cohort,
+        academicStage,
+        contextualDescription: descParts.join(' · '),
+      } as ITimetableGridEntry;
+    });
   }
 
   static async getFacultyTimetable(
@@ -1155,7 +1227,15 @@ export class TimetableService {
     }
 
     if (requester && requester.role === AppRole.FACULTY) {
-      const myFaculty = await Faculty.findOne({ userId: requester.id });
+      let myFaculty = await Faculty.findOne({ userId: requester.id });
+      if (!myFaculty && mongoose.Types.ObjectId.isValid(requester.id)) {
+        myFaculty = await Faculty.findOne({
+          $or: [{ userId: new mongoose.Types.ObjectId(requester.id) }, { _id: new mongoose.Types.ObjectId(requester.id) }],
+        });
+      }
+      if (!myFaculty && requester.email) {
+        myFaculty = await Faculty.findOne({ email: requester.email.toLowerCase() });
+      }
       if (!myFaculty) throw ApiError.notFound('Faculty profile not found for authenticated user');
 
       if (facultyId !== 'me' && facultyId !== myFaculty._id.toString() && facultyId !== requester.id) {
@@ -1289,7 +1369,8 @@ export class TimetableService {
       }
     }
 
-    return entries.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    const enriched = await this.enrichTimetableEntries(entries);
+    return enriched.sort((a, b) => a.startTime.localeCompare(b.startTime));
   }
 
   static async getStudentTimetable(

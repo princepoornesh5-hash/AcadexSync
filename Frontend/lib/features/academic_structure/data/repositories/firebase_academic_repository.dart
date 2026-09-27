@@ -914,7 +914,7 @@ class FirebaseAcademicRepository implements AcademicRepository {
   // --- Subject Mutations ---
 
   @override
-  Future<void> addSubject(Subject subject) async {
+  Future<Subject> addSubject(Subject subject) async {
     final deptDoc = await _firestoreService.getDocument('departments', subject.departmentId);
     if (deptDoc == null) throw Exception("Invalid Department");
     
@@ -923,6 +923,7 @@ class FirebaseAcademicRepository implements AcademicRepository {
     
     _validateScope(deptDoc['collegeId'] as String?, subject.departmentId);
     await _firestoreService.setDocument('subjects', subject.id, subject.toJson());
+    return subject;
   }
 
   @override
@@ -1998,6 +1999,46 @@ class FirebaseAcademicRepository implements AcademicRepository {
   Future<Room> addRoom(Room room) async {
     await _firestoreService.setDocument('rooms', room.id, room.toJson());
     return room;
+  }
+
+  @override
+  Future<CurrentAcademicContext> getCurrentAcademicContext({String? departmentId, String? courseId}) async {
+    final ays = await getAcademicYears();
+    final currentAy = ays.firstWhere(
+      (ay) => ay.isCurrent && ay.isActive,
+      orElse: () => ays.isNotEmpty ? ays.first : AcademicYear(
+        id: 'default',
+        collegeId: _currentUser?.collegeId ?? '',
+        name: '2026–27',
+        startDate: DateTime(2026, 6, 1),
+        endDate: DateTime(2027, 5, 31),
+        isCurrent: true,
+      ),
+    );
+    return CurrentAcademicContext(
+      collegeId: currentAy.collegeId,
+      academicYear: currentAy,
+      isCurrentAuthoritative: true,
+      activeCohorts: const [],
+      totalActiveCohorts: 0,
+      departmentScope: departmentId,
+    );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAcademicHistory({String? departmentId, String? courseId}) async {
+    final ays = await getAcademicYears();
+    return ays
+        .where((ay) => !ay.isCurrent)
+        .map((ay) => {
+              'academicYear': ay.toJson(),
+              'isCurrent': false,
+              'name': ay.name,
+              'startDate': ay.startDate.toIso8601String(),
+              'endDate': ay.endDate.toIso8601String(),
+              'status': ay.status,
+            })
+        .toList();
   }
 }
 

@@ -450,7 +450,15 @@ export class ReportService {
     requester: AuthenticatedUser,
     dateMatch: Record<string, unknown>
   ): Promise<RoleDashboardReport> {
-    const faculty = await Faculty.findOne({ userId: requester.id });
+    let faculty = await Faculty.findOne({ userId: requester.id });
+    if (!faculty && mongoose.Types.ObjectId.isValid(requester.id)) {
+      faculty = await Faculty.findOne({
+        $or: [{ userId: new mongoose.Types.ObjectId(requester.id) }, { _id: new mongoose.Types.ObjectId(requester.id) }],
+      });
+    }
+    if (!faculty && requester.email) {
+      faculty = await Faculty.findOne({ email: requester.email.toLowerCase() });
+    }
     if (!faculty) throw ApiError.notFound('Faculty profile not found');
 
     const [

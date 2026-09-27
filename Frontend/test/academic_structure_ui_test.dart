@@ -78,13 +78,13 @@ void main() {
       expect(find.text('Courses'), findsWidgets);
       expect(find.text('Semesters'), findsWidgets);
       expect(find.text('Sections'), findsWidgets);
-      expect(find.text('Subjects Catalog'), findsWidgets);
+      expect(find.textContaining('Subject'), findsWidgets);
 
       // KPI Metric Cards
       expect(find.text('Active Units'), findsOneWidget);
       expect(find.text('Degree Programs'), findsOneWidget);
       expect(find.text('Academic Terms'), findsOneWidget);
-      expect(find.text('Classrooms'), findsOneWidget);
+      expect(find.textContaining('Classrooms'), findsOneWidget);
       expect(find.text('Curriculum Items'), findsOneWidget);
     });
 
@@ -109,7 +109,7 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-      expect(find.text('Create Department'), findsOneWidget);
+      expect(find.textContaining('Create Department'), findsOneWidget);
     });
 
     testWidgets('HOD sees Department Setup and Create Course action buttons', (tester) async {

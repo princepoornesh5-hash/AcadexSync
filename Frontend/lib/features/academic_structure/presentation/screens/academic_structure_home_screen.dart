@@ -19,6 +19,17 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
 import '../providers/department_setup_provider.dart';
+import '../../../institution_config/domain/models/institution_config_models.dart';
+import '../../../institution_config/presentation/providers/institution_config_providers.dart';
+
+enum AcademicWorkspaceModule {
+  departments,
+  programs,
+  semesters,
+  sections,
+  subjects,
+  faculty,
+}
 
 class AcademicStructureHomeScreen extends ConsumerStatefulWidget {
   const AcademicStructureHomeScreen({super.key});
@@ -30,8 +41,10 @@ class AcademicStructureHomeScreen extends ConsumerStatefulWidget {
 
 class _AcademicStructureHomeScreenState
     extends ConsumerState<AcademicStructureHomeScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
+  int _lastTabLength = 5;
+  int _currentTabIndex = 0;
   String _searchQuery = '';
   String _selectedDepartmentFilter = 'ALL';
 
@@ -39,10 +52,38 @@ class _AcademicStructureHomeScreenState
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
+    _tabController.addListener(_handleTabChange);
+  }
+
+  void _handleTabChange() {
+    if (!mounted) return;
+    if (_currentTabIndex != _tabController.index) {
+      setState(() {
+        _currentTabIndex = _tabController.index;
+      });
+    }
+  }
+
+  void _updateTabController(int newLength) {
+    if (_lastTabLength != newLength) {
+      final oldIndex = _currentTabIndex;
+      _tabController.removeListener(_handleTabChange);
+      _tabController.dispose();
+      final newIndex = oldIndex.clamp(0, newLength - 1);
+      _currentTabIndex = newIndex;
+      _tabController = TabController(
+        length: newLength,
+        initialIndex: newIndex,
+        vsync: this,
+      );
+      _tabController.addListener(_handleTabChange);
+      _lastTabLength = newLength;
+    }
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
     super.dispose();
   }
@@ -52,6 +93,12 @@ class _AcademicStructureHomeScreenState
     final authState = ref.watch(authProvider);
     final currentUser = authState is AuthAuthenticated ? authState.user : null;
     final userRole = currentUser?.role ?? AppRole.student;
+
+    final terminology = ref.watch(terminologyProvider);
+    final isSectionEnabled = terminology.isSectionEnabled;
+    final isHodOrBelow = userRole == AppRole.hod || userRole == AppRole.faculty || userRole == AppRole.student;
+    final tabLength = isHodOrBelow ? (isSectionEnabled ? 5 : 4) : (isSectionEnabled ? 6 : 5);
+    _updateTabController(tabLength);
 
     if (userRole == AppRole.hod && currentUser?.departmentId != null && currentUser!.departmentId!.isNotEmpty) {
       _selectedDepartmentFilter = currentUser.departmentId!;
@@ -74,6 +121,10 @@ class _AcademicStructureHomeScreenState
         ref.invalidate(semestersProvider);
         ref.invalidate(sectionsProvider);
         ref.invalidate(subjectsProvider);
+        ref.invalidate(facultyProvider(null));
+        if (currentUser?.departmentId != null) {
+          ref.invalidate(facultyProvider(currentUser!.departmentId));
+        }
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,7 +132,7 @@ class _AcademicStructureHomeScreenState
           AcadexPageHeader(
             title: 'Academic Structure',
             subtitle: _getSubtitleForRole(userRole),
-            actions: _buildHeaderActions(context, userRole),
+            actions: _buildHeaderActions(context, userRole, terminology, isSectionEnabled),
           ),
 
           // 0. Setup Guided Banner (For HOD & College Admin)
@@ -98,7 +149,13 @@ class _AcademicStructureHomeScreenState
             semestersAsync: semestersAsync,
             sectionsAsync: sectionsAsync,
             subjectsAsync: subjectsAsync,
+            facultyCount: currentUser?.departmentId != null
+                ? ref.watch(facultyProvider(currentUser!.departmentId)).items.length
+                : ref.watch(facultyProvider(null)).items.length,
+            role: userRole,
             isMobile: isMobile,
+            terminology: terminology,
+            isSectionEnabled: isSectionEnabled,
           ),
           const SizedBox(height: 24),
 
@@ -115,7 +172,7 @@ class _AcademicStructureHomeScreenState
                   },
                 ),
               ),
-              if (!isMobile) ...[
+              if (!isMobile && !isHodOrBelow) ...[
                 const SizedBox(width: 12),
                 deptsAsync.maybeWhen(
                   data: (depts) => _buildDepartmentFilterDropdown(depts, isDark, userRole, currentUser),
@@ -143,13 +200,31 @@ class _AcademicStructureHomeScreenState
               unselectedLabelColor: AcadexColors.inkMuted,
               indicatorColor: AcadexColors.primary,
               indicatorWeight: 3,
-              tabs: const [
-                Tab(icon: Icon(LucideIcons.building2, size: 16), text: 'Departments'),
-                Tab(icon: Icon(LucideIcons.graduationCap, size: 16), text: 'Courses'),
-                Tab(icon: Icon(LucideIcons.calendarDays, size: 16), text: 'Semesters'),
-                Tab(icon: Icon(LucideIcons.layoutGrid, size: 16), text: 'Sections'),
-                Tab(icon: Icon(LucideIcons.bookOpen, size: 16), text: 'Subjects Catalog'),
-              ],
+              onTap: (index) {
+                if (_currentTabIndex != index) {
+                  setState(() {
+                    _currentTabIndex = index;
+                  });
+                }
+              },
+              tabs: isHodOrBelow
+                  ? [
+                      Tab(icon: const Icon(LucideIcons.graduationCap, size: 16), text: terminology.label(AcademicConcept.program, plural: true)),
+                      Tab(icon: const Icon(LucideIcons.calendarDays, size: 16), text: terminology.label(AcademicConcept.semester, plural: true)),
+                      if (isSectionEnabled)
+                        Tab(icon: const Icon(LucideIcons.layoutGrid, size: 16), text: terminology.label(AcademicConcept.section, plural: true)),
+                      Tab(icon: const Icon(LucideIcons.bookOpen, size: 16), text: terminology.label(AcademicConcept.subject, plural: true)),
+                      const Tab(icon: Icon(LucideIcons.users, size: 16), text: 'Faculty'),
+                    ]
+                  : [
+                      Tab(icon: const Icon(LucideIcons.building2, size: 16), text: terminology.label(AcademicConcept.department, plural: true)),
+                      Tab(icon: const Icon(LucideIcons.graduationCap, size: 16), text: terminology.label(AcademicConcept.program, plural: true)),
+                      Tab(icon: const Icon(LucideIcons.calendarDays, size: 16), text: terminology.label(AcademicConcept.semester, plural: true)),
+                      if (isSectionEnabled)
+                        Tab(icon: const Icon(LucideIcons.layoutGrid, size: 16), text: terminology.label(AcademicConcept.section, plural: true)),
+                      Tab(icon: const Icon(LucideIcons.bookOpen, size: 16), text: terminology.label(AcademicConcept.subject, plural: true)),
+                      const Tab(icon: Icon(LucideIcons.users, size: 16), text: 'Faculty'),
+                    ],
             ),
           ),
           const SizedBox(height: 16),
@@ -159,13 +234,24 @@ class _AcademicStructureHomeScreenState
             height: 600,
             child: TabBarView(
               controller: _tabController,
-              children: [
-                _buildDepartmentsTab(deptsAsync, userRole, isDark),
-                _buildCoursesTab(coursesAsync, deptsAsync, userRole, isDark),
-                _buildSemestersTab(semestersAsync, coursesAsync, userRole, isDark),
-                _buildSectionsTab(sectionsAsync, semestersAsync, userRole, isDark),
-                _buildSubjectsTab(subjectsAsync, deptsAsync, userRole, isDark),
-              ],
+              children: isHodOrBelow
+                  ? [
+                      _buildCoursesTab(coursesAsync, deptsAsync, userRole, isDark),
+                      _buildSemestersTab(semestersAsync, coursesAsync, userRole, isDark),
+                      if (isSectionEnabled)
+                        _buildSectionsTab(sectionsAsync, semestersAsync, userRole, isDark),
+                      _buildSubjectsTab(subjectsAsync, deptsAsync, userRole, isDark),
+                      _buildFacultyTab(currentUser?.departmentId, userRole, isDark),
+                    ]
+                  : [
+                      _buildDepartmentsTab(deptsAsync, userRole, isDark),
+                      _buildCoursesTab(coursesAsync, deptsAsync, userRole, isDark),
+                      _buildSemestersTab(semestersAsync, coursesAsync, userRole, isDark),
+                      if (isSectionEnabled)
+                        _buildSectionsTab(sectionsAsync, semestersAsync, userRole, isDark),
+                      _buildSubjectsTab(subjectsAsync, deptsAsync, userRole, isDark),
+                      _buildFacultyTab(_selectedDepartmentFilter == 'ALL' ? null : _selectedDepartmentFilter, userRole, isDark),
+                    ],
             ),
           ),
         ],
@@ -188,9 +274,106 @@ class _AcademicStructureHomeScreenState
     }
   }
 
-  List<Widget> _buildHeaderActions(BuildContext context, AppRole role) {
+  List<Widget> _buildHeaderActions(
+    BuildContext context,
+    AppRole role,
+    TerminologyHelper terminology,
+    bool isSectionEnabled,
+  ) {
+    final isHod = role == AppRole.hod;
+    final isHodOrBelow = isHod || role == AppRole.faculty || role == AppRole.student;
+    final tabIdx = _currentTabIndex.clamp(0, _tabController.length - 1);
+
+    AcademicWorkspaceModule currentModule;
+    if (isHodOrBelow) {
+      if (tabIdx == 0) {
+        currentModule = AcademicWorkspaceModule.programs;
+      } else if (tabIdx == 1) {
+        currentModule = AcademicWorkspaceModule.semesters;
+      } else if (tabIdx == 2) {
+        currentModule = isSectionEnabled ? AcademicWorkspaceModule.sections : AcademicWorkspaceModule.subjects;
+      } else if (tabIdx == 3) {
+        currentModule = isSectionEnabled ? AcademicWorkspaceModule.subjects : AcademicWorkspaceModule.faculty;
+      } else {
+        currentModule = AcademicWorkspaceModule.faculty;
+      }
+    } else {
+      if (tabIdx == 0) {
+        currentModule = AcademicWorkspaceModule.departments;
+      } else if (tabIdx == 1) {
+        currentModule = AcademicWorkspaceModule.programs;
+      } else if (tabIdx == 2) {
+        currentModule = AcademicWorkspaceModule.semesters;
+      } else if (tabIdx == 3) {
+        currentModule = isSectionEnabled ? AcademicWorkspaceModule.sections : AcademicWorkspaceModule.subjects;
+      } else if (tabIdx == 4) {
+        currentModule = isSectionEnabled ? AcademicWorkspaceModule.subjects : AcademicWorkspaceModule.faculty;
+      } else {
+        currentModule = AcademicWorkspaceModule.faculty;
+      }
+    }
+
     if (role == AppRole.collegeAdmin || role == AppRole.superAdmin) {
+      Widget dynamicCreateButton;
+      switch (currentModule) {
+        case AcademicWorkspaceModule.departments:
+          dynamicCreateButton = AcadexButton(
+            key: const Key('acad_create_dept'),
+            label: '+ Create ${terminology.label(AcademicConcept.department)}',
+            icon: LucideIcons.plus,
+            onPressed: () => context.push('/academics/departments/new'),
+          );
+          break;
+        case AcademicWorkspaceModule.programs:
+          dynamicCreateButton = AcadexButton(
+            key: const Key('acad_create_prog'),
+            label: '+ Create ${terminology.label(AcademicConcept.program)}',
+            icon: LucideIcons.plus,
+            onPressed: () => context.push('/academics/courses/new'),
+          );
+          break;
+        case AcademicWorkspaceModule.semesters:
+          dynamicCreateButton = AcadexButton(
+            key: const Key('acad_create_sem'),
+            label: '+ Create ${terminology.label(AcademicConcept.semester)}',
+            icon: LucideIcons.plus,
+            onPressed: () => context.push('/academics/semesters/new'),
+          );
+          break;
+        case AcademicWorkspaceModule.sections:
+          dynamicCreateButton = AcadexButton(
+            key: const Key('acad_create_sec'),
+            label: '+ Create ${terminology.label(AcademicConcept.section)}',
+            icon: LucideIcons.plus,
+            onPressed: () => context.push('/academics/sections/new'),
+          );
+          break;
+        case AcademicWorkspaceModule.subjects:
+          dynamicCreateButton = AcadexButton(
+            key: const Key('acad_create_sub'),
+            label: '+ Create ${terminology.label(AcademicConcept.subject)}',
+            icon: LucideIcons.plus,
+            onPressed: () => context.push('/academics/subjects/new'),
+          );
+          break;
+        case AcademicWorkspaceModule.faculty:
+          dynamicCreateButton = AcadexButton(
+            key: const Key('acad_add_fac'),
+            label: '+ Add Faculty',
+            icon: LucideIcons.userPlus,
+            onPressed: () => context.push('/academics/faculty/new'),
+          );
+          break;
+      }
+
       return [
+        AcadexButton(
+          label: 'Academic Config',
+          icon: LucideIcons.slidersHorizontal,
+          variant: AcadexButtonVariant.secondary,
+          onPressed: () => context.push('/academics/configuration'),
+        ),
+        const SizedBox(width: 8),
         AcadexButton(
           label: 'Department Setup',
           icon: LucideIcons.compass,
@@ -198,20 +381,60 @@ class _AcademicStructureHomeScreenState
           onPressed: () => context.push('/academics/setup'),
         ),
         const SizedBox(width: 8),
-        AcadexButton(
-          label: 'Add Academic Year',
-          icon: LucideIcons.calendarPlus,
-          variant: AcadexButtonVariant.secondary,
-          onPressed: () => context.push('/academics/academic_years/new'),
-        ),
-        const SizedBox(width: 8),
-        AcadexButton(
-          label: 'Create Department',
-          icon: LucideIcons.plus,
-          onPressed: () => context.push('/academics/departments/new'),
-        ),
+        dynamicCreateButton,
       ];
     } else if (role == AppRole.hod) {
+      Widget dynamicCreateButton;
+      switch (currentModule) {
+        case AcademicWorkspaceModule.programs:
+          dynamicCreateButton = AcadexButton(
+            key: const Key('hod_acad_create_prog'),
+            label: '+ Create ${terminology.label(AcademicConcept.program)}',
+            icon: LucideIcons.plus,
+            onPressed: () => context.push('/academics/courses/new'),
+          );
+          break;
+        case AcademicWorkspaceModule.semesters:
+          dynamicCreateButton = AcadexButton(
+            key: const Key('hod_acad_create_sem'),
+            label: '+ Create ${terminology.label(AcademicConcept.semester)}',
+            icon: LucideIcons.plus,
+            onPressed: () => context.push('/academics/semesters/new'),
+          );
+          break;
+        case AcademicWorkspaceModule.sections:
+          dynamicCreateButton = AcadexButton(
+            key: const Key('hod_acad_create_sec'),
+            label: '+ Create ${terminology.label(AcademicConcept.section)}',
+            icon: LucideIcons.plus,
+            onPressed: () => context.push('/academics/sections/new'),
+          );
+          break;
+        case AcademicWorkspaceModule.subjects:
+          dynamicCreateButton = AcadexButton(
+            key: const Key('hod_acad_create_sub'),
+            label: '+ Create ${terminology.label(AcademicConcept.subject)}',
+            icon: LucideIcons.plus,
+            onPressed: () => context.push('/academics/subjects/new'),
+          );
+          break;
+        case AcademicWorkspaceModule.faculty:
+          dynamicCreateButton = AcadexButton(
+            key: const Key('hod_acad_add_fac'),
+            label: '+ Add Faculty',
+            icon: LucideIcons.userPlus,
+            onPressed: () => context.push('/academics/faculty/new'),
+          );
+          break;
+        default:
+          dynamicCreateButton = AcadexButton(
+            key: const Key('hod_acad_create_prog_fallback'),
+            label: '+ Create ${terminology.label(AcademicConcept.program)}',
+            icon: LucideIcons.plus,
+            onPressed: () => context.push('/academics/courses/new'),
+          );
+      }
+
       return [
         AcadexButton(
           label: 'Department Setup',
@@ -220,11 +443,7 @@ class _AcademicStructureHomeScreenState
           onPressed: () => context.push('/academics/setup'),
         ),
         const SizedBox(width: 8),
-        AcadexButton(
-          label: 'Create Course',
-          icon: LucideIcons.plus,
-          onPressed: () => context.push('/academics/courses/new'),
-        ),
+        dynamicCreateButton,
       ];
     }
     return [];
@@ -410,19 +629,25 @@ class _AcademicStructureHomeScreenState
     required AsyncValue<List<Semester>> semestersAsync,
     required AsyncValue<List<Section>> sectionsAsync,
     required AsyncValue<List<Subject>> subjectsAsync,
+    required int facultyCount,
+    required AppRole role,
     required bool isMobile,
+    required TerminologyHelper terminology,
+    required bool isSectionEnabled,
   }) {
     final deptCount = deptsAsync.valueOrNull?.length ?? 0;
     final courseCount = coursesAsync.valueOrNull?.length ?? 0;
     final semCount = semestersAsync.valueOrNull?.length ?? 0;
     final sectionCount = sectionsAsync.valueOrNull?.length ?? 0;
     final subjectCount = subjectsAsync.valueOrNull?.length ?? 0;
+    final isHod = role == AppRole.hod;
 
     return LayoutBuilder(builder: (context, constraints) {
+      final totalCards = isSectionEnabled ? 5 : 4;
       final crossAxisCount = isMobile
           ? 2
           : constraints.maxWidth > 1000
-              ? 5
+              ? totalCards
               : 3;
 
       return GridView.count(
@@ -433,32 +658,41 @@ class _AcademicStructureHomeScreenState
         crossAxisSpacing: 12,
         childAspectRatio: isMobile ? 1.3 : 1.25,
         children: [
+          if (isHod)
+            AcadexStatCard(
+              title: 'Faculty',
+              value: facultyCount.toString(),
+              icon: LucideIcons.users,
+              subtitle: 'Department Staff',
+            )
+          else
+            AcadexStatCard(
+              title: terminology.label(AcademicConcept.department, plural: true),
+              value: deptCount.toString(),
+              icon: LucideIcons.building2,
+              subtitle: 'Active Units',
+            ),
           AcadexStatCard(
-            title: 'Departments',
-            value: deptCount.toString(),
-            icon: LucideIcons.building2,
-            subtitle: 'Active Units',
-          ),
-          AcadexStatCard(
-            title: 'Courses',
+            title: terminology.label(AcademicConcept.program, plural: true),
             value: courseCount.toString(),
             icon: LucideIcons.graduationCap,
             subtitle: 'Degree Programs',
           ),
           AcadexStatCard(
-            title: 'Semesters',
+            title: terminology.label(AcademicConcept.semester, plural: true),
             value: semCount.toString(),
             icon: LucideIcons.calendarDays,
             subtitle: 'Academic Terms',
           ),
+          if (isSectionEnabled)
+            AcadexStatCard(
+              title: terminology.label(AcademicConcept.section, plural: true),
+              value: sectionCount.toString(),
+              icon: LucideIcons.layoutGrid,
+              subtitle: 'Classrooms / Batches',
+            ),
           AcadexStatCard(
-            title: 'Sections',
-            value: sectionCount.toString(),
-            icon: LucideIcons.layoutGrid,
-            subtitle: 'Classrooms',
-          ),
-          AcadexStatCard(
-            title: 'Subjects',
+            title: terminology.label(AcademicConcept.subject, plural: true),
             value: subjectCount.toString(),
             icon: LucideIcons.bookOpen,
             subtitle: 'Curriculum Items',
@@ -577,7 +811,11 @@ class _AcademicStructureHomeScreenState
       AsyncValue<List<Department>> deptsAsync, AppRole role, bool isDark) {
     return deptsAsync.when(
       loading: () => const AcadexLoadingState(message: 'Loading departments...'),
-      error: (e, _) => AcadexErrorState(message: e.toString()),
+      error: (e, _) => AcadexErrorState.fromError(
+        error: e,
+        title: 'Unable to load departments',
+        onRetry: () => ref.invalidate(departmentsProvider),
+      ),
       data: (depts) {
         final filtered = depts.where((d) {
           final matchesQuery = _searchQuery.isEmpty ||
@@ -662,7 +900,11 @@ class _AcademicStructureHomeScreenState
       AsyncValue<List<Department>> deptsAsync, AppRole role, bool isDark) {
     return coursesAsync.when(
       loading: () => const AcadexLoadingState(message: 'Loading courses...'),
-      error: (e, _) => AcadexErrorState(message: e.toString()),
+      error: (e, _) => AcadexErrorState.fromError(
+        error: e,
+        title: 'Unable to load courses',
+        onRetry: () => ref.invalidate(coursesProvider),
+      ),
       data: (courses) {
         final filtered = courses.where((c) {
           final matchesQuery = _searchQuery.isEmpty ||
@@ -753,7 +995,11 @@ class _AcademicStructureHomeScreenState
       AsyncValue<List<Course>> coursesAsync, AppRole role, bool isDark) {
     return semestersAsync.when(
       loading: () => const AcadexLoadingState(message: 'Loading semesters...'),
-      error: (e, _) => AcadexErrorState(message: e.toString()),
+      error: (e, _) => AcadexErrorState.fromError(
+        error: e,
+        title: 'Unable to load semesters',
+        onRetry: () => ref.invalidate(semestersProvider),
+      ),
       data: (semesters) {
         final filtered = semesters.where((s) {
           return _searchQuery.isEmpty ||
@@ -847,7 +1093,11 @@ class _AcademicStructureHomeScreenState
       AsyncValue<List<Semester>> semestersAsync, AppRole role, bool isDark) {
     return sectionsAsync.when(
       loading: () => const AcadexLoadingState(message: 'Loading sections...'),
-      error: (e, _) => AcadexErrorState(message: e.toString()),
+      error: (e, _) => AcadexErrorState.fromError(
+        error: e,
+        title: 'Unable to load sections',
+        onRetry: () => ref.invalidate(sectionsProvider),
+      ),
       data: (sections) {
         final filtered = sections.where((s) {
           return _searchQuery.isEmpty ||
@@ -935,12 +1185,16 @@ class _AcademicStructureHomeScreenState
     );
   }
 
-  // --- TAB 5: SUBJECTS CATALOG ---
+  // --- TAB 5: SUBJECTS ---
   Widget _buildSubjectsTab(AsyncValue<List<Subject>> subjectsAsync,
       AsyncValue<List<Department>> deptsAsync, AppRole role, bool isDark) {
     return subjectsAsync.when(
-      loading: () => const AcadexLoadingState(message: 'Loading subjects catalog...'),
-      error: (e, _) => AcadexErrorState(message: e.toString()),
+      loading: () => const AcadexLoadingState(message: 'Loading subjects...'),
+      error: (e, _) => AcadexErrorState.fromError(
+        error: e,
+        title: 'Unable to load subjects',
+        onRetry: () => ref.invalidate(subjectsProvider),
+      ),
       data: (subjects) {
         final filtered = subjects.where((s) {
           final matchesQuery = _searchQuery.isEmpty ||
@@ -954,7 +1208,7 @@ class _AcademicStructureHomeScreenState
         if (filtered.isEmpty) {
           return AcadexEmptyState(
             title: 'No Subjects Found',
-            subtitle: 'No academic subjects in the syllabus catalog.',
+            subtitle: 'Create the first subject for this course and academic period.',
             icon: LucideIcons.bookOpen,
             actionLabel: (role == AppRole.collegeAdmin || role == AppRole.hod)
                 ? 'Create Subject'
@@ -1007,20 +1261,105 @@ class _AcademicStructureHomeScreenState
                         onPressed: () => context.push('/notes'),
                       ),
                       const SizedBox(width: 8),
-                      if (role == AppRole.collegeAdmin || role == AppRole.hod)
-                        IconButton(
-                          icon: const Icon(LucideIcons.edit3, size: 18),
-                          tooltip: 'Edit Subject',
-                          onPressed: () =>
-                              context.push('/academics/subjects/edit/${sub.id}'),
-                        ),
+                      const Icon(LucideIcons.chevronRight, size: 16, color: AcadexColors.inkMuted),
                     ],
                   ),
-                  onTap: () => context.push('/academics/subjects'),
+                  onTap: () => context.push('/academics/subjects/${sub.id}'),
                 ),
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  // --- TAB 6: FACULTY ---
+  Widget _buildFacultyTab(String? departmentId, AppRole role, bool isDark) {
+    final facultyState = ref.watch(facultyProvider(departmentId));
+    if (facultyState.isLoading && facultyState.items.isEmpty) {
+      return const AcadexLoadingState(message: 'Loading department faculty...');
+    }
+    if (facultyState.error != null && facultyState.items.isEmpty) {
+      return AcadexErrorState.fromError(
+        error: facultyState.error,
+        title: 'Unable to load faculty',
+        onRetry: () => ref.read(facultyProvider(departmentId).notifier).refresh(),
+      );
+    }
+
+    final filtered = facultyState.items.where((f) {
+      final matchesQuery = _searchQuery.isEmpty ||
+          f.name.toLowerCase().contains(_searchQuery) ||
+          f.email.toLowerCase().contains(_searchQuery) ||
+          (f.designation?.toLowerCase().contains(_searchQuery) ?? false);
+      return matchesQuery;
+    }).toList();
+
+    if (filtered.isEmpty) {
+      return AcadexEmptyState(
+        title: 'No Faculty Found',
+        subtitle: 'No faculty members found for this department.',
+        icon: LucideIcons.users,
+        actionLabel: (role == AppRole.collegeAdmin || role == AppRole.hod)
+            ? 'Add Faculty'
+            : null,
+        onActionTap: () => context.push('/academics/faculty/new'),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.only(top: 8),
+      itemCount: filtered.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final fac = filtered[index];
+        return AcadexCard(
+          child: Material(
+            type: MaterialType.transparency,
+            child: ListTile(
+              leading: AcadexAvatar(
+                name: fac.name,
+                size: 40,
+              ),
+              title: Text(
+                fac.name,
+                style: AcadexTypography.heading3(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ),
+              ),
+              subtitle: Text(
+                '${(fac.designation != null && fac.designation!.isNotEmpty) ? fac.designation! : "Faculty"} • ${fac.email}',
+                style: AcadexTypography.bodySmall(
+                  color: isDark
+                      ? AcadexColors.darkInkMuted
+                      : AcadexColors.inkMuted,
+                ),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AcadexBadge(
+                    label: fac.isActive ? 'Active' : 'Inactive',
+                    variant: fac.isActive
+                        ? AcadexBadgeVariant.success
+                        : AcadexBadgeVariant.neutral,
+                  ),
+                  const SizedBox(width: 8),
+                  if (role == AppRole.collegeAdmin || role == AppRole.hod)
+                    AcadexButton(
+                      label: 'Assign',
+                      variant: AcadexButtonVariant.secondary,
+                      icon: LucideIcons.userCheck,
+                      onPressed: () => context.push('/faculty-assignments'),
+                    ),
+                  const SizedBox(width: 8),
+                  const Icon(LucideIcons.chevronRight, size: 16, color: AcadexColors.inkMuted),
+                ],
+              ),
+              onTap: () => context.push('/academics/faculty/${fac.id}'),
+            ),
+          ),
         );
       },
     );

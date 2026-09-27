@@ -54,6 +54,8 @@ router.delete(
 // 4. Batch Mark Read
 router.patch('/read-all', asyncHandler(NotificationController.markAllAsRead));
 router.post('/read-all', asyncHandler(NotificationController.markAllAsRead));
+router.patch('/mark-all-read', asyncHandler(NotificationController.markAllAsRead));
+router.post('/mark-all-read', asyncHandler(NotificationController.markAllAsRead));
 
 // 5. Individual Notification
 router.patch('/:id/read', asyncHandler(NotificationController.markAsRead));

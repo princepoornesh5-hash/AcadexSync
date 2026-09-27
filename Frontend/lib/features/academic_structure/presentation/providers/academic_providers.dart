@@ -507,8 +507,8 @@ class SubjectNotifier extends AutoDisposeAsyncNotifier<List<Subject>> {
   Future<List<Subject>> build() async {
     return ref.watch(academicRepositoryProvider).getSubjects();
   }
-  Future<void> addSubject(Subject subject) async {
-    await ref.read(academicRepositoryProvider).addSubject(subject);
+  Future<Subject> addSubject(Subject subject) async {
+    final created = await ref.read(academicRepositoryProvider).addSubject(subject);
     ref.invalidateSelf();
     if (subject.departmentId.isNotEmpty) {
       ref.invalidate(departmentSetupProvider(subject.departmentId));
@@ -521,6 +521,7 @@ class SubjectNotifier extends AutoDisposeAsyncNotifier<List<Subject>> {
     }
     ref.invalidate(collegeAdminStatsProvider);
     ref.invalidate(hodStatsProvider);
+    return created;
   }
   Future<void> updateSubject(Subject subject) async {
     await ref.read(academicRepositoryProvider).updateSubject(subject);
@@ -1073,6 +1074,7 @@ class FacultyAssignmentsNotifier extends AutoDisposeAsyncNotifier<List<FacultyAs
   Future<void> createAssignment(FacultyAssignment assignment) async {
     await ref.read(academicRepositoryProvider).createFacultyAssignment(assignment);
     ref.invalidateSelf();
+    ref.invalidate(myFacultyAssignmentsProvider);
     ref.invalidate(facultyProvider(null));
     if (assignment.departmentId.isNotEmpty) {
       ref.invalidate(departmentSetupProvider(assignment.departmentId));
@@ -1088,6 +1090,7 @@ class FacultyAssignmentsNotifier extends AutoDisposeAsyncNotifier<List<FacultyAs
   Future<void> updateAssignment(FacultyAssignment assignment) async {
     await ref.read(academicRepositoryProvider).createFacultyAssignment(assignment);
     ref.invalidateSelf();
+    ref.invalidate(myFacultyAssignmentsProvider);
     ref.invalidate(facultyProvider(null));
     if (assignment.departmentId.isNotEmpty) {
       ref.invalidate(departmentSetupProvider(assignment.departmentId));
@@ -1103,6 +1106,7 @@ class FacultyAssignmentsNotifier extends AutoDisposeAsyncNotifier<List<FacultyAs
   Future<void> removeAssignment(String assignmentId) async {
     await ref.read(academicRepositoryProvider).removeFacultyAssignment(assignmentId);
     ref.invalidateSelf();
+    ref.invalidate(myFacultyAssignmentsProvider);
     ref.invalidate(facultyProvider(null));
     ref.invalidate(facultyStatsProvider);
     ref.invalidate(hodStatsProvider);
@@ -1111,6 +1115,7 @@ class FacultyAssignmentsNotifier extends AutoDisposeAsyncNotifier<List<FacultyAs
   Future<void> deactivateAssignment(String assignmentId) async {
     await ref.read(academicRepositoryProvider).updateFacultyAssignment(assignmentId, isActive: false);
     ref.invalidateSelf();
+    ref.invalidate(myFacultyAssignmentsProvider);
     ref.invalidate(facultyProvider(null));
     ref.invalidate(facultyStatsProvider);
     ref.invalidate(hodStatsProvider);
@@ -1178,7 +1183,16 @@ final subjectsForSemesterProvider = Provider.autoDispose.family<List<Subject>, S
 
 final facultyAssignedSubjectsProvider = Provider.autoDispose.family<List<Subject>, String>((ref, facultyId) {
   final assignments = ref.watch(facultyAssignmentsProvider).valueOrNull ?? [];
-  final myAssignments = assignments.where((a) => a.facultyId == facultyId && a.isActive).toList();
+  final facultyList = ref.watch(facultyProvider(null)).items;
+  Faculty? matchedFac;
+  for (final f in facultyList) {
+    if (f.id == facultyId || f.userId == facultyId) {
+      matchedFac = f;
+      break;
+    }
+  }
+  final targetIds = {facultyId, if (matchedFac != null) ...[matchedFac.id, if (matchedFac.userId != null) matchedFac.userId!]};
+  final myAssignments = assignments.where((a) => targetIds.contains(a.facultyId) && a.isActive).toList();
   final subjectMap = ref.watch(subjectMapProvider);
   final Set<String> seenIds = {};
   final List<Subject> result = [];
@@ -1193,7 +1207,16 @@ final facultyAssignedSubjectsProvider = Provider.autoDispose.family<List<Subject
 
 final facultyAssignedSectionsProvider = Provider.autoDispose.family<List<Section>, ({String facultyId, String? subjectId})>((ref, args) {
   final assignments = ref.watch(facultyAssignmentsProvider).valueOrNull ?? [];
-  final myAssignments = assignments.where((a) => a.facultyId == args.facultyId && a.isActive && (args.subjectId == null || a.subjectId == args.subjectId)).toList();
+  final facultyList = ref.watch(facultyProvider(null)).items;
+  Faculty? matchedFac;
+  for (final f in facultyList) {
+    if (f.id == args.facultyId || f.userId == args.facultyId) {
+      matchedFac = f;
+      break;
+    }
+  }
+  final targetIds = {args.facultyId, if (matchedFac != null) ...[matchedFac.id, if (matchedFac.userId != null) matchedFac.userId!]};
+  final myAssignments = assignments.where((a) => targetIds.contains(a.facultyId) && a.isActive && (args.subjectId == null || a.subjectId == args.subjectId)).toList();
   final sectionMap = ref.watch(sectionMapProvider);
   final Set<String> seenIds = {};
   final List<Section> result = [];
@@ -1212,7 +1235,27 @@ final myFacultyAssignmentsProvider = Provider.autoDispose<List<FacultyAssignment
   if (authState is! AuthAuthenticated) return [];
   final assignments = ref.watch(facultyAssignmentsProvider).valueOrNull ?? [];
   final currentUserId = authState.user.id;
-  return assignments.where((a) => a.facultyId == currentUserId && a.isActive).toList();
+  final currentUserEmail = authState.user.email.trim().toLowerCase();
+
+  // Find the faculty record matching this authenticated user
+  final facultyList = ref.watch(facultyProvider(null)).items;
+  Faculty? myFaculty;
+  for (final f in facultyList) {
+    if (f.userId == currentUserId || f.id == currentUserId || (currentUserEmail.isNotEmpty && f.email.trim().toLowerCase() == currentUserEmail)) {
+      myFaculty = f;
+      break;
+    }
+  }
+
+  return assignments.where((a) {
+    if (!a.isActive) return false;
+    if (a.facultyId == currentUserId) return true;
+    if (myFaculty != null) {
+      if (a.facultyId == myFaculty.id) return true;
+      if (myFaculty.userId != null && a.facultyId == myFaculty.userId) return true;
+    }
+    return false;
+  }).toList();
 });
 
 // --- Parameterized Faculty Assignments by Faculty ID ---
@@ -1496,4 +1539,25 @@ class RoomNotifier extends AutoDisposeAsyncNotifier<List<Room>> {
 
 final roomsProvider = AsyncNotifierProvider.autoDispose<RoomNotifier, List<Room>>(RoomNotifier.new);
 
+// --- Authoritative Current Academic Context Providers (Prompt 24) ---
+final currentAcademicContextProvider = FutureProvider.autoDispose.family<CurrentAcademicContext, ({String? departmentId, String? courseId})>((ref, params) async {
+  final repo = ref.watch(academicRepositoryProvider);
+  return repo.getCurrentAcademicContext(departmentId: params.departmentId, courseId: params.courseId);
+});
 
+final defaultCurrentAcademicContextProvider = FutureProvider.autoDispose<CurrentAcademicContext>((ref) async {
+  final authState = ref.watch(auth.authProvider);
+  String? departmentId;
+  if (authState is AuthAuthenticated) {
+    if (authState.user.role == AppRole.hod || authState.user.role == AppRole.faculty || authState.user.role == AppRole.student) {
+      departmentId = authState.user.departmentId;
+    }
+  }
+  final repo = ref.watch(academicRepositoryProvider);
+  return repo.getCurrentAcademicContext(departmentId: departmentId);
+});
+
+final academicHistoryProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, ({String? departmentId, String? courseId})>((ref, params) async {
+  final repo = ref.watch(academicRepositoryProvider);
+  return repo.getAcademicHistory(departmentId: params.departmentId, courseId: params.courseId);
+});

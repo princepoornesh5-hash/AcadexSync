@@ -31,6 +31,8 @@ export interface CreateNotificationInput {
   priority?: NotificationPriority;
   entityType?: string;
   entityId?: string;
+  relatedEntityType?: string;
+  relatedEntityId?: string;
   deepLink?: string;
   metadata?: Record<string, unknown>;
   idempotencyKey?: string;
@@ -49,11 +51,20 @@ export class NotificationService {
    */
   private static mapTypeToCategory(type: NotificationType): NotificationCategory {
     switch (type) {
+      case NotificationType.REQUEST_RECEIVED:
+      case NotificationType.REQUEST_UPDATED:
+      case NotificationType.REQUEST_RESPONDED:
+      case NotificationType.REQUEST_APPROVED:
+      case NotificationType.REQUEST_REJECTED:
+        return NotificationCategory.REQUEST;
       case NotificationType.NOTE_PUBLISHED:
       case NotificationType.NOTE_UPDATED:
         return NotificationCategory.NOTES;
       case NotificationType.ATTENDANCE_LOW:
       case NotificationType.ATTENDANCE_MARKED:
+      case NotificationType.ATTENDANCE_ABSENT:
+      case NotificationType.ATTENDANCE_LATE:
+      case NotificationType.ATTENDANCE_ALERT:
         return NotificationCategory.ATTENDANCE;
       case NotificationType.TIMETABLE_PUBLISHED:
       case NotificationType.TIMETABLE_UPDATED:
@@ -61,6 +72,9 @@ export class NotificationService {
         return NotificationCategory.TIMETABLE;
       case NotificationType.ANNOUNCEMENT:
         return NotificationCategory.ANNOUNCEMENT;
+      case NotificationType.CALENDAR_EVENT:
+      case NotificationType.HOLIDAY:
+        return NotificationCategory.ACADEMIC;
       case NotificationType.SYSTEM:
       default:
         return NotificationCategory.SYSTEM;
@@ -213,22 +227,78 @@ export class NotificationService {
   // 3. NOTIFICATION CREATION & PUSH DISPATCH
   // =========================================================================
 
+  private static inFlightIdempotencyKeys = new Map<string, Promise<INotification>>();
+
   static async createNotification(input: CreateNotificationInput): Promise<INotification> {
-    // 1. Idempotency check
     if (input.idempotencyKey) {
-      const existing = await Notification.findOne({
-        recipientUserId: new mongoose.Types.ObjectId(input.recipientUserId),
-        idempotencyKey: input.idempotencyKey,
-      });
-      if (existing) {
-        return existing;
+      const key = `${input.recipientUserId}_${input.idempotencyKey}`;
+      if (this.inFlightIdempotencyKeys.has(key)) {
+        return this.inFlightIdempotencyKeys.get(key)!;
+      }
+
+      const promise = (async () => {
+        const existing = await Notification.findOne({
+          recipientUserId: new mongoose.Types.ObjectId(input.recipientUserId),
+          idempotencyKey: input.idempotencyKey,
+        });
+        if (existing) {
+          return existing;
+        }
+
+        const category = input.category ?? this.mapTypeToCategory(input.notificationType);
+        const priority = input.priority ?? NotificationPriority.NORMAL;
+
+        try {
+          // 2. Persist notification in MongoDB (Authoritative Source of Truth)
+          const notification = await Notification.create({
+            collegeId: new mongoose.Types.ObjectId(input.collegeId),
+            departmentId: input.departmentId ? new mongoose.Types.ObjectId(input.departmentId) : undefined,
+            recipientUserId: new mongoose.Types.ObjectId(input.recipientUserId),
+            recipientRole: input.recipientRole,
+            title: input.title,
+            body: input.body,
+            notificationType: input.notificationType,
+            category,
+            priority,
+            entityType: input.entityType ?? input.relatedEntityType,
+            entityId: input.entityId ?? input.relatedEntityId,
+            deepLink: input.deepLink,
+            metadata: input.metadata ?? {},
+            idempotencyKey: input.idempotencyKey,
+          });
+
+          // 3. Asynchronously attempt FCM push delivery without blocking or failing transaction
+          this.dispatchPushForNotification(notification).catch((err) => {
+            logger.error('Error dispatching push notification for user', err);
+          });
+
+          return notification;
+        } catch (err: any) {
+          if (err?.code === 11000) {
+            const dupe = await Notification.findOne({
+              recipientUserId: new mongoose.Types.ObjectId(input.recipientUserId),
+              idempotencyKey: input.idempotencyKey,
+            });
+            if (dupe) return dupe;
+          }
+          throw err;
+        }
+      })();
+
+      this.inFlightIdempotencyKeys.set(key, promise);
+      try {
+        return await promise;
+      } finally {
+        const timer = setTimeout(() => {
+          this.inFlightIdempotencyKeys.delete(key);
+        }, 10000);
+        if (timer.unref) timer.unref();
       }
     }
 
     const category = input.category ?? this.mapTypeToCategory(input.notificationType);
     const priority = input.priority ?? NotificationPriority.NORMAL;
 
-    // 2. Persist notification in MongoDB (Authoritative Source of Truth)
     const notification = await Notification.create({
       collegeId: new mongoose.Types.ObjectId(input.collegeId),
       departmentId: input.departmentId ? new mongoose.Types.ObjectId(input.departmentId) : undefined,
@@ -239,14 +309,13 @@ export class NotificationService {
       notificationType: input.notificationType,
       category,
       priority,
-      entityType: input.entityType,
-      entityId: input.entityId,
+      entityType: input.entityType ?? input.relatedEntityType,
+      entityId: input.entityId ?? input.relatedEntityId,
       deepLink: input.deepLink,
       metadata: input.metadata ?? {},
       idempotencyKey: input.idempotencyKey,
     });
 
-    // 3. Asynchronously attempt FCM push delivery without blocking or failing transaction
     this.dispatchPushForNotification(notification).catch((err) => {
       logger.error('Error dispatching push notification for user', err);
     });

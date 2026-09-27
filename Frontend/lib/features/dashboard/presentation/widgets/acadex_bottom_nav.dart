@@ -6,6 +6,7 @@ import '../../../../core/presentation/navigation/acadex_nav_item.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../notifications/presentation/providers/notification_providers.dart';
 
 /// Compact, role-aware mobile bottom navigation bar conforming to Prompt 11
 /// Features 4 primary destinations + 1 'More' entry point with zero horizontal overflow at 360px.
@@ -22,6 +23,7 @@ class AcadexBottomNav extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
+    final unreadNotifs = ref.watch(unreadNotificationCountProvider);
     AppRole role = AppRole.student;
     if (authState is AuthAuthenticated) {
       role = authState.user.role;
@@ -75,6 +77,7 @@ class AcadexBottomNav extends ConsumerWidget {
                 icon: LucideIcons.ellipsis,
                 label: 'More',
                 isActive: isMoreActive,
+                badgeCount: unreadNotifs,
                 onTap: () {
                   final scaffoldState = Scaffold.maybeOf(context);
                   if (scaffoldState != null && scaffoldState.hasDrawer) {
@@ -95,12 +98,14 @@ class _NavTab extends StatelessWidget {
   final String label;
   final bool isActive;
   final VoidCallback onTap;
+  final int badgeCount;
 
   const _NavTab({
     required this.icon,
     required this.label,
     required this.isActive,
     required this.onTap,
+    this.badgeCount = 0,
   });
 
   @override
@@ -124,10 +129,37 @@ class _NavTab extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    icon,
-                    size: 20,
-                    color: isActive ? activeColor : inactiveColor,
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(
+                        icon,
+                        size: 20,
+                        color: isActive ? activeColor : inactiveColor,
+                      ),
+                      if (badgeCount > 0)
+                        Positioned(
+                          top: -3,
+                          right: -7,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: AcadexColors.primary,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            constraints: const BoxConstraints(minWidth: 13, minHeight: 13),
+                            child: Text(
+                              badgeCount > 9 ? '9+' : '$badgeCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Flexible(

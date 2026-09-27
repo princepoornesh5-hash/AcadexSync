@@ -189,32 +189,32 @@ final collegeAdminStatsProvider = FutureProvider.autoDispose<List<DashboardStatM
 
 final collegeAdminQuickActionsProvider = Provider<List<QuickActionModel>>((ref) => [
       const QuickActionModel(
-        label: 'Department Setup',
-        icon: LucideIcons.compass,
+        label: 'Academic Years',
+        icon: LucideIcons.calendarDays,
         iconColor: DashboardColors.primary,
         iconBackground: DashboardColors.primaryLight,
-        route: '/academics/setup',
+        route: '/academics/academic-years',
       ),
       const QuickActionModel(
-        label: 'Create Department',
-        icon: LucideIcons.plusCircle,
+        label: 'Departments',
+        icon: LucideIcons.building2,
         iconColor: DashboardColors.purple,
         iconBackground: DashboardColors.purpleLight,
-        route: '/academics/departments/new',
+        route: '/academics/departments',
       ),
       const QuickActionModel(
-        label: 'Provision Faculty',
-        icon: LucideIcons.userPlus,
+        label: 'Assign HODs',
+        icon: LucideIcons.userCheck,
         iconColor: DashboardColors.teal,
         iconBackground: DashboardColors.tealLight,
-        route: '/academics/faculty/new',
+        route: '/academics/hods',
       ),
       const QuickActionModel(
-        label: 'Admit Student',
-        icon: LucideIcons.graduationCap,
+        label: 'College Analytics',
+        icon: LucideIcons.barChart3,
         iconColor: DashboardColors.success,
         iconBackground: DashboardColors.successLight,
-        route: '/academics/students/new',
+        route: '/analytics',
       ),
     ]);
 
@@ -425,6 +425,13 @@ final facultyQuickActionsProvider = Provider<List<QuickActionModel>>((ref) => [
         iconColor: DashboardColors.purple,
         iconBackground: DashboardColors.purpleLight,
         route: '/notes/new',
+      ),
+      const QuickActionModel(
+        label: 'Assignments',
+        icon: LucideIcons.fileSpreadsheet,
+        iconColor: DashboardColors.success,
+        iconBackground: DashboardColors.successLight,
+        route: '/assignments',
       ),
       const QuickActionModel(
         label: "Today's Timetable",

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../notifications/presentation/widgets/notification_badge.dart';
 import '../../../../core/presentation/widgets/acadex_avatar.dart';
+import 'acadex_drawer.dart';
 
 class AcadexAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   final String title;
@@ -30,7 +32,7 @@ class AcadexAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(64.0);
+  Size get preferredSize => const Size.fromHeight(56.0);
 
   @override
   ConsumerState<AcadexAppBar> createState() => _AcadexAppBarState();
@@ -63,75 +65,108 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
       user = authState.user;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = AcadexBreakpoints.isMobile(context);
     final isDesktop = AcadexBreakpoints.isDesktop(context);
     final topPadding = MediaQuery.paddingOf(context).top;
 
-    const toolbarHeight = 64.0;
-    const headerTextColor = Color(0xFF07111F);
-    const headerMutedColor = Color(0xFF64748B);
-    const headerIconColor = Color(0xFF07111F);
+    const toolbarHeight = 56.0;
+    final headerTextColor = isDark ? AcadexColors.darkInk : const Color(0xFF07111F);
+    final headerMutedColor = isDark ? AcadexColors.darkInkMuted : const Color(0xFF64748B);
+    final headerIconColor = isDark ? AcadexColors.darkInk : const Color(0xFF07111F);
 
-    return Container(
-      height: toolbarHeight + topPadding,
-      padding: EdgeInsets.only(
-        top: topPadding,
-        left: isMobile ? 8 : 20,
-        right: isMobile ? 8 : 20,
-      ),
-      decoration: const BoxDecoration(
-        color: AcadexColors.surface,
-        border: Border(
-          bottom: BorderSide(
-            color: AcadexColors.hairline,
-            width: 1,
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          height: toolbarHeight + topPadding,
+          padding: EdgeInsets.only(
+            top: topPadding,
+            left: isMobile ? 8 : 16,
+            right: isMobile ? 8 : 16,
           ),
-        ),
-      ),
-      child: SizedBox(
-        height: toolbarHeight,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Left Action: Back Button or Drawer Menu
-            if (widget.showBackButton) ...[
-              IconButton(
-                icon: const Icon(
-                  LucideIcons.arrowLeft,
-                  color: headerIconColor,
-                  size: 22,
-                ),
-                tooltip: 'Back',
-                padding: const EdgeInsets.all(8),
-                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                splashRadius: 24,
-                onPressed: widget.onBack ?? () {
-                  context.safePop(fallbackRoute: '/dashboard');
-                },
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFF0F172A).withValues(alpha: 0.72)
+                : const Color(0xFFFFFFFF).withValues(alpha: 0.72),
+            border: Border(
+              bottom: BorderSide(
+                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0).withValues(alpha: 0.85),
+                width: 1,
               ),
-              const SizedBox(width: 4),
-            ] else if (widget.showDrawerButton) ...[
-              Builder(
-                builder: (ctx) => IconButton(
-                  icon: const Icon(
-                    LucideIcons.menu,
-                    color: headerIconColor,
-                    size: 22,
-                  ),
-                  tooltip: 'Open Navigation Menu',
-                  padding: const EdgeInsets.all(8),
-                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                  splashRadius: 24,
-                  onPressed: () {
-                    final scaffold = Scaffold.maybeOf(ctx);
-                    if (scaffold != null && scaffold.hasDrawer) {
-                      scaffold.openDrawer();
-                    }
-                  },
-                ),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.03),
+                blurRadius: 12,
+                offset: const Offset(0, 2),
               ),
-              const SizedBox(width: 4),
             ],
+          ),
+          child: SizedBox(
+            height: toolbarHeight,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Persistent Desktop Sidebar Toggle Button near top-left
+                if (isDesktop) ...[
+                  IconButton(
+                    icon: Icon(
+                      ref.watch(sidebarCollapsedProvider) ? LucideIcons.panelLeftOpen : LucideIcons.panelLeftClose,
+                      color: headerIconColor,
+                      size: 20,
+                    ),
+                    tooltip: ref.watch(sidebarCollapsedProvider) ? 'Expand Sidebar' : 'Collapse Sidebar',
+                    padding: const EdgeInsets.all(6),
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    splashRadius: 20,
+                    onPressed: () {
+                      ref.read(sidebarCollapsedProvider.notifier).state =
+                          !ref.read(sidebarCollapsedProvider.notifier).state;
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                ],
+
+                // Left Action: Back Button or Mobile Drawer Menu
+                if (widget.showBackButton) ...[
+                  IconButton(
+                    icon: Icon(
+                      LucideIcons.arrowLeft,
+                      color: headerIconColor,
+                      size: 20,
+                    ),
+                    tooltip: 'Back',
+                    padding: const EdgeInsets.all(6),
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    splashRadius: 20,
+                    onPressed: widget.onBack ?? () {
+                      context.safePop(fallbackRoute: '/dashboard');
+                    },
+                  ),
+                  const SizedBox(width: 4),
+                ] else if (widget.showDrawerButton && !isDesktop) ...[
+                  Builder(
+                    builder: (ctx) => IconButton(
+                      icon: Icon(
+                        LucideIcons.menu,
+                        color: headerIconColor,
+                        size: 20,
+                      ),
+                      tooltip: 'Open Navigation Menu',
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                      splashRadius: 20,
+                      onPressed: () {
+                        final scaffold = Scaffold.maybeOf(ctx);
+                        if (scaffold != null && scaffold.hasDrawer) {
+                          scaffold.openDrawer();
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                ],
 
             // Contextual Page Title & Subtitle
             Expanded(
@@ -142,7 +177,7 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
                 children: [
                   Text(
                     widget.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: headerTextColor,
                       fontWeight: FontWeight.w700,
                       fontSize: 18,
@@ -155,7 +190,7 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
                     const SizedBox(height: 1),
                     Text(
                       widget.subtitle!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: headerMutedColor,
                         fontWeight: FontWeight.w400,
                         fontSize: 12,
@@ -181,23 +216,25 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
                   controller: _searchController,
                   textInputAction: TextInputAction.search,
                   onSubmitted: _handleSearch,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: headerTextColor,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Search...',
-                    hintStyle: const TextStyle(
+                    hintStyle: TextStyle(
                       color: headerMutedColor,
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: isDark
+                        ? const Color(0xFF1E293B).withValues(alpha: 0.6)
+                        : const Color(0xFFF1F5F9).withValues(alpha: 0.85),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    prefixIcon: const Icon(
+                    prefixIcon: Icon(
                       LucideIcons.search,
                       size: 16,
                       color: headerMutedColor,
@@ -205,11 +242,17 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
                     prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1),
+                      borderSide: BorderSide(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        width: 1,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1),
+                      borderSide: BorderSide(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        width: 1,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -227,7 +270,7 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
             // Mobile Compact Search Icon Button
             if (isMobile) ...[
               IconButton(
-                icon: const Icon(
+                icon: Icon(
                   LucideIcons.search,
                   color: headerMutedColor,
                   size: 22,
@@ -435,6 +478,8 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
           ],
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }

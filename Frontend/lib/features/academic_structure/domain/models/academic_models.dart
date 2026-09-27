@@ -282,6 +282,7 @@ class Course {
   final String name;
   final String code;
   final int duration;
+  final String progressionType;
   final bool isActive;
 
   Course({
@@ -291,6 +292,7 @@ class Course {
     required this.name,
     required this.code,
     this.duration = 3,
+    this.progressionType = 'YEAR_SEMESTER',
     this.isActive = true,
   });
 
@@ -301,6 +303,7 @@ class Course {
     String? name,
     String? code,
     int? duration,
+    String? progressionType,
     bool? isActive,
   }) {
     return Course(
@@ -310,6 +313,7 @@ class Course {
       name: name ?? this.name,
       code: code ?? this.code,
       duration: duration ?? this.duration,
+      progressionType: progressionType ?? this.progressionType,
       isActive: isActive ?? this.isActive,
     );
   }
@@ -322,6 +326,7 @@ class Course {
       name: json['name'] as String? ?? '',
       code: json['code'] as String? ?? '',
       duration: (json['duration'] as num?)?.toInt() ?? 3,
+      progressionType: json['progressionType'] as String? ?? 'YEAR_SEMESTER',
       isActive: json['isActive'] as bool? ?? true,
     );
   }
@@ -334,6 +339,7 @@ class Course {
       'name': name,
       'code': code,
       'duration': duration,
+      'progressionType': progressionType,
       'isActive': isActive,
     };
   }
@@ -754,6 +760,7 @@ class Subject {
 
 class Faculty {
   final String id;
+  final String? userId;
   final String collegeId;
   final String departmentId;
   final String name;
@@ -772,6 +779,7 @@ class Faculty {
 
   Faculty({
     required this.id,
+    this.userId,
     required this.collegeId,
     required this.departmentId,
     required this.name,
@@ -791,6 +799,7 @@ class Faculty {
 
   Faculty copyWith({
     String? id,
+    String? userId,
     String? collegeId,
     String? departmentId,
     String? name,
@@ -809,6 +818,7 @@ class Faculty {
   }) {
     return Faculty(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       collegeId: collegeId ?? this.collegeId,
       departmentId: departmentId ?? this.departmentId,
       name: name ?? this.name,
@@ -836,7 +846,8 @@ class Faculty {
       final f = faculty ?? {};
       final rawStatus = u['accountStatus']?.toString() ?? f['status']?.toString() ?? 'active';
       return Faculty(
-        id: (u['id'] ?? u['_id'] ?? f['id'] ?? f['_id'] ?? '').toString(),
+        id: (f['id'] ?? f['_id'] ?? u['id'] ?? u['_id'] ?? '').toString(),
+        userId: (f['userId'] ?? u['id'] ?? u['_id'] ?? json['userId'])?.toString(),
         collegeId: (f['collegeId'] ?? u['collegeId'] ?? '').toString(),
         departmentId: (f['departmentId'] ?? u['departmentId'] ?? '').toString(),
         name: (u['name'] ?? f['name'] ?? '').toString(),
@@ -858,6 +869,7 @@ class Faculty {
     final rawStatus = json['accountStatus']?.toString() ?? json['status']?.toString() ?? 'active';
     return Faculty(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
+      userId: json['userId']?.toString(),
       collegeId: (json['collegeId'] ?? '').toString(),
       departmentId: (json['departmentId'] ?? '').toString(),
       name: json['name'] as String? ?? '',
@@ -879,6 +891,7 @@ class Faculty {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'userId': userId,
       'collegeId': collegeId,
       'departmentId': departmentId,
       'name': name,
@@ -1605,6 +1618,8 @@ class FacultyAssignment {
   final String? roomId;
   final int? maxStudents;
   final String? assignmentType;
+  final String? cohort;
+  final String? academicStage;
 
   FacultyAssignment({
     required this.id,
@@ -1626,6 +1641,8 @@ class FacultyAssignment {
     this.roomId,
     this.maxStudents,
     this.assignmentType,
+    this.cohort,
+    this.academicStage,
   });
 
   FacultyAssignment copyWith({
@@ -1648,6 +1665,8 @@ class FacultyAssignment {
     String? roomId,
     int? maxStudents,
     String? assignmentType,
+    String? cohort,
+    String? academicStage,
   }) {
     return FacultyAssignment(
       id: id ?? this.id,
@@ -1669,6 +1688,8 @@ class FacultyAssignment {
       roomId: roomId ?? this.roomId,
       maxStudents: maxStudents ?? this.maxStudents,
       assignmentType: assignmentType ?? this.assignmentType,
+      cohort: cohort ?? this.cohort,
+      academicStage: academicStage ?? this.academicStage,
     );
   }
 
@@ -1699,6 +1720,8 @@ class FacultyAssignment {
       roomId: json['roomId'] as String?,
       maxStudents: json['maxStudents'] as int?,
       assignmentType: json['assignmentType'] as String?,
+      cohort: json['cohort'] as String?,
+      academicStage: json['academicStage'] as String?,
     );
   }
 
@@ -1723,6 +1746,8 @@ class FacultyAssignment {
       if (roomId != null) 'roomId': roomId,
       if (maxStudents != null) 'maxStudents': maxStudents,
       if (assignmentType != null) 'assignmentType': assignmentType,
+      if (cohort != null) 'cohort': cohort,
+      if (academicStage != null) 'academicStage': academicStage,
     };
   }
 
@@ -1980,4 +2005,175 @@ class Room {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+}
+
+class CohortSectionInfo {
+  final String sectionId;
+  final String name;
+  final int capacity;
+
+  const CohortSectionInfo({
+    required this.sectionId,
+    required this.name,
+    this.capacity = 60,
+  });
+
+  factory CohortSectionInfo.fromJson(Map<String, dynamic> json) {
+    return CohortSectionInfo(
+      sectionId: json['sectionId']?.toString() ?? json['id']?.toString() ?? '',
+      name: json['name'] as String? ?? '',
+      capacity: (json['capacity'] as num?)?.toInt() ?? 60,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'sectionId': sectionId,
+    'name': name,
+    'capacity': capacity,
+  };
+}
+
+class AcademicPeriodInfo {
+  final String semesterId;
+  final String name;
+  final int number;
+  final bool isCurrent;
+  final String status;
+  final List<CohortSectionInfo> sections;
+
+  const AcademicPeriodInfo({
+    required this.semesterId,
+    required this.name,
+    required this.number,
+    this.isCurrent = false,
+    this.status = 'active',
+    this.sections = const [],
+  });
+
+  factory AcademicPeriodInfo.fromJson(Map<String, dynamic> json) {
+    return AcademicPeriodInfo(
+      semesterId: json['semesterId']?.toString() ?? json['id']?.toString() ?? '',
+      name: json['name'] as String? ?? '',
+      number: (json['number'] as num?)?.toInt() ?? 1,
+      isCurrent: json['isCurrent'] as bool? ?? false,
+      status: json['status'] as String? ?? 'active',
+      sections: (json['sections'] as List<dynamic>?)
+              ?.map((s) => CohortSectionInfo.fromJson(s as Map<String, dynamic>))
+              .toList() ??
+          const [],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'semesterId': semesterId,
+    'name': name,
+    'number': number,
+    'isCurrent': isCurrent,
+    'status': status,
+    'sections': sections.map((s) => s.toJson()).toList(),
+  };
+}
+
+class ActiveCohortInfo {
+  final String cohort;
+  final String courseId;
+  final String courseName;
+  final String courseCode;
+  final String departmentId;
+  final String academicStage;
+  final int stageNumber;
+  final int entryYear;
+  final int expectedGraduationYear;
+  final String progressionType;
+  final List<AcademicPeriodInfo> periods;
+
+  const ActiveCohortInfo({
+    required this.cohort,
+    required this.courseId,
+    required this.courseName,
+    required this.courseCode,
+    required this.departmentId,
+    required this.academicStage,
+    required this.stageNumber,
+    required this.entryYear,
+    required this.expectedGraduationYear,
+    this.progressionType = 'YEAR_SEMESTER',
+    this.periods = const [],
+  });
+
+  factory ActiveCohortInfo.fromJson(Map<String, dynamic> json) {
+    return ActiveCohortInfo(
+      cohort: json['cohort'] as String? ?? '',
+      courseId: json['courseId']?.toString() ?? '',
+      courseName: json['courseName'] as String? ?? '',
+      courseCode: json['courseCode'] as String? ?? '',
+      departmentId: json['departmentId']?.toString() ?? '',
+      academicStage: json['academicStage'] as String? ?? '',
+      stageNumber: (json['stageNumber'] as num?)?.toInt() ?? 1,
+      entryYear: (json['entryYear'] as num?)?.toInt() ?? 2024,
+      expectedGraduationYear: (json['expectedGraduationYear'] as num?)?.toInt() ?? 2027,
+      progressionType: json['progressionType'] as String? ?? 'YEAR_SEMESTER',
+      periods: (json['periods'] as List<dynamic>?)
+              ?.map((p) => AcademicPeriodInfo.fromJson(p as Map<String, dynamic>))
+              .toList() ??
+          const [],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'cohort': cohort,
+    'courseId': courseId,
+    'courseName': courseName,
+    'courseCode': courseCode,
+    'departmentId': departmentId,
+    'academicStage': academicStage,
+    'stageNumber': stageNumber,
+    'entryYear': entryYear,
+    'expectedGraduationYear': expectedGraduationYear,
+    'progressionType': progressionType,
+    'periods': periods.map((p) => p.toJson()).toList(),
+  };
+}
+
+class CurrentAcademicContext {
+  final String collegeId;
+  final AcademicYear? academicYear;
+  final bool isCurrentAuthoritative;
+  final List<ActiveCohortInfo> activeCohorts;
+  final int totalActiveCohorts;
+  final String? departmentScope;
+
+  const CurrentAcademicContext({
+    required this.collegeId,
+    this.academicYear,
+    this.isCurrentAuthoritative = true,
+    this.activeCohorts = const [],
+    this.totalActiveCohorts = 0,
+    this.departmentScope,
+  });
+
+  factory CurrentAcademicContext.fromJson(Map<String, dynamic> json) {
+    return CurrentAcademicContext(
+      collegeId: json['collegeId']?.toString() ?? '',
+      academicYear: json['academicYear'] != null
+          ? AcademicYear.fromJson(json['academicYear'] as Map<String, dynamic>)
+          : null,
+      isCurrentAuthoritative: json['isCurrentAuthoritative'] as bool? ?? true,
+      activeCohorts: (json['activeCohorts'] as List<dynamic>?)
+              ?.map((c) => ActiveCohortInfo.fromJson(c as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      totalActiveCohorts: (json['totalActiveCohorts'] as num?)?.toInt() ?? 0,
+      departmentScope: json['departmentScope'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'collegeId': collegeId,
+    'academicYear': academicYear?.toJson(),
+    'isCurrentAuthoritative': isCurrentAuthoritative,
+    'activeCohorts': activeCohorts.map((c) => c.toJson()).toList(),
+    'totalActiveCohorts': totalActiveCohorts,
+    if (departmentScope != null) 'departmentScope': departmentScope,
+  };
 }

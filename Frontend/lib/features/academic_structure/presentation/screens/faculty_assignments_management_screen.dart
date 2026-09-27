@@ -141,12 +141,10 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
       return true;
     }).toList();
 
-    final isMobile = AcadexBreakpoints.isMobile(context);
-
     return AcadexPageContainer(
         backgroundColor: Colors.transparent,
         maxWidth: 1600,
-        scrollable: isMobile,
+        scrollable: true,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -511,8 +509,7 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
             ),
 
             // Content Area
-            Expanded(
-              child: assignmentsAsync.when(
+            assignmentsAsync.when(
                 loading: () => const Center(child: AcadexLoadingState(message: "Loading faculty assignments...")),
                 error: (err, _) => Center(
                   child: AcadexErrorState(
@@ -577,6 +574,8 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                   if (isMobile) {
                     // Mobile stacked card list with subtle hover transition
                     return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                       padding: const EdgeInsets.only(bottom: 24),
                       itemCount: filtered.length,
                       separatorBuilder: (ctx, i) => const SizedBox(height: 12),
@@ -586,6 +585,7 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                         final crs = courseMap[a.courseId];
                         final sem = semMap[a.semesterId];
                         final sec = secMap[a.sectionId];
+                        final yr = yearMap[a.academicYearId];
 
                         return AcadexCard(
                           child: Column(
@@ -615,6 +615,11 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                               Text(
                                 '${crs?.name ?? a.courseId} • ${sem?.name ?? a.semesterId} • Section ${sec?.name ?? a.sectionId}',
                                 style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Academic Year: ${yr?.name ?? (a.academicYearId.isNotEmpty ? a.academicYearId : 'Current')}${a.cohort != null && a.cohort!.isNotEmpty ? '  •  Cohort: ${a.cohort}' : ''}',
+                                style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
                               ),
                               const SizedBox(height: 12),
                               Row(
@@ -649,6 +654,7 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                       "Semester",
                       "Section",
                       "Academic Year",
+                      "Cohort / Batch",
                       "Status",
                       "Actions",
                     ],
@@ -709,6 +715,7 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                             ),
                           ),
                           DataCell(Text(yr?.name ?? (a.academicYearId.isNotEmpty ? a.academicYearId : 'Current'))),
+                          DataCell(Text(a.cohort != null && a.cohort!.isNotEmpty ? a.cohort! : '—')),
                           DataCell(
                             AcadexBadge(
                               label: a.isActive ? "Active" : "Inactive",
@@ -738,7 +745,6 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                   );
                 },
               ),
-            ),
           ],
         ),
       );

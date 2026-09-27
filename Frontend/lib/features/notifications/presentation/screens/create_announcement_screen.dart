@@ -128,9 +128,9 @@ class _CreateAnnouncementScreenState extends ConsumerState<CreateAnnouncementScr
       final payload = <String, dynamic>{
         'title': _titleController.text.trim(),
         'body': _bodyController.text.trim(),
-        'category': _category,
+        'category': _category.toLowerCase(),
         'audienceScope': _scope.apiValue,
-        'priority': _priority,
+        'priority': _priority.toLowerCase(),
         'isPinned': _isPinned,
         'status': status,
         'publishNow': status == 'PUBLISHED',

@@ -6,12 +6,14 @@ export const createCourseSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
   code: z.string().trim().min(2, 'Code must be at least 2 characters').max(30).toUpperCase(),
   duration: z.number().int().min(1).max(6).optional().default(3),
+  progressionType: z.enum(['YEAR_SEMESTER', 'YEAR_ONLY', 'YEAR_TERM', 'COMBINED_FIRST_YEAR']).optional().default('YEAR_SEMESTER'),
 });
 
 export const updateCourseSchema = z.object({
   name: z.string().trim().min(2).max(100).optional(),
   code: z.string().trim().min(2).max(30).toUpperCase().optional(),
   duration: z.number().int().min(1).max(6).optional(),
+  progressionType: z.enum(['YEAR_SEMESTER', 'YEAR_ONLY', 'YEAR_TERM', 'COMBINED_FIRST_YEAR']).optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -26,7 +28,14 @@ export const courseQuerySchema = z.object({
 
 // Academic Year Validation
 export const createAcademicYearSchema = z.object({
-  name: z.string().trim().min(4, 'Name must be at least 4 characters (e.g. 2026-2027)').max(50),
+  name: z
+    .string()
+    .trim()
+    .min(4, 'Name must be at least 4 characters (e.g. 2026-2027)')
+    .max(50)
+    .refine((val) => !val.toLowerCase().includes('batch'), {
+      message: 'Academic Year represents the operational academic cycle (e.g. 2026–27 or 2026-2027), not an intake batch.',
+    }),
   startDate: z.string().datetime({ message: 'Invalid start date ISO string' }),
   endDate: z.string().datetime({ message: 'Invalid end date ISO string' }),
   isCurrent: z.boolean().optional().default(false),
@@ -36,7 +45,15 @@ export const createAcademicYearSchema = z.object({
 });
 
 export const updateAcademicYearSchema = z.object({
-  name: z.string().trim().min(4).max(50).optional(),
+  name: z
+    .string()
+    .trim()
+    .min(4)
+    .max(50)
+    .refine((val) => !val.toLowerCase().includes('batch'), {
+      message: 'Academic Year represents the operational academic cycle (e.g. 2026–27 or 2026-2027), not an intake batch.',
+    })
+    .optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   isCurrent: z.boolean().optional(),
@@ -152,12 +169,16 @@ export const enrollStudentSchema = z.object({
   courseId: z.string().optional(),
   academicYearId: z.string().optional(),
   semesterId: z.string().optional(),
+  cohort: z.string().optional(),
+  academicStage: z.string().optional(),
   enrollmentDate: z.string().optional(),
 });
 
 export const updateEnrollmentSchema = z.object({
   status: z.enum(['active', 'completed', 'withdrawn', 'transferred', 'inactive']).optional(),
   sectionId: z.string().optional(),
+  cohort: z.string().optional(),
+  academicStage: z.string().optional(),
 });
 
 export const enrollmentQuerySchema = z.object({
@@ -182,6 +203,8 @@ export const createFacultyAssignmentSchema = z.object({
   semesterId: z.string().optional(),
   academicYearId: z.string().optional(),
   departmentId: z.string().optional(),
+  cohort: z.string().optional(),
+  academicStage: z.string().optional(),
   roomId: z.string().optional(),
   maxStudents: z.number().int().positive().optional(),
   assignmentType: z.string().optional().default('lecture'),
@@ -191,6 +214,8 @@ export const updateFacultyAssignmentSchema = z.object({
   roomId: z.string().optional(),
   maxStudents: z.number().int().positive().optional(),
   assignmentType: z.string().optional(),
+  cohort: z.string().optional(),
+  academicStage: z.string().optional(),
   isActive: z.boolean().optional(),
 });
 

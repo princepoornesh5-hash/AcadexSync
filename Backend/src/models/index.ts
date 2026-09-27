@@ -22,3 +22,8 @@ export * from './authSession.model';
 export * from './otp.model';
 export * from './invitation.model';
 export * from './announcement.model';
+export * from './request.model';
+export * from './assignment.model';
+export * from './assignmentSubmission.model';
+export * from './institutionConfiguration.model';
+export * from './calendarEvent.model';

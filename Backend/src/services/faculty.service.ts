@@ -201,36 +201,58 @@ export class FacultyService {
       if (faculty && faculty.userId) {
         user = await User.findById(faculty.userId);
       }
+      if (faculty && !user && faculty.email) {
+        user = await User.findOne({ email: faculty.email.toLowerCase() });
+        if (user && !faculty.userId) {
+          faculty.userId = user._id;
+          await faculty.save();
+        }
+      }
     }
 
     if (!user) {
-      throw ApiError.notFound(`Faculty with ID "${id}" not found`);
+      if (faculty) {
+        user = new User({
+          _id: faculty.userId || faculty._id,
+          collegeId: faculty.collegeId,
+          departmentId: faculty.departmentId,
+          name: faculty.name,
+          email: faculty.email,
+          phone: faculty.phone,
+          role: AppRole.FACULTY,
+          accountStatus: AccountStatus.ACTIVE,
+        });
+      } else {
+        throw ApiError.notFound('Faculty record not found or is no longer available');
+      }
     }
+
+    const resolvedUser: IUser = user;
 
     // Scoping
     if (requester.role === AppRole.SUPER_ADMIN) {
-      return { user, faculty };
+      return { user: resolvedUser, faculty };
     }
 
     if (requester.role === AppRole.COLLEGE_ADMIN) {
-      if (!requester.collegeId || user.collegeId?.toString() !== requester.collegeId.toString()) {
+      if (!requester.collegeId || resolvedUser.collegeId?.toString() !== requester.collegeId.toString()) {
         throw ApiError.forbidden('Cross-college tenant access is strictly prohibited');
       }
-      return { user, faculty };
+      return { user: resolvedUser, faculty };
     }
 
     if (requester.role === AppRole.HOD) {
-      if (!requester.departmentId || user.departmentId?.toString() !== requester.departmentId.toString()) {
+      if (!requester.departmentId || resolvedUser.departmentId?.toString() !== requester.departmentId.toString()) {
         throw ApiError.forbidden('Cross-department access is strictly prohibited for HOD');
       }
-      return { user, faculty };
+      return { user: resolvedUser, faculty };
     }
 
     if (requester.role === AppRole.FACULTY) {
-      if (user._id.toString() !== requester.id) {
+      if (resolvedUser._id.toString() !== requester.id) {
         throw ApiError.forbidden('Faculty can only view their own profile');
       }
-      return { user, faculty };
+      return { user: resolvedUser, faculty };
     }
 
     throw ApiError.forbidden('Access denied to faculty administration');

@@ -4,7 +4,9 @@ import '../../../../app/theme/app_theme.dart';
 class SectionHeader extends StatelessWidget {
   final String title;
   final String? actionLabel;
+  final IconData? actionIcon;
   final VoidCallback? onAction;
+  final Widget? trailing;
   final Color? titleColor;
   final Color? actionColor;
   final bool showAccent;
@@ -14,7 +16,9 @@ class SectionHeader extends StatelessWidget {
     super.key,
     required this.title,
     this.actionLabel,
+    this.actionIcon,
     this.onAction,
+    this.trailing,
     this.titleColor,
     this.actionColor,
     this.showAccent = false,
@@ -32,7 +36,7 @@ class SectionHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(
+        Flexible(
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -59,7 +63,9 @@ class SectionHeader extends StatelessWidget {
             ],
           ),
         ),
-        if (actionLabel != null)
+        if (trailing != null)
+          trailing!
+        else if (actionLabel != null)
           TextButton(
             onPressed: onAction,
             style: TextButton.styleFrom(
@@ -68,12 +74,26 @@ class SectionHeader extends StatelessWidget {
               minimumSize: const Size(48, 44),
               tapTargetSize: MaterialTapTargetSize.padded,
             ),
-            child: Text(
-              actionLabel!,
-              style: AcadexTypography.button(
-                color: standardActionColor,
-              ).copyWith(fontWeight: FontWeight.w600),
-            ),
+            child: actionIcon != null
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(actionIcon, size: 14, color: standardActionColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        actionLabel!,
+                        style: AcadexTypography.button(
+                          color: standardActionColor,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  )
+                : Text(
+                    actionLabel!,
+                    style: AcadexTypography.button(
+                      color: standardActionColor,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
           ),
       ],
     );

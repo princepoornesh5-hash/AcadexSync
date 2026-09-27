@@ -21,6 +21,9 @@ import '../widgets/section_header.dart';
 import '../widgets/stat_card.dart';
 import '../../../timetable/presentation/providers/timetable_providers.dart';
 import '../../../timetable/presentation/widgets/timetable_widgets.dart';
+import '../../../auth/domain/models/role_enum.dart';
+import 'package:campus_management/features/requests/presentation/widgets/dashboard_request_card.dart';
+import 'package:campus_management/features/requests/presentation/providers/requests_providers.dart';
 
 class FacultyDashboard extends ConsumerWidget {
   const FacultyDashboard({super.key});
@@ -61,6 +64,7 @@ class FacultyDashboard extends ConsumerWidget {
               ref.invalidate(facultyActivityProvider);
               ref.invalidate(myFacultyAssignmentsProvider);
               ref.invalidate(todayScheduleProvider);
+              ref.invalidate(requestSummaryCountsProvider);
             },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,6 +163,10 @@ class FacultyDashboard extends ConsumerWidget {
                     secondaryActionLabel: 'View Timetable',
                     onSecondaryAction: () => context.go('/timetable'),
                   ),
+                const SizedBox(height: 14),
+
+                // Request Center Status Card (Prompt 29)
+                const DashboardRequestCard(role: AppRole.faculty),
                 AcadexLayout.sectionSpacer,
 
                 // Overview Stat Cards

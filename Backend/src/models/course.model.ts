@@ -6,6 +6,7 @@ export interface ICourse extends Document {
   name: string;
   code: string;
   duration: number;
+  progressionType?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -18,6 +19,11 @@ const CourseSchema = new Schema<ICourse>(
     name: { type: String, required: true, trim: true },
     code: { type: String, required: true, uppercase: true, trim: true },
     duration: { type: Number, default: 3, min: 1, max: 6 },
+    progressionType: {
+      type: String,
+      enum: ['YEAR_SEMESTER', 'YEAR_ONLY', 'YEAR_TERM', 'COMBINED_FIRST_YEAR'],
+      default: 'YEAR_SEMESTER',
+    },
     isActive: { type: Boolean, default: true },
   },
   {

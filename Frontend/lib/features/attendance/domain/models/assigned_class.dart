@@ -14,6 +14,8 @@ class AssignedClass {
   final String? endTime;
   final String? roomNumber;
   final String? building;
+  final String? cohort;
+  final String? academicStage;
   final DateTime date;
   final bool isAttendanceMarked;
 
@@ -33,12 +35,28 @@ class AssignedClass {
     this.endTime,
     this.roomNumber,
     this.building,
+    this.cohort,
+    this.academicStage,
     required this.date,
     this.isAttendanceMarked = false,
   });
 
   /// The effective timetable entry ID representing this class
   String get effectiveTimetableEntryId => timetableEntryId ?? id;
+
+  /// Full contextual academic description: e.g. "2024–27 · 3rd Year · Semester 5 · Class A"
+  String get contextualDescription {
+    final parts = <String>[];
+    if (cohort != null && cohort!.isNotEmpty) parts.add(cohort!);
+    if (academicStage != null && academicStage!.isNotEmpty) parts.add(academicStage!);
+    if (semester.isNotEmpty) parts.add(semester.startsWith('Sem') ? semester : 'Semester $semester');
+    if (sectionName.isNotEmpty) {
+      parts.add(sectionName.startsWith('Class') || sectionName.startsWith('Sec')
+          ? sectionName
+          : 'Class $sectionName');
+    }
+    return parts.join(' · ');
+  }
 
   AssignedClass copyWith({
     String? id,
@@ -56,6 +74,8 @@ class AssignedClass {
     String? endTime,
     String? roomNumber,
     String? building,
+    String? cohort,
+    String? academicStage,
     DateTime? date,
     bool? isAttendanceMarked,
   }) {
@@ -75,6 +95,8 @@ class AssignedClass {
       endTime: endTime ?? this.endTime,
       roomNumber: roomNumber ?? this.roomNumber,
       building: building ?? this.building,
+      cohort: cohort ?? this.cohort,
+      academicStage: academicStage ?? this.academicStage,
       date: date ?? this.date,
       isAttendanceMarked: isAttendanceMarked ?? this.isAttendanceMarked,
     );
@@ -97,6 +119,8 @@ class AssignedClass {
       endTime: json['endTime'] as String?,
       roomNumber: json['roomNumber'] as String?,
       building: json['building'] as String?,
+      cohort: json['cohort'] as String?,
+      academicStage: json['academicStage'] as String?,
       date: json['date'] != null ? DateTime.parse(json['date'] as String) : DateTime.now(),
       isAttendanceMarked: json['isAttendanceMarked'] as bool? ?? false,
     );
@@ -119,6 +143,8 @@ class AssignedClass {
       if (endTime != null) 'endTime': endTime,
       if (roomNumber != null) 'roomNumber': roomNumber,
       if (building != null) 'building': building,
+      if (cohort != null) 'cohort': cohort,
+      if (academicStage != null) 'academicStage': academicStage,
       'date': date.toIso8601String(),
       'isAttendanceMarked': isAttendanceMarked,
     };

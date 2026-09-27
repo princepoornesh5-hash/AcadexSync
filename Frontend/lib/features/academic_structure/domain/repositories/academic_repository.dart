@@ -92,7 +92,7 @@ abstract class AcademicRepository {
   Future<List<SectionTransferValidationResult>> validateBulkSectionTransfer(List<String> studentIds, String targetSectionId);
   Future<void> executeBulkSectionTransfer({required List<String> studentIds, required String targetSectionId});
 
-  Future<void> addSubject(Subject subject);
+  Future<Subject> addSubject(Subject subject);
   Future<void> updateSubject(Subject subject);
   Future<void> updateSubjectStatus(String id, bool isActive);
   Future<void> deactivateSubject(String id);
@@ -196,4 +196,8 @@ abstract class AcademicRepository {
   Future<Map<String, int>> getDepartmentFacultyCounts();
   Future<List<Room>> getRooms({String? collegeId, String? departmentId});
   Future<Room> addRoom(Room room);
+
+  // Authoritative Current Academic Context & History (Prompt 24)
+  Future<CurrentAcademicContext> getCurrentAcademicContext({String? departmentId, String? courseId});
+  Future<List<Map<String, dynamic>>> getAcademicHistory({String? departmentId, String? courseId});
 }
