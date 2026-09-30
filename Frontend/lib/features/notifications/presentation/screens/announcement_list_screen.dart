@@ -6,7 +6,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
-import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -48,105 +47,71 @@ class _AnnouncementListScreenState extends ConsumerState<AnnouncementListScreen>
         user.role == AppRole.collegeAdmin ||
         user.role == AppRole.hod;
 
+    final canAuthor = isAdmin || user.role == AppRole.faculty;
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: AcadexPageContainer(
-          maxWidth: AcadexLayout.contentMaxWidth,
-          scrollable: false,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(LucideIcons.arrowLeft, color: AcadexColors.ink),
-                      onPressed: () {
-                        if (context.canPop()) {
-                          context.pop();
-                        } else {
-                          context.go('/dashboard');
-                        }
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Announcements',
-                            style: AcadexTypography.heading2(color: AcadexColors.ink),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            isAdmin
-                                ? 'Manage and publish institutional broadcasts'
-                                : 'Official announcements and notices for you',
-                            style: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (isAdmin)
-                      AcadexButton(
-                        label: 'Create Announcement',
-                        icon: LucideIcons.plus,
-                        size: AcadexButtonSize.md,
-                        onPressed: () => context.push('/announcements/create'),
-                      ),
-                  ],
-                ),
-              ),
-
-              // Admin filter tabs
-              if (isAdmin)
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AcadexColors.surface,
-                    borderRadius: AcadexRadius.borderRadiusMd,
-                    border: Border.all(color: AcadexColors.hairline),
-                  ),
-                  child: TabBar(
-                    controller: _tabController,
-                    indicatorColor: AcadexColors.primary,
-                    indicatorWeight: 2.5,
-                    labelColor: AcadexColors.primary,
-                    unselectedLabelColor: AcadexColors.inkSecondary,
-                    labelStyle: AcadexTypography.caption(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.bold),
-                    unselectedLabelStyle: AcadexTypography.caption(color: AcadexColors.inkSecondary),
-                    tabs: const [
-                      Tab(text: 'All (Admin)'),
-                      Tab(text: 'Published'),
-                      Tab(text: 'Drafts'),
-                      Tab(text: 'My Feed'),
-                    ],
-                  ),
-                ),
-
-              // Content Area
-              Expanded(
-                child: isAdmin
-                    ? TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildAdminList(null),
-                          _buildAdminList(AnnouncementStatus.published),
-                          _buildAdminList(AnnouncementStatus.draft),
-                          _buildUserFeed(),
-                        ],
-                      )
-                    : _buildUserFeed(),
-              ),
-            ],
-          ),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(LucideIcons.arrowLeft, color: AcadexColors.ink),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/dashboard');
+            }
+          },
         ),
+        title: Text(
+          'Announcements',
+          style: AcadexTypography.heading2(color: AcadexColors.ink),
+        ),
+        actions: [
+          if (canAuthor)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: AcadexButton(
+                label: 'Create Announcement',
+                icon: LucideIcons.plus,
+                size: AcadexButtonSize.sm,
+                onPressed: () => context.push('/announcements/create'),
+              ),
+            ),
+        ],
+        bottom: isAdmin
+            ? TabBar(
+                controller: _tabController,
+                indicatorColor: AcadexColors.primary,
+                indicatorWeight: 2.5,
+                labelColor: AcadexColors.primary,
+                unselectedLabelColor: AcadexColors.inkSecondary,
+                labelStyle: AcadexTypography.caption(color: AcadexColors.primary)
+                    .copyWith(fontWeight: FontWeight.bold),
+                unselectedLabelStyle:
+                    AcadexTypography.caption(color: AcadexColors.inkSecondary),
+                tabs: const [
+                  Tab(text: 'All (Admin)'),
+                  Tab(text: 'Published'),
+                  Tab(text: 'Drafts'),
+                  Tab(text: 'My Feed'),
+                ],
+              )
+            : null,
       ),
+      body: isAdmin
+          ? TabBarView(
+              controller: _tabController,
+              children: [
+                _buildAdminList(null),
+                _buildAdminList(AnnouncementStatus.published),
+                _buildAdminList(AnnouncementStatus.draft),
+                _buildUserFeed(),
+              ],
+            )
+          : _buildUserFeed(),
     );
   }
 
@@ -406,8 +371,17 @@ class _AdminAnnouncementCard extends StatelessWidget {
       case AnnouncementStatus.published:
         statusColor = AcadexColors.success;
         break;
+      case AnnouncementStatus.scheduled:
+        statusColor = AcadexColors.primary;
+        break;
       case AnnouncementStatus.draft:
         statusColor = AcadexColors.warning;
+        break;
+      case AnnouncementStatus.expired:
+        statusColor = AcadexColors.inkMuted;
+        break;
+      case AnnouncementStatus.cancelled:
+        statusColor = AcadexColors.error;
         break;
       case AnnouncementStatus.archived:
         statusColor = AcadexColors.inkSecondary;
@@ -434,7 +408,10 @@ class _AdminAnnouncementCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Top Badges Row
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -448,7 +425,6 @@ class _AdminAnnouncementCard extends StatelessWidget {
                       style: AcadexTypography.caption(color: statusColor).copyWith(fontWeight: FontWeight.bold),
                     ),
                   ),
-                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
@@ -462,7 +438,6 @@ class _AdminAnnouncementCard extends StatelessWidget {
                     ),
                   ),
                   if (announcement.isPinned) ...[
-                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -479,7 +454,6 @@ class _AdminAnnouncementCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                  const Spacer(),
                   Text(
                     DateFormat('d MMM, h:mm a').format(announcement.createdAt),
                     style: AcadexTypography.caption(color: AcadexColors.inkSecondary),
@@ -603,7 +577,10 @@ class _UserAnnouncementCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Top tags
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -617,7 +594,6 @@ class _UserAnnouncementCard extends StatelessWidget {
                     ),
                   ),
                   if (announcement.isPinned) ...[
-                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -634,7 +610,6 @@ class _UserAnnouncementCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                  const Spacer(),
                   Text(
                     DateFormat('d MMM, h:mm a').format(announcement.publishedAt ?? announcement.publishAt),
                     style: AcadexTypography.caption(color: AcadexColors.inkSecondary),

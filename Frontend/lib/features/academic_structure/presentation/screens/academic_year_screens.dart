@@ -487,9 +487,9 @@ class _AcademicYearFormScreenState extends ConsumerState<AcademicYearFormScreen>
     final dateFormat = DateFormat('yyyy-MM-dd');
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),

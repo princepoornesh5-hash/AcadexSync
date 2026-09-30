@@ -38,6 +38,7 @@ router.put(
 );
 router.post('/:id/publish', asyncHandler(AnnouncementController.publishAnnouncement));
 router.post('/:id/archive', asyncHandler(AnnouncementController.archiveAnnouncement));
+router.post('/:id/cancel', asyncHandler(AnnouncementController.cancelAnnouncement));
 router.delete('/:id', asyncHandler(AnnouncementController.deleteAnnouncement));
 
 export const announcementRouter = router;

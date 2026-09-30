@@ -343,12 +343,23 @@ class _AnnouncementDetailScreenState extends ConsumerState<AnnouncementDetailScr
                           ),
                         ] else if (isPublished) ...[
                           OutlinedButton.icon(
+                            icon: const Icon(LucideIcons.ban, size: 16, color: AcadexColors.error),
+                            label: const Text('Cancel'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AcadexColors.error,
+                              side: const BorderSide(color: AcadexColors.hairline),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            ),
+                            onPressed: _isProcessing ? null : () => _cancel(announcement),
+                          ),
+                          const SizedBox(width: 10),
+                          OutlinedButton.icon(
                             icon: const Icon(LucideIcons.archive, size: 16),
                             label: const Text('Archive Announcement'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AcadexColors.inkSecondary,
                               side: const BorderSide(color: AcadexColors.hairline),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             ),
                             onPressed: _isProcessing ? null : () => _archive(announcement),
                           ),
@@ -406,6 +417,30 @@ class _AnnouncementDetailScreenState extends ConsumerState<AnnouncementDetailScr
           context,
           e,
           fallbackMessage: 'Failed to archive announcement',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  Future<void> _cancel(AnnouncementModel announcement) async {
+    setState(() => _isProcessing = true);
+    try {
+      await ref.read(announcementCreationProvider.notifier).cancelAnnouncement(announcement.id);
+      ref.invalidate(announcementByIdProvider(announcement.id));
+      if (mounted) {
+        AcadexSnackBar.showSuccess(
+          context,
+          'Announcement cancelled successfully!',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AcadexSnackBar.showError(
+          context,
+          e,
+          fallbackMessage: 'Failed to cancel announcement',
         );
       }
     } finally {

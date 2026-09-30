@@ -104,14 +104,7 @@ class ApiNotificationRepository implements NotificationRepository {
       final data = response.data;
       if (data != null && data['success'] == true && data['data'] != null) {
         final map = data['data'] as Map<String, dynamic>;
-        return NotificationPreferences(
-          attendanceAlerts: map['attendance'] ?? true,
-          academicUpdates: map['academic'] ?? true,
-          announcements: map['announcements'] ?? true,
-          notesUploaded: map['notes'] ?? true,
-          certificateUpdates: map['certificates'] ?? true,
-          generalNotifications: map['system'] ?? true,
-        );
+        return NotificationPreferences.fromJson(map);
       }
       return null;
     } catch (e) {
@@ -124,12 +117,7 @@ class ApiNotificationRepository implements NotificationRepository {
     try {
       await _apiClient.dio.put(
         '/notifications/preferences',
-        data: {
-          'notes': prefs.notesUploaded,
-          'attendance': prefs.attendanceAlerts,
-          'timetable': true,
-          'pushEnabled': true,
-        },
+        data: prefs.toJson(),
       );
     } catch (e) {
       // Non-blocking update error handling
@@ -196,7 +184,21 @@ class ApiNotificationRepository implements NotificationRepository {
 
   @override
   Future<void> markAsUnread(String id, String userId) async {
-    // Backend notifications are authoritative; markAsUnread is not supported on backend
+    try {
+      await _apiClient.dio.patch('/notifications/$id/unread');
+      _updateStreamController.add(null);
+    } catch (e) {
+      // Handle or log error
+    }
+  }
+
+  Future<void> archiveNotification(String id) async {
+    try {
+      await _apiClient.dio.patch('/notifications/$id/archive');
+      _updateStreamController.add(null);
+    } catch (e) {
+      // Handle or log error
+    }
   }
 
   @override
@@ -211,8 +213,12 @@ class ApiNotificationRepository implements NotificationRepository {
 
   @override
   Future<void> deleteNotification(String id, String userId) async {
-    // Soft/local delete if needed
-    _updateStreamController.add(null);
+    try {
+      await _apiClient.dio.delete('/notifications/$id');
+      _updateStreamController.add(null);
+    } catch (e) {
+      // Handle or log error
+    }
   }
 
   @override
@@ -314,6 +320,21 @@ class ApiNotificationRepository implements NotificationRepository {
       throw Exception(data?['message'] ?? 'Failed to archive announcement');
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to archive announcement');
+    }
+  }
+
+  /// Cancels a scheduled or published announcement
+  Future<AnnouncementModel> cancelAnnouncement(String id) async {
+    try {
+      final response = await _apiClient.dio.post('/announcements/$id/cancel');
+      final data = response.data;
+      if (data != null && data['success'] == true && data['data'] != null) {
+        _updateStreamController.add(null);
+        return AnnouncementModel.fromJson(data['data'] as Map<String, dynamic>);
+      }
+      throw Exception(data?['message'] ?? 'Failed to cancel announcement');
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to cancel announcement');
     }
   }
 

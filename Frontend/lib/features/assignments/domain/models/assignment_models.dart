@@ -43,7 +43,8 @@ enum AssignmentType {
 enum AssignmentStatus {
   draft,
   published,
-  closed;
+  closed,
+  archived;
 
   String get label {
     switch (this) {
@@ -53,6 +54,8 @@ enum AssignmentStatus {
         return 'Published';
       case AssignmentStatus.closed:
         return 'Closed';
+      case AssignmentStatus.archived:
+        return 'Archived';
     }
   }
 
@@ -64,6 +67,8 @@ enum AssignmentStatus {
         return AssignmentStatus.published;
       case 'CLOSED':
         return AssignmentStatus.closed;
+      case 'ARCHIVED':
+        return AssignmentStatus.archived;
       case 'DRAFT':
       default:
         return AssignmentStatus.draft;
@@ -73,15 +78,24 @@ enum AssignmentStatus {
 
 enum StudentTaskStatus {
   pending,
+  draft,
+  submitted,
   completed,
+  resubmitted,
   overdue;
 
   String get label {
     switch (this) {
       case StudentTaskStatus.pending:
         return 'Pending';
+      case StudentTaskStatus.draft:
+        return 'Draft';
+      case StudentTaskStatus.submitted:
+        return 'Submitted';
       case StudentTaskStatus.completed:
         return 'Completed';
+      case StudentTaskStatus.resubmitted:
+        return 'Resubmitted';
       case StudentTaskStatus.overdue:
         return 'Overdue';
     }
@@ -91,6 +105,12 @@ enum StudentTaskStatus {
     if (val == null) return StudentTaskStatus.pending;
     final upper = val.trim().toUpperCase();
     switch (upper) {
+      case 'DRAFT':
+        return StudentTaskStatus.draft;
+      case 'SUBMITTED':
+        return StudentTaskStatus.submitted;
+      case 'RESUBMITTED':
+        return StudentTaskStatus.resubmitted;
       case 'COMPLETED':
         return StudentTaskStatus.completed;
       case 'OVERDUE':
@@ -104,12 +124,15 @@ enum StudentTaskStatus {
 
 enum FacultyReviewStatus {
   notReviewed,
+  underReview,
   reviewed;
 
   String get label {
     switch (this) {
       case FacultyReviewStatus.notReviewed:
         return 'Review Pending';
+      case FacultyReviewStatus.underReview:
+        return 'Under Review';
       case FacultyReviewStatus.reviewed:
         return 'Reviewed';
     }
@@ -119,12 +142,192 @@ enum FacultyReviewStatus {
     if (val == null) return FacultyReviewStatus.notReviewed;
     final upper = val.trim().toUpperCase();
     switch (upper) {
+      case 'UNDER_REVIEW':
+        return FacultyReviewStatus.underReview;
       case 'REVIEWED':
         return FacultyReviewStatus.reviewed;
       case 'NOT_REVIEWED':
       default:
         return FacultyReviewStatus.notReviewed;
     }
+  }
+}
+
+class SubmissionAttachmentModel {
+  final String fileId;
+  final String name;
+  final String url;
+  final String? fileType;
+  final int? fileSize;
+  final String? uploadedAt;
+
+  const SubmissionAttachmentModel({
+    required this.fileId,
+    required this.name,
+    required this.url,
+    this.fileType,
+    this.fileSize,
+    this.uploadedAt,
+  });
+
+  factory SubmissionAttachmentModel.fromJson(Map<String, dynamic> json) {
+    return SubmissionAttachmentModel(
+      fileId: json['fileId']?.toString() ?? '',
+      name: json['name']?.toString() ?? 'Attachment',
+      url: json['url']?.toString() ?? '',
+      fileType: json['fileType']?.toString(),
+      fileSize: json['fileSize'] is num ? (json['fileSize'] as num).toInt() : null,
+      uploadedAt: json['uploadedAt']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'fileId': fileId,
+    'name': name,
+    'url': url,
+    if (fileType != null) 'fileType': fileType,
+    if (fileSize != null) 'fileSize': fileSize,
+    if (uploadedAt != null) 'uploadedAt': uploadedAt,
+  };
+}
+
+class SubmissionHistoryModel {
+  final int version;
+  final String? textResponse;
+  final List<SubmissionAttachmentModel> attachments;
+  final DateTime? submittedAt;
+  final bool isLate;
+
+  const SubmissionHistoryModel({
+    required this.version,
+    this.textResponse,
+    required this.attachments,
+    this.submittedAt,
+    this.isLate = false,
+  });
+
+  factory SubmissionHistoryModel.fromJson(Map<String, dynamic> json) {
+    final rawAtts = json['attachments'];
+    List<SubmissionAttachmentModel> atts = [];
+    if (rawAtts is List) {
+      atts = rawAtts
+          .whereType<Map<String, dynamic>>()
+          .map((a) => SubmissionAttachmentModel.fromJson(a))
+          .toList();
+    }
+    return SubmissionHistoryModel(
+      version: json['version'] is num ? (json['version'] as num).toInt() : 1,
+      textResponse: json['textResponse']?.toString(),
+      attachments: atts,
+      submittedAt: json['submittedAt'] != null ? DateTime.tryParse(json['submittedAt'].toString()) : null,
+      isLate: json['isLate'] == true,
+    );
+  }
+}
+
+class SubmissionModel {
+  final String id;
+  final String assignmentId;
+  final String studentId;
+  final StudentTaskStatus status;
+  final String? textResponse;
+  final List<SubmissionAttachmentModel> attachments;
+  final DateTime? submittedAt;
+  final bool isLate;
+  final int version;
+  final List<SubmissionHistoryModel> submissionHistory;
+  final FacultyReviewStatus reviewStatus;
+  final double? marks;
+  final String? feedback;
+  final DateTime? reviewedAt;
+  final String? reviewedBy;
+
+  const SubmissionModel({
+    required this.id,
+    required this.assignmentId,
+    required this.studentId,
+    required this.status,
+    this.textResponse,
+    required this.attachments,
+    this.submittedAt,
+    this.isLate = false,
+    this.version = 1,
+    required this.submissionHistory,
+    required this.reviewStatus,
+    this.marks,
+    this.feedback,
+    this.reviewedAt,
+    this.reviewedBy,
+  });
+
+  factory SubmissionModel.fromJson(Map<String, dynamic> json) {
+    final rawAtts = json['attachments'];
+    List<SubmissionAttachmentModel> atts = [];
+    if (rawAtts is List) {
+      atts = rawAtts
+          .whereType<Map<String, dynamic>>()
+          .map((a) => SubmissionAttachmentModel.fromJson(a))
+          .toList();
+    }
+
+    final rawHist = json['submissionHistory'];
+    List<SubmissionHistoryModel> hist = [];
+    if (rawHist is List) {
+      hist = rawHist
+          .whereType<Map<String, dynamic>>()
+          .map((h) => SubmissionHistoryModel.fromJson(h))
+          .toList();
+    }
+
+    return SubmissionModel(
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      assignmentId: json['assignmentId']?.toString() ?? '',
+      studentId: json['studentId']?.toString() ?? '',
+      status: StudentTaskStatus.fromString(json['status']?.toString()),
+      textResponse: json['textResponse']?.toString(),
+      attachments: atts,
+      submittedAt: json['submittedAt'] != null ? DateTime.tryParse(json['submittedAt'].toString()) : null,
+      isLate: json['isLate'] == true,
+      version: json['version'] is num ? (json['version'] as num).toInt() : 1,
+      submissionHistory: hist,
+      reviewStatus: FacultyReviewStatus.fromString(json['reviewStatus']?.toString()),
+      marks: json['marks'] is num ? (json['marks'] as num).toDouble() : null,
+      feedback: json['feedback']?.toString(),
+      reviewedAt: json['reviewedAt'] != null ? DateTime.tryParse(json['reviewedAt'].toString()) : null,
+      reviewedBy: json['reviewedBy']?.toString(),
+    );
+  }
+}
+
+class SubmissionUploadAuthModel {
+  final String signature;
+  final int expire;
+  final String token;
+  final String publicKey;
+  final String uploadEndpoint;
+  final String folder;
+  final String fileName;
+
+  const SubmissionUploadAuthModel({
+    required this.signature,
+    required this.expire,
+    required this.token,
+    required this.publicKey,
+    required this.uploadEndpoint,
+    required this.folder,
+    required this.fileName,
+  });
+
+  factory SubmissionUploadAuthModel.fromJson(Map<String, dynamic> json) {
+    return SubmissionUploadAuthModel(
+      signature: json['signature']?.toString() ?? '',
+      expire: json['expire'] is num ? (json['expire'] as num).toInt() : 0,
+      token: json['token']?.toString() ?? '',
+      publicKey: json['publicKey']?.toString() ?? '',
+      uploadEndpoint: json['uploadEndpoint']?.toString() ?? '',
+      folder: json['folder']?.toString() ?? '',
+      fileName: json['fileName']?.toString() ?? '',
+    );
   }
 }
 
@@ -167,7 +370,7 @@ class AssignmentModel {
   final String courseId;
   final String academicYearId;
   final String semesterId;
-  final String sectionId;
+  final String? sectionId;
   final String subjectId;
   final String facultyId;
   final String? facultyAssignmentId;
@@ -207,7 +410,7 @@ class AssignmentModel {
     required this.courseId,
     required this.academicYearId,
     required this.semesterId,
-    required this.sectionId,
+    this.sectionId,
     required this.subjectId,
     required this.facultyId,
     this.facultyAssignmentId,
@@ -285,7 +488,7 @@ class AssignmentModel {
       courseId: (json['courseId'] is Map ? json['courseId']['_id'] : json['courseId'])?.toString() ?? '',
       academicYearId: (json['academicYearId'] is Map ? json['academicYearId']['_id'] : json['academicYearId'])?.toString() ?? '',
       semesterId: (json['semesterId'] is Map ? json['semesterId']['_id'] : json['semesterId'])?.toString() ?? '',
-      sectionId: (json['sectionId'] is Map ? json['sectionId']['_id'] : json['sectionId'])?.toString() ?? '',
+      sectionId: (json['sectionId'] is Map ? json['sectionId']['_id'] : json['sectionId'])?.toString(),
       subjectId: (json['subjectId'] is Map ? json['subjectId']['_id'] : json['subjectId'])?.toString() ?? '',
       facultyId: (json['facultyId'] is Map ? json['facultyId']['_id'] : json['facultyId'])?.toString() ?? '',
       facultyAssignmentId: json['facultyAssignmentId']?.toString(),
@@ -325,7 +528,7 @@ class AssignmentModel {
       'courseId': courseId,
       'academicYearId': academicYearId,
       'semesterId': semesterId,
-      'sectionId': sectionId,
+      if (sectionId != null) 'sectionId': sectionId,
       'subjectId': subjectId,
       'facultyId': facultyId,
       if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
@@ -345,6 +548,8 @@ class AssignmentModel {
       if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
     };
   }
+
+  bool get isPastDue => DateTime.now().isAfter(dueDateTime);
 }
 
 class StudentAssignmentActivityModel {
@@ -355,8 +560,15 @@ class StudentAssignmentActivityModel {
   final DateTime? completedAt;
   final bool isLate;
   final FacultyReviewStatus reviewStatus;
-  final int? marks;
+  final double? marks;
   final int maximumMarks;
+  final String? submissionId;
+  final String? textResponse;
+  final List<SubmissionAttachmentModel> attachments;
+  final DateTime? submittedAt;
+  final int version;
+  final List<SubmissionHistoryModel> submissionHistory;
+  final String? feedback;
 
   const StudentAssignmentActivityModel({
     required this.studentId,
@@ -368,9 +580,34 @@ class StudentAssignmentActivityModel {
     required this.reviewStatus,
     this.marks,
     required this.maximumMarks,
+    this.submissionId,
+    this.textResponse,
+    this.attachments = const [],
+    this.submittedAt,
+    this.version = 1,
+    this.submissionHistory = const [],
+    this.feedback,
   });
 
   factory StudentAssignmentActivityModel.fromJson(Map<String, dynamic> json, int maxMarks) {
+    final rawAtts = json['attachments'];
+    List<SubmissionAttachmentModel> atts = [];
+    if (rawAtts is List) {
+      atts = rawAtts
+          .whereType<Map<String, dynamic>>()
+          .map((a) => SubmissionAttachmentModel.fromJson(a))
+          .toList();
+    }
+
+    final rawHist = json['submissionHistory'];
+    List<SubmissionHistoryModel> hist = [];
+    if (rawHist is List) {
+      hist = rawHist
+          .whereType<Map<String, dynamic>>()
+          .map((h) => SubmissionHistoryModel.fromJson(h))
+          .toList();
+    }
+
     return StudentAssignmentActivityModel(
       studentId: json['studentId']?.toString() ?? '',
       studentName: json['studentName']?.toString() ?? 'Student',
@@ -379,14 +616,22 @@ class StudentAssignmentActivityModel {
       completedAt: json['completedAt'] != null ? DateTime.tryParse(json['completedAt'].toString()) : null,
       isLate: json['isLate'] == true,
       reviewStatus: FacultyReviewStatus.fromString(json['reviewStatus']?.toString()),
-      marks: json['marks'] is num ? (json['marks'] as num).toInt() : null,
+      marks: json['marks'] is num ? (json['marks'] as num).toDouble() : null,
       maximumMarks: json['maximumMarks'] is num ? (json['maximumMarks'] as num).toInt() : maxMarks,
+      submissionId: json['submissionId']?.toString(),
+      textResponse: json['textResponse']?.toString(),
+      attachments: atts,
+      submittedAt: json['submittedAt'] != null ? DateTime.tryParse(json['submittedAt'].toString()) : null,
+      version: json['version'] is num ? (json['version'] as num).toInt() : 1,
+      submissionHistory: hist,
+      feedback: json['feedback']?.toString(),
     );
   }
 
   StudentAssignmentActivityModel copyWith({
-    int? marks,
+    double? marks,
     FacultyReviewStatus? reviewStatus,
+    String? feedback,
   }) {
     return StudentAssignmentActivityModel(
       studentId: studentId,
@@ -398,6 +643,13 @@ class StudentAssignmentActivityModel {
       reviewStatus: reviewStatus ?? this.reviewStatus,
       marks: marks ?? this.marks,
       maximumMarks: maximumMarks,
+      submissionId: submissionId,
+      textResponse: textResponse,
+      attachments: attachments,
+      submittedAt: submittedAt,
+      version: version,
+      submissionHistory: submissionHistory,
+      feedback: feedback ?? this.feedback,
     );
   }
 }

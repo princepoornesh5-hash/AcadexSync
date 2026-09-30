@@ -278,6 +278,7 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
     timetableCount: timetableCount,
     currentAcademicYear: currentAcademicYear,
     isSectionEnabled: isSectionEnabled,
+    termHelper: terminology,
   );
   milestones.add(
     SetupMilestone.fromDecision(
@@ -312,6 +313,7 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
     timetableCount: timetableCount,
     currentAcademicYear: currentAcademicYear,
     isSectionEnabled: isSectionEnabled,
+    termHelper: terminology,
   );
   milestones.add(
     SetupMilestone.fromDecision(
@@ -344,6 +346,7 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
     timetableCount: timetableCount,
     currentAcademicYear: currentAcademicYear,
     isSectionEnabled: isSectionEnabled,
+    termHelper: terminology,
   );
   milestones.add(
     SetupMilestone.fromDecision(
@@ -379,6 +382,7 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
       timetableCount: timetableCount,
       currentAcademicYear: currentAcademicYear,
       isSectionEnabled: isSectionEnabled,
+    termHelper: terminology,
     );
     milestones.add(
       SetupMilestone.fromDecision(
@@ -414,6 +418,7 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
     timetableCount: timetableCount,
     currentAcademicYear: currentAcademicYear,
     isSectionEnabled: isSectionEnabled,
+    termHelper: terminology,
   );
   milestones.add(
     SetupMilestone.fromDecision(
@@ -448,6 +453,7 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
     timetableCount: timetableCount,
     currentAcademicYear: currentAcademicYear,
     isSectionEnabled: isSectionEnabled,
+    termHelper: terminology,
   );
   milestones.add(
     SetupMilestone.fromDecision(
@@ -480,6 +486,7 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
     timetableCount: timetableCount,
     currentAcademicYear: currentAcademicYear,
     isSectionEnabled: isSectionEnabled,
+    termHelper: terminology,
   );
   milestones.add(
     SetupMilestone.fromDecision(
@@ -512,6 +519,7 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
     timetableCount: timetableCount,
     currentAcademicYear: currentAcademicYear,
     isSectionEnabled: isSectionEnabled,
+    termHelper: terminology,
   );
   milestones.add(
     SetupMilestone.fromDecision(

@@ -69,6 +69,9 @@ class FakeRequestsRepository implements RequestsRepository {
     required String description,
     AcademicContextModel? academicContext,
     RequestDetailsModel? details,
+    String? status,
+    String? relatedEntityType,
+    String? relatedEntityId,
   }) async {
     return RequestModel(
       id: 'req_created_1',
@@ -81,10 +84,73 @@ class FakeRequestsRepository implements RequestsRepository {
       requestType: requestType,
       title: title ?? 'Leave Request',
       description: description,
-      status: RequestStatus.submitted,
+      status: status != null ? RequestStatusExtension.fromString(status) : RequestStatus.submitted,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
+  }
+
+  @override
+  Future<RequestModel> submitRequest(String id) async {
+    final existing = await getRequestById(id);
+    return existing ??
+        RequestModel(
+          id: id,
+          requestId: 'REQ-2026-0001',
+          collegeId: 'college_01',
+          requesterUserId: 'user_student_1',
+          requesterName: 'Student Ravi',
+          requesterRole: AppRole.student,
+          targetRole: AppRole.hod,
+          requestType: RequestType.leave,
+          title: 'Leave Request',
+          description: 'Submitted',
+          status: RequestStatus.submitted,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+  }
+
+  @override
+  Future<RequestModel> cancelRequest(String id, {String? reason}) async {
+    final existing = await getRequestById(id);
+    return existing ??
+        RequestModel(
+          id: id,
+          requestId: 'REQ-2026-0001',
+          collegeId: 'college_01',
+          requesterUserId: 'user_student_1',
+          requesterName: 'Student Ravi',
+          requesterRole: AppRole.student,
+          targetRole: AppRole.hod,
+          requestType: RequestType.leave,
+          title: 'Leave Request',
+          description: reason ?? 'Cancelled',
+          status: RequestStatus.cancelled,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+  }
+
+  @override
+  Future<RequestModel> startReview(String id) async {
+    final existing = await getRequestById(id);
+    return existing ??
+        RequestModel(
+          id: id,
+          requestId: 'REQ-2026-0001',
+          collegeId: 'college_01',
+          requesterUserId: 'user_student_1',
+          requesterName: 'Student Ravi',
+          requesterRole: AppRole.student,
+          targetRole: AppRole.hod,
+          requestType: RequestType.leave,
+          title: 'Leave Request',
+          description: 'Under review',
+          status: RequestStatus.inReview,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
   }
 
   @override

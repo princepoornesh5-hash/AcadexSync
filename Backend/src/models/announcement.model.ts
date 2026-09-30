@@ -100,5 +100,6 @@ const AnnouncementSchema = new Schema<IAnnouncement>(
 AnnouncementSchema.index({ collegeId: 1, status: 1, publishAt: -1 });
 AnnouncementSchema.index({ collegeId: 1, audienceScope: 1, status: 1 });
 AnnouncementSchema.index({ departmentId: 1, status: 1, publishAt: -1 });
+AnnouncementSchema.index({ collegeId: 1, expiresAt: 1 });
 
 export const Announcement = mongoose.model<IAnnouncement>('Announcement', AnnouncementSchema);

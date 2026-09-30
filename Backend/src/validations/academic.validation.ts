@@ -165,7 +165,7 @@ export const subjectQuerySchema = z.object({
 // Student Enrollment Validation
 export const enrollStudentSchema = z.object({
   studentId: z.string().min(1, 'studentId is required'),
-  sectionId: z.string().min(1, 'sectionId is required'),
+  sectionId: z.string().optional().nullable(),
   courseId: z.string().optional(),
   academicYearId: z.string().optional(),
   semesterId: z.string().optional(),
@@ -176,7 +176,7 @@ export const enrollStudentSchema = z.object({
 
 export const updateEnrollmentSchema = z.object({
   status: z.enum(['active', 'completed', 'withdrawn', 'transferred', 'inactive']).optional(),
-  sectionId: z.string().optional(),
+  sectionId: z.string().optional().nullable(),
   cohort: z.string().optional(),
   academicStage: z.string().optional(),
 });
@@ -198,7 +198,7 @@ export const enrollmentQuerySchema = z.object({
 export const createFacultyAssignmentSchema = z.object({
   facultyId: z.string().min(1, 'facultyId is required'),
   subjectId: z.string().min(1, 'subjectId is required'),
-  sectionId: z.string().min(1, 'sectionId is required'),
+  sectionId: z.string().optional().nullable(),
   courseId: z.string().optional(),
   semesterId: z.string().optional(),
   academicYearId: z.string().optional(),
@@ -208,14 +208,23 @@ export const createFacultyAssignmentSchema = z.object({
   roomId: z.string().optional(),
   maxStudents: z.number().int().positive().optional(),
   assignmentType: z.string().optional().default('lecture'),
+  status: z.enum(['active', 'inactive', 'ended', 'archived']).optional(),
 });
 
 export const updateFacultyAssignmentSchema = z.object({
+  facultyId: z.string().optional(),
+  subjectId: z.string().optional(),
+  sectionId: z.string().optional().nullable(),
+  courseId: z.string().optional(),
+  semesterId: z.string().optional(),
+  academicYearId: z.string().optional(),
+  departmentId: z.string().optional(),
   roomId: z.string().optional(),
   maxStudents: z.number().int().positive().optional(),
   assignmentType: z.string().optional(),
   cohort: z.string().optional(),
   academicStage: z.string().optional(),
+  status: z.enum(['active', 'inactive', 'ended', 'archived']).optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -230,5 +239,6 @@ export const facultyAssignmentQuerySchema = z.object({
   sectionId: z.string().optional(),
   subjectId: z.string().optional(),
   academicYearId: z.string().optional(),
+  status: z.enum(['active', 'inactive', 'ended', 'archived']).optional(),
   isActive: z.string().optional().transform((v) => (v === 'true' ? true : v === 'false' ? false : undefined)),
 });

@@ -42,10 +42,11 @@ class _SubjectListScreenState extends ConsumerState<SubjectListScreen> {
   String? _selectedAcademicYearId;
   String? _selectedSemesterId;
 
-  void _navigateCreateSubject(BuildContext context, List<Course> courses, List<Semester> semesters) {
+  void _navigateCreateSubject(BuildContext context, List<Course> courses, List<Semester> semesters, TerminologyHelper terminology) {
     final check = AcademicPrerequisiteGuard.checkSubjectPrerequisites(
       courses: courses,
       semesters: semesters,
+      termHelper: terminology,
     );
     if (!check.isSatisfied) {
       AcademicPrerequisiteGuard.showBlockerDialog(context, check);
@@ -78,20 +79,28 @@ class _SubjectListScreenState extends ConsumerState<SubjectListScreen> {
       return true;
     }).toList();
 
+    final terminology = ref.watch(terminologyProvider);
+    final subLabel = terminology.subjectName();
+    final subsLabel = terminology.subjectName(plural: true);
+    final progLabel = terminology.programName();
+    final progsLabel = terminology.programName(plural: true);
+    final semLabel = terminology.semesterName();
+    final semsLabel = terminology.semesterName(plural: true);
+
     return AcadexPageContainer(
       scrollable: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AcadexPageHeader(
-            title: "Subjects",
+          AcadexPageHeader(
+            title: subsLabel,
             subtitle: "Manage course curriculum, lecture credits, and subject specifications.",
           ),
           AcadexSearchFilterBar(
-            searchHint: "Search subjects by code or name...",
+            searchHint: "Search ${subsLabel.toLowerCase()} by code or name...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
-            onActionTap: () => _navigateCreateSubject(context, coursesList, semsList),
-            actionLabel: "Create Subject",
+            onActionTap: () => _navigateCreateSubject(context, coursesList, semsList, terminology),
+            actionLabel: "+ Create $subLabel",
           ),
           const SizedBox(height: 10),
 
@@ -117,7 +126,7 @@ class _SubjectListScreenState extends ConsumerState<SubjectListScreen> {
                       isDense: true,
                       dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                       items: [
-                        const DropdownMenuItem(value: 'all', child: Text('All Courses', style: TextStyle(fontSize: 12))),
+                        DropdownMenuItem(value: 'all', child: Text('All $progsLabel', style: const TextStyle(fontSize: 12))),
                         for (final c in coursesList)
                           DropdownMenuItem(value: c.id, child: Text("${c.name} (${c.code})", style: const TextStyle(fontSize: 12))),
                       ],
@@ -175,7 +184,7 @@ class _SubjectListScreenState extends ConsumerState<SubjectListScreen> {
                       isDense: true,
                       dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                       items: [
-                        const DropdownMenuItem(value: 'all', child: Text('All Semesters', style: TextStyle(fontSize: 12))),
+                        DropdownMenuItem(value: 'all', child: Text('All $semsLabel', style: const TextStyle(fontSize: 12))),
                         for (final s in availableSems)
                           DropdownMenuItem(value: s.id, child: Text("${s.name} (Term ${s.number})", style: const TextStyle(fontSize: 12))),
                       ],
@@ -247,32 +256,36 @@ class _SubjectListScreenState extends ConsumerState<SubjectListScreen> {
                   if (coursesList.isEmpty) {
                     return FreshDepartmentSetupCard(
                       currentStep: AcademicSetupStep.course,
-                      actionLabel: "Create Course",
+                      actionLabel: "Create $progLabel",
                       onAction: () => context.push('/academics/courses/new'),
-                      customMessage: "No courses found. Create a course first before creating subjects.",
+                      customMessage: "No ${progsLabel.toLowerCase()} found. Create a ${progLabel.toLowerCase()} first before creating ${subsLabel.toLowerCase()}.",
+                      termHelper: terminology,
                     );
                   }
                   if (semsList.isEmpty) {
                     return FreshDepartmentSetupCard(
                       currentStep: AcademicSetupStep.semester,
-                      actionLabel: "Create Semester",
+                      actionLabel: "Create $semLabel",
                       onAction: () => context.push('/academics/semesters/new'),
-                      customMessage: "No semesters found. Create semesters for your courses before creating subjects.",
+                      customMessage: "No ${semsLabel.toLowerCase()} found. Create ${semsLabel.toLowerCase()} for your ${progsLabel.toLowerCase()} before creating ${subsLabel.toLowerCase()}.",
+                      termHelper: terminology,
                     );
                   }
-                  if (sectionsAsync.valueOrNull?.isEmpty ?? false) {
+                  if (terminology.isSectionEnabled && (sectionsAsync.valueOrNull?.isEmpty ?? false)) {
                     return FreshDepartmentSetupCard(
                       currentStep: AcademicSetupStep.section,
-                      actionLabel: "Create Section",
+                      actionLabel: "Create ${terminology.sectionName()}",
                       onAction: () => context.push('/academics/sections/new'),
-                      customMessage: "Create sections before creating curriculum subjects.",
+                      customMessage: "Create ${terminology.sectionName(plural: true).toLowerCase()} before creating curriculum ${subsLabel.toLowerCase()}.",
+                      termHelper: terminology,
                     );
                   }
                   return FreshDepartmentSetupCard(
                     currentStep: AcademicSetupStep.subject,
-                    actionLabel: "Create First Subject",
+                    actionLabel: "Create First $subLabel",
                     onAction: () => context.push('/academics/subjects/new'),
-                    customMessage: "Semesters and sections are configured! Create curriculum subjects with credits.",
+                    customMessage: "$semsLabel configured! Create curriculum ${subsLabel.toLowerCase()} with credits.",
+                    termHelper: terminology,
                   );
                 }
 
@@ -431,7 +444,7 @@ class _SubjectListScreenState extends ConsumerState<SubjectListScreen> {
                 }
 
                 return AcadexDataTable(
-                  columns: const ["Subject Name", "Code", "Course", "Semester", "Credits", "Type", "Status", "Action"],
+                  columns: ["Subject Name", "Code", progLabel, semLabel, "Credits", "Type", "Status", "Action"],
                   rows: filtered.map((s) {
                     final courseLabel = coursesMap[s.courseId] ?? (s.courseId.isNotEmpty ? 'Course' : '—');
                     final semLabel = semsMap[s.semesterId] ?? (s.semesterId.isNotEmpty ? 'Semester' : '—');
@@ -598,13 +611,16 @@ class _SubjectFormScreenState extends ConsumerState<SubjectFormScreen> {
         final createdSubject = await ref.read(subjectsProvider.notifier).addSubject(subject);
 
         if (mounted) {
-          AcadexSnackBar.showSuccess(context, 'Subject created successfully.');
+          final terminology = ref.read(terminologyProvider);
+          final subLabel = terminology.subjectName();
+
+          AcadexSnackBar.showSuccess(context, '$subLabel created successfully.');
 
           SetupContinuationDialog.show(
             context,
-            title: 'Subject Created Successfully',
+            title: '$subLabel Created Successfully',
             entityName: '${createdSubject.name} (${createdSubject.code})',
-            message: 'Subject added to syllabus. Continue to allocate faculty teaching assignments.',
+            message: '$subLabel added to syllabus. Continue to allocate faculty teaching assignments.',
             primaryActionLabel: 'Continue to Faculty Assignment',
             onContinue: () {
               final queryParts = <String>[];
@@ -626,7 +642,9 @@ class _SubjectFormScreenState extends ConsumerState<SubjectFormScreen> {
         }
 
         if (mounted) {
-          AcadexSnackBar.showSuccess(context, 'Subject updated successfully.');
+          final terminology = ref.read(terminologyProvider);
+          final subLabel = terminology.subjectName();
+          AcadexSnackBar.showSuccess(context, '$subLabel updated successfully.');
           context.safePop(fallbackRoute: '/academics/subjects');
         }
       }
@@ -645,6 +663,8 @@ class _SubjectFormScreenState extends ConsumerState<SubjectFormScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final coursesAsync = ref.watch(coursesProvider);
     final semestersAsync = ref.watch(semestersProvider);
+    final terminology = ref.watch(terminologyProvider);
+    final subLabel = terminology.subjectName();
     final authState = ref.watch(authProvider);
     final user = authState is AuthAuthenticated ? authState.user : null;
     final isHod = user?.role == AppRole.hod;
@@ -654,16 +674,16 @@ class _SubjectFormScreenState extends ConsumerState<SubjectFormScreen> {
         (userDepartmentId.isNotEmpty ? userDepartmentId : 'Assigned Department');
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
           onPressed: () => context.safePop(fallbackRoute: '/academics/subjects'),
         ),
         title: Text(
-          isEdit ? "Edit Subject" : "Create Subject",
+          isEdit ? "Edit $subLabel" : "Create $subLabel",
           style: AcadexTypography.heading2(
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ).copyWith(fontSize: 18),
@@ -676,9 +696,9 @@ class _SubjectFormScreenState extends ConsumerState<SubjectFormScreen> {
               child: Form(
                 key: _formKey,
                 child: AcadexFormCard(
-                  title: isEdit ? "Edit Subject" : "Subject Details",
+                  title: isEdit ? "Edit $subLabel" : "$subLabel Details",
                   isSaving: _isLoading,
-                  saveLabel: isEdit ? "Update Subject" : "Create Subject",
+                  saveLabel: isEdit ? "Update $subLabel" : "Create $subLabel",
                   onCancel: () => context.safePop(fallbackRoute: '/academics/subjects'),
                   onSave: _save,
                   child: Column(
@@ -770,7 +790,7 @@ class _SubjectFormScreenState extends ConsumerState<SubjectFormScreen> {
 
                             // Semester Selector (Filtered to selected course)
                             AcadexFormField(
-                              label: "Semester / Academic Term *",
+                              label: "${ref.watch(terminologyProvider).semesterName()} *",
                               child: semestersAsync.when(
                                 loading: () => const LinearProgressIndicator(),
                                 error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error)),
@@ -803,12 +823,16 @@ class _SubjectFormScreenState extends ConsumerState<SubjectFormScreen> {
                                     );
                                   }
 
+                                  final effectiveSemesterValue = availableSems.any((s) => s.id == _selectedSemesterId)
+                                      ? _selectedSemesterId
+                                      : null;
+
                                   return DropdownButtonFormField<String>(
-                                    key: ValueKey('subject_sem_dropdown_$_selectedCourseId'),
+                                    key: ValueKey('subject_sem_dropdown_${_selectedCourseId}_$effectiveSemesterValue'),
                                     dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                                    value: _selectedSemesterId,
-                                    decoration: const InputDecoration(hintText: "Select Semester Term"),
-                                    validator: (v) => v == null ? 'Semester is required' : null,
+                                    value: effectiveSemesterValue,
+                                    decoration: InputDecoration(hintText: "Select ${ref.watch(terminologyProvider).semesterName()}"),
+                                    validator: (v) => v == null ? '${ref.watch(terminologyProvider).semesterName()} is required' : null,
                                     items: availableSems.map((s) => DropdownMenuItem(value: s.id, child: Text("${s.name} (Term ${s.number})"))).toList(),
                                     onChanged: isEdit
                                         ? null

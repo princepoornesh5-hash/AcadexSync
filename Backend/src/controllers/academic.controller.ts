@@ -272,6 +272,26 @@ export class AcademicController {
     return ApiResponse.success(res, null, 'Student enrollment withdrawn successfully');
   });
 
+  static getStudentCurrentEnrollment = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const targetStudentId = req.params.studentId || req.user.id;
+    const result = await AcademicService.getStudentCurrentEnrollment(targetStudentId, req.user);
+    return ApiResponse.success(res, result);
+  });
+
+  static listFacultyStudents = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const { sectionId, subjectId, semesterId, page, limit } = req.query;
+    const result = await AcademicService.listFacultyStudents(req.user, {
+      sectionId: typeof sectionId === 'string' ? sectionId : undefined,
+      subjectId: typeof subjectId === 'string' ? subjectId : undefined,
+      semesterId: typeof semesterId === 'string' ? semesterId : undefined,
+      page: page ? parseInt(page as string, 10) : 1,
+      limit: limit ? parseInt(limit as string, 10) : 50,
+    });
+    return ApiResponse.success(res, result);
+  });
+
   // =========================================================================
   // 7. ACADEMIC TREE & LOOKUPS
   // =========================================================================
@@ -322,8 +342,8 @@ export class AcademicController {
 
   static deleteFacultyAssignment = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user) throw ApiError.unauthorized('User not authenticated');
-    await AcademicService.deleteFacultyAssignment(req.params.id, req.user);
-    return ApiResponse.success(res, null, 'Faculty assignment deleted successfully');
+    const result = await AcademicService.deleteFacultyAssignment(req.params.id, req.user);
+    return ApiResponse.success(res, null, result.message);
   });
 
   static getFacultyWorkload = asyncHandler(async (req: Request, res: Response) => {

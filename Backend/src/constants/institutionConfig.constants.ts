@@ -50,6 +50,107 @@ export interface IAttendanceAlertsConfig {
   absenceAlertsEnabled: boolean;
 }
 
+export interface IAssessmentComponentConfig {
+  key: string;
+  name: string;
+  maxMarks: number;
+  weightage?: number;
+  enabled: boolean;
+  appliesTo: 'all' | 'theory' | 'practical';
+  visibleToStudents: boolean;
+}
+
+export interface IAssessmentConfig {
+  enabled: boolean;
+  maxTotalMarks: number;
+  allowDecimals: boolean;
+  requireHodApproval: boolean;
+  components: IAssessmentComponentConfig[];
+}
+
+export const DEFAULT_ASSESSMENT_COMPONENTS: IAssessmentComponentConfig[] = [
+  {
+    key: 'internalTest',
+    name: 'Internal Test',
+    maxMarks: 20,
+    weightage: 40,
+    enabled: true,
+    appliesTo: 'all',
+    visibleToStudents: true,
+  },
+  {
+    key: 'assignment',
+    name: 'Assignment',
+    maxMarks: 10,
+    weightage: 20,
+    enabled: true,
+    appliesTo: 'all',
+    visibleToStudents: true,
+  },
+  {
+    key: 'lab',
+    name: 'Lab / Practical',
+    maxMarks: 10,
+    weightage: 20,
+    enabled: true,
+    appliesTo: 'practical',
+    visibleToStudents: true,
+  },
+  {
+    key: 'record',
+    name: 'Record Book',
+    maxMarks: 5,
+    weightage: 10,
+    enabled: true,
+    appliesTo: 'practical',
+    visibleToStudents: true,
+  },
+  {
+    key: 'viva',
+    name: 'Viva Voce',
+    maxMarks: 5,
+    weightage: 10,
+    enabled: true,
+    appliesTo: 'practical',
+    visibleToStudents: true,
+  },
+  {
+    key: 'quiz',
+    name: 'Quiz',
+    maxMarks: 5,
+    weightage: 10,
+    enabled: false,
+    appliesTo: 'all',
+    visibleToStudents: true,
+  },
+  {
+    key: 'seminar',
+    name: 'Seminar',
+    maxMarks: 10,
+    weightage: 10,
+    enabled: false,
+    appliesTo: 'all',
+    visibleToStudents: true,
+  },
+  {
+    key: 'project',
+    name: 'Project Work',
+    maxMarks: 15,
+    weightage: 20,
+    enabled: false,
+    appliesTo: 'all',
+    visibleToStudents: true,
+  },
+];
+
+export const DEFAULT_ASSESSMENT_CONFIG: IAssessmentConfig = {
+  enabled: true,
+  maxTotalMarks: 50,
+  allowDecimals: false,
+  requireHodApproval: false,
+  components: DEFAULT_ASSESSMENT_COMPONENTS,
+};
+
 export const DEFAULT_ATTENDANCE_ALERTS: IAttendanceAlertsConfig = {
   enabled: true,
   warningPercentage: 75,

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/models/assignment_models.dart';
 
-String getMarkEmoji(int marks, int maximumMarks) {
+String getMarkEmoji(num marks, int maximumMarks) {
   if (maximumMarks <= 0) return '🙂';
   final ratio = marks / maximumMarks;
   if (ratio >= 1.0) return '🏆';
@@ -16,8 +17,9 @@ String getMarkEmoji(int marks, int maximumMarks) {
 class MarksSliderRow extends StatefulWidget {
   final StudentAssignmentActivityModel student;
   final int maximumMarks;
-  final int? currentMark;
-  final ValueChanged<int> onMarkChanged;
+  final double? currentMark;
+  final ValueChanged<double> onMarkChanged;
+  final VoidCallback? onInspect;
 
   const MarksSliderRow({
     super.key,
@@ -25,6 +27,7 @@ class MarksSliderRow extends StatefulWidget {
     required this.maximumMarks,
     required this.currentMark,
     required this.onMarkChanged,
+    this.onInspect,
   });
 
   @override
@@ -69,17 +72,16 @@ class _MarksSliderRowState extends State<MarksSliderRow>
   }
 
   void _onChanged(double val) {
-    final intVal = val.round();
     setState(() {
-      _currentValue = intVal.toDouble();
+      _currentValue = val;
     });
-    widget.onMarkChanged(intVal);
+    widget.onMarkChanged(val);
   }
 
   void _setFullMarks() {
-    final full = widget.maximumMarks;
+    final full = widget.maximumMarks.toDouble();
     setState(() {
-      _currentValue = full.toDouble();
+      _currentValue = full;
     });
     widget.onMarkChanged(full);
   }
@@ -109,78 +111,131 @@ class _MarksSliderRowState extends State<MarksSliderRow>
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Single Header line: Name, review state badge, and Full Marks action
+          // Top Row: Student Name and Roll Number spanning full width
           Row(
             children: [
               Expanded(
-                child: Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        widget.student.studentName,
-                        style: AcadexTypography.title(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (widget.student.rollNumber != null) ...[
-                      const SizedBox(width: 6),
-                      Text(
-                        '(${widget.student.rollNumber})',
-                        style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: isReviewed
-                            ? const Color(0xFFDCFCE7)
-                            : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        isReviewed ? '✓ Reviewed' : '✓ Done',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: isReviewed ? const Color(0xFF15803D) : AcadexColors.inkSecondary,
-                        ),
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  widget.student.studentName,
+                  style: AcadexTypography.title(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // Compact shortcut [ Full Marks ]
-              InkWell(
-                onTap: _setFullMarks,
-                borderRadius: BorderRadius.circular(4),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.primaryTint,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: AcadexColors.primary.withOpacity(0.3),
-                      width: 0.8,
-                    ),
-                  ),
-                  child: const Text(
-                    'Full Marks',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AcadexColors.primary,
-                    ),
+              if (widget.student.rollNumber != null) ...[
+                const SizedBox(width: 6),
+                Text(
+                  '(${widget.student.rollNumber})',
+                  style: AcadexTypography.caption(
+                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                   ),
                 ),
-              ),
+              ],
             ],
           ),
+          const SizedBox(height: 6),
+
+          // Second Row: Badges (left) and Action buttons (right)
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                  decoration: BoxDecoration(
+                    color: isReviewed
+                        ? const Color(0xFFDCFCE7)
+                        : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    isReviewed ? '✓ Reviewed' : '✓ Done',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: isReviewed ? const Color(0xFF15803D) : AcadexColors.inkSecondary,
+                    ),
+                  ),
+                ),
+                if (widget.student.isLate) ...[
+                  const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'LATE',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFDC2626),
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 12),
+                if (widget.onInspect != null) ...[
+                  InkWell(
+                    onTap: widget.onInspect,
+                    borderRadius: BorderRadius.circular(4),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                      margin: const EdgeInsets.only(right: 4),
+                      decoration: BoxDecoration(
+                        color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(LucideIcons.fileText, size: 10, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                          const SizedBox(width: 2.5),
+                          Text(
+                            'Review',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+                InkWell(
+                  onTap: _setFullMarks,
+                  borderRadius: BorderRadius.circular(4),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                    decoration: BoxDecoration(
+                      color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.primaryTint,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'Full Marks',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: AcadexColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+
 
           const SizedBox(height: 2),
 

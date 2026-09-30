@@ -36,4 +36,53 @@ abstract class AssignmentsRepository {
     String id,
     List<Map<String, dynamic>> marks,
   );
+
+  Future<AssignmentModel> updateAssignment({
+    required String id,
+    String? title,
+    String? description,
+    List<String>? questions,
+    AssignmentType? assignmentType,
+    String? dueDate,
+    String? dueTime,
+    int? maximumMarks,
+    List<AssignmentAttachmentModel>? attachments,
+  });
+
+  Future<AssignmentModel> archiveAssignment(String id);
+
+  Future<void> deleteAssignment(String id);
+
+  Future<SubmissionModel?> getMySubmission(String assignmentId);
+
+  Future<SubmissionUploadAuthModel> getSubmissionUploadAuth({
+    required String assignmentId,
+    required String fileName,
+    required String fileType,
+  });
+
+  Future<SubmissionModel> saveDraftSubmission({
+    required String assignmentId,
+    String? textResponse,
+    List<SubmissionAttachmentModel>? attachments,
+  });
+
+  Future<SubmissionModel> submitAssignment({
+    required String assignmentId,
+    String? textResponse,
+    List<SubmissionAttachmentModel>? attachments,
+  });
+
+  Future<String> getSubmissionFileDownloadUrl({
+    required String submissionId,
+    required String fileId,
+  });
+
+  Future<SubmissionModel> reviewSingleSubmission({
+    required String assignmentId,
+    required String studentId,
+    double? marks,
+    String? feedback,
+    FacultyReviewStatus? reviewStatus,
+  });
 }

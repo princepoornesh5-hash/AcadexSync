@@ -11,11 +11,21 @@ export interface IUser extends Document {
   passwordHash?: string;
   collegeId?: mongoose.Types.ObjectId;
   departmentId?: mongoose.Types.ObjectId;
+  /**
+   * @deprecated Legacy convenience cache. Authoritative academic placement is StudentEnrollment.
+   */
   courseId?: mongoose.Types.ObjectId;
+  /**
+   * @deprecated Legacy convenience cache. Authoritative academic placement is StudentEnrollment.
+   */
   sectionId?: mongoose.Types.ObjectId;
+  /**
+   * @deprecated Legacy convenience cache. Authoritative academic placement is StudentEnrollment.
+   */
   semesterId?: mongoose.Types.ObjectId;
   firebaseUid?: string;
   profilePictureUrl?: string;
+  bio?: string;
   accountStatus: AccountStatus;
   activationStatus: string;
   lastLoginAt?: Date;
@@ -31,7 +41,6 @@ const UserSchema = new Schema<IUser>(
       sparse: true,
       uppercase: true,
       trim: true,
-      default: null,
     },
     name: { type: String, required: true, trim: true },
     email: {
@@ -61,6 +70,7 @@ const UserSchema = new Schema<IUser>(
     semesterId: { type: Schema.Types.ObjectId, ref: 'Semester', default: null },
     firebaseUid: { type: String, default: null, sparse: true, index: true },
     profilePictureUrl: { type: String, default: null },
+    bio: { type: String, default: '', trim: true, maxlength: 500 },
     accountStatus: {
       type: String,
       enum: Object.values(AccountStatus),

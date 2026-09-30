@@ -6,7 +6,7 @@ export interface IAttendanceRecordItem {
   studentId: mongoose.Types.ObjectId;
   studentName: string;
   rollNumber: string;
-  sectionId: mongoose.Types.ObjectId;
+  sectionId?: mongoose.Types.ObjectId | null;
   status: AttendanceStatus;
   oldStatus?: AttendanceStatus;
   lastModified?: Date;
@@ -23,8 +23,8 @@ export interface IAttendanceSession extends Document {
   facultyId: mongoose.Types.ObjectId;
   subjectId: mongoose.Types.ObjectId;
   subjectName: string;
-  sectionId: mongoose.Types.ObjectId;
-  sectionName: string;
+  sectionId?: mongoose.Types.ObjectId | null;
+  sectionName?: string | null;
   timeSlot: string;
   date: Date;
   records: IAttendanceRecordItem[];
@@ -48,7 +48,7 @@ const AttendanceRecordItemSchema = new Schema<IAttendanceRecordItem>(
     studentId: { type: Schema.Types.ObjectId, ref: 'Student', required: true },
     studentName: { type: String, required: true },
     rollNumber: { type: String, required: true },
-    sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: true },
+    sectionId: { type: Schema.Types.ObjectId, ref: 'Section', default: null },
     status: {
       type: String,
       enum: Object.values(AttendanceStatus),
@@ -76,8 +76,8 @@ const AttendanceSessionSchema = new Schema<IAttendanceSession>(
     facultyId: { type: Schema.Types.ObjectId, ref: 'Faculty', required: true, index: true },
     subjectId: { type: Schema.Types.ObjectId, ref: 'Subject', required: true, index: true },
     subjectName: { type: String, required: true },
-    sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: true, index: true },
-    sectionName: { type: String, required: true },
+    sectionId: { type: Schema.Types.ObjectId, ref: 'Section', default: null, index: true },
+    sectionName: { type: String, default: null },
     timeSlot: { type: String, required: true },
     date: { type: Date, required: true, index: true },
     records: [AttendanceRecordItemSchema],
@@ -111,7 +111,7 @@ const AttendanceSessionSchema = new Schema<IAttendanceSession>(
         if (ret.semesterId) ret.semesterId = ret.semesterId.toString();
         ret.facultyId = ret.facultyId?.toString();
         ret.subjectId = ret.subjectId?.toString();
-        ret.sectionId = ret.sectionId?.toString();
+        if (ret.sectionId) ret.sectionId = ret.sectionId.toString();
         if (ret.timetableId) ret.timetableId = ret.timetableId.toString();
         if (ret.facultyAssignmentId) ret.facultyAssignmentId = ret.facultyAssignmentId.toString();
         delete ret.__v;
@@ -123,7 +123,11 @@ const AttendanceSessionSchema = new Schema<IAttendanceSession>(
 
 AttendanceSessionSchema.index(
   { collegeId: 1, sectionId: 1, subjectId: 1, date: 1, timeSlot: 1 },
-  { unique: true }
+  { unique: true, partialFilterExpression: { sectionId: { $type: 'objectId' } } }
+);
+AttendanceSessionSchema.index(
+  { collegeId: 1, semesterId: 1, subjectId: 1, date: 1, timeSlot: 1 },
+  { unique: true, partialFilterExpression: { sectionId: null } }
 );
 AttendanceSessionSchema.index({ collegeId: 1, facultyId: 1, date: 1 });
 AttendanceSessionSchema.index({ collegeId: 1, date: 1 });

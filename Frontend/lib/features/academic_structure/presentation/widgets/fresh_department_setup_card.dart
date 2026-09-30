@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../institution_config/presentation/providers/institution_config_providers.dart';
 
 enum AcademicSetupStep {
   course,
@@ -20,6 +21,7 @@ class FreshDepartmentSetupCard extends StatelessWidget {
   final VoidCallback onAction;
   final String actionLabel;
   final String? customMessage;
+  final TerminologyHelper? termHelper;
 
   const FreshDepartmentSetupCard({
     super.key,
@@ -27,11 +29,23 @@ class FreshDepartmentSetupCard extends StatelessWidget {
     required this.onAction,
     required this.actionLabel,
     this.customMessage,
+    this.termHelper,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isSecEnabled = termHelper?.isSectionEnabled ?? true;
+    final progName = termHelper?.programName() ?? "Course";
+    final progsName = termHelper?.programName(plural: true) ?? "Courses";
+    final ayName = termHelper?.academicYearName() ?? "Academic Year";
+    final semName = termHelper?.semesterName() ?? "Semester";
+    final semsName = termHelper?.semesterName(plural: true) ?? "Semesters";
+    final secName = termHelper?.sectionName() ?? "Section";
+    final secsName = termHelper?.sectionName(plural: true) ?? "Sections";
+    final subsName = termHelper?.subjectName(plural: true) ?? "Subjects";
+
+    int currentStepNum = 1;
 
     return Center(
       child: SingleChildScrollView(
@@ -102,19 +116,21 @@ class FreshDepartmentSetupCard extends StatelessWidget {
 
               Text(
                 customMessage ??
-                    "Establish your department's core academic hierarchy before sections, subjects, faculty allocations, and timetable can be created.",
+                    "Recommended next steps: Establish core academic foundations in whatever order makes sense. When a dependent operation needs missing data, you will be guided directly.",
                 style: AcadexTypography.body(
                   color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              // 8-Step Guided Roadmap
+              // TIER 1: CORE FOUNDATION (REQUIRED)
+              _buildTierHeader("CORE FOUNDATIONS", "Required", AcadexColors.primary, isDark),
+              const SizedBox(height: 8),
               _buildStepItem(
                 context,
-                stepNumber: 1,
-                title: "Course",
-                description: "Define courses offered by your department (e.g. Diploma in Computer Engineering).",
+                stepNumber: currentStepNum++,
+                title: progName,
+                description: "Define $progsName offered by your department.",
                 icon: LucideIcons.graduationCap,
                 isCompleted: currentStep.index > AcademicSetupStep.course.index,
                 isCurrent: currentStep == AcademicSetupStep.course,
@@ -123,8 +139,8 @@ class FreshDepartmentSetupCard extends StatelessWidget {
               const SizedBox(height: 10),
               _buildStepItem(
                 context,
-                stepNumber: 2,
-                title: "Academic Year",
+                stepNumber: currentStepNum++,
+                title: ayName,
                 description: "Associate or confirm the active institutional academic calendar (e.g. 2026–27).",
                 icon: LucideIcons.calendar,
                 isCompleted: currentStep.index > AcademicSetupStep.academicYear.index,
@@ -134,31 +150,37 @@ class FreshDepartmentSetupCard extends StatelessWidget {
               const SizedBox(height: 10),
               _buildStepItem(
                 context,
-                stepNumber: 3,
-                title: "Semesters",
-                description: "Create sequential semesters for your course and academic year.",
+                stepNumber: currentStepNum++,
+                title: semsName,
+                description: "Create sequential ${semsName.toLowerCase()} for your ${progName.toLowerCase()} and ${ayName.toLowerCase()}.",
                 icon: LucideIcons.calendarClock,
                 isCompleted: currentStep.index > AcademicSetupStep.semester.index,
                 isCurrent: currentStep == AcademicSetupStep.semester,
                 isDark: isDark,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 18),
+
+              // TIER 2: OPERATIONAL MODULES (RECOMMENDED)
+              _buildTierHeader("OPERATIONAL MODULES", "Recommended", AcadexColors.accentGreen, isDark),
+              const SizedBox(height: 8),
+              if (isSecEnabled) ...[
+                _buildStepItem(
+                  context,
+                  stepNumber: currentStepNum++,
+                  title: secsName,
+                  description: "Create student cohorts (e.g. $secName A, B) with seat capacity under each ${semName.toLowerCase()}.",
+                  icon: LucideIcons.users,
+                  isCompleted: currentStep.index > AcademicSetupStep.section.index,
+                  isCurrent: currentStep == AcademicSetupStep.section,
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 10),
+              ],
               _buildStepItem(
                 context,
-                stepNumber: 4,
-                title: "Sections",
-                description: "Create student cohorts (e.g. Section A, B) with seat capacity under each semester.",
-                icon: LucideIcons.users,
-                isCompleted: currentStep.index > AcademicSetupStep.section.index,
-                isCurrent: currentStep == AcademicSetupStep.section,
-                isDark: isDark,
-              ),
-              const SizedBox(height: 10),
-              _buildStepItem(
-                context,
-                stepNumber: 5,
-                title: "Subjects",
-                description: "Add theory and lab curriculum subjects with credit hours for your semesters.",
+                stepNumber: currentStepNum++,
+                title: subsName,
+                description: "Add theory and lab curriculum ${subsName.toLowerCase()} with credit hours for your ${semsName.toLowerCase()}.",
                 icon: LucideIcons.bookOpen,
                 isCompleted: currentStep.index > AcademicSetupStep.subject.index,
                 isCurrent: currentStep == AcademicSetupStep.subject,
@@ -167,9 +189,9 @@ class FreshDepartmentSetupCard extends StatelessWidget {
               const SizedBox(height: 10),
               _buildStepItem(
                 context,
-                stepNumber: 6,
+                stepNumber: currentStepNum++,
                 title: "Assign Faculty",
-                description: "Assign qualified faculty to teach subjects for each section and academic context.",
+                description: "Assign qualified faculty to teach ${subsName.toLowerCase()} for each ${isSecEnabled ? '$secName and ' : ''}academic context.",
                 icon: LucideIcons.userCheck,
                 isCompleted: currentStep.index > AcademicSetupStep.facultyAssignment.index,
                 isCurrent: currentStep == AcademicSetupStep.facultyAssignment,
@@ -178,18 +200,22 @@ class FreshDepartmentSetupCard extends StatelessWidget {
               const SizedBox(height: 10),
               _buildStepItem(
                 context,
-                stepNumber: 7,
+                stepNumber: currentStepNum++,
                 title: "Enroll Students",
-                description: "Connect existing department students to academic sections to build the authoritative roster.",
+                description: "Connect existing department students to academic ${isSecEnabled ? secsName.toLowerCase() : semsName.toLowerCase()} to build the authoritative roster.",
                 icon: LucideIcons.userPlus,
                 isCompleted: currentStep.index > AcademicSetupStep.studentEnrollment.index,
                 isCurrent: currentStep == AcademicSetupStep.studentEnrollment,
                 isDark: isDark,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 18),
+
+              // TIER 3: SCHEDULING & RESOURCES (OPTIONAL)
+              _buildTierHeader("SCHEDULING & RESOURCES", "Optional", AcadexColors.inkMuted, isDark),
+              const SizedBox(height: 8),
               _buildStepItem(
                 context,
-                stepNumber: 8,
+                stepNumber: currentStepNum++,
                 title: "Create Timetable",
                 description: "Schedule teaching periods using validated faculty assignments and room allocations.",
                 icon: LucideIcons.calendarClock,
@@ -200,7 +226,7 @@ class FreshDepartmentSetupCard extends StatelessWidget {
               const SizedBox(height: 10),
               _buildStepItem(
                 context,
-                stepNumber: 9,
+                stepNumber: currentStepNum++,
                 title: "Publish Timetable",
                 description: "Validate conflict-free department schedule and publish authoritative periods for faculty and students.",
                 icon: LucideIcons.send,
@@ -232,6 +258,38 @@ class FreshDepartmentSetupCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTierHeader(String title, String badge, Color badgeColor, bool isDark) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: badgeColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            badge,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: badgeColor,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

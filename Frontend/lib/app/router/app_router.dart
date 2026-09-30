@@ -47,7 +47,10 @@ import '../../features/academic_structure/presentation/screens/my_assignments_sc
 import '../../features/academic_structure/presentation/screens/student_profile_screen.dart';
 import '../../features/academic_structure/presentation/screens/academic_structure_home_screen.dart';
 import '../../features/academic_structure/presentation/screens/department_setup_screen.dart';
+import '../../features/academic_structure/presentation/screens/room_screens.dart';
 import '../../features/institution_config/presentation/screens/institution_configuration_screen.dart';
+import '../../features/institution_config/domain/models/institution_config_models.dart';
+import '../../features/institution_config/presentation/providers/institution_config_providers.dart';
 
 import '../../features/attendance/presentation/screens/attendance_dashboard_router.dart';
 import '../../features/attendance/presentation/screens/mark_attendance_screen.dart';
@@ -74,7 +77,8 @@ import '../../features/attendance/presentation/providers/attendance_alert_provid
 import '../../features/users/presentation/screens/user_directory_screen.dart';
 import '../../features/users/presentation/screens/user_detail_screen.dart';
 import '../../features/users/presentation/screens/user_form_screen.dart';
-import '../../features/users/presentation/screens/profile_screen.dart';
+import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 
 import '../../features/settings/presentation/screens/settings_home_screen.dart';
 import '../../features/settings/presentation/screens/appearance_screen.dart';
@@ -98,6 +102,19 @@ import '../../features/assignments/presentation/screens/assignments_screen.dart'
 import '../../features/assignments/presentation/screens/new_assignment_screen.dart';
 import '../../features/assignments/presentation/screens/assignment_detail_screen.dart';
 import '../../features/assignments/presentation/screens/assignment_activity_screen.dart';
+import '../../features/assessments/presentation/screens/internal_marks_screen.dart';
+import '../../features/assessments/presentation/screens/student_internal_marks_screen.dart';
+
+import '../../features/practicals/presentation/screens/practical_sessions_list_screen.dart';
+import '../../features/practicals/presentation/screens/new_practical_session_screen.dart';
+import '../../features/practicals/presentation/screens/practical_session_detail_screen.dart';
+import '../../features/practicals/presentation/screens/student_practicals_screen.dart';
+
+import '../../features/academic_records/presentation/screens/student_academic_history_screen.dart';
+import '../../features/academic_records/presentation/screens/academic_record_detail_screen.dart';
+import '../../features/academic_records/presentation/screens/department_academic_records_screen.dart';
+import '../../features/academic_results/presentation/screens/admin_results_dashboard_screen.dart';
+import '../../features/academic_results/presentation/screens/student_official_result_screen.dart';
 
 import '../../features/timetable/presentation/screens/timetable_dashboard_screen.dart';
 import '../../features/timetable/presentation/screens/timetable_management_screen.dart';
@@ -123,26 +140,41 @@ import '../../features/dashboard/presentation/widgets/acadex_app_bar.dart';
 import '../../features/calendar/presentation/screens/calendar_screen.dart';
 import '../theme/app_theme.dart';
 
-String _getRouteTitle(String route) {
-  if (route == '/academics/courses/new') return 'Create Course';
-  if (route.endsWith('/edit') && route.contains('/courses')) return 'Edit Course';
-  if (RegExp(r'^/academics/courses/[^/]+$').hasMatch(route)) return 'Course Details';
-  if (route.startsWith('/academics/courses')) return 'Courses';
+String _getRouteTitle(String route, [TerminologyHelper? terminology]) {
+  final courseTerm = terminology?.label(AcademicConcept.program) ?? 'Course';
+  final coursesTerm = terminology?.label(AcademicConcept.program, plural: true) ?? 'Courses';
+  final semTerm = terminology?.label(AcademicConcept.semester) ?? 'Semester';
+  final semsTerm = terminology?.label(AcademicConcept.semester, plural: true) ?? 'Semesters';
+  final secTerm = terminology?.label(AcademicConcept.section) ?? 'Section';
+  final secsTerm = terminology?.label(AcademicConcept.section, plural: true) ?? 'Sections';
+  final subTerm = terminology?.label(AcademicConcept.subject) ?? 'Subject';
+  final subsTerm = terminology?.label(AcademicConcept.subject, plural: true) ?? 'Subjects';
+  final roomTerm = terminology?.label(AcademicConcept.room) ?? 'Room';
+  final roomsTerm = terminology?.label(AcademicConcept.room, plural: true) ?? 'Rooms';
 
-  if (route == '/academics/semesters/new') return 'Create Semester';
-  if (route.endsWith('/edit') && route.contains('/semesters')) return 'Edit Semester';
-  if (RegExp(r'^/academics/semesters/[^/]+$').hasMatch(route)) return 'Semester Details';
-  if (route.startsWith('/academics/semesters')) return 'Semesters';
+  if (route == '/academics/courses/new') return 'Create $courseTerm';
+  if (route.endsWith('/edit') && route.contains('/courses')) return 'Edit $courseTerm';
+  if (RegExp(r'^/academics/courses/[^/]+$').hasMatch(route)) return '$courseTerm Details';
+  if (route.startsWith('/academics/courses')) return coursesTerm;
 
-  if (route == '/academics/sections/new') return 'Create Section';
-  if (route.endsWith('/edit') && route.contains('/sections')) return 'Edit Section';
-  if (RegExp(r'^/academics/sections/[^/]+$').hasMatch(route)) return 'Section Details';
-  if (route.startsWith('/academics/sections')) return 'Sections';
+  if (route == '/academics/semesters/new') return 'Create $semTerm';
+  if (route.endsWith('/edit') && route.contains('/semesters')) return 'Edit $semTerm';
+  if (RegExp(r'^/academics/semesters/[^/]+$').hasMatch(route)) return '$semTerm Details';
+  if (route.startsWith('/academics/semesters')) return semsTerm;
 
-  if (route == '/academics/subjects/new') return 'Create Subject';
-  if (route.endsWith('/edit') && route.contains('/subjects')) return 'Edit Subject';
-  if (RegExp(r'^/academics/subjects/[^/]+$').hasMatch(route)) return 'Subject Details';
-  if (route.startsWith('/academics/subjects')) return 'Subjects';
+  if (route == '/academics/sections/new') return 'Create $secTerm';
+  if (route.endsWith('/edit') && route.contains('/sections')) return 'Edit $secTerm';
+  if (RegExp(r'^/academics/sections/[^/]+$').hasMatch(route)) return '$secTerm Details';
+  if (route.startsWith('/academics/sections')) return secsTerm;
+
+  if (route == '/academics/subjects/new') return 'Create $subTerm';
+  if (route.endsWith('/edit') && route.contains('/subjects')) return 'Edit $subTerm';
+  if (RegExp(r'^/academics/subjects/[^/]+$').hasMatch(route)) return '$subTerm Details';
+  if (route.startsWith('/academics/subjects')) return subsTerm;
+
+  if (route == '/academics/rooms/new') return 'Create $roomTerm';
+  if (route.endsWith('/edit') && route.contains('/rooms')) return 'Edit $roomTerm';
+  if (route.startsWith('/academics/rooms')) return roomsTerm;
 
   if (route.startsWith('/academics/configuration')) return 'Institution Configuration';
   if (route.startsWith('/academics/academic_years')) return 'Academic Years';
@@ -157,6 +189,16 @@ String _getRouteTitle(String route) {
   if (route.startsWith('/faculty-workload')) return 'Faculty Workload';
   if (route.startsWith('/my-assignments')) return 'My Assignments';
   if (route.startsWith('/academics/students')) return 'Students';
+  if (route.startsWith('/assessments/entry')) return 'Internal Marks Entry';
+  if (route.startsWith('/assessments/my-marks')) return 'My Internal Marks';
+  if (route.startsWith('/assessments')) return 'Internal Assessments';
+  if (route == '/practicals/new') return 'Schedule Practical Session';
+  if (route == '/practicals/my-history') return 'My Practical History';
+  if (route.startsWith('/practicals')) return 'Practical Sessions';
+  if (route == '/academic-records/history') return 'My Academic History';
+  if (route.startsWith('/academic-records')) return 'Academic Records';
+  if (route.startsWith('/academic-results')) return 'Academic Results';
+  if (route.startsWith('/my-results')) return 'Official Academic Result';
   if (route.startsWith('/attendance')) return 'Attendance';
   if (route.startsWith('/timetable')) return 'Timetable';
   if (route.startsWith('/notes')) return 'Academic Notes';
@@ -215,8 +257,15 @@ class ShellWrapper extends ConsumerWidget {
       });
     }
 
-    final pageTitle = _getRouteTitle(activeRoute);
+    final terminology = ref.watch(terminologyProvider);
+    final pageTitle = _getRouteTitle(activeRoute, terminology);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final isFullscreenForm = activeRoute.endsWith('/new') ||
+        activeRoute.endsWith('/edit') ||
+        activeRoute.contains('/entry') ||
+        activeRoute.contains('/mark') ||
+        activeRoute.contains('/upload');
 
     final scaffold = Scaffold(
       backgroundColor: isDark ? const Color(0xFF0B0F19) : const Color(0xFFF8FAFC),
@@ -228,7 +277,7 @@ class ShellWrapper extends ConsumerWidget {
         onBack: () => context.safePop(fallbackRoute: homeRoute),
       ),
       drawer: isMobile ? AcadexDrawer(activeRoute: activeRoute, isModal: true) : null,
-      bottomNavigationBar: isMobile
+      bottomNavigationBar: (isMobile && !isFullscreenForm)
           ? AcadexBottomNav(
               activeRoute: activeRoute,
               onTabSelected: (route) => context.go(route),
@@ -506,6 +555,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         }
       }
 
+      // Practicals role-based route guard
+      if (loc == '/practicals' || loc == '/practicals/') {
+        if (role == AppRole.student) {
+          return '/practicals/my-history';
+        }
+      } else if (loc.startsWith('/practicals/new')) {
+        if (role == AppRole.student) {
+          return '/practicals/my-history';
+        }
+      }
+
+      // Academic Records role-based route guard
+      if (loc == '/academic-records' || loc == '/academic-records/') {
+        if (role == AppRole.student) {
+          return '/academic-records/history';
+        }
+      }
+
       return null;
     },
     routes: [
@@ -755,6 +822,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/academics/subjects/new', builder: (context, state) => SubjectFormScreen(initialCourseId: state.uri.queryParameters['courseId'], initialSemesterId: state.uri.queryParameters['semesterId'])),
       GoRoute(path: '/academics/subjects/edit/:id', builder: (context, state) => SubjectFormScreen(id: state.pathParameters['id'])),
       GoRoute(path: '/academics/subjects/:id', builder: (context, state) => SubjectDetailScreen(key: ValueKey(state.pathParameters['id']), subjectId: state.pathParameters['id']!)),
+
+      GoRoute(
+        path: '/academics/rooms',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/academics/rooms', child: RoomListScreen()),
+        ),
+      ),
+      GoRoute(path: '/academics/rooms/new', builder: (context, state) => RoomFormScreen(initialDepartmentId: state.uri.queryParameters['departmentId'])),
+      GoRoute(path: '/academics/rooms/edit/:id', builder: (context, state) => RoomFormScreen(id: state.pathParameters['id'])),
 
       GoRoute(
         path: '/academics/hods',
@@ -1102,6 +1180,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state: state,
           child: const ShellWrapper(activeRoute: '/profile', child: ProfileScreen()),
         ),
+        routes: [
+          GoRoute(
+            path: 'edit',
+            pageBuilder: (context, state) => fadeTransitionPage(
+              context: context,
+              state: state,
+              child: const ShellWrapper(activeRoute: '/profile', child: EditProfileScreen()),
+            ),
+          ),
+        ],
       ),
 
       // Settings (Primary Navigation: Instant Replacement)
@@ -1339,6 +1427,131 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+
+      // Internal Assessment & Marks module
+      GoRoute(
+        path: '/assessments',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(
+            activeRoute: '/assessments',
+            child: StudentInternalMarksScreen(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/assessments/entry',
+        builder: (context, state) {
+          final sectionId = state.uri.queryParameters['sectionId'] ?? '';
+          final subjectId = state.uri.queryParameters['subjectId'] ?? '';
+          final academicYearId = state.uri.queryParameters['academicYearId'];
+          return InternalMarksScreen(
+            sectionId: sectionId,
+            subjectId: subjectId,
+            academicYearId: academicYearId,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/assessments/my-marks',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(
+            activeRoute: '/assessments/my-marks',
+            child: StudentInternalMarksScreen(),
+          ),
+        ),
+      ),
+
+      // Labs & Practical Sessions module (Prompt 41)
+      GoRoute(
+        path: '/practicals',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(activeRoute: '/practicals', child: PracticalSessionsListScreen()),
+        ),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (context, state) => const NewPracticalSessionScreen(),
+          ),
+          GoRoute(
+            path: 'my-history',
+            pageBuilder: (context, state) => noTransitionPage(
+              context: context,
+              state: state,
+              child: const ShellWrapper(activeRoute: '/practicals/my-history', child: StudentPracticalsScreen()),
+            ),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return PracticalSessionDetailScreen(sessionId: id);
+            },
+          ),
+        ],
+      ),
+
+      // Academic Records & Student Academic History (Prompt 42)
+      GoRoute(
+        path: '/academic-records',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(
+            activeRoute: '/academic-records',
+            child: DepartmentAcademicRecordsScreen(),
+          ),
+        ),
+        routes: [
+          GoRoute(
+            path: 'history',
+            pageBuilder: (context, state) => noTransitionPage(
+              context: context,
+              state: state,
+              child: const ShellWrapper(
+                activeRoute: '/academic-records/history',
+                child: StudentAcademicHistoryScreen(),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return AcademicRecordDetailScreen(recordId: id);
+            },
+          ),
+        ],
+      ),
+
+      // Academic Results & Official Finalization Module (Prompt 44)
+      GoRoute(
+        path: '/academic-results',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(
+            activeRoute: '/academic-results',
+            child: AdminResultsDashboardScreen(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/my-results',
+        pageBuilder: (context, state) => noTransitionPage(
+          context: context,
+          state: state,
+          child: const ShellWrapper(
+            activeRoute: '/my-results',
+            child: StudentOfficialResultScreen(),
+          ),
+        ),
       ),
 
       // Placeholder route for all future modules

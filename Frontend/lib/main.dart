@@ -13,6 +13,7 @@ import 'core/observability/logger.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/auth/domain/models/auth_state.dart';
 import 'features/notifications/presentation/providers/notification_providers.dart';
+import 'core/realtime/realtime.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -141,11 +142,17 @@ class _CampusManagementAppState extends ConsumerState<CampusManagementApp> {
   StreamSubscription<RemoteMessage>? _messageSub;
   StreamSubscription<RemoteMessage>? _messageOpenedSub;
   StreamSubscription<String>? _tokenRefreshSub;
+  late final AppLifecycleListener _lifecycleListener;
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
   @override
   void initState() {
     super.initState();
+    _lifecycleListener = AppLifecycleListener(
+      onStateChange: (state) {
+        ref.read(realtimeServiceProvider).handleAppLifecycleState(state);
+      },
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupFCM();
       _setupTokenRegistration();
@@ -154,6 +161,7 @@ class _CampusManagementAppState extends ConsumerState<CampusManagementApp> {
 
   @override
   void dispose() {
+    _lifecycleListener.dispose();
     _messageSub?.cancel();
     _messageOpenedSub?.cancel();
     _tokenRefreshSub?.cancel();
@@ -286,6 +294,7 @@ class _CampusManagementAppState extends ConsumerState<CampusManagementApp> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(realtimeConnectionCoordinatorProvider);
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(

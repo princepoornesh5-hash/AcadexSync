@@ -78,6 +78,28 @@ class FakeCalendarRepository implements CalendarRepository {
     }
     throw Exception('Event not found');
   }
+
+  @override
+  Future<List<AcademicCalendarModel>> getAcademicCalendars({
+    String? academicYearId,
+    String? semesterId,
+  }) async =>
+      [];
+
+  @override
+  Future<AcademicCalendarModel> createAcademicCalendar(Map<String, dynamic> data) async =>
+      AcademicCalendarModel.fromJson(data);
+
+  @override
+  Future<WorkingDayResolution> resolveWorkingDay(
+    String date, {
+    String? semesterId,
+    String? departmentId,
+  }) async =>
+      WorkingDayResolution(date: date, isWorkingDay: true, isHoliday: false);
+
+  @override
+  Future<void> declareHoliday(Map<String, dynamic> data) async {}
 }
 
 void main() {

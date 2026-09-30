@@ -41,6 +41,7 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
   late int _periodSpan;
   late TextEditingController _roomController;
   late TextEditingController _buildingController;
+  String? _selectedRoomId;
   late TimetableDay _day;
   late int _startPeriodIndex;
 
@@ -55,6 +56,7 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     _facultyAssignmentId = entry?.facultyAssignmentId;
     _sessionType = entry?.sessionType ?? TimetableSessionType.lecture;
     _periodSpan = entry?.periodSpan ?? 1;
+    _selectedRoomId = entry?.roomId;
     _roomController = TextEditingController(text: entry?.roomNumber ?? '');
     _buildingController = TextEditingController(text: entry?.building ?? '');
     _day = entry?.dayOfWeek ?? widget.day;
@@ -81,9 +83,13 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     final isRoomEnabled = termHelper.isRoomEnabled;
     final isBuildingEnabled = termHelper.isBuildingEnabled;
 
-    // Section-scoped active faculty assignments
+    // Section-scoped or semester-scoped active faculty assignments
     final sectionAssignments = container != null
-        ? ref.watch(facultyAssignmentsBySectionProvider(container.sectionId))
+        ? (container.sectionId.isNotEmpty && container.sectionId != 'none'
+            ? ref.watch(facultyAssignmentsBySectionProvider(container.sectionId))
+            : (container.semesterId.isNotEmpty
+                ? ref.watch(facultyAssignmentsBySemesterProvider(container.semesterId))
+                : ref.watch(facultyAssignmentsBySectionProvider(container.sectionId))))
         : <FacultyAssignment>[];
 
     // Auto-resolve faculty assignment ID if not explicitly set
@@ -123,6 +129,18 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     final startTime = startPeriod?.startTime ?? '00:00';
     final endTime = endPeriod?.endTime ?? '00:00';
 
+    final roomsAsync = ref.watch(roomsProvider);
+    final allRooms = roomsAsync.valueOrNull ?? <Room>[];
+    final activeRooms = allRooms.where((r) => r.isActive).toList();
+
+    // Auto-resolve roomId from roomNumber text if not yet selected
+    if (_selectedRoomId == null && _roomController.text.trim().isNotEmpty && activeRooms.isNotEmpty) {
+      final match = activeRooms.where((r) => r.code.toUpperCase() == _roomController.text.trim().toUpperCase()).firstOrNull;
+      if (match != null) {
+        _selectedRoomId = match.id;
+      }
+    }
+
     // Calculate real-time local conflicts
     final validationErrors = _validateLocally(
       authoringState: authoringState,
@@ -134,6 +152,7 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
       facultyAssignmentId: _facultyAssignmentId,
       subjectId: _subjectId,
       facultyId: _facultyId,
+      roomId: _selectedRoomId,
       roomNumber: _roomController.text,
       existingEntryId: widget.existingEntry?.id,
       facultyMap: facultyMap,
@@ -192,7 +211,7 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                       if (container != null) ...[
                         const SizedBox(height: 2),
                         Text(
-                          '$deptName • $courseName • Sem ${container.semesterId} • Sec $sectionName',
+                          '$deptName • $courseName • Sem ${container.semesterId}${sectionName.isNotEmpty ? ' • Sec $sectionName' : ''}',
                           style: AcadexTypography.caption(
                             color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                           ),
@@ -504,18 +523,64 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                     if (isRoomEnabled) ...[
                       _buildFieldLabel('Room Number', isDark),
                       const SizedBox(height: 6),
-                      TextFormField(
-                        controller: _roomController,
-                        decoration: _buildInputDecoration(
-                          hintText: 'e.g. LH-101, Lab-2',
-                          prefixIcon: LucideIcons.doorOpen,
-                          isDark: isDark,
+                      if (activeRooms.isNotEmpty) ...[
+                        DropdownButtonFormField<String?>(
+                          isExpanded: true,
+                          value: _selectedRoomId != null && activeRooms.any((r) => r.id == _selectedRoomId)
+                              ? _selectedRoomId
+                              : null,
+                          decoration: _buildInputDecoration(
+                            hintText: 'Select Room',
+                            prefixIcon: LucideIcons.doorOpen,
+                            isDark: isDark,
+                          ),
+                          dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                          items: [
+                            const DropdownMenuItem(value: null, child: Text('Custom / Manual Entry', overflow: TextOverflow.ellipsis)),
+                            ...activeRooms.map((r) => DropdownMenuItem(
+                                  value: r.id,
+                                  child: Text('${r.code} — ${r.name} (${r.capacity} seats)', overflow: TextOverflow.ellipsis),
+                                )),
+                          ],
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedRoomId = val;
+                              if (val != null) {
+                                final picked = activeRooms.firstWhere((r) => r.id == val);
+                                _roomController.text = picked.code;
+                              }
+                            });
+                          },
                         ),
-                        style: AcadexTypography.bodyMedium(
-                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                        if (_selectedRoomId == null) ...[
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _roomController,
+                            decoration: _buildInputDecoration(
+                              hintText: 'e.g. LH-101, Lab-2',
+                              prefixIcon: LucideIcons.hash,
+                              isDark: isDark,
+                            ),
+                            style: AcadexTypography.bodyMedium(
+                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ],
+                      ] else ...[
+                        TextFormField(
+                          controller: _roomController,
+                          decoration: _buildInputDecoration(
+                            hintText: 'e.g. LH-101, Lab-2',
+                            prefixIcon: LucideIcons.doorOpen,
+                            isDark: isDark,
+                          ),
+                          style: AcadexTypography.bodyMedium(
+                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          ),
+                          onChanged: (_) => setState(() {}),
                         ),
-                        onChanged: (_) => setState(() {}),
-                      ),
+                      ],
                       if (isBuildingEnabled) const SizedBox(height: 16),
                     ],
                     if (isBuildingEnabled) ...[
@@ -535,6 +600,7 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                     ],
                   ] else ...[
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (isRoomEnabled)
                           Expanded(
@@ -543,18 +609,64 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
                               children: [
                                 _buildFieldLabel('Room Number', isDark),
                                 const SizedBox(height: 6),
-                                TextFormField(
-                                  controller: _roomController,
-                                  decoration: _buildInputDecoration(
-                                    hintText: 'e.g. LH-101, Lab-2',
-                                    prefixIcon: LucideIcons.doorOpen,
-                                    isDark: isDark,
+                                if (activeRooms.isNotEmpty) ...[
+                                  DropdownButtonFormField<String?>(
+                                    isExpanded: true,
+                                    value: _selectedRoomId != null && activeRooms.any((r) => r.id == _selectedRoomId)
+                                        ? _selectedRoomId
+                                        : null,
+                                    decoration: _buildInputDecoration(
+                                      hintText: 'Select Room',
+                                      prefixIcon: LucideIcons.doorOpen,
+                                      isDark: isDark,
+                                    ),
+                                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                    items: [
+                                      const DropdownMenuItem(value: null, child: Text('Custom / Manual Entry', overflow: TextOverflow.ellipsis)),
+                                      ...activeRooms.map((r) => DropdownMenuItem(
+                                            value: r.id,
+                                            child: Text('${r.code} — ${r.name} (${r.capacity} seats)', overflow: TextOverflow.ellipsis),
+                                          )),
+                                    ],
+                                    onChanged: (val) {
+                                      setState(() {
+                                        _selectedRoomId = val;
+                                        if (val != null) {
+                                          final picked = activeRooms.firstWhere((r) => r.id == val);
+                                          _roomController.text = picked.code;
+                                        }
+                                      });
+                                    },
                                   ),
-                                  style: AcadexTypography.bodyMedium(
-                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  if (_selectedRoomId == null) ...[
+                                    const SizedBox(height: 8),
+                                    TextFormField(
+                                      controller: _roomController,
+                                      decoration: _buildInputDecoration(
+                                        hintText: 'e.g. LH-101, Lab-2',
+                                        prefixIcon: LucideIcons.hash,
+                                        isDark: isDark,
+                                      ),
+                                      style: AcadexTypography.bodyMedium(
+                                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                      ),
+                                      onChanged: (_) => setState(() {}),
+                                    ),
+                                  ],
+                                ] else ...[
+                                  TextFormField(
+                                    controller: _roomController,
+                                    decoration: _buildInputDecoration(
+                                      hintText: 'e.g. LH-101, Lab-2',
+                                      prefixIcon: LucideIcons.doorOpen,
+                                      isDark: isDark,
+                                    ),
+                                    style: AcadexTypography.bodyMedium(
+                                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                    ),
+                                    onChanged: (_) => setState(() {}),
                                   ),
-                                  onChanged: (_) => setState(() {}),
-                                ),
+                                ],
                               ],
                             ),
                           ),
@@ -748,6 +860,7 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
     String? facultyAssignmentId,
     required String subjectId,
     required String facultyId,
+    String? roomId,
     required String roomNumber,
     String? existingEntryId,
     required Map<String, Faculty> facultyMap,
@@ -794,9 +907,12 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
       }
 
       // Room Conflict (same room booked at overlapping time on the same day)
-      if (roomNumber.trim().isNotEmpty && other.roomNumber.trim().toLowerCase() == roomNumber.trim().toLowerCase()) {
+      final sameRoom = (roomId != null && other.roomId != null && other.roomId == roomId) ||
+          (roomNumber.trim().isNotEmpty && other.roomNumber.trim().toLowerCase() == roomNumber.trim().toLowerCase());
+      if (sameRoom) {
         if (isPeriodOverlap || isTimeOverlap) {
-          errors.add('Room Conflict: Room ${roomNumber.trim()} is already booked on ${day.displayName} (${other.startTime} - ${other.endTime}).');
+          final displayRoom = roomNumber.trim().isNotEmpty ? roomNumber.trim() : 'Selected Room';
+          errors.add('Room Conflict: Room $displayRoom is already booked on ${day.displayName} (${other.startTime} - ${other.endTime}).');
         }
       }
     }
@@ -820,6 +936,7 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
         subjectId: _subjectId,
         facultyId: _facultyId,
         facultyAssignmentId: _facultyAssignmentId,
+        roomId: _selectedRoomId,
         roomNumber: _roomController.text.trim(),
         building: _buildingController.text.trim().isEmpty ? null : _buildingController.text.trim(),
         sessionType: _sessionType,
@@ -836,6 +953,7 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
         subjectId: _subjectId,
         facultyId: _facultyId,
         facultyAssignmentId: _facultyAssignmentId,
+        roomId: _selectedRoomId,
         roomNumber: _roomController.text.trim(),
         building: _buildingController.text.trim().isEmpty ? null : _buildingController.text.trim(),
         sessionType: _sessionType,

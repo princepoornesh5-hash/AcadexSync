@@ -111,6 +111,7 @@ class FacultyAssignmentsListScreen extends ConsumerWidget {
         statusBg = const Color(0xFFDCFCE7);
         break;
       case AssignmentStatus.closed:
+      case AssignmentStatus.archived:
         statusColor = isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted;
         statusBg = isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft;
         break;

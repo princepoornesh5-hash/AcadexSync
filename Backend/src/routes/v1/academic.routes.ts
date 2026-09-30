@@ -89,16 +89,20 @@ router.put('/subjects/:id', requireHodOrAbove, AcademicController.updateSubject)
 
 // Enrollments
 router.get('/enrollments', AcademicController.listEnrollments);
-router.post('/enrollments', requireFacultyOrAbove, AcademicController.enrollStudent);
+router.post('/enrollments', requireHodOrAbove, AcademicController.enrollStudent);
 router.get('/enrollments/:id', AcademicController.getEnrollmentById);
 router.patch('/enrollments/:id', requireHodOrAbove, AcademicController.updateEnrollment);
 router.delete('/enrollments/:id', requireHodOrAbove, AcademicController.deleteEnrollment);
+router.get('/students/me/current-enrollment', AcademicController.getStudentCurrentEnrollment);
+router.get('/students/:studentId/current-enrollment', AcademicController.getStudentCurrentEnrollment);
+router.get('/faculty-roster/students', requireFacultyOrAbove, AcademicController.listFacultyStudents);
 
 // Room Management (Phase 9J.1)
 router.post('/rooms', requireHodOrAbove, TimetableController.createRoom);
 router.get('/rooms', TimetableController.listRooms);
 router.get('/rooms/:id', TimetableController.getRoomById);
 router.put('/rooms/:id', requireHodOrAbove, TimetableController.updateRoom);
+router.delete('/rooms/:id', requireHodOrAbove, TimetableController.deleteRoom);
 
 // Timetable Management (Phase 9J.1)
 router.get('/students/me/timetable', TimetableController.getStudentTimetable);

@@ -200,8 +200,8 @@ class MyAssignmentsScreen extends ConsumerWidget {
                                   facultyAssignmentId: a.id,
                                   subjectId: a.subjectId,
                                   subjectName: sub?.name ?? a.subjectId,
-                                  sectionId: a.sectionId,
-                                  sectionName: sec?.name ?? a.sectionId,
+                                  sectionId: a.sectionId ?? '',
+                                  sectionName: sec?.name ?? (a.sectionId != null && a.sectionId!.isNotEmpty ? a.sectionId! : 'No Section'),
                                   semester: sem?.name ?? a.semesterId,
                                   cohort: a.cohort,
                                   academicStage: a.academicStage,
@@ -211,6 +211,11 @@ class MyAssignmentsScreen extends ConsumerWidget {
                                 ref.read(activeClassProvider.notifier).state = assignedClass;
                                 context.push('/attendance/mark');
                               },
+                            ),
+                            IconButton(
+                              tooltip: "Internal Assessment Marks",
+                              icon: const Icon(LucideIcons.award, size: 18, color: AcadexColors.primary),
+                              onPressed: () => context.push('/assessments/entry?sectionId=${a.sectionId}&subjectId=${a.subjectId}'),
                             ),
                             IconButton(
                               tooltip: "Coursework Assignments",

@@ -1,337 +1,209 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
-import '../../../../core/presentation/widgets/acadex_page_container.dart';
-import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
-import '../../../../core/presentation/widgets/acadex_adaptive_gradient_text.dart';
-import '../../../auth/domain/models/auth_state.dart';
-import '../../../auth/domain/models/user_model.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../domain/models/home_dashboard_models.dart';
 import '../providers/dashboard_providers.dart';
-import '../widgets/acadex_hero_card.dart';
-import '../widgets/activity_feed.dart';
-import '../widgets/quick_action_card.dart';
-import '../widgets/section_header.dart';
-import '../widgets/stat_card.dart';
-import '../../../timetable/presentation/providers/timetable_providers.dart';
-import '../../../timetable/presentation/widgets/timetable_widgets.dart';
-import '../../../academic_structure/presentation/widgets/academic_structure_summary_widget.dart';
-import '../../../academic_structure/presentation/widgets/institution_setup_card.dart';
-import '../../../reports/presentation/providers/reports_providers.dart';
+import '../widgets/home_dashboard_widgets.dart';
 
 class CollegeAdminDashboard extends ConsumerWidget {
   const CollegeAdminDashboard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stats = ref.watch(collegeAdminStatsProvider);
-    final quickActions = ref.watch(collegeAdminQuickActionsProvider);
-    final activity = ref.watch(collegeAdminActivityProvider);
-    final authState = ref.watch(authProvider);
+    final dashboardAsync = ref.watch(homeDashboardProvider);
 
-    UserModel? user;
-    if (authState is AuthAuthenticated) user = authState.user;
-
-    final isMobile = AcadexBreakpoints.isMobile(context);
-    final firstName = user?.name.split(' ').first ?? 'College Admin';
-
-    return LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final statCols = AcadexLayout.statGridColumns(context);
-
-          return AcadexPageContainer(
-            topPadding: isMobile ? 16 : 24,
-            onRefresh: () async {
-              ref.invalidate(collegeAdminStatsProvider);
-              ref.invalidate(collegeAdminActivityProvider);
-            },
+    return AcadexPageContainer(
+      onRefresh: () async {
+        ref.invalidate(homeDashboardProvider);
+      },
+      child: dashboardAsync.when(
+        loading: () => const Center(
+          child: AcadexLoadingState(message: 'Loading institution dashboard...'),
+        ),
+        error: (err, _) => AcadexErrorState.fromError(
+          error: err,
+          title: 'Unable to load dashboard',
+          onRetry: () => ref.invalidate(homeDashboardProvider),
+        ),
+        data: (dashboard) {
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── 1. Top Greeting (Unboxed Adaptive Gradient Text) ──────
-                _buildGreeting(context, isMobile, firstName),
-                SizedBox(height: isMobile ? 14 : 20),
+                // 1. Welcome & Greeting
+                DashboardGreetingHeader(greeting: dashboard.greeting),
 
-                // ── 2. College Status Hero Card (Solid White Surface) ─────
-                AcadexHeroCard(
-                  eyebrow: 'Institutional Command',
-                  badge: const AcadexBadge(
-                    label: 'ACTIVE ACADEMIC SESSION',
-                    variant: AcadexBadgeVariant.primary,
-                  ),
-                  icon: LucideIcons.building2,
-                  title: 'Academic Structure & Operations',
-                  subtitle: 'Manage departments, courses, faculty allocations, and timetable across campus.',
-                  primaryActionLabel: 'Academic Structure',
-                  primaryActionIcon: LucideIcons.layers,
-                  onPrimaryAction: () => context.go('/academics'),
-                  secondaryActionLabel: 'Manage Timetable',
-                  onSecondaryAction: () => context.go('/timetable/manage'),
-                ),
-                SizedBox(height: isMobile ? 18 : 24),
-
-                // ── 3. Key Institutional Stat Cards ───────────────────────
-                SectionHeader(
-                  title: 'College Overview',
-                  actionLabel: 'View Analytics →',
-                  showAccent: true,
-                  onAction: () => context.go('/analytics'),
-                ),
-                const SizedBox(height: 12),
-                stats.when(
-                  loading: () => const AcadexLoadingState(message: 'Loading institutional metrics...'),
-                  error: (err, _) => AcadexErrorState(
-                    message: 'Failed to load metrics: $err',
-                    onRetry: () => ref.refresh(collegeAdminStatsProvider),
-                  ),
-                  data: (data) => GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    itemCount: data.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: statCols,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: isMobile
-                          ? (width >= 375 ? 1.05 : 0.98)
-                          : (width > 600 ? 1.25 : 1.1),
-                    ),
-                    itemBuilder: (_, i) => StatCard(stat: data[i]),
-                  ),
-                ),
-                SizedBox(height: isMobile ? 18 : 24),
-
-                // ── 4. Today's Campus Timetable Schedule ───────────────────
-                const SectionHeader(
-                  title: "Today's Schedule & Sessions",
-                  showAccent: true,
-                ),
-                const SizedBox(height: 12),
-                Consumer(
-                  builder: (context, ref, _) {
-                    final todayAsync = ref.watch(todayScheduleProvider);
-                    return todayAsync.when(
-                      loading: () => const AcadexLoadingState(message: 'Loading today\'s sessions...'),
-                      error: (err, _) => AcadexErrorState(
-                        message: 'Error loading schedule: $err',
-                        onRetry: () => ref.refresh(todayScheduleProvider),
-                      ),
-                      data: (data) => TodayScheduleWidget(todayEntries: data),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-
-                // ── 5. Core Institution Setup Summary ──────────────────────
-                const InstitutionSetupCard(),
-                const SizedBox(height: 24),
-
-                // ── 6. Academic Hierarchy Summary Deck ─────────────────────
-                const AcademicStructureSummaryWidget(),
-                const SizedBox(height: 24),
-
-                // ── 6. Department Breakdown (Live from /reports/dashboard) ──
-                Consumer(
-                  builder: (context, ref, _) {
-                    final reportAsync = ref.watch(roleDashboardReportProvider);
-                    return reportAsync.when(
-                      loading: () => const SizedBox.shrink(),
-                      error: (_, _) => const SizedBox.shrink(),
-                      data: (report) {
-                        if (report == null || report.recentActivity.isEmpty) {
-                          return const SizedBox.shrink();
-                        }
-                        final depts = report.recentActivity;
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SectionHeader(
-                              title: 'Department Performance Breakdown',
-                              actionLabel: 'View Departments →',
-                              showAccent: true,
-                              onAction: () => context.go('/academics/departments'),
-                            ),
-                            const SizedBox(height: 12),
-                            AcadexCard(
-                              padding: const EdgeInsets.all(16),
-                              child: ListView.separated(
-                                physics: const NeverScrollableScrollPhysics(),
-                                shrinkWrap: true,
-                                itemCount: depts.length > 6 ? 6 : depts.length,
-                                separatorBuilder: (_, _) => const Divider(
-                                  height: 1,
-                                  color: AcadexColors.hairline,
-                                ),
-                                itemBuilder: (context, idx) {
-                                  final dept = depts[idx];
-                                  final name = dept['name']?.toString() ?? 'Department';
-                                  final code = dept['code']?.toString() ?? '';
-                                  final students = dept['studentsCount']?.toString() ?? '0';
-                                  final faculty = dept['facultyCount']?.toString() ?? '0';
-                                  final attPct = dept['attendancePercentage'] != null
-                                      ? '${(dept['attendancePercentage'] as num).toStringAsFixed(1)}%'
-                                      : 'N/A';
-
-                                  return ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    leading: Container(
-                                      width: 38,
-                                      height: 38,
-                                      decoration: BoxDecoration(
-                                        color: AcadexColors.primaryLight,
-                                        borderRadius: AcadexRadius.borderRadiusMd,
-                                      ),
-                                      child: const Icon(LucideIcons.layoutGrid, color: AcadexColors.primary, size: 18),
-                                    ),
-                                    title: Text(
-                                      name,
-                                      style: AcadexTypography.body(
-                                        color: AcadexColors.ink,
-                                      ).copyWith(fontWeight: FontWeight.w600),
-                                    ),
-                                    subtitle: Text(
-                                      'Code: $code • $students Students • $faculty Faculty',
-                                      style: AcadexTypography.caption(
-                                        color: AcadexColors.inkMuted,
-                                      ),
-                                    ),
-                                    trailing: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: AcadexColors.canvasSoft,
-                                        borderRadius: AcadexRadius.borderRadiusSm,
-                                      ),
-                                      child: Text(
-                                        'Att: $attPct',
-                                        style: AcadexTypography.caption(
-                                          color: AcadexColors.inkSecondary,
-                                        ).copyWith(fontWeight: FontWeight.w600),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                          ],
-                        );
-                      },
-                    );
-                  },
+                // 2. Tenant Context
+                DashboardContextCard(
+                  role: dashboard.role,
+                  contextModel: dashboard.context,
                 ),
 
-                // ── 7. Quick Operations Grid ───────────────────────────────
-                SectionHeader(
-                  title: 'Quick Operations',
-                  actionLabel: 'More Actions →',
-                  showAccent: true,
-                  onAction: () => context.go('/academics'),
-                ),
-                const SizedBox(height: 12),
-                QuickActionsRow(actions: quickActions),
-                const SizedBox(height: 24),
+                // 3. Institution Alerts
+                DashboardAlertsSection(alerts: dashboard.alerts),
 
-                // ── 8. Recent Notifications & Activity ─────────────────────
-                SectionHeader(
-                  title: 'Recent Activity & Notifications',
-                  actionLabel: 'View All →',
-                  showAccent: true,
-                  onAction: () => context.go('/notifications'),
+                // 4. Pending Operational Actions
+                DashboardPendingActionsSection(
+                  pendingActions: dashboard.pendingActions,
                 ),
-                const SizedBox(height: 12),
-                activity.when(
-                  loading: () => const AcadexLoadingState(message: 'Loading recent activity...'),
-                  error: (err, _) => AcadexErrorState(
-                    message: 'Failed to load activity: $err',
-                    onRetry: () => ref.refresh(collegeAdminActivityProvider),
-                  ),
-                  data: (data) => ActivityFeed(items: data),
+
+                // 5. Institution Calendar & Upcoming
+                DashboardUpcomingSection(upcoming: dashboard.upcoming),
+
+                // 6. Management Shortcuts Grid
+                DashboardQuickActionsGrid(
+                  quickActions: dashboard.quickActions,
                 ),
+
+                // 7. Tenant Scoped Metrics
+                _buildCollegeAdminMetricsSummary(context, dashboard.summary),
+
+                // 8. Recent Activity
+                DashboardRecentActivitySection(recent: dashboard.recent),
+
                 const SizedBox(height: 32),
               ],
             ),
           );
         },
-      );
+      ),
+    );
   }
 
-  Widget _buildGreeting(BuildContext context, bool isMobile, String firstName) {
-    if (isMobile) {
-      return Column(
+  Widget _buildCollegeAdminMetricsSummary(
+    BuildContext context,
+    DashboardSummaryModel summary,
+  ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 18),
+        Text(
+          'Institution Operations Snapshot',
+          style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.2,
+              ),
+        ),
+        const SizedBox(height: 10),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isNarrow = constraints.maxWidth < 380;
+            return GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: isNarrow ? 2 : 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: isNarrow ? 1.6 : 1.8,
+              children: [
+                _buildMetricTile(
+                  context,
+                  title: 'Departments',
+                  value: '${summary.departmentsCount}',
+                  subtitle: 'Academic divisions',
+                  icon: LucideIcons.layers,
+                  color: AcadexColors.primary,
+                  isDark: isDark,
+                ),
+                _buildMetricTile(
+                  context,
+                  title: 'Faculty Members',
+                  value: '${summary.facultyCount}',
+                  subtitle: 'Active educators',
+                  icon: LucideIcons.users,
+                  color: Colors.teal,
+                  isDark: isDark,
+                ),
+                _buildMetricTile(
+                  context,
+                  title: 'Total Students',
+                  value: '${summary.studentsCount}',
+                  subtitle: 'Enrolled learners',
+                  icon: LucideIcons.graduationCap,
+                  color: Colors.purple,
+                  isDark: isDark,
+                ),
+                _buildMetricTile(
+                  context,
+                  title: 'Pending Requests',
+                  value: '${summary.pendingRequestsCount}',
+                  subtitle: 'Awaiting institutional action',
+                  icon: LucideIcons.inbox,
+                  color: summary.pendingRequestsCount > 0 ? AcadexColors.warning : Colors.teal,
+                  isDark: isDark,
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMetricTile(
+    BuildContext context, {
+    required String title,
+    required String value,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required bool isDark,
+  }) {
+    final theme = Theme.of(context);
+
+    return AcadexCard(
+      padding: const EdgeInsets.all(12),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 6),
               Expanded(
-                child: AcadexAdaptiveGradientText(
-                  'Hello, $firstName 👋',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
+                child: Text(
+                  title,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const AcadexBadge(
-                label: 'COLLEGE ADMIN',
-                variant: AcadexBadgeVariant.primary,
-              ),
             ],
           ),
-          const SizedBox(height: 4),
-          const AcadexAdaptiveGradientText(
-            'Institutional command center for academic operations, scheduling, and faculty management.',
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
             style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+              fontSize: 11,
+              color: isDark ? Colors.grey[500] : Colors.grey[500],
             ),
-            isSecondary: true,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
-      );
-    } else {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AcadexAdaptiveGradientText(
-                  'Hello, $firstName 👋',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const AcadexAdaptiveGradientText(
-                  'Institutional command center for academic operations, scheduling, and faculty management.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  isSecondary: true,
-                ),
-              ],
-            ),
-          ),
-          const AcadexBadge(
-            label: 'COLLEGE ADMIN',
-            variant: AcadexBadgeVariant.primary,
-          ),
-        ],
-      );
-    }
+      ),
+    );
   }
 }

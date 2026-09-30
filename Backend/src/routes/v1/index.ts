@@ -17,8 +17,14 @@ import { teacherSubstitutionRouter } from './teacherSubstitution.routes';
 import { announcementRouter } from './announcement.routes';
 import { requestRouter } from './request.routes';
 import { assignmentRouter } from './assignment.routes';
+import internalAssessmentRouter from './internalAssessment.routes';
 import institutionConfigRouter from './institutionConfig.routes';
 import { academicCalendarRouter } from './academicCalendar.routes';
+import practicalRouter from './practical.routes';
+import academicRecordRouter from './academicRecord.routes';
+import academicResultRouter from './academicResult.routes';
+import { profileRouter } from './profile.routes';
+import { dashboardRouter } from './dashboard.routes';
 
 const router = Router();
 
@@ -27,6 +33,8 @@ router.use('/health', healthRouter);
 
 // Versioned feature routes
 router.use('/auth', authRouter);
+router.use('/dashboard', dashboardRouter);
+router.use('/profile', profileRouter);
 router.use('/colleges', collegeRouter);
 router.use('/departments', departmentRouter);
 router.use('/academics', academicRouter);
@@ -41,6 +49,10 @@ router.use('/notifications', notificationRouter);
 router.use('/announcements', announcementRouter);
 router.use('/requests', requestRouter);
 router.use('/assignments', assignmentRouter);
+router.use('/assessments', internalAssessmentRouter);
+router.use('/practicals', practicalRouter);
+router.use('/academic-records', academicRecordRouter);
+router.use('/academic-results', academicResultRouter);
 router.use('/calendar', academicCalendarRouter);
 router.use('/audit', auditRouter);
 router.use('/reports', reportRouter);

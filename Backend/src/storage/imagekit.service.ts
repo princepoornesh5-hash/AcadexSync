@@ -38,6 +38,14 @@ export class ImageKitService {
     return `/acadex/colleges/${collegeId}/profiles/${cleanRole}s/${entityId}`;
   }
 
+  static buildAssignmentSubmissionFolder(
+    collegeId: string,
+    assignmentId: string,
+    studentId: string
+  ): string {
+    return `/acadex/colleges/${collegeId}/assignments/${assignmentId}/submissions/${studentId}`;
+  }
+
   // =========================================================================
   // 2. MIME & EXTENSION VALIDATION
   // =========================================================================

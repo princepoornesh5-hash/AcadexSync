@@ -4,18 +4,22 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../auth/domain/models/role_enum.dart';
 
 enum RequestStatus {
+  draft,
   submitted,
   received,
   inReview,
   approved,
   rejected,
   resolved,
+  cancelled,
   closed,
 }
 
 extension RequestStatusExtension on RequestStatus {
   String get value {
     switch (this) {
+      case RequestStatus.draft:
+        return 'DRAFT';
       case RequestStatus.submitted:
         return 'SUBMITTED';
       case RequestStatus.received:
@@ -28,6 +32,8 @@ extension RequestStatusExtension on RequestStatus {
         return 'REJECTED';
       case RequestStatus.resolved:
         return 'RESOLVED';
+      case RequestStatus.cancelled:
+        return 'CANCELLED';
       case RequestStatus.closed:
         return 'CLOSED';
     }
@@ -35,6 +41,8 @@ extension RequestStatusExtension on RequestStatus {
 
   String get displayName {
     switch (this) {
+      case RequestStatus.draft:
+        return 'Draft';
       case RequestStatus.submitted:
         return 'Submitted';
       case RequestStatus.received:
@@ -47,6 +55,8 @@ extension RequestStatusExtension on RequestStatus {
         return 'Rejected';
       case RequestStatus.resolved:
         return 'Resolved';
+      case RequestStatus.cancelled:
+        return 'Cancelled';
       case RequestStatus.closed:
         return 'Closed';
     }
@@ -54,6 +64,8 @@ extension RequestStatusExtension on RequestStatus {
 
   Color get color {
     switch (this) {
+      case RequestStatus.draft:
+        return const Color(0xFF6B7280); // gray-500
       case RequestStatus.submitted:
         return AcadexColors.inkSecondary;
       case RequestStatus.received:
@@ -66,6 +78,8 @@ extension RequestStatusExtension on RequestStatus {
         return const Color(0xFFDC2626); // red-600
       case RequestStatus.resolved:
         return const Color(0xFF0D9488); // teal-600
+      case RequestStatus.cancelled:
+        return const Color(0xFF9CA3AF); // gray-400
       case RequestStatus.closed:
         return const Color(0xFF64748B); // slate-500
     }
@@ -73,6 +87,8 @@ extension RequestStatusExtension on RequestStatus {
 
   Color get backgroundColor {
     switch (this) {
+      case RequestStatus.draft:
+        return const Color(0xFFF3F4F6); // gray-100
       case RequestStatus.submitted:
         return AcadexColors.surfaceHover;
       case RequestStatus.received:
@@ -85,6 +101,8 @@ extension RequestStatusExtension on RequestStatus {
         return const Color(0xFFFEE2E2); // red-100
       case RequestStatus.resolved:
         return const Color(0xFFCCFBF1); // teal-100
+      case RequestStatus.cancelled:
+        return const Color(0xFFF3F4F6); // gray-100
       case RequestStatus.closed:
         return const Color(0xFFF1F5F9); // slate-100
     }
@@ -92,6 +110,8 @@ extension RequestStatusExtension on RequestStatus {
 
   IconData get icon {
     switch (this) {
+      case RequestStatus.draft:
+        return LucideIcons.fileEdit;
       case RequestStatus.submitted:
         return LucideIcons.send;
       case RequestStatus.received:
@@ -104,6 +124,8 @@ extension RequestStatusExtension on RequestStatus {
         return LucideIcons.xCircle;
       case RequestStatus.resolved:
         return LucideIcons.checkCheck;
+      case RequestStatus.cancelled:
+        return LucideIcons.ban;
       case RequestStatus.closed:
         return LucideIcons.archive;
     }
@@ -112,12 +134,15 @@ extension RequestStatusExtension on RequestStatus {
   static RequestStatus fromString(String val) {
     final clean = val.toUpperCase().trim();
     switch (clean) {
+      case 'DRAFT':
+        return RequestStatus.draft;
       case 'SUBMITTED':
         return RequestStatus.submitted;
       case 'RECEIVED':
         return RequestStatus.received;
       case 'IN_REVIEW':
       case 'INREVIEW':
+      case 'UNDER_REVIEW':
       case 'REVIEW':
         return RequestStatus.inReview;
       case 'APPROVED':
@@ -126,6 +151,8 @@ extension RequestStatusExtension on RequestStatus {
         return RequestStatus.rejected;
       case 'RESOLVED':
         return RequestStatus.resolved;
+      case 'CANCELLED':
+        return RequestStatus.cancelled;
       case 'CLOSED':
         return RequestStatus.closed;
       default:
@@ -518,6 +545,8 @@ class RequestModel {
   final String? respondedByName;
   final String? responseMessage;
   final List<RequestAuditEntryModel> history;
+  final String? relatedEntityType;
+  final String? relatedEntityId;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -543,6 +572,8 @@ class RequestModel {
     this.respondedByName,
     this.responseMessage,
     this.history = const [],
+    this.relatedEntityType,
+    this.relatedEntityId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -578,6 +609,8 @@ class RequestModel {
               .map((h) => RequestAuditEntryModel.fromJson(Map<String, dynamic>.from(h as Map)))
               .toList()
           : const [],
+      relatedEntityType: json['relatedEntityType']?.toString(),
+      relatedEntityId: json['relatedEntityId']?.toString(),
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -610,6 +643,8 @@ class RequestModel {
       if (respondedByName != null) 'respondedByName': respondedByName,
       if (responseMessage != null) 'responseMessage': responseMessage,
       'history': history.map((h) => h.toJson()).toList(),
+      if (relatedEntityType != null) 'relatedEntityType': relatedEntityType,
+      if (relatedEntityId != null) 'relatedEntityId': relatedEntityId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };

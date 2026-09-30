@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../domain/models/timetable_models.dart';
@@ -221,10 +222,17 @@ class _TimetableDesignerScreenState extends ConsumerState<TimetableDesignerScree
                                 ? null
                                 : () async {
                                     final success = await ref.read(timetableAuthoringProvider(widget.timetableId).notifier).saveDraft();
-                                    if (context.mounted && success) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Timetable draft saved successfully!'), backgroundColor: AcadexColors.success),
-                                      );
+                                    if (context.mounted) {
+                                      if (success) {
+                                        AcadexSnackBar.showSuccess(context, 'Timetable draft saved successfully!');
+                                      } else {
+                                        final err = ref.read(timetableAuthoringProvider(widget.timetableId)).errorMessage;
+                                        AcadexSnackBar.showError(
+                                          context,
+                                          err,
+                                          fallbackMessage: 'Failed to save timetable draft. Please try again.',
+                                        );
+                                      }
                                     }
                                   },
                             icon: authoringState.isSaving
@@ -710,10 +718,17 @@ class _TimetableDesignerScreenState extends ConsumerState<TimetableDesignerScree
                       final success = await ref.read(timetableAuthoringProvider(widget.timetableId).notifier).publish(
                             publishedBy: user?.id ?? 'user',
                           );
-                      if (context.mounted && success) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Timetable published to live schedule successfully!'), backgroundColor: AcadexColors.success),
-                        );
+                      if (context.mounted) {
+                        if (success) {
+                          AcadexSnackBar.showSuccess(context, 'Timetable published to live schedule successfully!');
+                        } else {
+                          final err = ref.read(timetableAuthoringProvider(widget.timetableId)).errorMessage;
+                          AcadexSnackBar.showError(
+                            context,
+                            err,
+                            fallbackMessage: 'Failed to publish timetable. Please resolve any validation conflicts and try again.',
+                          );
+                        }
                       }
                     },
               child: const Text('Confirm & Publish', style: TextStyle(color: Colors.white)),

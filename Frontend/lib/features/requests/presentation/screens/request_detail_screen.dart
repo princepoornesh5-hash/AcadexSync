@@ -120,42 +120,48 @@ class RequestDetailScreen extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: AcadexColors.primaryLight,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  request.requestType.icon,
-                                  color: AcadexColors.primary,
-                                  size: 18,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    request.requestType.displayName,
-                                    style: AcadexTypography.bodySmall().copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      color: AcadexColors.ink,
-                                    ),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AcadexColors.primaryLight,
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                  Text(
-                                    'ID: ${request.requestId}',
-                                    style: AcadexTypography.caption().copyWith(
-                                      color: AcadexColors.inkMuted,
-                                      fontSize: 11,
-                                    ),
+                                  child: Icon(
+                                    request.requestType.icon,
+                                    color: AcadexColors.primary,
+                                    size: 18,
                                   ),
-                                ],
-                              ),
-                            ],
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        request.requestType.displayName,
+                                        style: AcadexTypography.bodySmall().copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: AcadexColors.ink,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        'ID: ${request.requestId}',
+                                        style: AcadexTypography.caption().copyWith(
+                                          color: AcadexColors.inkMuted,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           RequestStatusChip(status: request.status),
                         ],
                       ),
@@ -326,11 +332,13 @@ class RequestDetailScreen extends ConsumerWidget {
                         children: [
                           const Icon(LucideIcons.clock, size: 16, color: AcadexColors.inkMuted),
                           const SizedBox(width: 8),
-                          Text(
-                            'Pending response from ${request.targetName ?? request.targetRole.displayName}.',
-                            style: AcadexTypography.caption().copyWith(
-                              color: AcadexColors.inkSecondary,
-                              fontStyle: FontStyle.italic,
+                          Expanded(
+                            child: Text(
+                              'Pending response from ${request.targetName ?? request.targetRole.displayName}.',
+                              style: AcadexTypography.caption().copyWith(
+                                color: AcadexColors.inkSecondary,
+                                fontStyle: FontStyle.italic,
+                              ),
                             ),
                           ),
                         ],
@@ -359,8 +367,24 @@ class RequestDetailScreen extends ConsumerWidget {
 
                 // Action Buttons
 
+                // 0. Requester Draft Actions
+                if (isRequester && request.status == RequestStatus.draft) ...[
+                  AcadexButton(
+                    label: 'Submit Request',
+                    icon: LucideIcons.send,
+                    onPressed: () async {
+                      final res = await ref.read(requestActionProvider.notifier).submitRequest(request.id);
+                      if (res != null && context.mounted) {
+                        AcadexSnackBar.showSuccess(context, 'Request submitted successfully.');
+                        ref.invalidate(requestDetailProvider(requestId));
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                ],
+
                 // 1. Authorized Responder Actions
-                if (isAuthorizedResponder && isOpen) ...[
+                if (isAuthorizedResponder && isOpen && request.status != RequestStatus.draft) ...[
                   if (request.status == RequestStatus.submitted ||
                       request.status == RequestStatus.received) ...[
                     AcadexButton(
@@ -368,11 +392,7 @@ class RequestDetailScreen extends ConsumerWidget {
                       icon: LucideIcons.clock,
                       variant: AcadexButtonVariant.secondary,
                       onPressed: () async {
-                        await ref.read(requestActionProvider.notifier).updateStatus(
-                              id: request.id,
-                              status: RequestStatus.inReview,
-                              note: 'Under active review by department authority',
-                            );
+                        await ref.read(requestActionProvider.notifier).startReview(request.id);
                         ref.invalidate(requestDetailProvider(requestId));
                       },
                     ),
@@ -437,11 +457,16 @@ class RequestDetailScreen extends ConsumerWidget {
                       );
 
                       if (confirmed == true) {
-                        final res = await ref.read(requestActionProvider.notifier).updateStatus(
-                              id: request.id,
-                              status: RequestStatus.closed,
-                              note: isRequester ? 'Cancelled by requester' : 'Closed by authority',
-                            );
+                        final res = isRequester
+                            ? await ref.read(requestActionProvider.notifier).cancelRequest(
+                                  request.id,
+                                  reason: 'Cancelled by requester',
+                                )
+                            : await ref.read(requestActionProvider.notifier).updateStatus(
+                                  id: request.id,
+                                  status: RequestStatus.closed,
+                                  note: 'Closed by authority',
+                                );
                         if (res != null && context.mounted) {
                           AcadexSnackBar.showSuccess(
                             context,
@@ -523,11 +548,13 @@ class _SectionCard extends StatelessWidget {
             children: [
               Icon(icon, size: 16, color: AcadexColors.primary),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: AcadexTypography.bodySmall().copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AcadexColors.ink,
+              Expanded(
+                child: Text(
+                  title,
+                  style: AcadexTypography.bodySmall().copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AcadexColors.ink,
+                  ),
                 ),
               ),
             ],
@@ -628,13 +655,17 @@ class _TimelineItem extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    entry.status.displayName,
-                    style: AcadexTypography.caption().copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: entry.status.color,
+                  Expanded(
+                    child: Text(
+                      entry.status.displayName,
+                      style: AcadexTypography.caption().copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: entry.status.color,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     _formatTime(entry.timestamp),
                     style: AcadexTypography.caption().copyWith(

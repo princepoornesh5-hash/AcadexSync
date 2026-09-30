@@ -15,7 +15,15 @@ export interface IFaculty extends Document {
   joiningDate?: Date;
   status: string;
   isActive: boolean;
+  /**
+   * @deprecated Use FacultyAssignment as the authoritative teaching context truth.
+   * Retained for backward-safe query compatibility during transition.
+   */
   subjectIds: mongoose.Types.ObjectId[];
+  /**
+   * @deprecated Use FacultyAssignment as the authoritative teaching context truth.
+   * Retained for backward-safe query compatibility during transition.
+   */
   sectionIds: mongoose.Types.ObjectId[];
   metadata?: Record<string, unknown>;
   createdAt: Date;

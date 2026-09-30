@@ -53,6 +53,12 @@ export class TimetableController {
     return ApiResponse.success(res, room, 'Room updated successfully');
   });
 
+  static deleteRoom = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const result = await TimetableService.deleteRoom(req.params.id, req.user);
+    return ApiResponse.success(res, result, result.message);
+  });
+
   // =========================================================================
   // 2. TIMETABLE MANAGEMENT
   // =========================================================================

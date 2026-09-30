@@ -25,6 +25,23 @@ class _CalendarEventDetailSheetState
     extends ConsumerState<CalendarEventDetailSheet> {
   bool _isLoading = false;
 
+  String _getNavigationLabel(CalendarSourceType source) {
+    switch (source) {
+      case CalendarSourceType.assignment:
+        return 'View Assignment';
+      case CalendarSourceType.practical:
+        return 'View Practical Session';
+      case CalendarSourceType.assessment:
+        return 'View Internal Assessment';
+      case CalendarSourceType.academicResult:
+        return 'View Academic Result';
+      case CalendarSourceType.timetable:
+        return 'View Timetable';
+      default:
+        return 'View Details';
+    }
+  }
+
   Future<void> _handleCancelEvent() async {
     final reasonController = TextEditingController();
     final shouldCancel = await showDialog<bool>(
@@ -234,6 +251,9 @@ class _CalendarEventDetailSheetState
             _buildDetailRow(LucideIcons.clock, 'Time', timeLabel),
             const SizedBox(height: 10),
 
+            _buildDetailRow(LucideIcons.layers, 'Source', event.sourceType.displayName),
+            const SizedBox(height: 10),
+
             if (event.academicContext != null && event.academicContext!.isNotEmpty) ...[
               _buildDetailRow(LucideIcons.graduationCap, 'Scope', event.academicContext!),
               const SizedBox(height: 10),
@@ -283,8 +303,7 @@ class _CalendarEventDetailSheetState
             ],
 
             // Action Buttons
-            if (event.sourceType == CalendarSourceType.derived &&
-                event.navigationTarget != null) ...[
+            if (event.navigationTarget != null && event.navigationTarget!.isNotEmpty) ...[
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -293,7 +312,7 @@ class _CalendarEventDetailSheetState
                     context.push(event.navigationTarget!);
                   },
                   icon: const Icon(LucideIcons.externalLink, size: 16),
-                  label: const Text('View Assignment Details'),
+                  label: Text(_getNavigationLabel(event.sourceType)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AcadexColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 14),

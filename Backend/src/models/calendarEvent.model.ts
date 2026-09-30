@@ -20,6 +20,7 @@ export interface ICalendarEvent extends Document {
   startTime?: string | null; // HH:mm
   endTime?: string | null; // HH:mm
   allDay: boolean;
+  academicCalendarId?: mongoose.Types.ObjectId | null;
   departmentId?: mongoose.Types.ObjectId | null;
   courseId?: mongoose.Types.ObjectId | null;
   academicYearId?: mongoose.Types.ObjectId | null;
@@ -101,6 +102,12 @@ const CalendarEventSchema = new Schema<ICalendarEvent>(
     allDay: {
       type: Boolean,
       default: false,
+    },
+    academicCalendarId: {
+      type: Schema.Types.ObjectId,
+      ref: 'AcademicCalendar',
+      default: null,
+      index: true,
     },
     departmentId: {
       type: Schema.Types.ObjectId,

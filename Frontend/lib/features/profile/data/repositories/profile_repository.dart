@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/services/imagekit_uploader.dart';
+import '../../domain/models/profile_models.dart';
 
 class ProfileRepository {
   static const int maxProfileImageSizeBytes = 5 * 1024 * 1024; // 5 MB
@@ -35,6 +36,74 @@ class ProfileRepository {
     }
   }
 
+  /// Resolves the canonical, composed profile for the authenticated user.
+  Future<ComposedProfileModel> getMyProfile() async {
+    final response = await _apiClient.dio.get('/profile/me');
+    if (response.data != null && response.data['data'] != null) {
+      return ComposedProfileModel.fromJson(
+        response.data['data'] as Map<String, dynamic>,
+      );
+    }
+    throw Exception('Failed to load user profile');
+  }
+
+  /// Updates allowed personal fields on the authenticated user's profile.
+  Future<ComposedProfileModel> updateMyProfile(Map<String, dynamic> data) async {
+    final response = await _apiClient.dio.patch(
+      '/profile/me',
+      data: data,
+    );
+    if (response.data != null && response.data['data'] != null) {
+      return ComposedProfileModel.fromJson(
+        response.data['data'] as Map<String, dynamic>,
+      );
+    }
+    throw Exception('Failed to update profile');
+  }
+
+  /// Retrieves another user's scoped profile by ID (if authorized).
+  Future<ComposedProfileModel> getProfileById(String id) async {
+    final response = await _apiClient.dio.get('/profile/$id');
+    if (response.data != null && response.data['data'] != null) {
+      return ComposedProfileModel.fromJson(
+        response.data['data'] as Map<String, dynamic>,
+      );
+    }
+    throw Exception('Failed to load profile for user $id');
+  }
+
+  /// Scoped directory query bounded by role and tenant.
+  Future<Map<String, dynamic>> getDirectory({
+    String? search,
+    String? role,
+    String? departmentId,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final queryParams = <String, dynamic>{
+      'page': page,
+      'limit': limit,
+    };
+    if (search != null && search.trim().isNotEmpty) {
+      queryParams['search'] = search.trim();
+    }
+    if (role != null && role.isNotEmpty) {
+      queryParams['role'] = role;
+    }
+    if (departmentId != null && departmentId.isNotEmpty) {
+      queryParams['departmentId'] = departmentId;
+    }
+
+    final response = await _apiClient.dio.get(
+      '/profile/directory',
+      queryParameters: queryParams,
+    );
+    if (response.data != null && response.data['data'] != null) {
+      return response.data['data'] as Map<String, dynamic>;
+    }
+    throw Exception('Failed to load user directory');
+  }
+
   /// Phase 1: Request upload authorization parameters from backend
   Future<ImageKitUploadAuth> requestUploadAuth({
     required String fileName,
@@ -43,8 +112,8 @@ class ProfileRepository {
     String? targetUserId,
   }) async {
     final endpoint = targetUserId != null && targetUserId.isNotEmpty
-        ? '/users/$targetUserId/profile-image/upload-url'
-        : '/users/me/profile-image/upload-url';
+        ? '/profile/$targetUserId/avatar/upload-url'
+        : '/profile/me/avatar/upload-url';
 
     final response = await _apiClient.dio.post(
       endpoint,
@@ -72,8 +141,8 @@ class ProfileRepository {
     String? targetUserId,
   }) async {
     final endpoint = targetUserId != null && targetUserId.isNotEmpty
-        ? '/users/$targetUserId/profile-image/complete'
-        : '/users/me/profile-image/complete';
+        ? '/profile/$targetUserId/avatar/complete'
+        : '/profile/me/avatar/complete';
 
     final response = await _apiClient.dio.post(
       endpoint,
@@ -118,12 +187,14 @@ class ProfileRepository {
       onProgress: onProgress,
     );
 
-    final updatedUser = await completeUpload(
+    final updatedProfile = await completeUpload(
       fileId: uploadResult.fileId,
       fileUrl: uploadResult.url,
       targetUserId: targetUserId,
     );
 
-    return (updatedUser['profilePictureUrl'] ?? uploadResult.url).toString();
+    // Return the updated user avatar URL
+    final userData = updatedProfile['user'] as Map<String, dynamic>?;
+    return (userData?['profilePictureUrl'] ?? uploadResult.url).toString();
   }
 }

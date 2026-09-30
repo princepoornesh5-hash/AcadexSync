@@ -3,12 +3,17 @@ import { app } from './app';
 import { env } from './config/env';
 import { connectDB, disconnectDB } from './db/connection';
 import { Logger } from './utils/logger';
+import { realtimeServer, changeStreamManager } from './realtime';
 
 async function startServer(): Promise<http.Server | void> {
   return new Promise((resolve) => {
     Logger.info(`Starting ACADEX Backend in ${env.NODE_ENV} mode...`);
 
     const server = http.createServer(app);
+
+    // Attach WebSocket Realtime Server
+    realtimeServer.attachToServer(server, '/ws');
+    Logger.info('⚡ ACADEX Realtime WebSocket Server attached at /ws');
 
     server.on('error', async (error: NodeJS.ErrnoException) => {
       if (error.code === 'EADDRINUSE') {
@@ -48,6 +53,8 @@ async function startServer(): Promise<http.Server | void> {
         if (env.MONGODB_URI) {
           await connectDB();
           Logger.info('MongoDB Atlas database connection initialized.');
+          // Initialize MongoDB Change Streams if supported by cluster
+          await changeStreamManager.initialize();
         } else {
           Logger.warn(
             'MONGODB_URI not configured. Database will connect on-demand or when configured.'
@@ -57,9 +64,16 @@ async function startServer(): Promise<http.Server | void> {
         Logger.info(`🚀 ACADEX Backend running on port ${env.PORT}`);
         Logger.info(`   Health check: http://localhost:${env.PORT}/health`);
         Logger.info(`   API v1 Root:  http://localhost:${env.PORT}/api/v1`);
+        Logger.info(`   Realtime WS:  ws://localhost:${env.PORT}/ws`);
 
         const shutdown = async (signal: string) => {
           Logger.info(`Received ${signal}. Shutting down gracefully...`);
+          try {
+            await changeStreamManager.close();
+            await realtimeServer.close();
+          } catch (e) {
+            Logger.warn('Error during realtime shutdown cleanup', e);
+          }
           server.close(async () => {
             Logger.info('HTTP server closed.');
             try {

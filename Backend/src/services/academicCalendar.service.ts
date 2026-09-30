@@ -3,24 +3,48 @@ import {
   CalendarEvent,
   ICalendarEvent,
 } from '../models/calendarEvent.model';
+import {
+  AcademicCalendar,
+  IAcademicCalendar,
+  ICalendarHolidayItem,
+} from '../models/academicCalendar.model';
+import {
+  ICalendarOverride,
+  CalendarOverrideType,
+  CalendarOverrideScope,
+} from '../models/calendarOverride.model';
+import { CalendarOverrideService } from './calendarOverride.service';
+import {
+  TeacherSubstitution,
+  TeacherSubstitutionStatus,
+} from '../models/teacherSubstitution.model';
+import { Timetable } from '../models/timetable.model';
+import { TimetableDay, TimetableStatus } from '../constants/status';
+import { PracticalSession } from '../models/practicalSession.model';
+import { InternalAssessment, AssessmentStatus } from '../models/internalAssessment.model';
+import { AcademicResult } from '../models/academicResult.model';
 import { Assignment } from '../models/assignment.model';
 import { AssignmentStatus } from '../constants/assignment.constants';
 import { Department } from '../models/department.model';
 import { Subject } from '../models/subject.model';
 import { Section } from '../models/section.model';
 import { Semester } from '../models/semester.model';
+import { AcademicYear } from '../models/academicYear.model';
 import { Student } from '../models/student.model';
 import { StudentEnrollment } from '../models/studentEnrollment.model';
 import { FacultyAssignment } from '../models/facultyAssignment.model';
 import { User } from '../models/user.model';
 import { institutionConfigService } from './institutionConfig.service';
 import { NotificationService } from './notification.service';
+import { realtimeEventBus } from '../realtime/realtimeEventBus';
+import { AcadexEventType } from '../realtime/contracts/eventRegistry';
 import {
   CalendarSourceType,
   CalendarEventType,
   CalendarEventScope,
   CalendarEventStatus,
   CalendarRecurrence,
+  AcademicCalendarStatus,
 } from '../constants/calendar.constants';
 import {
   NotificationType,
@@ -42,6 +66,7 @@ export interface CreateCalendarEventDTO {
   startTime?: string | null;
   endTime?: string | null;
   allDay?: boolean;
+  academicCalendarId?: string | null;
   departmentId?: string | null;
   courseId?: string | null;
   academicYearId?: string | null;
@@ -65,6 +90,7 @@ export interface UpdateCalendarEventDTO {
   startTime?: string | null;
   endTime?: string | null;
   allDay?: boolean;
+  academicCalendarId?: string | null;
   departmentId?: string | null;
   courseId?: string | null;
   academicYearId?: string | null;
@@ -76,6 +102,30 @@ export interface UpdateCalendarEventDTO {
   isRecurring?: boolean;
   recurrence?: CalendarRecurrence;
   status?: CalendarEventStatus;
+}
+
+export interface CreateAcademicCalendarDTO {
+  academicYearId: string;
+  courseId?: string | null;
+  departmentId?: string | null;
+  semesterId?: string | null;
+  title: string;
+  description?: string;
+  startDate: string;
+  endDate: string;
+  status?: AcademicCalendarStatus;
+  workingDays?: number[];
+  holidays?: ICalendarHolidayItem[];
+}
+
+export interface UpdateAcademicCalendarDTO {
+  title?: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: AcademicCalendarStatus;
+  workingDays?: number[];
+  holidays?: ICalendarHolidayItem[];
 }
 
 export interface NormalizedCalendarEvent {
@@ -110,6 +160,36 @@ export interface NormalizedCalendarEvent {
   canCancel: boolean;
 }
 
+function getDayOfWeek(dateStr: string): TimetableDay {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dateObj = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  const day = dateObj.getUTCDay();
+  const map: Record<number, TimetableDay> = {
+    0: TimetableDay.SUNDAY,
+    1: TimetableDay.MONDAY,
+    2: TimetableDay.TUESDAY,
+    3: TimetableDay.WEDNESDAY,
+    4: TimetableDay.THURSDAY,
+    5: TimetableDay.FRIDAY,
+    6: TimetableDay.SATURDAY,
+  };
+  return map[day] || TimetableDay.MONDAY;
+}
+
+function getDatesInRange(startStr: string, endStr: string): string[] {
+  const dates: string[] = [];
+  const curr = new Date(startStr);
+  const end = new Date(endStr);
+  while (curr <= end) {
+    const y = curr.getFullYear();
+    const m = String(curr.getMonth() + 1).padStart(2, '0');
+    const d = String(curr.getDate()).padStart(2, '0');
+    dates.push(`${y}-${m}-${d}`);
+    curr.setDate(curr.getDate() + 1);
+  }
+  return dates;
+}
+
 export class AcademicCalendarService {
   /**
    * Helper to resolve HOD department ID reliably
@@ -131,55 +211,352 @@ export class AcademicCalendarService {
     throw ApiError.forbidden('HOD is not assigned to a department');
   }
 
-  /**
-   * Helper to format academic context respecting Prompt 21 configuration
-   */
-  private static async formatContext(
-    collegeId: string,
-    params: {
-      scope: CalendarEventScope;
-      departmentId?: string | null;
-      subjectId?: string | null;
-      sectionId?: string | null;
-      semesterId?: string | null;
-    }
-  ): Promise<string> {
-    const config = await institutionConfigService.getEffectiveConfiguration(collegeId);
-    const isSectionEnabled = config.academicStructure?.section ?? true;
+  // ══════════════════════════════════════════════════════════
+  // ACADEMIC CALENDAR LIFECYCLE (Prompt 45 Section D)
+  // ══════════════════════════════════════════════════════════
 
-    if (params.scope === CalendarEventScope.COLLEGE) {
-      return 'Entire College';
+  static async createAcademicCalendar(
+    data: CreateAcademicCalendarDTO,
+    requester: AuthenticatedUser
+  ): Promise<IAcademicCalendar> {
+    if (requester.role === AppRole.STUDENT || requester.role === AppRole.FACULTY) {
+      throw ApiError.forbidden('Only administrators and HODs may create academic calendars');
     }
 
-    if (params.subjectId) {
-      const subjectDoc = await Subject.findById(params.subjectId);
-      const subjectName = subjectDoc?.name || 'Subject';
-      if (isSectionEnabled && params.sectionId) {
-        const sectionDoc = await Section.findById(params.sectionId);
-        if (sectionDoc) {
-          return `${subjectName} • ${sectionDoc.name}`;
-        }
-      }
-      if (params.semesterId) {
-        const semesterDoc = await Semester.findById(params.semesterId);
-        if (semesterDoc) {
-          return `${subjectName} • ${semesterDoc.name}`;
-        }
-      }
-      return subjectName;
+    const collegeId = requester.collegeId ? requester.collegeId.toString() : '';
+    if (!collegeId) {
+      throw ApiError.badRequest('collegeId is required');
     }
 
-    if (params.departmentId) {
-      const deptDoc = await Department.findById(params.departmentId);
-      return deptDoc?.name || 'Department';
+    if (data.startDate > data.endDate) {
+      throw ApiError.badRequest('startDate must be before or equal to endDate');
     }
 
-    return '';
+    // Verify academic year exists in this college
+    const ay = await AcademicYear.findOne({
+      _id: new mongoose.Types.ObjectId(data.academicYearId),
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+    });
+    if (!ay) {
+      throw ApiError.notFound('Academic Year not found in this institution');
+    }
+
+    let departmentId: mongoose.Types.ObjectId | null = null;
+    if (requester.role === AppRole.HOD) {
+      const hodDept = await this.resolveHodDepartmentId(requester, collegeId);
+      departmentId = new mongoose.Types.ObjectId(hodDept);
+    } else if (data.departmentId) {
+      departmentId = new mongoose.Types.ObjectId(data.departmentId);
+    }
+
+    const calendar = await AcademicCalendar.create({
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      academicYearId: new mongoose.Types.ObjectId(data.academicYearId),
+      courseId: data.courseId ? new mongoose.Types.ObjectId(data.courseId) : null,
+      departmentId,
+      semesterId: data.semesterId ? new mongoose.Types.ObjectId(data.semesterId) : null,
+      title: data.title,
+      description: data.description || '',
+      startDate: data.startDate,
+      endDate: data.endDate,
+      status: data.status || AcademicCalendarStatus.DRAFT,
+      workingDays: data.workingDays || [1, 2, 3, 4, 5],
+      holidays: data.holidays || [],
+      createdBy: new mongoose.Types.ObjectId(requester.id),
+    });
+
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.CALENDAR_CREATED,
+      aggregateType: 'AcademicCalendar',
+      aggregateId: calendar._id.toString(),
+      action: 'CREATED',
+      collegeId: collegeId.toString(),
+      scope: { type: 'college', collegeId: collegeId.toString() },
+      payload: {
+        calendarId: calendar._id.toString(),
+        academicYearId: data.academicYearId,
+        title: calendar.title,
+      },
+      occurredAt: new Date().toISOString(),
+    });
+
+    return calendar;
   }
 
-  /**
-   * Create a new manual or institution calendar event with authoritative role checks.
-   */
+  static async listAcademicCalendars(
+    requester: AuthenticatedUser,
+    query: {
+      academicYearId?: string;
+      status?: AcademicCalendarStatus;
+      page?: number;
+      limit?: number;
+    }
+  ): Promise<{ calendars: IAcademicCalendar[]; total: number; page: number; pages: number }> {
+    const collegeId = requester.collegeId ? requester.collegeId.toString() : '';
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(50, Math.max(1, query.limit || 20));
+    const skip = (page - 1) * limit;
+
+    const filter: any = { collegeId: new mongoose.Types.ObjectId(collegeId) };
+    if (query.academicYearId) {
+      filter.academicYearId = new mongoose.Types.ObjectId(query.academicYearId);
+    }
+    if (query.status) {
+      filter.status = query.status;
+    }
+
+    if (requester.role === AppRole.HOD) {
+      try {
+        const hodDept = await this.resolveHodDepartmentId(requester, collegeId);
+        filter.$or = [{ departmentId: null }, { departmentId: new mongoose.Types.ObjectId(hodDept) }];
+      } catch {
+        filter.departmentId = null;
+      }
+    }
+
+    const [calendars, total] = await Promise.all([
+      AcademicCalendar.find(filter).sort({ startDate: -1, createdAt: -1 }).skip(skip).limit(limit),
+      AcademicCalendar.countDocuments(filter),
+    ]);
+
+    return {
+      calendars,
+      total,
+      page,
+      pages: Math.ceil(total / limit) || 1,
+    };
+  }
+
+  static async getAcademicCalendarById(
+    id: string,
+    requester: AuthenticatedUser
+  ): Promise<IAcademicCalendar> {
+    const collegeId = requester.collegeId ? requester.collegeId.toString() : '';
+    const calendar = await AcademicCalendar.findById(id);
+    if (!calendar || calendar.collegeId.toString() !== collegeId) {
+      throw ApiError.notFound('Academic calendar not found');
+    }
+    return calendar;
+  }
+
+  static async updateAcademicCalendar(
+    id: string,
+    data: UpdateAcademicCalendarDTO,
+    requester: AuthenticatedUser
+  ): Promise<IAcademicCalendar> {
+    if (requester.role === AppRole.STUDENT || requester.role === AppRole.FACULTY) {
+      throw ApiError.forbidden('Only administrators and HODs may modify academic calendars');
+    }
+
+    const calendar = await this.getAcademicCalendarById(id, requester);
+
+    if (data.startDate && data.endDate && data.startDate > data.endDate) {
+      throw ApiError.badRequest('startDate must be before or equal to endDate');
+    }
+
+    if (data.title !== undefined) calendar.title = data.title;
+    if (data.description !== undefined) calendar.description = data.description;
+    if (data.startDate !== undefined) calendar.startDate = data.startDate;
+    if (data.endDate !== undefined) calendar.endDate = data.endDate;
+    if (data.status !== undefined) calendar.status = data.status;
+    if (data.workingDays !== undefined) calendar.workingDays = data.workingDays;
+    if (data.holidays !== undefined) calendar.holidays = data.holidays;
+    calendar.updatedBy = new mongoose.Types.ObjectId(requester.id);
+
+    await calendar.save();
+
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.CALENDAR_UPDATED,
+      aggregateType: 'AcademicCalendar',
+      aggregateId: calendar._id.toString(),
+      action: 'UPDATED',
+      collegeId: calendar.collegeId.toString(),
+      scope: { type: 'college', collegeId: calendar.collegeId.toString() },
+      payload: { calendarId: calendar._id.toString(), status: calendar.status },
+      occurredAt: new Date().toISOString(),
+    });
+
+    return calendar;
+  }
+
+  static async activateAcademicCalendar(
+    id: string,
+    requester: AuthenticatedUser
+  ): Promise<IAcademicCalendar> {
+    return this.updateAcademicCalendar(id, { status: AcademicCalendarStatus.ACTIVE }, requester);
+  }
+
+  static async closeAcademicCalendar(
+    id: string,
+    requester: AuthenticatedUser
+  ): Promise<IAcademicCalendar> {
+    return this.updateAcademicCalendar(id, { status: AcademicCalendarStatus.CLOSED }, requester);
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // HOLIDAY & WORKING-DAY RESOLUTION (Prompt 45 Sections H & I)
+  // ══════════════════════════════════════════════════════════
+
+  static async declareHoliday(
+    data: {
+      date: string;
+      name: string;
+      description?: string;
+      scope?: CalendarEventScope;
+      departmentId?: string | null;
+    },
+    requester: AuthenticatedUser
+  ): Promise<{ override: ICalendarOverride; event: ICalendarEvent }> {
+    if (requester.role === AppRole.STUDENT || requester.role === AppRole.FACULTY) {
+      throw ApiError.forbidden('Only administrators and HODs may declare holidays');
+    }
+
+    const collegeId = requester.collegeId ? requester.collegeId.toString() : '';
+    let scope = data.scope || CalendarEventScope.COLLEGE;
+    let deptId = data.departmentId || null;
+
+    if (requester.role === AppRole.HOD) {
+      const hodDept = await this.resolveHodDepartmentId(requester, collegeId);
+      deptId = hodDept;
+      scope = CalendarEventScope.DEPARTMENT;
+    }
+
+    // 1. Create canonical CalendarOverride
+    const override = await CalendarOverrideService.createOverride(
+      {
+        collegeId,
+        departmentId: deptId,
+        date: data.date,
+        type: CalendarOverrideType.HOLIDAY,
+        scope: scope === CalendarEventScope.DEPARTMENT ? CalendarOverrideScope.DEPARTMENT : CalendarOverrideScope.COLLEGE,
+        reason: data.name,
+      },
+      requester
+    );
+
+    // 2. Create matching CalendarEvent for calendar visualization
+    const event = await this.createEvent(
+      {
+        title: `Holiday: ${data.name}`,
+        description: data.description || 'Institutional Holiday',
+        eventType: CalendarEventType.HOLIDAY,
+        scope,
+        startDate: data.date,
+        endDate: data.date,
+        allDay: true,
+        departmentId: deptId,
+        status: CalendarEventStatus.PUBLISHED,
+      },
+      requester
+    );
+
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.CALENDAR_OVERRIDE_UPDATED,
+      aggregateType: 'CalendarOverride',
+      aggregateId: override._id.toString(),
+      action: 'CREATED',
+      collegeId: collegeId.toString(),
+      scope: { type: 'college', collegeId: collegeId.toString() },
+      payload: { overrideId: override._id.toString(), date: data.date, type: 'HOLIDAY' },
+      occurredAt: new Date().toISOString(),
+    });
+
+    return { override, event };
+  }
+
+  static async resolveWorkingDay(
+    collegeId: string,
+    date: string,
+    context?: { departmentId?: string; courseId?: string }
+  ): Promise<{
+    date: string;
+    isWorkingDay: boolean;
+    reason: string;
+    type: 'WORKING_DAY' | 'HOLIDAY' | 'SPECIAL_WORKING_DAY' | 'WEEKLY_OFF';
+  }> {
+    // 1. Check CalendarOverride (hierarchical: department -> college)
+    const override = await CalendarOverrideService.resolveActiveOverride({
+      collegeId,
+      date,
+      departmentId: context?.departmentId || null,
+    });
+
+    if (override) {
+      if (override.type === CalendarOverrideType.HOLIDAY) {
+        return {
+          date,
+          isWorkingDay: false,
+          reason: override.reason || 'Declared Holiday',
+          type: 'HOLIDAY',
+        };
+      }
+      if (override.type === CalendarOverrideType.SPECIAL_WORKING_DAY) {
+        return {
+          date,
+          isWorkingDay: true,
+          reason: override.reason || 'Compensatory Working Day',
+          type: 'SPECIAL_WORKING_DAY',
+        };
+      }
+    }
+
+    // 2. Check active AcademicCalendar for this college
+    const activeCalendar = await AcademicCalendar.findOne({
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      status: AcademicCalendarStatus.ACTIVE,
+      startDate: { $lte: date },
+      endDate: { $gte: date },
+    });
+
+    if (activeCalendar) {
+      // Check embedded holidays
+      const calHoliday = activeCalendar.holidays.find((h) => h.date === date);
+      if (calHoliday) {
+        return {
+          date,
+          isWorkingDay: false,
+          reason: calHoliday.name,
+          type: 'HOLIDAY',
+        };
+      }
+
+      // Check working days array (1=Mon ... 7=Sun)
+      const dayOfWeek = getDayOfWeek(date);
+      const dayNumMap: Record<TimetableDay, number> = {
+        [TimetableDay.MONDAY]: 1,
+        [TimetableDay.TUESDAY]: 2,
+        [TimetableDay.WEDNESDAY]: 3,
+        [TimetableDay.THURSDAY]: 4,
+        [TimetableDay.FRIDAY]: 5,
+        [TimetableDay.SATURDAY]: 6,
+        [TimetableDay.SUNDAY]: 7,
+      };
+      const dayNum = dayNumMap[dayOfWeek];
+      const isConfiguredWorkingDay = activeCalendar.workingDays.includes(dayNum);
+
+      return {
+        date,
+        isWorkingDay: isConfiguredWorkingDay,
+        reason: isConfiguredWorkingDay ? 'Regular Working Day' : 'Weekly Off',
+        type: isConfiguredWorkingDay ? 'WORKING_DAY' : 'WEEKLY_OFF',
+      };
+    }
+
+    // Default fallback: Mon-Fri working, Sat-Sun off
+    const dow = getDayOfWeek(date);
+    const isWeekend = dow === TimetableDay.SATURDAY || dow === TimetableDay.SUNDAY;
+    return {
+      date,
+      isWorkingDay: !isWeekend,
+      reason: !isWeekend ? 'Regular Working Day' : 'Weekend',
+      type: !isWeekend ? 'WORKING_DAY' : 'WEEKLY_OFF',
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // EVENT CRUD (Prompt 45 Section E)
+  // ══════════════════════════════════════════════════════════
+
   static async createEvent(
     data: CreateCalendarEventDTO,
     requester: AuthenticatedUser
@@ -202,7 +579,6 @@ export class AcademicCalendarService {
     let subjectId: mongoose.Types.ObjectId | null = null;
     let facultyAssignmentId: mongoose.Types.ObjectId | null = null;
 
-    // ── ROLE SCOPE AUTHORIZATION ────────────────────────────
     if (requester.role === AppRole.SUPER_ADMIN || requester.role === AppRole.COLLEGE_ADMIN) {
       scope = scope || CalendarEventScope.COLLEGE;
       if (data.departmentId) {
@@ -239,7 +615,6 @@ export class AcademicCalendarService {
       }
       scope = scope || CalendarEventScope.CLASS;
 
-      // Authoritative teaching context resolution
       let assignment = null;
       if (data.facultyAssignmentId) {
         assignment = await FacultyAssignment.findOne({
@@ -248,61 +623,53 @@ export class AcademicCalendarService {
           collegeId: new mongoose.Types.ObjectId(collegeId),
           isActive: true,
         });
+        if (!assignment) {
+          throw ApiError.forbidden('Invalid or inactive faculty assignment');
+        }
       } else if (data.subjectId) {
-        const query: any = {
+        assignment = await FacultyAssignment.findOne({
           facultyId: new mongoose.Types.ObjectId(requester.id),
-          collegeId: new mongoose.Types.ObjectId(collegeId),
           subjectId: new mongoose.Types.ObjectId(data.subjectId),
+          collegeId: new mongoose.Types.ObjectId(collegeId),
           isActive: true,
-        };
-        if (data.sectionId) query.sectionId = new mongoose.Types.ObjectId(data.sectionId);
-        if (data.semesterId) query.semesterId = new mongoose.Types.ObjectId(data.semesterId);
-        assignment = await FacultyAssignment.findOne(query);
+        });
       }
 
-      if (!assignment) {
-        throw ApiError.forbidden('You can only create events for teaching contexts assigned to you');
+      if (assignment) {
+        facultyAssignmentId = assignment._id as mongoose.Types.ObjectId;
+        subjectId = assignment.subjectId;
+        courseId = assignment.courseId;
+        academicYearId = assignment.academicYearId;
+        semesterId = assignment.semesterId;
+        sectionId = assignment.sectionId || null;
+        departmentId = assignment.departmentId;
+      } else {
+        if (data.subjectId) subjectId = new mongoose.Types.ObjectId(data.subjectId);
+        if (data.sectionId) sectionId = new mongoose.Types.ObjectId(data.sectionId);
       }
-
-      facultyAssignmentId = assignment._id as mongoose.Types.ObjectId;
-      departmentId = assignment.departmentId;
-      courseId = assignment.courseId;
-      academicYearId = assignment.academicYearId;
-      semesterId = assignment.semesterId;
-      sectionId = assignment.sectionId;
-      subjectId = assignment.subjectId;
     }
 
-    const startDate = data.startDate;
-    const endDate = data.endDate || startDate;
-    const status = data.status || CalendarEventStatus.PUBLISHED;
-
-    // Resolve human-friendly academic context
     const academicContext = await this.formatContext(collegeId, {
       scope: scope || CalendarEventScope.COLLEGE,
-      departmentId: departmentId ? departmentId.toString() : null,
-      subjectId: subjectId ? subjectId.toString() : null,
-      sectionId: sectionId ? sectionId.toString() : null,
-      semesterId: semesterId ? semesterId.toString() : null,
+      departmentId: departmentId?.toString(),
+      subjectId: subjectId?.toString(),
+      sectionId: sectionId?.toString(),
+      semesterId: semesterId?.toString(),
     });
-
-    const isHoliday =
-      data.eventType === CalendarEventType.HOLIDAY ||
-      data.eventType === CalendarEventType.PUBLIC_HOLIDAY ||
-      data.eventType === CalendarEventType.INSTITUTION_HOLIDAY;
 
     const event = await CalendarEvent.create({
       collegeId: new mongoose.Types.ObjectId(collegeId),
+      academicCalendarId: data.academicCalendarId ? new mongoose.Types.ObjectId(data.academicCalendarId) : null,
       title: data.title,
       description: data.description || '',
-      sourceType: isHoliday ? CalendarSourceType.SYSTEM : CalendarSourceType.MANUAL,
+      sourceType: CalendarSourceType.MANUAL,
       eventType: data.eventType,
-      scope,
-      startDate,
-      endDate,
+      scope: scope || CalendarEventScope.COLLEGE,
+      startDate: data.startDate,
+      endDate: data.endDate || data.startDate,
       startTime: data.startTime || null,
       endTime: data.endTime || null,
-      allDay: isHoliday ? true : (data.allDay ?? false),
+      allDay: data.allDay ?? false,
       departmentId,
       courseId,
       academicYearId,
@@ -313,36 +680,38 @@ export class AcademicCalendarService {
       location: data.location || null,
       isRecurring: data.isRecurring ?? false,
       recurrence: data.recurrence || CalendarRecurrence.NONE,
-      status,
+      status: data.status || CalendarEventStatus.PUBLISHED,
       createdBy: new mongoose.Types.ObjectId(requester.id),
       creatorRole: requester.role,
-      creatorName: requester.name || 'Staff Member',
+      creatorName: requester.name || 'User',
       academicContext,
-      navigationTarget: null,
     });
 
-    // Dispatch notification safely if published
-    if (status === CalendarEventStatus.PUBLISHED) {
+    if (event.status === CalendarEventStatus.PUBLISHED) {
       this.dispatchCalendarNotification(event, requester).catch((err) => {
-        logger.warn('Failed to dispatch calendar event notification:', err);
+        logger.warn('Failed to dispatch notification on event creation:', err);
       });
     }
+
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.CALENDAR_EVENT_CREATED,
+      aggregateType: 'CalendarEvent',
+      aggregateId: event._id.toString(),
+      action: 'CREATED',
+      collegeId: collegeId.toString(),
+      scope: { type: 'college', collegeId: collegeId.toString() },
+      payload: { eventId: event._id.toString(), startDate: event.startDate, title: event.title },
+      occurredAt: new Date().toISOString(),
+    });
 
     return event;
   }
 
-  /**
-   * Update an existing manual calendar event.
-   */
   static async updateEvent(
     eventId: string,
     data: UpdateCalendarEventDTO,
     requester: AuthenticatedUser
   ): Promise<ICalendarEvent> {
-    if (requester.role === AppRole.STUDENT) {
-      throw ApiError.forbidden('Students cannot modify calendar events');
-    }
-
     const collegeId = requester.collegeId ? requester.collegeId.toString() : '';
     const event = await CalendarEvent.findById(eventId);
     if (!event) {
@@ -351,11 +720,10 @@ export class AcademicCalendarService {
     if (event.collegeId.toString() !== collegeId) {
       throw ApiError.forbidden('Cross-college modification is prohibited');
     }
-    if (event.sourceType === CalendarSourceType.DERIVED) {
-      throw ApiError.badRequest('Derived events cannot be modified through the calendar endpoint');
+    if (event.sourceType !== CalendarSourceType.MANUAL) {
+      throw ApiError.badRequest('Derived operational events cannot be modified through the calendar endpoint');
     }
 
-    // Authorization check
     if (requester.role === AppRole.SUPER_ADMIN || requester.role === AppRole.COLLEGE_ADMIN) {
       // Allowed full edit
     } else if (requester.role === AppRole.HOD) {
@@ -372,7 +740,6 @@ export class AcademicCalendarService {
       }
     }
 
-    // Apply allowed updates
     if (data.title !== undefined) event.title = data.title;
     if (data.description !== undefined) event.description = data.description;
     if (data.eventType !== undefined) event.eventType = data.eventType;
@@ -387,12 +754,21 @@ export class AcademicCalendarService {
     if (data.status !== undefined) event.status = data.status;
 
     await event.save();
+
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.CALENDAR_EVENT_UPDATED,
+      aggregateType: 'CalendarEvent',
+      aggregateId: event._id.toString(),
+      action: 'UPDATED',
+      collegeId: collegeId.toString(),
+      scope: { type: 'college', collegeId: collegeId.toString() },
+      payload: { eventId: event._id.toString(), startDate: event.startDate },
+      occurredAt: new Date().toISOString(),
+    });
+
     return event;
   }
 
-  /**
-   * Cancel a calendar event (sets status to CANCELLED without hard-deleting).
-   */
   static async cancelEvent(
     eventId: string,
     reason: string | undefined,
@@ -410,11 +786,10 @@ export class AcademicCalendarService {
     if (event.collegeId.toString() !== collegeId) {
       throw ApiError.forbidden('Cross-college modification is prohibited');
     }
-    if (event.sourceType === CalendarSourceType.DERIVED) {
+    if (event.sourceType !== CalendarSourceType.MANUAL) {
       throw ApiError.badRequest('Derived events cannot be cancelled through the calendar endpoint');
     }
 
-    // Authorization check
     if (requester.role === AppRole.SUPER_ADMIN || requester.role === AppRole.COLLEGE_ADMIN) {
       // Allowed
     } else if (requester.role === AppRole.HOD) {
@@ -436,12 +811,21 @@ export class AcademicCalendarService {
       event.metadata = { ...(event.metadata || {}), cancellationReason: reason };
     }
     await event.save();
+
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.CALENDAR_EVENT_CANCELLED,
+      aggregateType: 'CalendarEvent',
+      aggregateId: event._id.toString(),
+      action: 'CLOSED',
+      collegeId: collegeId.toString(),
+      scope: { type: 'college', collegeId: collegeId.toString() },
+      payload: { eventId: event._id.toString() },
+      occurredAt: new Date().toISOString(),
+    });
+
     return event;
   }
 
-  /**
-   * Publish a draft event.
-   */
   static async publishEvent(
     eventId: string,
     requester: AuthenticatedUser
@@ -453,13 +837,10 @@ export class AcademicCalendarService {
     return event;
   }
 
-  /**
-   * Central unified calendar query for the authenticated user.
-   * Merges:
-   * 1. Manual published Calendar Events
-   * 2. Annual recurring events projected onto target year
-   * 3. Derived Assignment Deadlines (from Assignment collection)
-   */
+  // ══════════════════════════════════════════════════════════
+  // UNIFIED MULTI-SOURCE CALENDAR AGGREGATION (Prompt 45 Sections F-Q)
+  // ══════════════════════════════════════════════════════════
+
   static async getCalendarForUser(
     requester: AuthenticatedUser,
     query: {
@@ -473,7 +854,6 @@ export class AcademicCalendarService {
       throw ApiError.badRequest('collegeId is required');
     }
 
-    // Default to a 3-month window around current date if not provided
     const now = new Date();
     const defaultStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
     const defaultEnd = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString().split('T')[0];
@@ -481,7 +861,9 @@ export class AcademicCalendarService {
     const startDate = query.startDate || defaultStart;
     const endDate = query.endDate || defaultEnd;
 
-    // Load institution config for concept visibility and terminology
+    const startDateTime = new Date(`${startDate}T00:00:00.000Z`);
+    const endDateTime = new Date(`${endDate}T23:59:59.999Z`);
+
     const config = await institutionConfigService.getEffectiveConfiguration(collegeId);
     const isSectionEnabled = config.academicStructure?.section ?? true;
 
@@ -489,6 +871,7 @@ export class AcademicCalendarService {
     let studentEnrollments: any[] = [];
     let facultyAssignments: any[] = [];
     let hodDeptId: string | null = null;
+    let studentId: string | null = null;
 
     if (requester.role === AppRole.STUDENT) {
       let student = await Student.findOne({ userId: requester.id, collegeId });
@@ -496,6 +879,7 @@ export class AcademicCalendarService {
         student = await Student.findById(requester.id);
       }
       if (student) {
+        studentId = student._id.toString();
         studentEnrollments = await StudentEnrollment.find({
           studentId: student._id,
           collegeId,
@@ -517,13 +901,18 @@ export class AcademicCalendarService {
     }
 
     const enrolledDeptIds = new Set(studentEnrollments.map((e) => e.departmentId.toString()));
-    const enrolledSectionIds = new Set(studentEnrollments.map((e) => e.sectionId.toString()));
+    const enrolledSectionIds = new Set(
+      studentEnrollments.filter((e) => e.sectionId).map((e) => e.sectionId.toString())
+    );
     const enrolledSemesterIds = new Set(studentEnrollments.map((e) => e.semesterId.toString()));
     const facultySubjectIds = new Set(facultyAssignments.map((a) => a.subjectId.toString()));
-    const facultySectionIds = new Set(facultyAssignments.map((a) => a.sectionId.toString()));
+    const facultySectionIds = new Set(
+      facultyAssignments.filter((a) => a.sectionId).map((a) => a.sectionId.toString())
+    );
+
+    const results: NormalizedCalendarEvent[] = [];
 
     // ── 1. QUERY MANUAL CALENDAR EVENTS ──────────────────────
-    // Normal query covers standard events where date range overlaps
     const manualEventFilter: any = {
       collegeId: new mongoose.Types.ObjectId(collegeId),
       startDate: { $lte: endDate },
@@ -531,11 +920,9 @@ export class AcademicCalendarService {
       isRecurring: false,
     };
 
-    // Role-based visibility
     if (requester.role === AppRole.STUDENT) {
       manualEventFilter.status = CalendarEventStatus.PUBLISHED;
     } else if (requester.role === AppRole.FACULTY || requester.role === AppRole.HOD) {
-      // Can see PUBLISHED, plus their own DRAFT/CANCELLED
       manualEventFilter.$or = [
         { status: CalendarEventStatus.PUBLISHED },
         { createdBy: new mongoose.Types.ObjectId(requester.id) },
@@ -555,19 +942,12 @@ export class AcademicCalendarService {
     }
     const recurringEvents = await CalendarEvent.find(recurringFilter);
 
-    // Filter manual & recurring events by audience visibility
     const visibleManualEvents: ICalendarEvent[] = [];
 
     const isVisibleToUser = (ev: ICalendarEvent): boolean => {
-      if (requester.role === AppRole.SUPER_ADMIN || requester.role === AppRole.COLLEGE_ADMIN) {
-        return true;
-      }
-      if (ev.createdBy.toString() === requester.id) {
-        return true;
-      }
-      if (ev.scope === CalendarEventScope.COLLEGE) {
-        return true;
-      }
+      if (requester.role === AppRole.SUPER_ADMIN || requester.role === AppRole.COLLEGE_ADMIN) return true;
+      if (ev.createdBy.toString() === requester.id) return true;
+      if (ev.scope === CalendarEventScope.COLLEGE) return true;
 
       if (requester.role === AppRole.HOD) {
         if (!hodDeptId) return false;
@@ -578,12 +958,8 @@ export class AcademicCalendarService {
         if (ev.scope === CalendarEventScope.DEPARTMENT) {
           return requester.departmentId ? ev.departmentId?.toString() === requester.departmentId : true;
         }
-        if (ev.subjectId && facultySubjectIds.has(ev.subjectId.toString())) {
-          return true;
-        }
-        if (ev.sectionId && facultySectionIds.has(ev.sectionId.toString())) {
-          return true;
-        }
+        if (ev.subjectId && facultySubjectIds.has(ev.subjectId.toString())) return true;
+        if (ev.sectionId && facultySectionIds.has(ev.sectionId.toString())) return true;
         return false;
       }
 
@@ -592,41 +968,30 @@ export class AcademicCalendarService {
           return ev.departmentId ? enrolledDeptIds.has(ev.departmentId.toString()) : false;
         }
         if (ev.scope === CalendarEventScope.SECTION || ev.scope === CalendarEventScope.CLASS) {
-          if (ev.sectionId && !enrolledSectionIds.has(ev.sectionId.toString())) {
-            return false;
-          }
-          if (ev.semesterId && !enrolledSemesterIds.has(ev.semesterId.toString())) {
-            return false;
-          }
+          if (ev.sectionId && !enrolledSectionIds.has(ev.sectionId.toString())) return false;
+          if (ev.semesterId && !enrolledSemesterIds.has(ev.semesterId.toString())) return false;
           return true;
         }
       }
-
       return false;
     };
 
     for (const ev of manualEvents) {
-      if (isVisibleToUser(ev)) {
-        visibleManualEvents.push(ev);
-      }
+      if (isVisibleToUser(ev)) visibleManualEvents.push(ev);
     }
 
-    // Project recurring events onto current query range
     const startYear = parseInt(startDate.slice(0, 4), 10);
     const endYear = parseInt(endDate.slice(0, 4), 10);
 
     for (const recEv of recurringEvents) {
       if (!isVisibleToUser(recEv)) continue;
-
-      const origStartMonthDay = recEv.startDate.slice(5); // MM-DD
+      const origStartMonthDay = recEv.startDate.slice(5);
       const origEndMonthDay = recEv.endDate.slice(5);
 
       for (let y = startYear; y <= endYear; y++) {
         const projectedStart = `${y}-${origStartMonthDay}`;
         const projectedEnd = `${y}-${origEndMonthDay}`;
-
         if (projectedStart <= endDate && projectedEnd >= startDate) {
-          // Clone event with projected dates
           const projectedDoc = new CalendarEvent(recEv.toObject());
           projectedDoc._id = recEv._id;
           projectedDoc.startDate = projectedStart;
@@ -636,41 +1001,12 @@ export class AcademicCalendarService {
       }
     }
 
-    // ── 3. QUERY DERIVED ASSIGNMENT DEADLINES ────────────────
-    const assignmentFilter: any = {
-      collegeId: new mongoose.Types.ObjectId(collegeId),
-      status: AssignmentStatus.PUBLISHED,
-      dueDate: { $gte: startDate, $lte: endDate },
-    };
-
-    if (requester.role === AppRole.STUDENT) {
-      assignmentFilter.sectionId = { $in: Array.from(enrolledSectionIds).map((id) => new mongoose.Types.ObjectId(id)) };
-    } else if (requester.role === AppRole.FACULTY) {
-      assignmentFilter.$or = [
-        { facultyId: new mongoose.Types.ObjectId(requester.id) },
-        { sectionId: { $in: Array.from(facultySectionIds).map((id) => new mongoose.Types.ObjectId(id)) } },
-      ];
-    } else if (requester.role === AppRole.HOD) {
-      if (hodDeptId) {
-        assignmentFilter.departmentId = new mongoose.Types.ObjectId(hodDeptId);
-      }
-    }
-
-    const assignments = await Assignment.find(assignmentFilter);
-
-    // ── 4. NORMALIZE & MERGE ─────────────────────────────────
-    const results: NormalizedCalendarEvent[] = [];
-
-    // Map manual events
     for (const ev of visibleManualEvents) {
       const isCreator = ev.createdBy.toString() === requester.id;
       const isAdmin = requester.role === AppRole.SUPER_ADMIN || requester.role === AppRole.COLLEGE_ADMIN;
       const isHodForDept = requester.role === AppRole.HOD && hodDeptId && ev.departmentId?.toString() === hodDeptId;
-
       const canEdit = isAdmin || (isHodForDept && ev.scope !== CalendarEventScope.COLLEGE) || (isCreator && requester.role === AppRole.FACULTY);
-      const canCancel = canEdit && ev.status !== CalendarEventStatus.CANCELLED;
 
-      // Adjust academic context if section is disabled
       let context = ev.academicContext || '';
       if (!isSectionEnabled && context.includes('•')) {
         context = context.split('•')[0].trim();
@@ -705,35 +1041,37 @@ export class AcademicCalendarService {
         creatorName: ev.creatorName,
         navigationTarget: `/calendar/event/${ev._id.toString()}`,
         canEdit,
-        canCancel,
+        canCancel: canEdit && ev.status !== CalendarEventStatus.CANCELLED,
       });
     }
 
-    // Map derived assignment deadlines
-    for (const a of assignments) {
-      // Format assignment academic context
-      let aContext = a.title;
-      try {
-        const sub = await Subject.findById(a.subjectId);
-        if (sub) {
-          if (isSectionEnabled && a.sectionId) {
-            const sec = await Section.findById(a.sectionId);
-            aContext = sec ? `${sub.name} • ${sec.name}` : sub.name;
-          } else {
-            aContext = sub.name;
-          }
-        }
-      } catch {
-        aContext = a.title;
-      }
+    // ── 3. QUERY DERIVED ASSIGNMENT DEADLINES (Prompt 39) ─────
+    const assignmentFilter: any = {
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      status: AssignmentStatus.PUBLISHED,
+      dueDate: { $gte: startDate, $lte: endDate },
+    };
 
+    if (requester.role === AppRole.STUDENT) {
+      assignmentFilter.sectionId = { $in: Array.from(enrolledSectionIds).map((id) => new mongoose.Types.ObjectId(id)) };
+    } else if (requester.role === AppRole.FACULTY) {
+      assignmentFilter.$or = [
+        { facultyId: new mongoose.Types.ObjectId(requester.id) },
+        { sectionId: { $in: Array.from(facultySectionIds).map((id) => new mongoose.Types.ObjectId(id)) } },
+      ];
+    } else if (requester.role === AppRole.HOD && hodDeptId) {
+      assignmentFilter.departmentId = new mongoose.Types.ObjectId(hodDeptId);
+    }
+
+    const assignments = await Assignment.find(assignmentFilter);
+    for (const a of assignments) {
       results.push({
         id: `derived_assignment_${a._id.toString()}`,
         title: a.title,
         description: a.description || `Due at ${a.dueTime}`,
-        sourceType: CalendarSourceType.DERIVED,
+        sourceType: CalendarSourceType.ASSIGNMENT,
         sourceId: a._id.toString(),
-        eventType: CalendarEventType.DEADLINE,
+        eventType: CalendarEventType.ASSIGNMENT_DEADLINE,
         scope: CalendarEventScope.CLASS,
         startDate: a.dueDate,
         endDate: a.dueDate,
@@ -746,7 +1084,7 @@ export class AcademicCalendarService {
         semesterId: a.semesterId ? a.semesterId.toString() : null,
         sectionId: isSectionEnabled && a.sectionId ? a.sectionId.toString() : null,
         subjectId: a.subjectId ? a.subjectId.toString() : null,
-        academicContext: aContext,
+        academicContext: a.title,
         location: null,
         isRecurring: false,
         recurrence: CalendarRecurrence.NONE,
@@ -760,13 +1098,268 @@ export class AcademicCalendarService {
       });
     }
 
-    // ── 5. FILTER BY EVENT TYPE & SORT ──────────────────────
+    // ── 4. QUERY TIMETABLE CLASSES & EXCEPTIONS (Prompt 45 Section L) ──
+    const dateList = getDatesInRange(startDate, endDate);
+    const timetableFilter: any = {
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      status: TimetableStatus.PUBLISHED,
+    };
+
+    if (requester.role === AppRole.STUDENT) {
+      timetableFilter.sectionId = { $in: Array.from(enrolledSectionIds).map((id) => new mongoose.Types.ObjectId(id)) };
+    } else if (requester.role === AppRole.FACULTY) {
+      timetableFilter['entries.facultyId'] = new mongoose.Types.ObjectId(requester.id);
+    } else if (requester.role === AppRole.HOD && hodDeptId) {
+      timetableFilter.departmentId = new mongoose.Types.ObjectId(hodDeptId);
+    }
+
+    const activeTimetables = await Timetable.find(timetableFilter).populate('entries.subjectId');
+
+    for (const tt of activeTimetables) {
+      for (const dateStr of dateList) {
+        const dayOfWeek = getDayOfWeek(dateStr);
+
+        // Check active holiday override for this day and section
+        const dayOverride = await CalendarOverrideService.resolveActiveOverride({
+          collegeId,
+          date: dateStr,
+          departmentId: tt.departmentId?.toString(),
+          sectionId: tt.sectionId?.toString(),
+        });
+
+        if (dayOverride && dayOverride.type === CalendarOverrideType.HOLIDAY) {
+          continue; // Classes do not run on holidays
+        }
+
+        const entriesForDay = tt.entries.filter((e) => e.dayOfWeek === dayOfWeek);
+
+        for (const entry of entriesForDay) {
+          // If faculty query, ensure this entry belongs to this faculty (or substitute)
+          const isOwnClass = entry.facultyId?.toString() === requester.id;
+          let substitute: any = null;
+
+          if (entry._id) {
+            substitute = await TeacherSubstitution.findOne({
+              collegeId: new mongoose.Types.ObjectId(collegeId),
+              timetableEntryId: entry._id,
+              date: dateStr,
+              status: TeacherSubstitutionStatus.ACTIVE,
+            }).populate('substituteFacultyId');
+          }
+
+          if (requester.role === AppRole.FACULTY) {
+            const isSubstitutedToMe = substitute?.substituteFacultyId?._id?.toString() === requester.id;
+            if (!isOwnClass && !isSubstitutedToMe) continue;
+          }
+
+          // Check if this specific entry is cancelled
+          const entryOverride = await CalendarOverrideService.resolveActiveOverride({
+            collegeId,
+            date: dateStr,
+            departmentId: tt.departmentId?.toString(),
+            sectionId: tt.sectionId?.toString(),
+            timetableEntryId: entry._id?.toString(),
+          });
+
+          const isCancelled = entryOverride?.type === CalendarOverrideType.CANCELLED;
+
+          const subjectObj: any = entry.subjectId;
+          let displayTitle = (typeof subjectObj === 'object' && subjectObj?.name) ? subjectObj.name : (entry.subjectName || 'Class');
+          let facultyDisplay = substitute ? `Substituted: ${substitute.substituteFacultyId?.name || 'Substitute'}` : undefined;
+
+          results.push({
+            id: `derived_timetable_${tt._id.toString()}_${entry._id?.toString() || 'entry'}_${dateStr}`,
+            title: displayTitle,
+            description: facultyDisplay ? `${facultyDisplay} • ${entry.roomNumber || ''}` : (entry.roomNumber ? `Room: ${entry.roomNumber}` : ''),
+            sourceType: CalendarSourceType.TIMETABLE,
+            sourceId: entry._id?.toString() || tt._id.toString(),
+            eventType: CalendarEventType.TIMETABLE_CLASS,
+            scope: CalendarEventScope.CLASS,
+            startDate: dateStr,
+            endDate: dateStr,
+            startTime: entry.startTime,
+            endTime: entry.endTime,
+            allDay: false,
+            departmentId: tt.departmentId?.toString() || null,
+            courseId: tt.courseId?.toString() || null,
+            academicYearId: tt.academicYearId?.toString() || null,
+            semesterId: tt.semesterId?.toString() || null,
+            sectionId: tt.sectionId?.toString() || null,
+            subjectId: entry.subjectId?.toString() || null,
+            academicContext: entry.sectionName ? `${entry.subjectName || 'Subject'} • ${entry.sectionName}` : entry.subjectName || null,
+            location: entry.roomNumber || null,
+            isRecurring: false,
+            recurrence: CalendarRecurrence.NONE,
+            status: isCancelled ? CalendarEventStatus.CANCELLED : CalendarEventStatus.PUBLISHED,
+            createdBy: tt.createdBy || requester.id,
+            creatorRole: AppRole.COLLEGE_ADMIN,
+            creatorName: 'Academic Schedule',
+            navigationTarget: `/timetable`,
+            canEdit: false,
+            canCancel: false,
+          });
+        }
+      }
+    }
+
+    // ── 5. QUERY PRACTICAL SESSIONS (Prompt 41) ──────────────
+    const practicalFilter: any = {
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      scheduledDate: { $gte: startDateTime, $lte: endDateTime },
+    };
+
+    if (requester.role === AppRole.STUDENT) {
+      practicalFilter.sectionId = { $in: Array.from(enrolledSectionIds).map((id) => new mongoose.Types.ObjectId(id)) };
+    } else if (requester.role === AppRole.FACULTY) {
+      practicalFilter.facultyId = new mongoose.Types.ObjectId(requester.id);
+    } else if (requester.role === AppRole.HOD && hodDeptId) {
+      practicalFilter.departmentId = new mongoose.Types.ObjectId(hodDeptId);
+    }
+
+    const practicalSessions = await PracticalSession.find(practicalFilter).populate('subjectId');
+    for (const ps of practicalSessions) {
+      const scheduledDateStr = ps.scheduledDate.toISOString().split('T')[0];
+      const subDoc: any = ps.subjectId;
+      results.push({
+        id: `derived_practical_${ps._id.toString()}`,
+        title: `Practical: ${ps.topic}`,
+        description: ps.instructions || `Session #${ps.sessionNumber}`,
+        sourceType: CalendarSourceType.PRACTICAL,
+        sourceId: ps._id.toString(),
+        eventType: CalendarEventType.PRACTICAL,
+        scope: CalendarEventScope.CLASS,
+        startDate: scheduledDateStr,
+        endDate: scheduledDateStr,
+        startTime: ps.startTime || null,
+        endTime: ps.endTime || null,
+        allDay: false,
+        departmentId: ps.departmentId?.toString(),
+        courseId: ps.courseId?.toString(),
+        academicYearId: ps.academicYearId?.toString(),
+        semesterId: ps.semesterId?.toString(),
+        sectionId: ps.sectionId?.toString() || null,
+        subjectId: subDoc?._id?.toString() || ps.subjectId?.toString() || null,
+        academicContext: subDoc?.name || ps.topic,
+        location: ps.roomNumber || null,
+        isRecurring: false,
+        recurrence: CalendarRecurrence.NONE,
+        status: ps.status === 'CANCELLED' ? CalendarEventStatus.CANCELLED : CalendarEventStatus.PUBLISHED,
+        createdBy: ps.facultyId?.toString() || requester.id,
+        creatorRole: AppRole.FACULTY,
+        creatorName: 'Faculty Instructor',
+        navigationTarget: `/practicals/${ps._id.toString()}`,
+        canEdit: false,
+        canCancel: false,
+      });
+    }
+
+    // ── 6. QUERY INTERNAL ASSESSMENTS (Prompt 43) ────────────
+    const assessmentFilter: any = {
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      assessmentDate: { $gte: startDateTime, $lte: endDateTime },
+      status: { $in: [AssessmentStatus.OPEN, AssessmentStatus.CLOSED, AssessmentStatus.REVIEWED, AssessmentStatus.PUBLISHED] },
+    };
+
+    if (requester.role === AppRole.STUDENT) {
+      assessmentFilter.sectionId = { $in: Array.from(enrolledSectionIds).map((id) => new mongoose.Types.ObjectId(id)) };
+    } else if (requester.role === AppRole.FACULTY) {
+      assessmentFilter.facultyId = new mongoose.Types.ObjectId(requester.id);
+    } else if (requester.role === AppRole.HOD && hodDeptId) {
+      assessmentFilter.departmentId = new mongoose.Types.ObjectId(hodDeptId);
+    }
+
+    const assessments = await InternalAssessment.find(assessmentFilter).populate('subjectId');
+    for (const ia of assessments) {
+      const aDateStr = ia.assessmentDate ? ia.assessmentDate.toISOString().split('T')[0] : startDate;
+      const subDoc: any = ia.subjectId;
+      results.push({
+        id: `derived_assessment_${ia._id.toString()}`,
+        title: `Assessment: ${ia.title}`,
+        description: `Max Marks: ${ia.maximumMarks} • Type: ${ia.assessmentType}`,
+        sourceType: CalendarSourceType.ASSESSMENT,
+        sourceId: ia._id.toString(),
+        eventType: CalendarEventType.INTERNAL_ASSESSMENT,
+        scope: CalendarEventScope.CLASS,
+        startDate: aDateStr,
+        endDate: aDateStr,
+        startTime: null,
+        endTime: null,
+        allDay: true,
+        departmentId: ia.departmentId?.toString(),
+        courseId: ia.courseId?.toString(),
+        academicYearId: ia.academicYearId?.toString(),
+        semesterId: ia.semesterId?.toString(),
+        sectionId: ia.sectionId?.toString() || null,
+        subjectId: subDoc?._id?.toString() || ia.subjectId?.toString() || null,
+        academicContext: subDoc?.name || ia.title,
+        location: null,
+        isRecurring: false,
+        recurrence: CalendarRecurrence.NONE,
+        status: CalendarEventStatus.PUBLISHED,
+        createdBy: ia.facultyId?.toString() || requester.id,
+        creatorRole: AppRole.FACULTY,
+        creatorName: ia.facultyName || 'Faculty',
+        navigationTarget: `/assessments`,
+        canEdit: false,
+        canCancel: false,
+      });
+    }
+
+    // ── 7. QUERY ACADEMIC RESULTS PUBLICATIONS (Prompt 44) ───
+    const resultFilter: any = {
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      status: 'PUBLISHED',
+      publishedAt: { $gte: startDateTime, $lte: endDateTime },
+    };
+
+    if (requester.role === AppRole.STUDENT && studentId) {
+      resultFilter.studentId = new mongoose.Types.ObjectId(studentId);
+    } else if (requester.role === AppRole.HOD && hodDeptId) {
+      // HOD scope
+    }
+
+    const publishedResults = await AcademicResult.find(resultFilter).limit(20);
+    for (const r of publishedResults) {
+      const pubDateStr = r.publishedAt ? r.publishedAt.toISOString().split('T')[0] : startDate;
+      results.push({
+        id: `derived_result_${r._id.toString()}`,
+        title: `Official Result Published (v${r.version})`,
+        description: `Overall: ${r.summary.overallResult} • Percentage: ${r.summary.percentage != null ? r.summary.percentage.toFixed(1) + '%' : 'N/A'}`,
+        sourceType: CalendarSourceType.ACADEMIC_RESULT,
+        sourceId: r._id.toString(),
+        eventType: CalendarEventType.RESULT_PUBLICATION,
+        scope: CalendarEventScope.COLLEGE,
+        startDate: pubDateStr,
+        endDate: pubDateStr,
+        startTime: null,
+        endTime: null,
+        allDay: true,
+        departmentId: r.departmentId?.toString(),
+        courseId: r.courseId?.toString(),
+        academicYearId: r.academicYearId?.toString(),
+        semesterId: r.semesterId?.toString(),
+        sectionId: r.sectionId?.toString() || null,
+        subjectId: null,
+        academicContext: `Semester ${r.semesterId}`,
+        location: null,
+        isRecurring: false,
+        recurrence: CalendarRecurrence.NONE,
+        status: CalendarEventStatus.PUBLISHED,
+        createdBy: r.publishedBy ? r.publishedBy.toString() : requester.id,
+        creatorRole: AppRole.COLLEGE_ADMIN,
+        creatorName: 'Controller of Examinations',
+        navigationTarget: `/my-results`,
+        canEdit: false,
+        canCancel: false,
+      });
+    }
+
+    // ── 8. FILTER & SORT ─────────────────────────────────────
     let filtered = results;
     if (query.eventType) {
       filtered = results.filter((e) => e.eventType === query.eventType);
     }
 
-    // Sort chronologically: startDate ASC, startTime ASC (allDay first)
     filtered.sort((a, b) => {
       const dateCmp = a.startDate.localeCompare(b.startDate);
       if (dateCmp !== 0) return dateCmp;
@@ -780,9 +1373,6 @@ export class AcademicCalendarService {
     return filtered;
   }
 
-  /**
-   * Retrieve single event detail (manual or derived).
-   */
   static async getEventById(
     eventId: string,
     requester: AuthenticatedUser
@@ -800,9 +1390,9 @@ export class AcademicCalendarService {
         id: eventId,
         title: assignment.title,
         description: assignment.description || '',
-        sourceType: CalendarSourceType.DERIVED,
+        sourceType: CalendarSourceType.ASSIGNMENT,
         sourceId: assignment._id.toString(),
-        eventType: CalendarEventType.DEADLINE,
+        eventType: CalendarEventType.ASSIGNMENT_DEADLINE,
         scope: CalendarEventScope.CLASS,
         startDate: assignment.dueDate,
         endDate: assignment.dueDate,
@@ -881,10 +1471,45 @@ export class AcademicCalendarService {
     };
   }
 
-  /**
-   * Helper to dispatch persistent notifications for important calendar events.
-   * Completely fault tolerant — will never bubble an exception or fail the event.
-   */
+  private static async formatContext(
+    collegeId: string,
+    params: {
+      scope: CalendarEventScope;
+      departmentId?: string | null;
+      subjectId?: string | null;
+      sectionId?: string | null;
+      semesterId?: string | null;
+    }
+  ): Promise<string> {
+    const config = await institutionConfigService.getEffectiveConfiguration(collegeId);
+    const isSectionEnabled = config.academicStructure?.section ?? true;
+
+    if (params.scope === CalendarEventScope.COLLEGE) {
+      return 'Entire College';
+    }
+
+    if (params.subjectId) {
+      const subjectDoc = await Subject.findById(params.subjectId);
+      const subjectName = subjectDoc?.name || 'Subject';
+      if (isSectionEnabled && params.sectionId) {
+        const sectionDoc = await Section.findById(params.sectionId);
+        if (sectionDoc) return `${subjectName} • ${sectionDoc.name}`;
+      }
+      if (params.semesterId) {
+        const semesterDoc = await Semester.findById(params.semesterId);
+        if (semesterDoc) return `${subjectName} • ${semesterDoc.name}`;
+      }
+      return subjectName;
+    }
+
+    if (params.departmentId) {
+      const deptDoc = await Department.findById(params.departmentId);
+      return deptDoc?.name || 'Department';
+    }
+
+    return '';
+  }
+
   private static async dispatchCalendarNotification(
     event: ICalendarEvent,
     requester: AuthenticatedUser
@@ -894,7 +1519,6 @@ export class AcademicCalendarService {
       let targetUserIds: string[] = [];
 
       if (event.scope === CalendarEventScope.COLLEGE) {
-        // Send to users in college
         const users = await User.find({ collegeId, isActive: { $ne: false } }).select('_id');
         targetUserIds = users.map((u) => u._id.toString());
       } else if (event.scope === CalendarEventScope.DEPARTMENT && event.departmentId) {
@@ -931,7 +1555,7 @@ export class AcademicCalendarService {
         : `Scheduled for ${event.startDate}${event.startTime ? ' at ' + event.startTime : ''}`;
 
       for (const uid of targetUserIds) {
-        if (uid === requester.id) continue; // Don't notify creator
+        if (uid === requester.id) continue;
 
         await NotificationService.createNotification({
           collegeId: collegeId.toString(),

@@ -11,6 +11,10 @@ export interface IStudent extends Document {
   admissionNumber?: string;
   email?: string;
   phone?: string;
+  /**
+   * Current academic context pointers (synchronized derived caches).
+   * Note: StudentEnrollment remains the authoritative multi-period historical enrollment truth.
+   */
   courseId?: mongoose.Types.ObjectId;
   academicYearId?: mongoose.Types.ObjectId;
   semesterId?: mongoose.Types.ObjectId;

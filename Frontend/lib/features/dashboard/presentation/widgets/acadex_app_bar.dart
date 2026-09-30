@@ -264,33 +264,26 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
               const SizedBox(width: 12),
             ],
 
-            // Extra Actions if any
-            if (widget.extraActions != null && !isMobile) ...widget.extraActions!,
-
-            // Mobile Compact Search Icon Button
+            // Trailing Actions: Streamlined Mobile vs Rich Desktop/Tablet
             if (isMobile) ...[
-              IconButton(
-                icon: Icon(
-                  LucideIcons.search,
-                  color: headerMutedColor,
-                  size: 22,
-                ),
-                tooltip: 'Search',
-                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                onPressed: () => context.push('/search'),
-                splashRadius: 24,
+              if (widget.extraActions != null && widget.extraActions!.isNotEmpty) ...[
+                ...widget.extraActions!,
+                const SizedBox(width: 4),
+              ],
+              NotificationBadge(
+                size: 20,
+                iconColor: headerIconColor,
               ),
-            ],
+            ] else ...[
+              if (widget.extraActions != null) ...widget.extraActions!,
+              NotificationBadge(
+                size: 20,
+                iconColor: headerIconColor,
+              ),
+              const SizedBox(width: 8),
 
-            // Notifications Badge (min 48x48 touch target)
-            NotificationBadge(
-              size: isMobile ? 22 : 20,
-              iconColor: const Color(0xFF475569),
-            ),
-            const SizedBox(width: 4),
-
-            // Profile Area with Menu
-            PopupMenuButton<String>(
+              // Profile Area with Menu (Desktop/Tablet)
+              PopupMenuButton<String>(
               tooltip: 'Account Menu',
               offset: const Offset(0, 52),
               shape: RoundedRectangleBorder(
@@ -475,6 +468,7 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
                       ),
                     ),
             ),
+            ],
           ],
         ),
       ),

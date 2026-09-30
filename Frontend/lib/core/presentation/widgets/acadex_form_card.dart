@@ -23,6 +23,9 @@ class AcadexFormCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.sizeOf(context).width < 600;
+    final padding = EdgeInsets.all(isMobile ? 16.0 : 24.0);
+
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -34,17 +37,18 @@ class AcadexFormCard extends StatelessWidget {
         children: [
           // Header
           Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: padding,
             child: Row(
               children: [
                 if (icon != null) ...[
-                  Icon(icon, color: Theme.of(context).primaryColor, size: 24),
+                  Icon(icon, color: Theme.of(context).primaryColor, size: isMobile ? 20 : 24),
                   const SizedBox(width: 12),
                 ],
                 Expanded(
                   child: Text(
                     title,
-                    style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface),
+                    style: AcadexTypography.title(color: Theme.of(context).colorScheme.onSurface)
+                        .copyWith(fontSize: isMobile ? 16 : 18),
                   ),
                 ),
               ],
@@ -54,7 +58,7 @@ class AcadexFormCard extends StatelessWidget {
           
           // Form Content
           Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: padding,
             child: child,
           ),
           
@@ -62,36 +66,83 @@ class AcadexFormCard extends StatelessWidget {
           if (onSave != null || onCancel != null) ...[
             Divider(height: 1, thickness: 1, color: Theme.of(context).dividerColor),
             Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: Wrap(
-                  alignment: WrapAlignment.end,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 16,
-                  runSpacing: 12,
-                  children: [
-                    if (onCancel != null)
-                      TextButton(
-                        onPressed: isSaving ? null : onCancel,
-                        child: Text("Cancel", style: AcadexTypography.button(color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted)),
-                      ),
-                    if (onSave != null)
-                      ElevatedButton(
-                        onPressed: isSaving ? null : onSave,
-                        child: isSaving
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                              )
-                            : Text(saveLabel ?? "Save Changes"),
-                      ),
-                  ],
-                ),
-              ),
+              padding: padding,
+              child: isMobile
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (onSave != null)
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(48),
+                              backgroundColor: Theme.of(context).primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                            ),
+                            onPressed: isSaving ? null : onSave,
+                            child: isSaving
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  )
+                                : Text(
+                                    saveLabel ?? "Save Changes",
+                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                                  ),
+                          ),
+                        if (onCancel != null) ...[
+                          const SizedBox(height: 8),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              minimumSize: const Size.fromHeight(44),
+                              shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                            ),
+                            onPressed: isSaving ? null : onCancel,
+                            child: Text(
+                              "Cancel",
+                              style: AcadexTypography.button(
+                                color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (onCancel != null) ...[
+                          TextButton(
+                            onPressed: isSaving ? null : onCancel,
+                            child: Text(
+                              "Cancel",
+                              style: AcadexTypography.button(
+                                color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                        if (onSave != null)
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(120, 44),
+                              shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                            ),
+                            onPressed: isSaving ? null : onSave,
+                            child: isSaving
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  )
+                                : Text(saveLabel ?? "Save Changes"),
+                          ),
+                      ],
+                    ),
             ),
-          ]
+          ],
         ],
       ),
     );
@@ -111,6 +162,7 @@ class AcadexFormField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isMobile = MediaQuery.sizeOf(context).width < 600;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -120,12 +172,12 @@ class AcadexFormField extends StatelessWidget {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.1,
-            color: isDark ? AcadexColors.darkInk : const Color(0xFF07111F),
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
         ),
         const SizedBox(height: 8),
         child,
-        const SizedBox(height: 24),
+        SizedBox(height: isMobile ? 16 : 24),
       ],
     );
   }

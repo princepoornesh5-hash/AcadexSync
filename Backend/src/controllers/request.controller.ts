@@ -43,4 +43,23 @@ export class RequestController {
     );
     ApiResponse.success(res, updated, 'Request status updated successfully.');
   });
+
+  static submitRequest = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const updated = await RequestService.submitRequest(req.params.id, req.user!);
+    ApiResponse.success(res, updated, 'Request submitted successfully.');
+  });
+
+  static cancelRequest = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const updated = await RequestService.cancelRequest(
+      req.params.id,
+      req.body?.reason,
+      req.user!
+    );
+    ApiResponse.success(res, updated, 'Request cancelled successfully.');
+  });
+
+  static startReview = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const updated = await RequestService.startReview(req.params.id, req.user!);
+    ApiResponse.success(res, updated, 'Request marked under review.');
+  });
 }

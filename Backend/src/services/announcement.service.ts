@@ -25,6 +25,7 @@ import { AuditService } from './audit.service';
 import { ApiError } from '../utils/apiError';
 import { AuthenticatedUser } from '../types/auth.types';
 import { logger } from '../utils/logger';
+import { realtimeEventBus, AcadexEventType } from '../realtime';
 
 export interface CreateAnnouncementInput {
   title: string;
@@ -54,9 +55,29 @@ export class AnnouncementService {
     data: CreateAnnouncementInput,
     requester: AuthenticatedUser
   ): Promise<{ collegeId: string; departmentId?: string | null }> {
-    // 1. Role enforcement: Faculty and Students cannot create announcements
-    if (requester.role === AppRole.FACULTY || requester.role === AppRole.STUDENT) {
-      throw ApiError.forbidden('Only administrators and HODs are authorized to create announcements');
+    // 1. Role enforcement: Students cannot create announcements
+    if (requester.role === AppRole.STUDENT) {
+      throw ApiError.forbidden('Students are not authorized to create announcements');
+    }
+
+    // Faculty can only create announcements targeted to sections or courses they actively teach
+    if (requester.role === AppRole.FACULTY) {
+      if (
+        data.audienceScope === AudienceScope.COLLEGE ||
+        data.audienceScope === AudienceScope.DEPARTMENT
+      ) {
+        throw ApiError.forbidden(
+          'Faculty are not authorized to publish college-wide or department-wide announcements'
+        );
+      }
+      if (
+        data.audienceScope !== AudienceScope.SECTION &&
+        data.audienceScope !== AudienceScope.COURSE
+      ) {
+        throw ApiError.forbidden(
+          'Faculty can only create announcements targeted to their assigned sections or courses'
+        );
+      }
     }
 
     // 2. Tenant scoping
@@ -367,6 +388,26 @@ export class AnnouncementService {
       newValue: { title: announcement.title, audienceScope: announcement.audienceScope, status: announcement.status },
     }).catch((e: Error) => logger.warn(`Audit log failed: ${e.message}`));
 
+    // Emit Realtime event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: isPublishNow ? AcadexEventType.ANNOUNCEMENT_CREATED : AcadexEventType.ANNOUNCEMENT_UPDATED,
+      aggregateType: 'Announcement',
+      aggregateId: announcement.id,
+      action: isPublishNow ? 'CREATED' : 'UPDATED',
+      collegeId: announcement.collegeId.toString(),
+      scope: {
+        type: announcement.departmentId ? 'department' : 'college',
+        collegeId: announcement.collegeId.toString(),
+        departmentId: announcement.departmentId?.toString(),
+      },
+      payload: {
+        announcementId: announcement.id,
+        title: announcement.title,
+        audienceScope: announcement.audienceScope,
+        status: announcement.status,
+      },
+    });
+
     return announcement;
   }
 
@@ -384,8 +425,11 @@ export class AnnouncementService {
     }
 
     // Role & Tenant verification
-    if (requester.role === AppRole.FACULTY || requester.role === AppRole.STUDENT) {
-      throw ApiError.forbidden('You are not authorized to publish announcements');
+    if (requester.role === AppRole.STUDENT) {
+      throw ApiError.forbidden('Students are not authorized to publish announcements');
+    }
+    if (requester.role === AppRole.FACULTY && announcement.createdBy.toString() !== requester.id) {
+      throw ApiError.forbidden('Faculty can only publish their own announcements');
     }
     if (requester.role !== AppRole.SUPER_ADMIN && announcement.collegeId.toString() !== requester.collegeId) {
       throw ApiError.forbidden('Access denied');
@@ -398,21 +442,108 @@ export class AnnouncementService {
       return announcement; // Idempotent
     }
 
-    announcement.status = AnnouncementStatus.PUBLISHED;
-    announcement.publishedAt = new Date();
+    // Atomic update to protect against concurrent publish race conditions
+    const updated = await Announcement.findOneAndUpdate(
+      { _id: announcement._id, status: { $ne: AnnouncementStatus.PUBLISHED } },
+      { $set: { status: AnnouncementStatus.PUBLISHED, publishedAt: new Date() } },
+      { new: true }
+    );
 
-    const count = await this.dispatchAnnouncementNotifications(announcement);
-    announcement.recipientCount = count;
+    if (!updated) {
+      return (await Announcement.findById(id)) || announcement;
+    }
+
+    const count = await this.dispatchAnnouncementNotifications(updated);
+    updated.recipientCount = count;
+    await updated.save();
+
+    await AuditService.log({
+      collegeId: updated.collegeId.toString(),
+      actorUserId: requester.id,
+      action: 'ANNOUNCEMENT_PUBLISHED',
+      entityType: 'Announcement',
+      entityId: updated.id,
+      newValue: { status: updated.status, recipientCount: count },
+    }).catch((e: Error) => logger.warn(`Audit log failed: ${e.message}`));
+
+    // Emit Realtime event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.ANNOUNCEMENT_PUBLISHED,
+      aggregateType: 'Announcement',
+      aggregateId: updated.id,
+      action: 'PUBLISHED',
+      collegeId: updated.collegeId.toString(),
+      scope: {
+        type: updated.departmentId ? 'department' : 'college',
+        collegeId: updated.collegeId.toString(),
+        departmentId: updated.departmentId?.toString(),
+      },
+      payload: {
+        announcementId: updated.id,
+        title: updated.title,
+        audienceScope: updated.audienceScope,
+        status: updated.status,
+      },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Cancels an announcement
+   */
+  static async cancelAnnouncement(id: string, requester: AuthenticatedUser): Promise<IAnnouncement> {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw ApiError.notFound('Announcement not found');
+    }
+
+    const announcement = await Announcement.findById(id);
+    if (!announcement) {
+      throw ApiError.notFound('Announcement not found');
+    }
+
+    if (requester.role === AppRole.STUDENT) {
+      throw ApiError.forbidden('Students cannot cancel announcements');
+    }
+    if (requester.role !== AppRole.SUPER_ADMIN && announcement.collegeId.toString() !== requester.collegeId) {
+      throw ApiError.forbidden('Access denied');
+    }
+    if (requester.role === AppRole.HOD && announcement.departmentId?.toString() !== requester.departmentId) {
+      throw ApiError.forbidden('HOD can only manage announcements in their department');
+    }
+    if (requester.role === AppRole.FACULTY && announcement.createdBy.toString() !== requester.id) {
+      throw ApiError.forbidden('Faculty can only cancel announcements they created');
+    }
+
+    announcement.status = AnnouncementStatus.CANCELLED;
     await announcement.save();
 
     await AuditService.log({
       collegeId: announcement.collegeId.toString(),
       actorUserId: requester.id,
-      action: 'ANNOUNCEMENT_PUBLISHED',
+      action: 'ANNOUNCEMENT_CANCELLED',
       entityType: 'Announcement',
       entityId: announcement.id,
-      newValue: { status: announcement.status, recipientCount: count },
     }).catch((e: Error) => logger.warn(`Audit log failed: ${e.message}`));
+
+    // Emit Realtime event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.ANNOUNCEMENT_CANCELLED,
+      aggregateType: 'Announcement',
+      aggregateId: announcement.id,
+      action: 'CANCELLED',
+      collegeId: announcement.collegeId.toString(),
+      scope: {
+        type: announcement.departmentId ? 'department' : 'college',
+        collegeId: announcement.collegeId.toString(),
+        departmentId: announcement.departmentId?.toString(),
+      },
+      payload: {
+        announcementId: announcement.id,
+        title: announcement.title,
+        status: announcement.status,
+      },
+    });
 
     return announcement;
   }

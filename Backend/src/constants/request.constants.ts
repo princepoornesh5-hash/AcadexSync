@@ -1,11 +1,14 @@
 import { AppRole } from './roles';
 
 export enum RequestStatus {
+  DRAFT = 'DRAFT',
   SUBMITTED = 'SUBMITTED',
   RECEIVED = 'RECEIVED',
   IN_REVIEW = 'IN_REVIEW',
+  UNDER_REVIEW = 'UNDER_REVIEW',
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
+  CANCELLED = 'CANCELLED',
   RESOLVED = 'RESOLVED',
   CLOSED = 'CLOSED',
 }
@@ -109,24 +112,40 @@ export const ALLOWED_REQUEST_TYPES_BY_ROLE: Record<AppRole, string[]> = {
  * Valid transitions between lifecycle states
  */
 export const VALID_STATUS_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
+  [RequestStatus.DRAFT]: [
+    RequestStatus.SUBMITTED,
+    RequestStatus.CANCELLED,
+  ],
   [RequestStatus.SUBMITTED]: [
     RequestStatus.RECEIVED,
     RequestStatus.IN_REVIEW,
+    RequestStatus.UNDER_REVIEW,
     RequestStatus.APPROVED,
     RequestStatus.REJECTED,
+    RequestStatus.CANCELLED,
     RequestStatus.RESOLVED,
     RequestStatus.CLOSED,
   ],
   [RequestStatus.RECEIVED]: [
     RequestStatus.IN_REVIEW,
+    RequestStatus.UNDER_REVIEW,
     RequestStatus.APPROVED,
     RequestStatus.REJECTED,
+    RequestStatus.CANCELLED,
     RequestStatus.RESOLVED,
     RequestStatus.CLOSED,
   ],
   [RequestStatus.IN_REVIEW]: [
     RequestStatus.APPROVED,
     RequestStatus.REJECTED,
+    RequestStatus.CANCELLED,
+    RequestStatus.RESOLVED,
+    RequestStatus.CLOSED,
+  ],
+  [RequestStatus.UNDER_REVIEW]: [
+    RequestStatus.APPROVED,
+    RequestStatus.REJECTED,
+    RequestStatus.CANCELLED,
     RequestStatus.RESOLVED,
     RequestStatus.CLOSED,
   ],
@@ -134,6 +153,9 @@ export const VALID_STATUS_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = 
     RequestStatus.CLOSED,
   ],
   [RequestStatus.REJECTED]: [
+    RequestStatus.CLOSED,
+  ],
+  [RequestStatus.CANCELLED]: [
     RequestStatus.CLOSED,
   ],
   [RequestStatus.RESOLVED]: [

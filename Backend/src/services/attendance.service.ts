@@ -34,6 +34,7 @@ import { TeacherSubstitutionService } from './teacherSubstitution.service';
 import { logger } from '../utils/logger';
 import { ApiError } from '../utils/apiError';
 import { AuthenticatedUser } from '../types/auth.types';
+import { realtimeEventBus, AcadexEventType } from '../realtime';
 import {
   DEFAULT_INSTITUTION_TIMEZONE,
   formatDateToCalendarString,
@@ -132,7 +133,7 @@ export class AttendanceService {
       if (data.subjectId && specifiedAssignment.subjectId.toString() !== data.subjectId.toString()) {
         throw ApiError.badRequest('Subject mismatch with specified faculty assignment');
       }
-      if (data.sectionId && specifiedAssignment.sectionId.toString() !== data.sectionId.toString()) {
+      if (data.sectionId && specifiedAssignment.sectionId && specifiedAssignment.sectionId.toString() !== data.sectionId.toString()) {
         throw ApiError.badRequest('Section mismatch with specified faculty assignment');
       }
     }
@@ -256,7 +257,7 @@ export class AttendanceService {
             if (assignment.subjectId.toString() !== entry.subjectId.toString()) {
               throw ApiError.badRequest('Subject mismatch with specified faculty assignment');
             }
-            if (assignment.sectionId.toString() !== timetable.sectionId.toString()) {
+            if (assignment.sectionId && timetable.sectionId && assignment.sectionId.toString() !== timetable.sectionId.toString()) {
               throw ApiError.badRequest('Section mismatch with specified faculty assignment');
             }
             if (assignment.courseId && timetable.courseId && assignment.courseId.toString() !== timetable.courseId.toString()) {
@@ -299,7 +300,7 @@ export class AttendanceService {
         if (data.subjectId && entry.subjectId.toString() !== data.subjectId.toString()) {
           throw ApiError.badRequest('Subject mismatch with timetable entry');
         }
-        if (data.sectionId && timetable.sectionId.toString() !== data.sectionId.toString()) {
+        if (data.sectionId && timetable.sectionId && timetable.sectionId.toString() !== data.sectionId.toString()) {
           throw ApiError.badRequest('Section mismatch with timetable entry');
         }
         if (data.facultyId && operationalFacultyId.toString() !== data.facultyId.toString()) {
@@ -309,7 +310,9 @@ export class AttendanceService {
         // Authoritative overrides from the stored timetable entry
         data.facultyId = operationalFacultyId;
         data.subjectId = entry.subjectId;
-        data.sectionId = timetable.sectionId;
+        if (timetable.sectionId) {
+          data.sectionId = timetable.sectionId;
+        }
         data.departmentId = timetable.departmentId;
         data.courseId = timetable.courseId;
         data.semesterId = timetable.semesterId;
@@ -380,29 +383,41 @@ export class AttendanceService {
       }
     }
 
-    // Check duplicate session for the same section, subject, date, timeSlot
-    if (data.sectionId && data.subjectId && data.timeSlot) {
-      const existing = await AttendanceSession.findOne({
+    // Check duplicate session for the same section/semester, subject, date, timeSlot
+    if (data.subjectId && data.timeSlot) {
+      const duplicateQuery: Record<string, unknown> = {
         collegeId: new mongoose.Types.ObjectId(collegeId),
-        sectionId: new mongoose.Types.ObjectId(data.sectionId),
         subjectId: new mongoose.Types.ObjectId(data.subjectId),
         date: sessionDate,
         timeSlot: data.timeSlot,
         status: { $ne: AttendanceSessionStatus.CANCELLED },
-      });
+      };
+      if (data.sectionId) {
+        duplicateQuery.sectionId = new mongoose.Types.ObjectId(data.sectionId);
+      } else if (data.semesterId) {
+        duplicateQuery.semesterId = new mongoose.Types.ObjectId(data.semesterId);
+      }
+      const existing = await AttendanceSession.findOne(duplicateQuery);
       if (existing) {
-        throw ApiError.conflict('An active attendance session already exists for this section, subject, date, and timeslot');
+        throw ApiError.conflict('An active attendance session already exists for this class, subject, date, and timeslot');
       }
     }
 
     // Roster Validation & Enrollment checks
     const populatedRecords: IAttendanceRecordItem[] = [];
-    if (data.records && data.records.length > 0 && data.sectionId) {
-      // Find all active enrollments in this section
-      const activeEnrollments = await StudentEnrollment.find({
-        sectionId: new mongoose.Types.ObjectId(data.sectionId),
+    if (data.records && data.records.length > 0) {
+      const enrollmentFilter: Record<string, any> = {
+        collegeId: new mongoose.Types.ObjectId(collegeId),
         status: 'active',
-      });
+      };
+      if (data.sectionId) {
+        enrollmentFilter.sectionId = new mongoose.Types.ObjectId(data.sectionId);
+      } else if (data.semesterId) {
+        enrollmentFilter.semesterId = new mongoose.Types.ObjectId(data.semesterId);
+      }
+
+      // Find all active enrollments in this section or semester
+      const activeEnrollments = await StudentEnrollment.find(enrollmentFilter);
       const validStudentIds = new Set(activeEnrollments.map((e) => e.studentId.toString()));
 
       const seenStudents = new Set<string>();
@@ -428,14 +443,14 @@ export class AttendanceService {
 
         // Validate that student is enrolled in this section
         if (!validStudentIds.has(student._id.toString())) {
-          throw ApiError.badRequest(`Student "${student.name}" is not enrolled in section "${sectionDoc?.name || data.sectionId}"`);
+          throw ApiError.badRequest(`Student "${student.name}" is not enrolled in section "${sectionDoc?.name || data.sectionId || 'class'}"`);
         }
 
         populatedRecords.push({
           studentId: student._id,
           studentName: student.name,
           rollNumber: student.rollNumber || 'N/A',
-          sectionId: sectionDoc ? sectionDoc._id : (data.sectionId ? new mongoose.Types.ObjectId(data.sectionId) : new mongoose.Types.ObjectId()),
+          sectionId: sectionDoc ? sectionDoc._id : (data.sectionId ? new mongoose.Types.ObjectId(data.sectionId) : null),
           status: rec.status || AttendanceStatus.PRESENT,
           remarks: rec.remarks || undefined,
           lastModified: new Date(),
@@ -451,7 +466,8 @@ export class AttendanceService {
       courseId: sectionDoc ? sectionDoc.courseId : data.courseId,
       academicYearId: sectionDoc ? sectionDoc.academicYearId : data.academicYearId,
       semesterId: sectionDoc ? sectionDoc.semesterId : data.semesterId,
-      sectionName: sectionDoc ? sectionDoc.name : data.sectionName || 'Section',
+      sectionId: sectionDoc ? sectionDoc._id : (data.sectionId ? new mongoose.Types.ObjectId(data.sectionId) : null),
+      sectionName: sectionDoc ? sectionDoc.name : (data.sectionName || null),
       subjectName: subjectDoc ? subjectDoc.name : data.subjectName || 'Subject',
       date: sessionDate,
       records: populatedRecords,
@@ -510,6 +526,48 @@ export class AttendanceService {
       );
     }
 
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.ATTENDANCE_SESSION_CREATED,
+      aggregateType: 'AttendanceSession',
+      aggregateId: session.id,
+      action: 'CREATED',
+      collegeId: session.collegeId.toString(),
+      scope: {
+        type: 'department',
+        collegeId: session.collegeId.toString(),
+        departmentId: session.departmentId?.toString(),
+      },
+      payload: {
+        sessionId: session.id,
+        facultyId: session.facultyId?.toString(),
+        sectionId: session.sectionId?.toString(),
+        subjectId: session.subjectId?.toString(),
+        date: session.date,
+        recordsCount: populatedRecords.length,
+      },
+    });
+
+    if (populatedRecords.length > 0) {
+      realtimeEventBus.publish({
+        eventType: AcadexEventType.ATTENDANCE_RECORD_BATCH_UPDATED,
+        aggregateType: 'AttendanceRecord',
+        aggregateId: session.id,
+        action: 'BATCH_UPDATED',
+        collegeId: session.collegeId.toString(),
+        scope: {
+          type: 'department',
+          collegeId: session.collegeId.toString(),
+          departmentId: session.departmentId?.toString(),
+        },
+        payload: {
+          sessionId: session.id,
+          sectionId: session.sectionId?.toString(),
+          recordCount: populatedRecords.length,
+        },
+      });
+    }
+
     return session;
   }
 
@@ -547,8 +605,26 @@ export class AttendanceService {
     }
     if (requester && requester.role === AppRole.STUDENT) {
       const studentProfile = await Student.findOne({ userId: requester.id });
-      if (!studentProfile || session.sectionId.toString() !== studentProfile.sectionId?.toString()) {
-        throw ApiError.forbidden('Students can only view attendance sessions for their enrolled section');
+      if (!studentProfile) {
+        throw ApiError.forbidden('Student profile not found');
+      }
+      const enrollment = await StudentEnrollment.findOne({
+        studentId: studentProfile._id,
+        collegeId: session.collegeId,
+        status: 'active',
+      });
+      if (session.sectionId) {
+        const matchesEnrollment = enrollment?.sectionId && enrollment.sectionId.toString() === session.sectionId.toString();
+        const matchesProfile = studentProfile.sectionId && studentProfile.sectionId.toString() === session.sectionId.toString();
+        if (!matchesEnrollment && !matchesProfile) {
+          throw ApiError.forbidden('Students can only view attendance sessions for their enrolled section');
+        }
+      } else if (session.semesterId) {
+        const matchesEnrollment = enrollment?.semesterId && enrollment.semesterId.toString() === session.semesterId.toString();
+        const matchesProfile = studentProfile.semesterId && studentProfile.semesterId.toString() === session.semesterId.toString();
+        if (!matchesEnrollment && !matchesProfile) {
+          throw ApiError.forbidden('Students can only view attendance sessions for their enrolled class');
+        }
       }
     }
 
@@ -657,11 +733,18 @@ export class AttendanceService {
       }
     }
 
-    // Validate students belong to the section
-    const activeEnrollments = await StudentEnrollment.find({
-      sectionId: session.sectionId,
+    // Validate students belong to the section or semester
+    const sessionEnrollmentFilter: Record<string, any> = {
+      collegeId: session.collegeId,
       status: 'active',
-    });
+    };
+    if (session.sectionId) {
+      sessionEnrollmentFilter.sectionId = session.sectionId;
+    } else if (session.semesterId) {
+      sessionEnrollmentFilter.semesterId = session.semesterId;
+    }
+
+    const activeEnrollments = await StudentEnrollment.find(sessionEnrollmentFilter);
     const validStudentIds = new Set(activeEnrollments.map((e) => e.studentId.toString()));
 
     const populatedItems: IAttendanceRecordItem[] = [];
@@ -687,14 +770,14 @@ export class AttendanceService {
       }
 
       if (!validStudentIds.has(student._id.toString())) {
-        throw ApiError.badRequest(`Student "${student.name}" is not enrolled in this section`);
+        throw ApiError.badRequest(`Student "${student.name}" is not enrolled in this section or class`);
       }
 
       populatedItems.push({
         studentId: student._id,
         studentName: student.name,
         rollNumber: student.rollNumber || 'N/A',
-        sectionId: session.sectionId,
+        sectionId: session.sectionId || undefined,
         status: rec.status,
         remarks: rec.remarks || undefined,
         lastModified: new Date(),
@@ -716,7 +799,7 @@ export class AttendanceService {
       studentId: r.studentId,
       studentName: r.studentName,
       rollNumber: r.rollNumber,
-      sectionId: session.sectionId,
+      sectionId: session.sectionId || null,
       subjectId: session.subjectId,
       courseId: session.courseId,
       departmentId: session.departmentId,
@@ -749,6 +832,25 @@ export class AttendanceService {
         logger.warn(`Failed to dispatch attendance notifications: ${err.message}`)
       );
     }
+
+    // Emit Realtime Domain Event (Coalesced Batch - Not 60 individual events!)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.ATTENDANCE_RECORD_BATCH_UPDATED,
+      aggregateType: 'AttendanceRecord',
+      aggregateId: session.id,
+      action: 'BATCH_UPDATED',
+      collegeId: session.collegeId.toString(),
+      scope: {
+        type: 'department',
+        collegeId: session.collegeId.toString(),
+        departmentId: session.departmentId?.toString(),
+      },
+      payload: {
+        sessionId: session.id,
+        sectionId: session.sectionId?.toString(),
+        recordCount: populatedItems.length,
+      },
+    });
 
     return session;
   }
@@ -784,6 +886,24 @@ export class AttendanceService {
       entityId: session.id,
     });
 
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.ATTENDANCE_LOCKED,
+      aggregateType: 'AttendanceSession',
+      aggregateId: session.id,
+      action: 'LOCKED',
+      collegeId: session.collegeId.toString(),
+      scope: {
+        type: 'department',
+        collegeId: session.collegeId.toString(),
+        departmentId: session.departmentId?.toString(),
+      },
+      payload: {
+        sessionId: session.id,
+        status: session.status,
+      },
+    });
+
     return session;
   }
 
@@ -805,6 +925,24 @@ export class AttendanceService {
       action: 'ATTENDANCE_SESSION_CLOSED',
       entityType: 'AttendanceSession',
       entityId: session.id,
+    });
+
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.ATTENDANCE_CLOSED,
+      aggregateType: 'AttendanceSession',
+      aggregateId: session.id,
+      action: 'CLOSED',
+      collegeId: session.collegeId.toString(),
+      scope: {
+        type: 'department',
+        collegeId: session.collegeId.toString(),
+        departmentId: session.departmentId?.toString(),
+      },
+      payload: {
+        sessionId: session.id,
+        status: session.status,
+      },
     });
 
     return session;
@@ -832,6 +970,24 @@ export class AttendanceService {
       action: 'ATTENDANCE_SESSION_CANCELLED',
       entityType: 'AttendanceSession',
       entityId: session.id,
+    });
+
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.ATTENDANCE_SESSION_UPDATED,
+      aggregateType: 'AttendanceSession',
+      aggregateId: session.id,
+      action: 'UPDATED',
+      collegeId: session.collegeId.toString(),
+      scope: {
+        type: 'department',
+        collegeId: session.collegeId.toString(),
+        departmentId: session.departmentId?.toString(),
+      },
+      payload: {
+        sessionId: session.id,
+        status: session.status,
+      },
     });
 
     return session;

@@ -15,7 +15,12 @@ import '../../domain/models/assignment_models.dart';
 import '../providers/assignments_providers.dart';
 
 class NewAssignmentScreen extends ConsumerStatefulWidget {
-  const NewAssignmentScreen({super.key});
+  final String? initialFacultyAssignmentId;
+
+  const NewAssignmentScreen({
+    super.key,
+    this.initialFacultyAssignmentId,
+  });
 
   @override
   ConsumerState<NewAssignmentScreen> createState() => _NewAssignmentScreenState();
@@ -25,6 +30,16 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
   final _formKey = GlobalKey<FormState>();
 
   String? _selectedFacultyAssignmentId;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialFacultyAssignmentId != null &&
+        widget.initialFacultyAssignmentId!.isNotEmpty) {
+      _selectedFacultyAssignmentId = widget.initialFacultyAssignmentId;
+    }
+  }
+
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _maxMarksController = TextEditingController(text: '10');
@@ -158,18 +173,21 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
     final subjectMap = ref.watch(subjectMapProvider);
     final sectionMap = ref.watch(sectionMapProvider);
 
-    // Filter teaching contexts for current faculty
+    // Canonical teaching contexts based on authenticated role
+    final myAssignments = ref.watch(myFacultyAssignmentsProvider);
+    final isFaculty = authState is AuthAuthenticated && authState.user.role == AppRole.faculty;
+
     List<FacultyAssignment> userAssignments = [];
-    if (facultyAssignmentsAsync.hasValue) {
+    if (isFaculty) {
+      userAssignments = myAssignments;
+    } else if (facultyAssignmentsAsync.hasValue) {
       final all = facultyAssignmentsAsync.value!;
-      if (authState is AuthAuthenticated) {
-        userAssignments = all.where((fa) {
-          return fa.facultyId == authState.user.id ||
-              fa.facultyName == authState.user.name ||
-              authState.user.role == AppRole.hod ||
-              authState.user.role == AppRole.collegeAdmin;
-        }).toList();
-        if (userAssignments.isEmpty) userAssignments = all;
+      if (authState is AuthAuthenticated && authState.user.role == AppRole.hod) {
+        userAssignments = all
+            .where((fa) =>
+                authState.user.departmentId == null ||
+                fa.departmentId == authState.user.departmentId)
+            .toList();
       } else {
         userAssignments = all;
       }
@@ -322,8 +340,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                         const SizedBox(height: 6),
                         DropdownButtonFormField<AssignmentType>(
                           value: _selectedType,
+                          isExpanded: true,
                           decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                             border: OutlineInputBorder(
                               borderRadius: AcadexRadius.borderRadiusMd,
                               borderSide: BorderSide(
@@ -335,7 +354,10 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                           items: AssignmentType.values.map((t) {
                             return DropdownMenuItem(
                               value: t,
-                              child: Text(t.label),
+                              child: Text(
+                                t.label,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             );
                           }).toList(),
                           onChanged: (val) {
@@ -404,7 +426,7 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                           onTap: _pickDate,
                           borderRadius: AcadexRadius.borderRadiusMd,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                             decoration: BoxDecoration(
                               border: Border.all(
                                 color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
@@ -413,13 +435,17 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                             ),
                             child: Row(
                               children: [
-                                const Icon(LucideIcons.calendar, size: 16, color: AcadexColors.primary),
-                                const SizedBox(width: 8),
-                                Text(
-                                  dateFormat.format(_selectedDate),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                const Icon(LucideIcons.calendar, size: 15, color: AcadexColors.primary),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    dateFormat.format(_selectedDate),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -429,7 +455,7 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -445,7 +471,7 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                           onTap: _pickTime,
                           borderRadius: AcadexRadius.borderRadiusMd,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                             decoration: BoxDecoration(
                               border: Border.all(
                                 color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
@@ -454,13 +480,17 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
                             ),
                             child: Row(
                               children: [
-                                const Icon(LucideIcons.clock, size: 16, color: AcadexColors.primary),
-                                const SizedBox(width: 8),
-                                Text(
-                                  _selectedTime.format(context),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                const Icon(LucideIcons.clock, size: 15, color: AcadexColors.primary),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    _selectedTime.format(context),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -479,19 +509,28 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'QUESTIONS (${_questionControllers.length})',
-                    style: AcadexTypography.eyebrow(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  Flexible(
+                    child: Text(
+                      'QUESTIONS (${_questionControllers.length})',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AcadexTypography.eyebrow(
+                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      ),
                     ),
                   ),
                   TextButton.icon(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                     onPressed: _addQuestion,
                     icon: const Icon(LucideIcons.plus, size: 14, color: AcadexColors.primary),
                     label: const Text(
                       'Add Question',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: AcadexColors.primary,
                       ),

@@ -2,12 +2,14 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IRoom extends Document {
   collegeId: mongoose.Types.ObjectId;
-  departmentId?: mongoose.Types.ObjectId;
+  departmentId?: mongoose.Types.ObjectId | null;
+  buildingId?: mongoose.Types.ObjectId | null;
+  building?: string | null;
   name: string;
   code: string;
   capacity: number;
   type: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'retired' | 'archived';
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -17,6 +19,8 @@ const RoomSchema = new Schema<IRoom>(
   {
     collegeId: { type: Schema.Types.ObjectId, ref: 'College', required: true, index: true },
     departmentId: { type: Schema.Types.ObjectId, ref: 'Department', default: null, index: true },
+    buildingId: { type: Schema.Types.ObjectId, ref: 'Building', default: null, index: true },
+    building: { type: String, default: null, trim: true },
     name: { type: String, required: true, trim: true },
     code: { type: String, required: true, uppercase: true, trim: true },
     capacity: { type: Number, required: true, min: 1, default: 60 },
@@ -27,8 +31,9 @@ const RoomSchema = new Schema<IRoom>(
     },
     status: {
       type: String,
-      enum: ['active', 'inactive'],
+      enum: ['active', 'inactive', 'retired', 'archived'],
       default: 'active',
+      index: true,
     },
     isActive: { type: Boolean, default: true },
   },
@@ -40,6 +45,7 @@ const RoomSchema = new Schema<IRoom>(
         ret.id = ret._id?.toString();
         ret.collegeId = ret.collegeId?.toString();
         if (ret.departmentId) ret.departmentId = ret.departmentId.toString();
+        if (ret.buildingId) ret.buildingId = ret.buildingId.toString();
         delete ret.__v;
         return ret;
       },

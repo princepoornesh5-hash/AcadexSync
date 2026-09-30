@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import { User } from '../models/user.model';
 import { Course, ICourse } from '../models/course.model';
-import { AcademicYear, IAcademicYear } from '../models/academicYear.model';
+import { AcademicYear, IAcademicYear, validateAcademicYearOperationalCycle } from '../models/academicYear.model';
+import { InstitutionConfiguration } from '../models/institutionConfiguration.model';
 import { Semester, ISemester } from '../models/semester.model';
 import { Section, ISection } from '../models/section.model';
 import { Subject, ISubject } from '../models/subject.model';
@@ -18,6 +19,7 @@ import { AppRole } from '../constants/roles';
 import { CollegeStatus, DepartmentStatus, AccountStatus, TimetableStatus, AcademicYearStatus } from '../constants/status';
 import { ApiError } from '../utils/apiError';
 import { AuthenticatedUser } from '../types/auth.types';
+import { realtimeEventBus, AcadexEventType } from '../realtime';
 
 export class AcademicService {
   // =========================================================================
@@ -278,6 +280,8 @@ export class AcademicService {
       throw ApiError.badRequest('startDate must be before endDate');
     }
 
+    validateAcademicYearOperationalCycle(data.name, start, end);
+
     const college = await College.findById(collegeId);
     if (!college || college.status === CollegeStatus.INACTIVE || !college.isActive) {
       throw ApiError.forbidden('Cannot create academic year for an inactive college');
@@ -379,6 +383,8 @@ export class AcademicService {
     if (year.startDate >= year.endDate) {
       throw ApiError.badRequest('startDate must be before endDate');
     }
+
+    validateAcademicYearOperationalCycle(year.name, year.startDate, year.endDate);
 
     if (update.isCurrent) {
       await AcademicYear.updateMany(
@@ -1024,31 +1030,42 @@ export class AcademicService {
 
   static async enrollStudent(
     collegeId: string,
-    data: { studentId: string; sectionId: string; courseId?: string; academicYearId?: string; semesterId?: string; enrollmentDate?: string },
+    data: { studentId: string; sectionId?: string | null; courseId?: string; academicYearId?: string; semesterId?: string; enrollmentDate?: string; cohort?: string; academicStage?: string },
     requester: AuthenticatedUser
   ): Promise<IStudentEnrollment> {
-    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD, AppRole.FACULTY].includes(requester.role)) {
-      throw ApiError.forbidden('Only staff and administrators have permission to enroll students');
+    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
+      throw ApiError.forbidden('Only administrators and HODs have permission to enroll students');
     }
 
     if (!mongoose.Types.ObjectId.isValid(data.studentId)) throw ApiError.badRequest('Invalid studentId');
-    if (!mongoose.Types.ObjectId.isValid(data.sectionId)) throw ApiError.badRequest('Invalid sectionId');
 
     const effectiveCollegeId = requester.role === AppRole.HOD || requester.role === AppRole.COLLEGE_ADMIN
       ? requester.collegeId || collegeId
       : collegeId;
 
-    const [student, section] = await Promise.all([
-      Student.findById(data.studentId),
-      Section.findById(data.sectionId),
-    ]);
-
+    const student = await Student.findById(data.studentId);
     if (!student) throw ApiError.notFound('Student not found');
-    if (!section) throw ApiError.notFound('Section not found');
 
-    const courseId = data.courseId || section.courseId?.toString();
-    const semesterId = data.semesterId || section.semesterId?.toString();
-    const academicYearId = data.academicYearId || section.academicYearId?.toString();
+    if (requester.role === AppRole.HOD && requester.departmentId !== student.departmentId.toString()) {
+      throw ApiError.forbidden('HOD can only enroll students within their assigned department');
+    }
+
+    const config = await InstitutionConfiguration.findOne({ collegeId: effectiveCollegeId });
+    const isSectionEnabled = config?.academicStructure?.section ?? true;
+
+    if (isSectionEnabled && (!data.sectionId || !mongoose.Types.ObjectId.isValid(data.sectionId))) {
+      throw ApiError.badRequest('Invalid or missing sectionId');
+    }
+
+    const section = (data.sectionId && mongoose.Types.ObjectId.isValid(data.sectionId))
+      ? await Section.findById(data.sectionId)
+      : null;
+
+    if (isSectionEnabled && !section) throw ApiError.notFound('Section not found');
+
+    const courseId = data.courseId || section?.courseId?.toString();
+    const semesterId = data.semesterId || section?.semesterId?.toString();
+    const academicYearId = data.academicYearId || section?.academicYearId?.toString();
 
     if (!courseId || !mongoose.Types.ObjectId.isValid(courseId)) throw ApiError.badRequest('Invalid courseId');
     if (!academicYearId || !mongoose.Types.ObjectId.isValid(academicYearId)) throw ApiError.badRequest('Invalid academicYearId');
@@ -1064,62 +1081,87 @@ export class AcademicService {
     if (!academicYear) throw ApiError.notFound('Academic Year not found');
     if (!semester) throw ApiError.notFound('Semester not found');
 
+    // Status safety: Inactive / archived entities must not become valid current enrollment context
+    if (!course.isActive || (course as any).status === 'archived' || (course as any).status === 'inactive') {
+      throw ApiError.badRequest('Cannot enroll student in an inactive or archived course');
+    }
+    if (!academicYear.isActive || (academicYear as any).status === 'archived' || (academicYear as any).status === 'inactive') {
+      throw ApiError.badRequest('Cannot enroll student in an inactive or archived academic year');
+    }
+    if (!semester.isActive || (semester as any).status === 'archived' || (semester as any).status === 'inactive') {
+      throw ApiError.badRequest('Cannot enroll student in an inactive or archived semester');
+    }
+    if (section && (!section.isActive || (section as any).status === 'archived' || (section as any).status === 'inactive')) {
+      throw ApiError.badRequest('Cannot enroll student in an inactive or archived section');
+    }
+
     // College Isolation
     if (student.collegeId.toString() !== effectiveCollegeId ||
         course.collegeId.toString() !== effectiveCollegeId ||
-        section.collegeId.toString() !== effectiveCollegeId ||
+        (section && section.collegeId.toString() !== effectiveCollegeId) ||
         academicYear.collegeId.toString() !== effectiveCollegeId ||
         semester.collegeId.toString() !== effectiveCollegeId) {
       throw ApiError.badRequest('All entities must belong to the specified college');
     }
 
+    // Role & Scope Authorization
+    if (requester.role === AppRole.COLLEGE_ADMIN && requester.collegeId !== effectiveCollegeId) {
+      throw ApiError.forbidden('Cross-college enrollment is strictly prohibited');
+    }
+    if (requester.role === AppRole.HOD) {
+      if (requester.departmentId !== student.departmentId.toString() ||
+          requester.departmentId !== course.departmentId.toString() ||
+          (section && requester.departmentId !== section.departmentId.toString())) {
+        throw ApiError.forbidden('HOD can only enroll students within their assigned department');
+      }
+    }
+
     // Hierarchy Consistency Checks
     if (student.departmentId.toString() !== course.departmentId.toString() ||
-        section.departmentId.toString() !== course.departmentId.toString()) {
+        (section && section.departmentId.toString() !== course.departmentId.toString())) {
       throw ApiError.badRequest('Student, Course, and Section must belong to the same department');
     }
     if (semester.courseId.toString() !== course.id || semester.academicYearId.toString() !== academicYear.id) {
       throw ApiError.badRequest('Semester does not match the course or academic year');
     }
-    if (section.semesterId.toString() !== semester.id || section.courseId.toString() !== course.id) {
-      throw ApiError.badRequest('Section does not match the semester or course');
-    }
-    if (section.academicYearId && section.academicYearId.toString() !== academicYear.id) {
-      throw ApiError.badRequest('Section does not match the academic year');
-    }
-
-    // Role Scoping
-    if (requester.role === AppRole.COLLEGE_ADMIN && requester.collegeId !== effectiveCollegeId) {
-      throw ApiError.forbidden('Cross-college enrollment is strictly prohibited');
-    }
-    if (requester.role === AppRole.HOD) {
-      if (requester.departmentId !== course.departmentId.toString() ||
-          requester.departmentId !== student.departmentId.toString() ||
-          requester.departmentId !== section.departmentId.toString()) {
-        throw ApiError.forbidden('HOD can only enroll students within their assigned department');
+    if (section) {
+      if (section.semesterId.toString() !== semester.id || section.courseId.toString() !== course.id) {
+        throw ApiError.badRequest('Section does not match the semester or course');
       }
-    } else if (requester.role === AppRole.FACULTY && requester.departmentId !== course.departmentId.toString()) {
-      throw ApiError.forbidden('Staff can only enroll students within their assigned department');
+      if (section.academicYearId && section.academicYearId.toString() !== academicYear.id) {
+        throw ApiError.badRequest('Section does not match the academic year');
+      }
     }
 
     // Section Capacity Check
-    const currentEnrollmentsCount = await StudentEnrollment.countDocuments({
-      sectionId: section._id,
-      status: 'active',
-    });
-    if (currentEnrollmentsCount >= section.capacity) {
-      throw ApiError.conflict(`Section "${section.name}" is full (capacity: ${section.capacity})`);
+    if (section) {
+      const currentEnrollmentsCount = await StudentEnrollment.countDocuments({
+        sectionId: section._id,
+        status: 'active',
+      });
+      if (currentEnrollmentsCount >= section.capacity) {
+        throw ApiError.conflict(`Section "${section.name}" is full (capacity: ${section.capacity})`);
+      }
     }
 
-    // Duplicate Concurrent Enrollment Check
+    // Duplicate Concurrent Enrollment Check: Prevent contradictory active enrollments
     const existingActive = await StudentEnrollment.findOne({
       studentId: student._id,
-      academicYearId: academicYear._id,
       semesterId: semester._id,
       status: 'active',
     });
     if (existingActive) {
       throw ApiError.conflict('Student is already actively enrolled in this semester and academic year');
+    }
+
+    const conflictingDeptActive = await StudentEnrollment.findOne({
+      studentId: student._id,
+      academicYearId: academicYear._id,
+      departmentId: { $ne: course.departmentId },
+      status: 'active',
+    });
+    if (conflictingDeptActive) {
+      throw ApiError.conflict('Student has an active enrollment in another department for this academic year. Please transfer the student first.');
     }
 
     let cohort = (data as any).cohort;
@@ -1142,21 +1184,33 @@ export class AcademicService {
       courseId: course._id,
       academicYearId: academicYear._id,
       semesterId: semester._id,
-      sectionId: section._id,
+      sectionId: section ? section._id : null,
       cohort,
       academicStage,
       enrollmentDate: data.enrollmentDate ? new Date(data.enrollmentDate) : new Date(),
       status: 'active',
     });
 
-    // Update current enrollment pointers on Student profile
+    // Update current enrollment pointers on Student profile (derived cache)
     student.courseId = course._id;
     student.academicYearId = academicYear._id;
     student.semesterId = semester._id;
-    student.sectionId = section._id;
+    if (section) {
+      student.sectionId = section._id;
+    } else {
+      student.sectionId = undefined;
+    }
     student.cohort = cohort;
     student.academicStage = academicStage;
     await student.save();
+
+    if (student.userId) {
+      await User.findByIdAndUpdate(student.userId, {
+        courseId: course._id,
+        semesterId: semester._id,
+        sectionId: section ? section._id : undefined,
+      });
+    }
 
     await AuditLog.create({
       collegeId: effectiveCollegeId,
@@ -1165,6 +1219,29 @@ export class AcademicService {
       entityType: 'StudentEnrollment',
       entityId: enrollment.id,
       newValue: enrollment.toJSON(),
+    });
+
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.STUDENT_ENROLLMENT_CREATED,
+      aggregateType: 'StudentEnrollment',
+      aggregateId: enrollment.id,
+      action: 'CREATED',
+      collegeId: effectiveCollegeId,
+      scope: {
+        type: 'user',
+        collegeId: effectiveCollegeId,
+        userId: student.userId?.toString(),
+        departmentId: student.departmentId?.toString(),
+      },
+      payload: {
+        enrollmentId: enrollment.id,
+        studentId: student.id,
+        sectionId: section?._id?.toString(),
+        courseId,
+        semesterId,
+        status: enrollment.status,
+      },
     });
 
     return enrollment;
@@ -1271,7 +1348,7 @@ export class AcademicService {
 
   static async updateEnrollment(
     id: string,
-    update: { status?: string; sectionId?: string },
+    update: { status?: string; sectionId?: string | null; cohort?: string; academicStage?: string },
     requester: AuthenticatedUser
   ): Promise<IStudentEnrollment> {
     if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
@@ -1282,16 +1359,22 @@ export class AcademicService {
     const prev = enrollment.toJSON();
 
     if (update.status) enrollment.status = update.status;
-    if (update.sectionId) {
-      if (!mongoose.Types.ObjectId.isValid(update.sectionId)) throw ApiError.badRequest('Invalid sectionId');
-      const targetSection = await Section.findById(update.sectionId);
-      if (!targetSection || targetSection.semesterId.toString() !== enrollment.semesterId.toString()) {
-        throw ApiError.badRequest('Target section must exist and belong to the same semester');
+    if (update.cohort) enrollment.cohort = update.cohort;
+    if (update.academicStage) enrollment.academicStage = update.academicStage;
+    if (update.sectionId !== undefined) {
+      if (update.sectionId === null) {
+        enrollment.sectionId = undefined;
+      } else {
+        if (!mongoose.Types.ObjectId.isValid(update.sectionId)) throw ApiError.badRequest('Invalid sectionId');
+        const targetSection = await Section.findById(update.sectionId);
+        if (!targetSection || targetSection.semesterId.toString() !== enrollment.semesterId.toString()) {
+          throw ApiError.badRequest('Target section must exist and belong to the same semester');
+        }
+        if (requester.role === AppRole.HOD && targetSection.departmentId.toString() !== requester.departmentId) {
+          throw ApiError.forbidden('Target section must belong to your assigned department');
+        }
+        enrollment.sectionId = targetSection._id;
       }
-      if (requester.role === AppRole.HOD && targetSection.departmentId.toString() !== requester.departmentId) {
-        throw ApiError.forbidden('Target section must belong to your assigned department');
-      }
-      enrollment.sectionId = targetSection._id;
     }
 
     await enrollment.save();
@@ -1330,6 +1413,274 @@ export class AcademicService {
       previousValue: prev,
       newValue: enrollment.toJSON(),
     });
+  }
+
+  /**
+   * Canonical resolver for a student's authoritative current enrollment and academic context.
+   */
+  static async getStudentCurrentEnrollment(
+    studentIdOrUserId: string,
+    requester: AuthenticatedUser
+  ): Promise<{
+    enrollment: IStudentEnrollment | null;
+    academicContext: {
+      departmentId: string | null;
+      departmentName: string | null;
+      courseId: string | null;
+      courseName: string | null;
+      courseCode: string | null;
+      academicYearId: string | null;
+      academicYearName: string | null;
+      semesterId: string | null;
+      semesterName: string | null;
+      semesterNumber: number | null;
+      sectionId: string | null;
+      sectionName: string | null;
+      cohort: string | null;
+      academicStage: string | null;
+      formattedContext: string;
+      status: string;
+      enrollmentDate?: Date | null;
+    } | null;
+  }> {
+    if (!mongoose.Types.ObjectId.isValid(studentIdOrUserId)) {
+      throw ApiError.badRequest('Invalid student ID format');
+    }
+
+    let student = await Student.findById(studentIdOrUserId);
+    if (!student) {
+      student = await Student.findOne({ userId: studentIdOrUserId });
+    }
+    if (!student) {
+      throw ApiError.notFound('Student profile not found');
+    }
+
+    // Role Scoping
+    if (requester.role === AppRole.STUDENT) {
+      if (student.userId?.toString() !== requester.id && student.id !== requester.id) {
+        throw ApiError.forbidden('Students can only view their own enrollment records');
+      }
+    } else if (requester.role === AppRole.COLLEGE_ADMIN) {
+      if (student.collegeId.toString() !== requester.collegeId) {
+        throw ApiError.forbidden('Cross-college access is strictly prohibited');
+      }
+    } else if (requester.role === AppRole.HOD) {
+      if (student.collegeId.toString() !== requester.collegeId) {
+        throw ApiError.forbidden('Cross-college access is strictly prohibited');
+      }
+      if (student.departmentId.toString() !== requester.departmentId) {
+        throw ApiError.forbidden('HOD can only view students within their assigned department');
+      }
+    } else if (requester.role === AppRole.FACULTY) {
+      if (student.collegeId.toString() !== requester.collegeId) {
+        throw ApiError.forbidden('Cross-college access is strictly prohibited');
+      }
+      const facultyDoc = await Faculty.findOne({
+        $or: [{ userId: requester.id }, { _id: requester.id }],
+        collegeId: requester.collegeId,
+      });
+      if (!facultyDoc) {
+        throw ApiError.forbidden('Faculty profile not found');
+      }
+      const assignments = await FacultyAssignment.find({
+        facultyId: facultyDoc._id,
+        collegeId: requester.collegeId,
+        isActive: true,
+      });
+      const assignedSectionIds = assignments.map((a) => a.sectionId?.toString()).filter(Boolean);
+      const assignedSemesterIds = assignments.map((a) => a.semesterId?.toString()).filter(Boolean);
+
+      const activeEnrollmentCheck = await StudentEnrollment.findOne({
+        studentId: student._id,
+        status: 'active',
+      }).sort({ createdAt: -1 });
+
+      const hasTeachingAccess = activeEnrollmentCheck && (
+        (activeEnrollmentCheck.sectionId && assignedSectionIds.includes(activeEnrollmentCheck.sectionId.toString())) ||
+        (!activeEnrollmentCheck.sectionId && assignedSemesterIds.includes(activeEnrollmentCheck.semesterId.toString()))
+      );
+
+      if (!hasTeachingAccess && student.departmentId.toString() !== requester.departmentId) {
+        throw ApiError.forbidden('Faculty can only view students within their authorized teaching contexts');
+      }
+    }
+
+    const enrollment = await StudentEnrollment.findOne({
+      studentId: student._id,
+      status: 'active',
+    })
+      .populate('departmentId', 'name code')
+      .populate('courseId', 'name code duration')
+      .populate('academicYearId', 'name isCurrent startDate endDate')
+      .populate('semesterId', 'name number isCurrent')
+      .populate('sectionId', 'name capacity')
+      .sort({ createdAt: -1 });
+
+    if (!enrollment) {
+      return {
+        enrollment: null,
+        academicContext: null,
+      };
+    }
+
+    const dept: any = enrollment.departmentId;
+    const course: any = enrollment.courseId;
+    const ay: any = enrollment.academicYearId;
+    const sem: any = enrollment.semesterId;
+    const sec: any = enrollment.sectionId;
+
+    const coursePart = course?.code || course?.name || '';
+    const stagePart = enrollment.academicStage || '';
+    const semPart = sem?.name || (sem?.number ? `Semester ${sem.number}` : '');
+    const cohortPart = enrollment.cohort ? `Cohort ${enrollment.cohort}` : '';
+    const ayPart = ay?.name ? `(AY ${ay.name})` : '';
+    const secPart = sec?.name ? `Section ${sec.name}` : '';
+
+    const parts = [coursePart, stagePart, semPart, cohortPart, ayPart, secPart].filter(Boolean);
+    const formattedContext = parts.join(' • ');
+
+    return {
+      enrollment,
+      academicContext: {
+        departmentId: dept?._id?.toString() || enrollment.departmentId.toString(),
+        departmentName: dept?.name || null,
+        courseId: course?._id?.toString() || enrollment.courseId.toString(),
+        courseName: course?.name || null,
+        courseCode: course?.code || null,
+        academicYearId: ay?._id?.toString() || enrollment.academicYearId.toString(),
+        academicYearName: ay?.name || null,
+        semesterId: sem?._id?.toString() || enrollment.semesterId.toString(),
+        semesterName: sem?.name || null,
+        semesterNumber: sem?.number ?? null,
+        sectionId: sec?._id?.toString() || (enrollment.sectionId?.toString() ?? null),
+        sectionName: sec?.name || null,
+        cohort: enrollment.cohort || null,
+        academicStage: enrollment.academicStage || null,
+        formattedContext,
+        status: enrollment.status,
+        enrollmentDate: enrollment.enrollmentDate,
+      },
+    };
+  }
+
+  /**
+   * Faculty student roster derived strictly from active FacultyAssignment teaching contexts.
+   */
+  static async listFacultyStudents(
+    requester: AuthenticatedUser,
+    query: { sectionId?: string; subjectId?: string; semesterId?: string; page?: number; limit?: number } = {}
+  ): Promise<{ items: any[]; total: number; page: number; limit: number; totalPages: number }> {
+    if (requester.role !== AppRole.FACULTY && requester.role !== AppRole.HOD) {
+      throw ApiError.forbidden('Only teaching faculty and HODs have access to teaching class rosters');
+    }
+
+    if (!requester.collegeId) {
+      return { items: [], total: 0, page: 1, limit: 50, totalPages: 0 };
+    }
+
+    let allowedSectionIds: mongoose.Types.ObjectId[] = [];
+    let allowedSemesterIds: mongoose.Types.ObjectId[] = [];
+
+    if (requester.role === AppRole.FACULTY) {
+      const facultyDoc = await Faculty.findOne({
+        $or: [{ userId: requester.id }, { _id: requester.id }],
+        collegeId: requester.collegeId,
+      });
+
+      if (!facultyDoc) {
+        return { items: [], total: 0, page: 1, limit: 50, totalPages: 0 };
+      }
+
+      const assignmentFilter: Record<string, any> = {
+        facultyId: facultyDoc._id,
+        collegeId: requester.collegeId,
+        isActive: true,
+      };
+      if (query.subjectId && mongoose.Types.ObjectId.isValid(query.subjectId)) {
+        assignmentFilter.subjectId = new mongoose.Types.ObjectId(query.subjectId);
+      }
+      if (query.sectionId && mongoose.Types.ObjectId.isValid(query.sectionId)) {
+        assignmentFilter.sectionId = new mongoose.Types.ObjectId(query.sectionId);
+      }
+      if (query.semesterId && mongoose.Types.ObjectId.isValid(query.semesterId)) {
+        assignmentFilter.semesterId = new mongoose.Types.ObjectId(query.semesterId);
+      }
+
+      const assignments = await FacultyAssignment.find(assignmentFilter);
+      if (assignments.length === 0) {
+        return { items: [], total: 0, page: 1, limit: 50, totalPages: 0 };
+      }
+
+      allowedSectionIds = assignments
+        .map((a) => a.sectionId)
+        .filter((id): id is mongoose.Types.ObjectId => Boolean(id));
+      allowedSemesterIds = assignments
+        .map((a) => a.semesterId)
+        .filter((id): id is mongoose.Types.ObjectId => Boolean(id));
+    }
+
+    const enrollmentQuery: Record<string, any> = {
+      collegeId: new mongoose.Types.ObjectId(requester.collegeId),
+      status: 'active',
+    };
+
+    if (requester.role === AppRole.FACULTY) {
+      const orConditions: any[] = [];
+      if (allowedSectionIds.length > 0) {
+        orConditions.push({ sectionId: { $in: allowedSectionIds } });
+      }
+      if (allowedSemesterIds.length > 0) {
+        orConditions.push({ semesterId: { $in: allowedSemesterIds }, sectionId: null });
+      }
+      if (orConditions.length === 0) {
+        return { items: [], total: 0, page: 1, limit: 50, totalPages: 0 };
+      }
+      enrollmentQuery.$or = orConditions;
+    } else if (requester.role === AppRole.HOD) {
+      if (!requester.departmentId) return { items: [], total: 0, page: 1, limit: 50, totalPages: 0 };
+      enrollmentQuery.departmentId = new mongoose.Types.ObjectId(requester.departmentId);
+      if (query.sectionId && mongoose.Types.ObjectId.isValid(query.sectionId)) {
+        enrollmentQuery.sectionId = new mongoose.Types.ObjectId(query.sectionId);
+      }
+      if (query.semesterId && mongoose.Types.ObjectId.isValid(query.semesterId)) {
+        enrollmentQuery.semesterId = new mongoose.Types.ObjectId(query.semesterId);
+      }
+    }
+
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(100, Math.max(1, query.limit || 50));
+    const skip = (page - 1) * limit;
+
+    const [enrollments, total] = await Promise.all([
+      StudentEnrollment.find(enrollmentQuery)
+        .populate('studentId', 'name rollNumber admissionNumber email phone status isActive lifecycleState')
+        .populate('courseId', 'name code')
+        .populate('semesterId', 'name number')
+        .populate('sectionId', 'name')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      StudentEnrollment.countDocuments(enrollmentQuery),
+    ]);
+
+    const items = enrollments.map((e: any) => ({
+      enrollmentId: e.id,
+      student: e.studentId,
+      course: e.courseId,
+      semester: e.semesterId,
+      section: e.sectionId,
+      cohort: e.cohort,
+      academicStage: e.academicStage,
+      status: e.status,
+    }));
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   // =========================================================================
@@ -1415,7 +1766,7 @@ export class AcademicService {
     data: {
       facultyId: string;
       subjectId: string;
-      sectionId: string;
+      sectionId?: string | null;
       courseId?: string;
       semesterId?: string;
       academicYearId?: string;
@@ -1423,6 +1774,9 @@ export class AcademicService {
       roomId?: string;
       maxStudents?: number;
       assignmentType?: string;
+      cohort?: string;
+      academicStage?: string;
+      status?: 'active' | 'inactive' | 'ended' | 'archived';
     },
     requester: AuthenticatedUser
   ): Promise<IFacultyAssignment> {
@@ -1440,7 +1794,13 @@ export class AcademicService {
 
     if (!mongoose.Types.ObjectId.isValid(data.facultyId)) throw ApiError.badRequest('Invalid facultyId format');
     if (!mongoose.Types.ObjectId.isValid(data.subjectId)) throw ApiError.badRequest('Invalid subjectId format');
-    if (!mongoose.Types.ObjectId.isValid(data.sectionId)) throw ApiError.badRequest('Invalid sectionId format');
+
+    const config = await InstitutionConfiguration.findOne({ collegeId: effectiveCollegeId });
+    const isSectionEnabled = config?.academicStructure?.section ?? true;
+
+    if (isSectionEnabled && (!data.sectionId || !mongoose.Types.ObjectId.isValid(data.sectionId))) {
+      throw ApiError.badRequest('Invalid or missing sectionId format');
+    }
 
     let faculty = await Faculty.findById(data.facultyId);
     if (!faculty) {
@@ -1451,127 +1811,170 @@ export class AcademicService {
         $or: [{ userId: new mongoose.Types.ObjectId(data.facultyId) }, { _id: new mongoose.Types.ObjectId(data.facultyId) }],
       });
     }
-    if (!faculty) {
-      const userDoc = await User.findOne({ _id: data.facultyId, role: AppRole.FACULTY });
-      if (userDoc) {
-        faculty = await Faculty.create({
-          collegeId: userDoc.collegeId,
-          departmentId: userDoc.departmentId,
-          userId: userDoc._id,
-          instituteId: userDoc.instituteId,
-          name: userDoc.name,
-          email: userDoc.email,
-          phone: userDoc.phone,
-          status: 'active',
-          isActive: true,
-          subjectIds: [],
-          sectionIds: [],
-        });
+
+    if (!faculty) throw ApiError.notFound('Faculty record was not found or is no longer available. Please refresh the faculty list and try again.');
+
+    if (faculty.collegeId.toString() !== effectiveCollegeId) {
+      throw ApiError.badRequest('Faculty does not belong to the specified college');
+    }
+
+    if (!faculty.isActive || faculty.status === 'inactive') {
+      throw ApiError.badRequest('Cannot assign an inactive faculty member');
+    }
+    if (faculty.userId) {
+      const userDoc = await User.findById(faculty.userId);
+      if (!userDoc || userDoc.accountStatus === AccountStatus.DEACTIVATED) {
+        throw ApiError.badRequest('Cannot assign a faculty member whose user account has been deactivated');
+      }
+    }
+
+    // Role and Department Scoping (HOD)
+    if (requester.role === AppRole.HOD) {
+      if (requester.departmentId !== faculty.departmentId.toString()) {
+        throw ApiError.forbidden('HOD can only assign faculty within their assigned department');
       }
     }
 
     const [subject, section] = await Promise.all([
       Subject.findById(data.subjectId),
-      Section.findById(data.sectionId),
+      (data.sectionId && mongoose.Types.ObjectId.isValid(data.sectionId))
+        ? Section.findById(data.sectionId)
+        : null,
     ]);
 
-    if (!faculty) throw ApiError.notFound('Faculty record was not found or is no longer available. Please refresh the faculty list and try again.');
     if (!subject) throw ApiError.notFound('Selected subject was not found or is no longer available. Please refresh the subject list.');
-    if (!section) throw ApiError.notFound('Selected section was not found or is no longer available. Please refresh the section list.');
+    if (isSectionEnabled && !section) throw ApiError.notFound('Selected section was not found or is no longer available. Please refresh the section list.');
 
-    if (
-      faculty.collegeId.toString() !== effectiveCollegeId ||
-      subject.collegeId.toString() !== effectiveCollegeId ||
-      section.collegeId.toString() !== effectiveCollegeId
-    ) {
-      throw ApiError.badRequest('Faculty, Subject, and Section must all belong to the specified college');
+    if (subject.collegeId.toString() !== effectiveCollegeId) {
+      throw ApiError.badRequest('Subject does not belong to the specified college');
+    }
+    if (section && section.collegeId.toString() !== effectiveCollegeId) {
+      throw ApiError.badRequest('Section does not belong to the specified college');
     }
 
-    if (!faculty.isActive || faculty.status === 'inactive') {
-      throw ApiError.forbidden('Cannot assign an inactive faculty member');
-    }
-    if (faculty.userId) {
-      const userDoc = await User.findById(faculty.userId);
-      if (!userDoc || userDoc.accountStatus !== AccountStatus.ACTIVE) {
-        throw ApiError.forbidden('Cannot assign a faculty member with an inactive user account');
-      }
-    }
     if (!subject.isActive) {
-      throw ApiError.forbidden('Cannot assign an inactive subject');
+      throw ApiError.badRequest('Cannot assign an inactive subject');
     }
-    if (!section.isActive || section.status === 'inactive') {
-      throw ApiError.forbidden('Cannot assign to an inactive section');
+    if (section && (!section.isActive || section.status === 'inactive')) {
+      throw ApiError.badRequest('Cannot assign to an inactive section');
     }
 
-    // Role and Department Scoping
     if (requester.role === AppRole.HOD) {
-      if (requester.departmentId !== faculty.departmentId.toString()) {
-        throw ApiError.forbidden('HOD can only assign faculty within their assigned department');
-      }
       if (requester.departmentId !== subject.departmentId.toString()) {
         throw ApiError.forbidden('HOD can only assign subjects within their assigned department');
       }
-      if (requester.departmentId !== section.departmentId.toString()) {
+      if (section && requester.departmentId !== section.departmentId.toString()) {
         throw ApiError.forbidden('HOD can only assign sections within their assigned department');
       }
     }
 
     // Department match check
     if (faculty.departmentId.toString() !== subject.departmentId.toString() ||
-        section.departmentId.toString() !== subject.departmentId.toString()) {
+        (section && section.departmentId.toString() !== subject.departmentId.toString())) {
       throw ApiError.badRequest('Faculty, Subject, and Section must belong to the same department');
     }
 
-    // Verify academic lineage
-    if (subject.semesterId?.toString() !== section.semesterId?.toString()) {
-      throw ApiError.badRequest('Subject semester does not match Section semester');
+    // Academic Year validation
+    let ayId = data.academicYearId || section?.academicYearId;
+    if (!ayId) {
+      const currentAy = await AcademicYear.findOne({ collegeId: effectiveCollegeId, isCurrent: true, isActive: true });
+      ayId = currentAy?._id.toString();
     }
-    if (subject.courseId && section.courseId && subject.courseId.toString() !== section.courseId.toString()) {
-      throw ApiError.badRequest('Subject course does not match Section course');
+    if (!ayId || !mongoose.Types.ObjectId.isValid(ayId)) {
+      throw ApiError.badRequest('Valid academicYearId is required for faculty assignment');
     }
-    if (data.courseId && section.courseId && data.courseId !== section.courseId.toString()) {
-      throw ApiError.badRequest('Course does not match section course');
+    const ayDoc = await AcademicYear.findById(ayId);
+    if (!ayDoc || ayDoc.collegeId.toString() !== effectiveCollegeId) {
+      throw ApiError.badRequest('Academic Year does not belong to the specified college');
     }
-    if (data.semesterId && section.semesterId && data.semesterId !== section.semesterId.toString()) {
-      throw ApiError.badRequest('Semester does not match section semester');
-    }
-    if (data.academicYearId && section.academicYearId && data.academicYearId !== section.academicYearId.toString()) {
-      throw ApiError.badRequest('Academic Year does not match section academic year');
+    if (ayDoc.status === 'archived' || !ayDoc.isActive) {
+      throw ApiError.badRequest('Cannot assign to an inactive or archived academic year');
     }
 
-    // Check duplicate assignment
-    const existing = await FacultyAssignment.findOne({
+    const courseId = section?.courseId || data.courseId || subject.courseId;
+    const semesterId = section?.semesterId || data.semesterId || subject.semesterId;
+
+    if (!courseId || !mongoose.Types.ObjectId.isValid(courseId.toString())) {
+      throw ApiError.badRequest('Valid courseId is required');
+    }
+    if (!semesterId || !mongoose.Types.ObjectId.isValid(semesterId.toString())) {
+      throw ApiError.badRequest('Valid semesterId is required');
+    }
+
+    const [courseDoc, semDoc] = await Promise.all([
+      Course.findById(courseId),
+      Semester.findById(semesterId),
+    ]);
+
+    if (!courseDoc || courseDoc.collegeId.toString() !== effectiveCollegeId) {
+      throw ApiError.badRequest('Course does not belong to the specified college');
+    }
+    if (courseDoc.departmentId.toString() !== faculty.departmentId.toString()) {
+      throw ApiError.badRequest('Course must belong to the faculty department');
+    }
+    if (!semDoc || (semDoc.collegeId && semDoc.collegeId.toString() !== effectiveCollegeId)) {
+      throw ApiError.badRequest('Semester does not belong to the specified college');
+    }
+    if (semDoc.courseId.toString() !== courseDoc._id.toString()) {
+      throw ApiError.badRequest('Semester does not belong to the specified course');
+    }
+    if (semDoc.status === 'archived' || !semDoc.isActive) {
+      throw ApiError.badRequest('Cannot assign to an inactive or archived semester');
+    }
+    if (semDoc.academicYearId && semDoc.academicYearId.toString() !== ayDoc._id.toString()) {
+      throw ApiError.badRequest('Semester does not match the provided academic year');
+    }
+
+    // Verify Subject belongs to Course & Semester
+    if (subject.courseId && subject.courseId.toString() !== courseDoc._id.toString()) {
+      throw ApiError.badRequest('Subject does not belong to the specified course');
+    }
+    if (subject.semesterId && subject.semesterId.toString() !== semDoc._id.toString()) {
+      throw ApiError.badRequest('Subject does not belong to the specified semester');
+    }
+
+    // Verify Section lineage
+    if (section) {
+      if (section.courseId.toString() !== courseDoc._id.toString()) {
+        throw ApiError.badRequest('Section course does not match selected course');
+      }
+      if (section.semesterId.toString() !== semDoc._id.toString()) {
+        throw ApiError.badRequest('Section semester does not match selected semester');
+      }
+      if (section.academicYearId && section.academicYearId.toString() !== ayDoc._id.toString()) {
+        throw ApiError.badRequest('Section academic year does not match selected academic year');
+      }
+    }
+
+    // Check duplicate active assignment
+    const duplicateQuery: Record<string, unknown> = {
       collegeId: new mongoose.Types.ObjectId(effectiveCollegeId),
       facultyId: faculty._id,
-      sectionId: section._id,
       subjectId: subject._id,
-      isActive: true,
-    });
+      academicYearId: ayDoc._id,
+      semesterId: semDoc._id,
+      status: 'active',
+      sectionId: section ? section._id : null,
+    };
+    const existing = await FacultyAssignment.findOne(duplicateQuery);
     if (existing) {
+      const secMsg = section ? ` for section "${section.name}"` : '';
       throw ApiError.conflict(
-        `Faculty "${faculty.name}" is already assigned to "${subject.name}" for section "${section.name}"`
+        `Faculty "${faculty.name}" is already assigned to "${subject.name}"${secMsg}`
       );
     }
 
     let cohort = (data as any).cohort;
     let academicStage = (data as any).academicStage;
-    const ayId = data.academicYearId || section.academicYearId;
     if (!cohort || !academicStage) {
-      if (ayId && section.courseId) {
-        const ayDoc = await AcademicYear.findById(ayId);
-        const courseDoc = await Course.findById(section.courseId);
-        const semDoc = await Semester.findById(section.semesterId);
-        if (ayDoc && courseDoc && semDoc) {
-          const match = ayDoc.name.match(/(\d{4})/);
-          const ayStartYear = match ? parseInt(match[1], 10) : new Date(ayDoc.startDate).getFullYear();
-          const duration = courseDoc.duration || 3;
-          const stageNumber = Math.max(1, Math.ceil(semDoc.number / 2));
-          const entryYear = ayStartYear - (stageNumber - 1);
-          const gradYear = entryYear + duration;
-          if (!cohort) cohort = `${entryYear}–${gradYear.toString().slice(-2)}`;
-          if (!academicStage) academicStage = `${stageNumber}${stageNumber === 1 ? 'st' : stageNumber === 2 ? 'nd' : stageNumber === 3 ? 'rd' : 'th'} Year`;
-        }
-      }
+      const match = ayDoc.name.match(/(\d{4})/);
+      const ayStartYear = match ? parseInt(match[1], 10) : new Date(ayDoc.startDate).getFullYear();
+      const duration = courseDoc.duration || 3;
+      const stageNumber = Math.max(1, Math.ceil(semDoc.number / 2));
+      const entryYear = ayStartYear - (stageNumber - 1);
+      const gradYear = entryYear + duration;
+      if (!cohort) cohort = `${entryYear}–${gradYear.toString().slice(-2)}`;
+      if (!academicStage) academicStage = `${stageNumber}${stageNumber === 1 ? 'st' : stageNumber === 2 ? 'nd' : stageNumber === 3 ? 'rd' : 'th'} Year`;
     }
 
     const assignment = await FacultyAssignment.create({
@@ -1579,25 +1982,32 @@ export class AcademicService {
       departmentId: faculty.departmentId,
       facultyId: faculty._id,
       facultyName: faculty.name,
-      courseId: section.courseId,
-      semesterId: section.semesterId,
-      sectionId: section._id,
+      courseId: courseDoc._id,
+      semesterId: semDoc._id,
+      sectionId: section ? section._id : null,
       subjectId: subject._id,
-      academicYearId: ayId || section.academicYearId,
+      academicYearId: ayDoc._id,
       cohort,
       academicStage,
       roomId: data.roomId || null,
-      maxStudents: data.maxStudents || section.capacity,
+      maxStudents: data.maxStudents || (section ? section.capacity : null),
       assignmentType: data.assignmentType || 'lecture',
       assignedBy: requester.id,
+      status: 'active',
       isActive: true,
       assignedAt: new Date(),
     });
 
     // Update Faculty references
+    const facultyUpdate: Record<string, unknown> = {
+      $addToSet: {
+        subjectIds: subject._id,
+        ...(section ? { sectionIds: section._id } : {}),
+      },
+    };
     await Faculty.updateOne(
       { _id: faculty._id },
-      { $addToSet: { subjectIds: subject._id, sectionIds: section._id } }
+      facultyUpdate
     );
 
     await AuditLog.create({
@@ -1609,12 +2019,48 @@ export class AcademicService {
       newValue: assignment.toJSON(),
     });
 
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.FACULTY_ASSIGNMENT_CREATED,
+      aggregateType: 'FacultyAssignment',
+      aggregateId: assignment.id,
+      action: 'CREATED',
+      collegeId: effectiveCollegeId,
+      scope: {
+        type: 'college',
+        collegeId: effectiveCollegeId,
+        departmentId: assignment.departmentId?.toString(),
+      },
+      payload: {
+        assignmentId: assignment.id,
+        facultyId: faculty.id,
+        facultyUserId: faculty.userId?.toString(),
+        subjectId: subject.id,
+        sectionId: section?._id?.toString(),
+      },
+    });
+
     return assignment;
   }
 
   static async updateFacultyAssignment(
     id: string,
-    update: { roomId?: string; maxStudents?: number; assignmentType?: string; isActive?: boolean },
+    update: {
+      facultyId?: string;
+      subjectId?: string;
+      sectionId?: string | null;
+      courseId?: string;
+      semesterId?: string;
+      academicYearId?: string;
+      departmentId?: string;
+      roomId?: string;
+      maxStudents?: number;
+      assignmentType?: string;
+      cohort?: string;
+      academicStage?: string;
+      status?: 'active' | 'inactive' | 'ended' | 'archived';
+      isActive?: boolean;
+    },
     requester: AuthenticatedUser
   ): Promise<IFacultyAssignment> {
     if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
@@ -1624,12 +2070,171 @@ export class AcademicService {
     const assignment = await this.getFacultyAssignmentById(id, requester);
     const prev = assignment.toJSON();
 
+    if (requester.role === AppRole.HOD && assignment.departmentId.toString() !== requester.departmentId) {
+      throw ApiError.forbidden('HOD can only update assignments within their assigned department');
+    }
+
+    const effectiveCollegeId = assignment.collegeId.toString();
+
+    // Revalidate entire relationship if any identity/academic context field changes
+    const isRelationshipChanged =
+      (update.facultyId && update.facultyId !== assignment.facultyId.toString()) ||
+      (update.subjectId && update.subjectId !== assignment.subjectId.toString()) ||
+      (update.courseId && update.courseId !== assignment.courseId?.toString()) ||
+      (update.semesterId && update.semesterId !== assignment.semesterId?.toString()) ||
+      (update.academicYearId && update.academicYearId !== assignment.academicYearId?.toString()) ||
+      (update.sectionId !== undefined && update.sectionId !== assignment.sectionId?.toString());
+
+    if (isRelationshipChanged) {
+      const targetFacultyId = update.facultyId || assignment.facultyId.toString();
+      const targetSubjectId = update.subjectId || assignment.subjectId.toString();
+      const targetCourseId = update.courseId || assignment.courseId?.toString();
+      const targetSemesterId = update.semesterId || assignment.semesterId?.toString();
+      const targetAyId = update.academicYearId || assignment.academicYearId?.toString();
+      const targetSectionId = update.sectionId !== undefined ? update.sectionId : assignment.sectionId?.toString();
+
+      const faculty = await Faculty.findById(targetFacultyId);
+      if (!faculty || faculty.collegeId.toString() !== effectiveCollegeId) {
+        throw ApiError.badRequest('Faculty does not belong to the specified college');
+      }
+      if (!faculty.isActive || faculty.status === 'inactive') {
+        throw ApiError.badRequest('Cannot assign an inactive faculty member');
+      }
+      if (requester.role === AppRole.HOD && requester.departmentId !== faculty.departmentId.toString()) {
+        throw ApiError.forbidden('HOD can only assign faculty within their assigned department');
+      }
+
+      const subject = await Subject.findById(targetSubjectId);
+      if (!subject || subject.collegeId.toString() !== effectiveCollegeId) {
+        throw ApiError.badRequest('Subject does not belong to the specified college');
+      }
+      if (subject.departmentId.toString() !== faculty.departmentId.toString()) {
+        throw ApiError.badRequest('Faculty and Subject must belong to the same department');
+      }
+
+      const course = await Course.findById(targetCourseId);
+      if (!course || course.collegeId.toString() !== effectiveCollegeId) {
+        throw ApiError.badRequest('Course does not belong to the specified college');
+      }
+
+      const semester = await Semester.findById(targetSemesterId);
+      if (!semester || (semester.collegeId && semester.collegeId.toString() !== effectiveCollegeId)) {
+        throw ApiError.badRequest('Semester does not belong to the specified college');
+      }
+      if (semester.courseId.toString() !== course._id.toString()) {
+        throw ApiError.badRequest('Semester does not belong to the specified course');
+      }
+
+      if (subject.courseId && subject.courseId.toString() !== course._id.toString()) {
+        throw ApiError.badRequest('Subject does not belong to the selected course and semester');
+      }
+      if (subject.semesterId && subject.semesterId.toString() !== semester._id.toString()) {
+        throw ApiError.badRequest('Subject does not belong to the selected course and semester');
+      }
+
+      const ay = await AcademicYear.findById(targetAyId);
+      if (!ay || ay.collegeId.toString() !== effectiveCollegeId) {
+        throw ApiError.badRequest('Academic Year does not belong to the specified college');
+      }
+
+      let sectionDoc = null;
+      if (targetSectionId) {
+        sectionDoc = await Section.findById(targetSectionId);
+        if (!sectionDoc || sectionDoc.collegeId.toString() !== effectiveCollegeId) {
+          throw ApiError.badRequest('Section does not belong to the specified college');
+        }
+        if (sectionDoc.departmentId.toString() !== faculty.departmentId.toString()) {
+          throw ApiError.badRequest('Section must belong to the faculty department');
+        }
+        if (sectionDoc.semesterId.toString() !== semester._id.toString()) {
+          throw ApiError.badRequest('Section semester does not match selected semester');
+        }
+      }
+
+      // Check duplicate
+      const duplicate = await FacultyAssignment.findOne({
+        _id: { $ne: assignment._id },
+        collegeId: assignment.collegeId,
+        facultyId: faculty._id,
+        subjectId: subject._id,
+        academicYearId: ay._id,
+        semesterId: semester._id,
+        sectionId: sectionDoc ? sectionDoc._id : null,
+        status: 'active',
+      });
+      if (duplicate) {
+        throw ApiError.conflict('An active assignment already exists for this faculty, subject, and context');
+      }
+
+      assignment.facultyId = faculty._id;
+      assignment.facultyName = faculty.name;
+      assignment.departmentId = faculty.departmentId;
+      assignment.subjectId = subject._id;
+      assignment.courseId = course._id;
+      assignment.semesterId = semester._id;
+      assignment.academicYearId = ay._id;
+      assignment.sectionId = sectionDoc ? sectionDoc._id : null;
+    }
+
     if (update.roomId !== undefined) assignment.roomId = update.roomId;
     if (update.maxStudents !== undefined) assignment.maxStudents = update.maxStudents;
     if (update.assignmentType !== undefined) assignment.assignmentType = update.assignmentType;
-    if (update.isActive !== undefined) assignment.isActive = update.isActive;
+    if (update.cohort !== undefined) assignment.cohort = update.cohort;
+    if (update.academicStage !== undefined) assignment.academicStage = update.academicStage;
+
+    if (update.status !== undefined) {
+      assignment.status = update.status;
+      assignment.isActive = update.status === 'active';
+      if (update.status !== 'active') {
+        assignment.endedAt = new Date();
+      } else {
+        assignment.endedAt = null;
+      }
+    } else if (update.isActive !== undefined) {
+      assignment.isActive = update.isActive;
+      assignment.status = update.isActive ? 'active' : 'inactive';
+      if (!update.isActive) {
+        assignment.endedAt = new Date();
+      } else {
+        assignment.endedAt = null;
+      }
+    }
 
     await assignment.save();
+
+    // Sync faculty subjectIds / sectionIds caches
+    if (assignment.isActive) {
+      await Faculty.updateOne(
+        { _id: assignment.facultyId },
+        {
+          $addToSet: {
+            subjectIds: assignment.subjectId,
+            ...(assignment.sectionId ? { sectionIds: assignment.sectionId } : {}),
+          },
+        }
+      );
+    } else {
+      const remSub = await FacultyAssignment.countDocuments({
+        facultyId: assignment.facultyId,
+        subjectId: assignment.subjectId,
+        isActive: true,
+        _id: { $ne: assignment._id },
+      });
+      if (remSub === 0) {
+        await Faculty.updateOne({ _id: assignment.facultyId }, { $pull: { subjectIds: assignment.subjectId } });
+      }
+      if (assignment.sectionId) {
+        const remSec = await FacultyAssignment.countDocuments({
+          facultyId: assignment.facultyId,
+          sectionId: assignment.sectionId,
+          isActive: true,
+          _id: { $ne: assignment._id },
+        });
+        if (remSec === 0) {
+          await Faculty.updateOne({ _id: assignment.facultyId }, { $pull: { sectionIds: assignment.sectionId } });
+        }
+      }
+    }
 
     await AuditLog.create({
       collegeId: assignment.collegeId.toString(),
@@ -1639,6 +2244,26 @@ export class AcademicService {
       entityId: assignment.id,
       previousValue: prev,
       newValue: assignment.toJSON(),
+    });
+
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.FACULTY_ASSIGNMENT_UPDATED,
+      aggregateType: 'FacultyAssignment',
+      aggregateId: assignment.id,
+      action: 'UPDATED',
+      collegeId: assignment.collegeId.toString(),
+      scope: {
+        type: 'college',
+        collegeId: assignment.collegeId.toString(),
+        departmentId: assignment.departmentId?.toString(),
+      },
+      payload: {
+        assignmentId: assignment.id,
+        facultyId: assignment.facultyId?.toString(),
+        status: assignment.status,
+        isActive: assignment.isActive,
+      },
     });
 
     return assignment;
@@ -1655,6 +2280,7 @@ export class AcademicService {
       sectionId?: string;
       subjectId?: string;
       academicYearId?: string;
+      status?: 'active' | 'inactive' | 'ended' | 'archived';
       isActive?: boolean;
       page?: number;
       limit?: number;
@@ -1663,10 +2289,33 @@ export class AcademicService {
     const mongoQuery: Record<string, unknown> = {};
 
     if (requester.role === AppRole.STUDENT) {
-      const studentProfile = await Student.findOne({ userId: requester.id });
-      if (!studentProfile || !studentProfile.sectionId) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
-      mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
-      mongoQuery.sectionId = studentProfile.sectionId;
+      let student = await Student.findOne({ userId: requester.id });
+      if (!student && mongoose.Types.ObjectId.isValid(requester.id)) {
+        student = await Student.findById(requester.id);
+      }
+      if (!student) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
+
+      const activeEnrollment = await StudentEnrollment.findOne({
+        collegeId: new mongoose.Types.ObjectId(requester.collegeId),
+        studentId: student._id,
+        status: 'active',
+      });
+
+      if (!activeEnrollment) {
+        if (student.sectionId) {
+          mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+          mongoQuery.sectionId = student.sectionId;
+        } else {
+          return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
+        }
+      } else {
+        mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+        if (activeEnrollment.sectionId) {
+          mongoQuery.sectionId = activeEnrollment.sectionId;
+        } else {
+          mongoQuery.semesterId = activeEnrollment.semesterId;
+        }
+      }
     } else if (requester.role === AppRole.FACULTY) {
       let facultyProfile = await Faculty.findOne({ userId: requester.id });
       if (!facultyProfile && mongoose.Types.ObjectId.isValid(requester.id)) {
@@ -1711,10 +2360,12 @@ export class AcademicService {
     if (query.academicYearId) {
       mongoQuery.academicYearId = new mongoose.Types.ObjectId(query.academicYearId);
     }
-    if (query.isActive !== undefined) {
+    if (query.status) {
+      mongoQuery.status = query.status;
+    } else if (query.isActive !== undefined) {
       mongoQuery.isActive = query.isActive;
     } else if (requester.role === AppRole.FACULTY) {
-      mongoQuery.isActive = true;
+      mongoQuery.status = 'active';
     }
 
     const page = Math.max(1, query.page || 1);
@@ -1726,7 +2377,6 @@ export class AcademicService {
       FacultyAssignment.countDocuments(mongoQuery),
     ]);
 
-    // Ensure all items return resolved cohort and academicStage for clear teaching context identification
     for (const item of items) {
       if (!item.cohort || !item.academicStage) {
         if (item.academicYearId && item.courseId && item.semesterId) {
@@ -1772,7 +2422,10 @@ export class AcademicService {
     return assignment;
   }
 
-  static async deleteFacultyAssignment(id: string, requester: AuthenticatedUser): Promise<void> {
+  static async deleteFacultyAssignment(
+    id: string,
+    requester: AuthenticatedUser
+  ): Promise<{ action: 'archived' | 'deleted'; message: string }> {
     if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
       throw ApiError.forbidden('Only administrators and HODs have permission to remove faculty assignments');
     }
@@ -1786,12 +2439,21 @@ export class AcademicService {
       Timetable.exists({ 'entries.facultyAssignmentId': assignment._id, status: TimetableStatus.PUBLISHED }),
     ]);
 
+    let action: 'archived' | 'deleted';
+    let message: string;
+
     if (hasAttendance || hasPublishedTimetable) {
-      // Safe deactivation: preserve historical attendance and audit record
+      // Safe deactivation / archive: preserve historical attendance and audit record
+      assignment.status = 'archived';
       assignment.isActive = false;
+      assignment.endedAt = new Date();
       await assignment.save();
+      action = 'archived';
+      message = 'Teaching assignment archived to preserve historical records';
     } else {
       await FacultyAssignment.findByIdAndDelete(id);
+      action = 'deleted';
+      message = 'Teaching assignment deleted successfully';
     }
 
     // Pull assignment from draft timetables so future unpublished authoring does not reference it
@@ -1811,14 +2473,16 @@ export class AcademicService {
       await Faculty.updateOne({ _id: assignment.facultyId }, { $pull: { subjectIds: assignment.subjectId } });
     }
 
-    const remainingForFacultySection = await FacultyAssignment.countDocuments({
-      facultyId: assignment.facultyId,
-      sectionId: assignment.sectionId,
-      isActive: true,
-      _id: { $ne: assignment._id },
-    });
-    if (remainingForFacultySection === 0) {
-      await Faculty.updateOne({ _id: assignment.facultyId }, { $pull: { sectionIds: assignment.sectionId } });
+    if (assignment.sectionId) {
+      const remainingForFacultySection = await FacultyAssignment.countDocuments({
+        facultyId: assignment.facultyId,
+        sectionId: assignment.sectionId,
+        isActive: true,
+        _id: { $ne: assignment._id },
+      });
+      if (remainingForFacultySection === 0) {
+        await Faculty.updateOne({ _id: assignment.facultyId }, { $pull: { sectionIds: assignment.sectionId } });
+      }
     }
 
     await AuditLog.create({
@@ -1830,6 +2494,26 @@ export class AcademicService {
       previousValue: prev,
       newValue: hasAttendance || hasPublishedTimetable ? assignment.toJSON() : undefined,
     });
+
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.FACULTY_ASSIGNMENT_ENDED,
+      aggregateType: 'FacultyAssignment',
+      aggregateId: assignment.id,
+      action: 'CLOSED',
+      collegeId: assignment.collegeId.toString(),
+      scope: {
+        type: 'college',
+        collegeId: assignment.collegeId.toString(),
+        departmentId: assignment.departmentId?.toString(),
+      },
+      payload: {
+        assignmentId: assignment.id,
+        facultyId: assignment.facultyId?.toString(),
+      },
+    });
+
+    return { action, message };
   }
 
   static async getFacultyWorkload(
@@ -1860,7 +2544,7 @@ export class AcademicService {
       facultyList.map(async (fac) => {
         const assignments = await FacultyAssignment.find({ facultyId: fac._id, isActive: true });
         const distinctSubjects = new Set(assignments.map((a) => a.subjectId.toString())).size;
-        const distinctSections = new Set(assignments.map((a) => a.sectionId.toString())).size;
+        const distinctSections = new Set(assignments.map((a) => a.sectionId?.toString()).filter(Boolean)).size;
 
         return {
           facultyId: fac.id,
@@ -1869,6 +2553,10 @@ export class AcademicService {
           departmentId: fac.departmentId?.toString(),
           assignedSubjectCount: distinctSubjects,
           assignedSectionCount: distinctSections,
+          subjectsAssigned: distinctSubjects,
+          sectionsAssigned: distinctSections,
+          weeklyClasses: assignments.length * 4,
+          hasAttendanceResponsibility: assignments.length > 0,
           totalAssignments: assignments.length,
           assignments: assignments.map((a) => a.toJSON()),
         };

@@ -339,7 +339,16 @@ class AcadexException implements Exception {
       return 'We could not complete this operation due to a temporary state update conflict. Please try again.';
     }
     if (lower.contains('faculty') && (lower.contains('not found') || lower.contains('unavailable') || lower.contains('no longer available'))) {
-      return "We couldn't complete this faculty assignment. The selected faculty record is unavailable. Please refresh the faculty list and try again.";
+      return 'The selected faculty member is no longer available. Refresh the faculty list and try again.';
+    }
+    if (lower.contains('subject') && (lower.contains('not found') || lower.contains('unavailable') || lower.contains('no longer available'))) {
+      return 'The selected subject is no longer available. Refresh Subjects and try again.';
+    }
+    if (lower.contains('room') && (lower.contains('not found') || lower.contains('unavailable') || lower.contains('no longer available'))) {
+      return 'The selected room is no longer available. Refresh Rooms and try again.';
+    }
+    if (lower.contains('section') && (lower.contains('not found') || lower.contains('unavailable') || lower.contains('no longer available'))) {
+      return 'The selected section is no longer available. Refresh the section list and try again.';
     }
 
     final technicalKeywords = [
@@ -361,6 +370,10 @@ class AcadexException implements Exception {
       'courseid',
       'collegeid',
       'departmentid',
+      'roomid',
+      'timetableid',
+      'timetableentryid',
+      'facultyassignmentid',
       'cast to objectid failed',
       'e11000 duplicate key error',
       'cannot read properties of undefined',

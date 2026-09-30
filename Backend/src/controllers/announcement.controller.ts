@@ -37,4 +37,9 @@ export class AnnouncementController {
     await AnnouncementService.deleteAnnouncement(req.params.id, req.user!);
     ApiResponse.success(res, null, 'Announcement deleted successfully');
   };
+
+  static cancelAnnouncement = async (req: Request, res: Response): Promise<void> => {
+    const announcement = await AnnouncementService.cancelAnnouncement(req.params.id, req.user!);
+    ApiResponse.success(res, announcement, 'Announcement cancelled successfully');
+  };
 }

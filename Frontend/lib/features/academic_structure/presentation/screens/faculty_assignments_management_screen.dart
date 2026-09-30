@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
@@ -16,6 +17,8 @@ import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
 import '../widgets/faculty_assignment_dialog.dart';
 import '../utils/academic_prerequisite_guard.dart';
+import '../../../institution_config/presentation/providers/institution_config_providers.dart';
+import '../../../../core/errors/acadex_error.dart';
 
 class FacultyAssignmentsManagementScreen extends ConsumerStatefulWidget {
   final String? initialSubjectId;
@@ -60,14 +63,19 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
     final semesters = ref.read(semestersProvider).valueOrNull ?? [];
     final sections = ref.read(sectionsProvider).valueOrNull ?? [];
     final subjects = ref.read(subjectsProvider).valueOrNull ?? [];
+    final academicYears = ref.read(academicYearsProvider).valueOrNull ?? [];
     final faculties = ref.read(facultyProvider(null)).items;
 
+    final terminology = ref.read(terminologyProvider);
     final check = AcademicPrerequisiteGuard.checkFacultyAssignmentPrerequisites(
       courses: courses,
       semesters: semesters,
       sections: sections,
       subjects: subjects,
+      academicYears: academicYears,
       faculties: faculties,
+      isSectionEnabled: terminology.isSectionEnabled,
+      termHelper: terminology,
     );
 
     if (!check.isSatisfied) {
@@ -97,6 +105,18 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
     if (isHod && hodDeptId != null && hodDeptId.isNotEmpty && _filterDepartmentId == null) {
       _filterDepartmentId = hodDeptId;
     }
+
+    final terminology = ref.watch(terminologyProvider);
+    final progLabel = terminology.programName();
+    final progsLabel = terminology.programName(plural: true);
+    final semLabel = terminology.semesterName();
+    final semsLabel = terminology.semesterName(plural: true);
+    final secLabel = terminology.sectionName();
+    final secsLabel = terminology.sectionName(plural: true);
+    final subLabel = terminology.subjectName();
+    final subsLabel = terminology.subjectName(plural: true);
+    final deptLabel = terminology.departmentName();
+    final deptsLabel = terminology.departmentName(plural: true);
 
     final assignmentsAsync = ref.watch(facultyAssignmentsProvider);
     final deptMap = ref.watch(departmentMapProvider);
@@ -190,10 +210,10 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                     child: DropdownButtonFormField<String?>(
                                       isExpanded: true,
                                       key: ValueKey('filter_dept_$_filterDepartmentId'),
-                                      decoration: const InputDecoration(labelText: "Department", isDense: true),
+                                      decoration: InputDecoration(labelText: deptLabel, isDense: true),
                                       initialValue: _filterDepartmentId,
                                       items: [
-                                        const DropdownMenuItem(value: null, child: Text("All Depts", overflow: TextOverflow.ellipsis)),
+                                        DropdownMenuItem(value: null, child: Text("All $deptsLabel", overflow: TextOverflow.ellipsis)),
                                         ...departments.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name, overflow: TextOverflow.ellipsis))),
                                       ],
                                       onChanged: (val) {
@@ -214,10 +234,10 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                   child: DropdownButtonFormField<String?>(
                                     isExpanded: true,
                                     key: ValueKey('filter_course_${_filterDepartmentId}_$_filterCourseId'),
-                                    decoration: const InputDecoration(labelText: "Course", isDense: true),
+                                    decoration: InputDecoration(labelText: progLabel, isDense: true),
                                     initialValue: _filterCourseId,
                                     items: [
-                                      const DropdownMenuItem(value: null, child: Text("All Courses", overflow: TextOverflow.ellipsis)),
+                                      DropdownMenuItem(value: null, child: Text("All $progsLabel", overflow: TextOverflow.ellipsis)),
                                       ...filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.code, overflow: TextOverflow.ellipsis))),
                                     ],
                                     onChanged: (val) {
@@ -239,10 +259,10 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                   child: DropdownButtonFormField<String?>(
                                     isExpanded: true,
                                     key: ValueKey('filter_sem_${_filterCourseId}_$_filterSemesterId'),
-                                    decoration: const InputDecoration(labelText: "Semester", isDense: true),
+                                    decoration: InputDecoration(labelText: semLabel, isDense: true),
                                     initialValue: _filterSemesterId,
                                     items: [
-                                      const DropdownMenuItem(value: null, child: Text("All Sems", overflow: TextOverflow.ellipsis)),
+                                      DropdownMenuItem(value: null, child: Text("All $semsLabel", overflow: TextOverflow.ellipsis)),
                                       ...filteredSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))),
                                     ],
                                     onChanged: (val) {
@@ -259,10 +279,10 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                   child: DropdownButtonFormField<String?>(
                                     isExpanded: true,
                                     key: ValueKey('filter_sec_${_filterSemesterId}_$_filterSectionId'),
-                                    decoration: const InputDecoration(labelText: "Section", isDense: true),
+                                    decoration: InputDecoration(labelText: secLabel, isDense: true),
                                     initialValue: _filterSectionId,
                                     items: [
-                                      const DropdownMenuItem(value: null, child: Text("All Secs", overflow: TextOverflow.ellipsis)),
+                                      DropdownMenuItem(value: null, child: Text("All $secsLabel", overflow: TextOverflow.ellipsis)),
                                       ...filteredSections.map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name, overflow: TextOverflow.ellipsis))),
                                     ],
                                     onChanged: (val) => setState(() => _filterSectionId = val),
@@ -314,10 +334,10 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                   child: DropdownButtonFormField<String?>(
                                     isExpanded: true,
                                     key: ValueKey('filter_dept_$_filterDepartmentId'),
-                                    decoration: const InputDecoration(labelText: "Department", hintText: "All Depts"),
+                                    decoration: InputDecoration(labelText: deptLabel, hintText: "All $deptsLabel"),
                                     initialValue: _filterDepartmentId,
                                     items: [
-                                      const DropdownMenuItem(value: null, child: Text("All Departments", overflow: TextOverflow.ellipsis)),
+                                      DropdownMenuItem(value: null, child: Text("All $deptsLabel", overflow: TextOverflow.ellipsis)),
                                       ...departments.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name, overflow: TextOverflow.ellipsis))),
                                     ],
                                     onChanged: (val) {
@@ -339,10 +359,10 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                 child: DropdownButtonFormField<String?>(
                                   isExpanded: true,
                                   key: ValueKey('filter_course_${_filterDepartmentId}_$_filterCourseId'),
-                                  decoration: const InputDecoration(labelText: "Course", hintText: "All Courses"),
+                                  decoration: InputDecoration(labelText: progLabel, hintText: "All $progsLabel"),
                                   initialValue: _filterCourseId,
                                   items: [
-                                    const DropdownMenuItem(value: null, child: Text("All Courses", overflow: TextOverflow.ellipsis)),
+                                    DropdownMenuItem(value: null, child: Text("All $progsLabel", overflow: TextOverflow.ellipsis)),
                                     ...filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.code, overflow: TextOverflow.ellipsis))),
                                   ],
                                   onChanged: (val) {
@@ -361,10 +381,10 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                 child: DropdownButtonFormField<String?>(
                                   isExpanded: true,
                                   key: ValueKey('filter_sem_${_filterCourseId}_$_filterSemesterId'),
-                                  decoration: const InputDecoration(labelText: "Semester", hintText: "All Semesters"),
+                                  decoration: InputDecoration(labelText: semLabel, hintText: "All $semsLabel"),
                                   initialValue: _filterSemesterId,
                                   items: [
-                                    const DropdownMenuItem(value: null, child: Text("All Semesters", overflow: TextOverflow.ellipsis)),
+                                    DropdownMenuItem(value: null, child: Text("All $semsLabel", overflow: TextOverflow.ellipsis)),
                                     ...filteredSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))),
                                   ],
                                   onChanged: (val) {
@@ -382,10 +402,10 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                 child: DropdownButtonFormField<String?>(
                                   isExpanded: true,
                                   key: ValueKey('filter_sec_${_filterSemesterId}_$_filterSectionId'),
-                                  decoration: const InputDecoration(labelText: "Section", hintText: "All Sections"),
+                                  decoration: InputDecoration(labelText: secLabel, hintText: "All $secsLabel"),
                                   initialValue: _filterSectionId,
                                   items: [
-                                    const DropdownMenuItem(value: null, child: Text("All Sections", overflow: TextOverflow.ellipsis)),
+                                    DropdownMenuItem(value: null, child: Text("All $secsLabel", overflow: TextOverflow.ellipsis)),
                                     ...filteredSections.map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name, overflow: TextOverflow.ellipsis))),
                                   ],
                                   onChanged: (val) => setState(() => _filterSectionId = val),
@@ -416,10 +436,10 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                 child: DropdownButtonFormField<String?>(
                                   isExpanded: true,
                                   key: ValueKey('filter_sub_${_filterSemesterId}_$_filterSubjectId'),
-                                  decoration: const InputDecoration(labelText: "Subject", hintText: "All Subjects"),
+                                  decoration: InputDecoration(labelText: subLabel, hintText: "All $subsLabel"),
                                   initialValue: _filterSubjectId,
                                   items: [
-                                    const DropdownMenuItem(value: null, child: Text("All Subjects", overflow: TextOverflow.ellipsis)),
+                                    DropdownMenuItem(value: null, child: Text("All $subsLabel", overflow: TextOverflow.ellipsis)),
                                     ...filteredSubjects.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.code} - ${s.name}', overflow: TextOverflow.ellipsis))),
                                   ],
                                   onChanged: (val) => setState(() => _filterSubjectId = val),
@@ -514,7 +534,7 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                 error: (err, _) => Center(
                   child: AcadexErrorState(
                     title: "Failed to load faculty assignments",
-                    message: err.toString(),
+                    message: AcadexException.sanitizedMessage(err),
                     onRetry: () => ref.invalidate(facultyAssignmentsProvider),
                     retryLabel: "Retry",
                   ),
@@ -626,6 +646,11 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   IconButton(
+                                    tooltip: "Internal Assessment Marks",
+                                    icon: const Icon(LucideIcons.award, size: 16, color: AcadexColors.primary),
+                                    onPressed: () => context.push('/assessments/entry?sectionId=${a.sectionId}&subjectId=${a.subjectId}'),
+                                  ),
+                                  IconButton(
                                     tooltip: a.isActive ? "Deactivate" : "Activate",
                                     icon: Icon(a.isActive ? LucideIcons.powerOff : LucideIcons.power, size: 16, color: a.isActive ? AcadexColors.warning : AcadexColors.success),
                                     onPressed: () => _toggleAssignmentActive(a),
@@ -646,13 +671,13 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
 
                   // Desktop Contained Data Table
                   return AcadexDataTable(
-                    columns: const [
+                    columns: [
                       "Faculty",
-                      "Department",
-                      "Subject",
-                      "Course",
-                      "Semester",
-                      "Section",
+                      deptLabel,
+                      subLabel,
+                      progLabel,
+                      semLabel,
+                      secLabel,
                       "Academic Year",
                       "Cohort / Batch",
                       "Status",
@@ -726,6 +751,11 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
+                                IconButton(
+                                  tooltip: "Internal Assessment Marks",
+                                  icon: const Icon(LucideIcons.award, size: 18, color: AcadexColors.primary),
+                                  onPressed: () => context.push('/assessments/entry?sectionId=${a.sectionId}&subjectId=${a.subjectId}'),
+                                ),
                                 IconButton(
                                   tooltip: a.isActive ? "Deactivate" : "Activate",
                                   icon: Icon(a.isActive ? LucideIcons.powerOff : LucideIcons.power, size: 18, color: a.isActive ? AcadexColors.warning : AcadexColors.success),

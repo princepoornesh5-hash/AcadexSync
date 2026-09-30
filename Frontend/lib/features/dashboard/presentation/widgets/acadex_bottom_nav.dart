@@ -41,20 +41,22 @@ class AcadexBottomNav extends ConsumerWidget {
     }
     final isMoreActive = !isAnyPrimaryActive;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
         border: Border(
           top: BorderSide(
-            color: AcadexColors.hairline,
+            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
             width: 1,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x0A07111F),
+            color: isDark ? Colors.black.withValues(alpha: 0.3) : const Color(0x0A07111F),
             blurRadius: 8,
-            offset: Offset(0, -2),
+            offset: const Offset(0, -2),
           ),
         ],
       ),
@@ -110,8 +112,9 @@ class _NavTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     const activeColor = AcadexColors.primary;
-    const inactiveColor = AcadexColors.inkMuted;
+    final inactiveColor = isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted;
     final textScaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.15);
 
     return Expanded(

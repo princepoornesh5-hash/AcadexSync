@@ -38,10 +38,11 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
   String? _selectedCourseId;
   String? _selectedAcademicYearId;
 
-  void _navigateCreateSemester(BuildContext context, List<Course> courses, List<AcademicYear> years) {
+  void _navigateCreateSemester(BuildContext context, List<Course> courses, List<AcademicYear> years, TerminologyHelper terminology) {
     final check = AcademicPrerequisiteGuard.checkSemesterPrerequisites(
       courses: courses,
       academicYears: years,
+      termHelper: terminology,
     );
     if (!check.isSatisfied) {
       AcademicPrerequisiteGuard.showBlockerDialog(context, check);
@@ -63,20 +64,25 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
     final coursesMap = {for (final c in coursesList) c.id: c.name};
     final yearsMap = {for (final y in yearsList) y.id: y.name};
 
+    final terminology = ref.watch(terminologyProvider);
+    final semTitle = terminology.semesterName(plural: true);
+    final semSingular = terminology.semesterName();
+    final progPlural = terminology.programName(plural: true);
+
     return AcadexPageContainer(
       scrollable: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AcadexPageHeader(
-            title: "Semesters",
-            subtitle: "Manage academic semesters, semester numbers, curricula, and current cohorts.",
+          AcadexPageHeader(
+            title: semTitle,
+            subtitle: "Manage academic $semTitle, ${semSingular.toLowerCase()} numbers, curricula, and current cohorts.",
           ),
           AcadexSearchFilterBar(
-            searchHint: "Search semesters or courses...",
+            searchHint: "Search ${semTitle.toLowerCase()} or ${progPlural.toLowerCase()}...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
-            onActionTap: () => _navigateCreateSemester(context, coursesList, yearsList),
-            actionLabel: "Create Semester",
+            onActionTap: () => _navigateCreateSemester(context, coursesList, yearsList, terminology),
+            actionLabel: "Create $semSingular",
           ),
           const SizedBox(height: 10),
 
@@ -102,7 +108,7 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                       isDense: true,
                       dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                       items: [
-                        const DropdownMenuItem(value: 'all', child: Text('All Courses', style: TextStyle(fontSize: 12))),
+                        DropdownMenuItem(value: 'all', child: Text('All $progPlural', style: const TextStyle(fontSize: 12))),
                         for (final c in coursesList)
                           DropdownMenuItem(value: c.id, child: Text("${c.name} (${c.code})", style: const TextStyle(fontSize: 12))),
                       ],
@@ -228,36 +234,39 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                       return FreshDepartmentSetupCard(
                         currentStep: AcademicSetupStep.course,
                         customMessage:
-                            "Step 1 Pending: Create a Course first. Semesters cannot be created without a Course.",
-                        actionLabel: "Create Course",
+                            "Step 1 Pending: Create a ${terminology.programName()} first. $semTitle cannot be created without a ${terminology.programName()}.",
+                        actionLabel: "Create ${terminology.programName()}",
                         onAction: () => context.push('/academics/courses/new'),
+                        termHelper: terminology,
                       );
                     }
                     if (yearsList.isEmpty) {
                       return FreshDepartmentSetupCard(
                         currentStep: AcademicSetupStep.academicYear,
                         customMessage:
-                            "Step 2 Pending: Academic Year required. Establish an Academic Year session before defining semesters.",
-                        actionLabel: "View Academic Years",
+                            "Step 2 Pending: ${terminology.academicYearName()} required. Establish an ${terminology.academicYearName()} session before defining ${semTitle.toLowerCase()}.",
+                        actionLabel: "View ${terminology.academicYearName(plural: true)}",
                         onAction: () => context.push('/academics/academic_years'),
+                        termHelper: terminology,
                       );
                     }
                     return FreshDepartmentSetupCard(
                       currentStep: AcademicSetupStep.semester,
                       customMessage:
-                          "Step 3 of 3: Establish semester cycles (e.g. Semester 1 to 6) for your courses and academic years.",
-                      actionLabel: "Create First Semester",
+                          "Step 3: Establish ${semSingular.toLowerCase()} cycles for your ${progPlural.toLowerCase()} and ${terminology.academicYearName(plural: true).toLowerCase()}.",
+                      actionLabel: "Create First $semSingular",
                       onAction: () => context.push('/academics/semesters/new'),
+                      termHelper: terminology,
                     );
                   }
 
                   if (semesters.isEmpty) {
                     return AcadexEmptyState(
-                      title: "No Semesters Found",
-                      subtitle: "Create a semester for the selected course and academic year.",
+                      title: "No $semTitle Found",
+                      subtitle: "Create a ${semSingular.toLowerCase()} for the selected ${terminology.programName().toLowerCase()} and ${terminology.academicYearName().toLowerCase()}.",
                       icon: LucideIcons.calendarClock,
-                      actionLabel: "Create Semester",
-                      onActionTap: () => _navigateCreateSemester(context, coursesList, yearsList),
+                      actionLabel: "Create $semSingular",
+                      onActionTap: () => _navigateCreateSemester(context, coursesList, yearsList, terminology),
                     );
                   }
 
@@ -628,18 +637,26 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
             s.number == sem.number).firstOrNull ?? sem;
 
         if (mounted) {
-          AcadexSnackBar.showSuccess(context, 'Semester created successfully.');
+          final terminology = ref.read(terminologyProvider);
+          final semLabel = terminology.semesterName();
+          final isSecEnabled = terminology.isSectionEnabled;
+          final nextActionLabel = isSecEnabled ? 'Continue to ${terminology.sectionName()}' : 'Continue to ${terminology.subjectName()}';
+          final nextRoute = isSecEnabled
+              ? '/academics/sections/new?courseId=${createdSem.courseId}&semesterId=${createdSem.id}&academicYearId=${createdSem.academicYearId}'
+              : '/academics/subjects/new?courseId=${createdSem.courseId}&semesterId=${createdSem.id}';
+
+          AcadexSnackBar.showSuccess(context, '$semLabel created successfully.');
 
           SetupContinuationDialog.show(
             context,
-            title: 'Semester Created Successfully',
+            title: '$semLabel Created Successfully',
             entityName: createdSem.name,
-            message: '${createdSem.name} is active. Continue to form student cohort sections.',
-            primaryActionLabel: 'Continue to Section',
+            message: isSecEnabled
+                ? '${createdSem.name} is active. Continue to form student cohort ${terminology.sectionName(plural: true).toLowerCase()}.'
+                : '${createdSem.name} is active. Continue to configure syllabus ${terminology.subjectName(plural: true).toLowerCase()}.',
+            primaryActionLabel: nextActionLabel,
             onContinue: () {
-              context.push(
-                '/academics/sections/new?courseId=${createdSem.courseId}&semesterId=${createdSem.id}&academicYearId=${createdSem.academicYearId}',
-              );
+              context.push(nextRoute);
             },
             secondaryActionLabel: 'Done',
             onDone: () => context.safePop(fallbackRoute: '/academics/semesters'),
@@ -653,7 +670,9 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
         }
 
         if (mounted) {
-          AcadexSnackBar.showSuccess(context, 'Semester updated successfully.');
+          final terminology = ref.read(terminologyProvider);
+          final semLabel = terminology.semesterName();
+          AcadexSnackBar.showSuccess(context, '$semLabel updated successfully.');
           context.safePop(fallbackRoute: '/academics/semesters');
         }
       }
@@ -672,19 +691,21 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final coursesAsync = ref.watch(coursesProvider);
     final yearsAsync = ref.watch(academicYearsProvider);
+    final terminology = ref.watch(terminologyProvider);
+    final semLabel = terminology.semesterName();
     final dateFormat = DateFormat('yyyy-MM-dd');
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
           onPressed: () => context.safePop(fallbackRoute: '/academics/semesters'),
         ),
         title: Text(
-          isEdit ? "Edit Semester" : "Create Semester",
+          isEdit ? "Edit $semLabel" : "Create $semLabel",
           style: AcadexTypography.heading2(
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ).copyWith(fontSize: 18),
@@ -697,9 +718,9 @@ class _SemesterFormScreenState extends ConsumerState<SemesterFormScreen> {
               child: Form(
                 key: _formKey,
                 child: AcadexFormCard(
-                  title: isEdit ? "Edit Semester" : "Semester Details",
+                  title: isEdit ? "Edit $semLabel" : "$semLabel Details",
                   isSaving: _isLoading,
-                  saveLabel: isEdit ? "Update Semester" : "Create Semester",
+                  saveLabel: isEdit ? "Update $semLabel" : "Create $semLabel",
                   onCancel: () => context.safePop(fallbackRoute: '/academics/semesters'),
                   onSave: _save,
                   child: Column(

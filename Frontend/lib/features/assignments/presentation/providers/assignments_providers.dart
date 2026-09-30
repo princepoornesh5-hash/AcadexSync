@@ -22,34 +22,41 @@ final assignmentDetailProvider = FutureProvider.autoDispose.family<AssignmentMod
   return repo.getAssignmentDetail(id);
 });
 
+final mySubmissionProvider = FutureProvider.autoDispose.family<SubmissionModel?, String>((ref, assignmentId) async {
+  final repo = ref.watch(assignmentsRepositoryProvider);
+  return repo.getMySubmission(assignmentId);
+});
+
 class AssignmentActivityNotifier
     extends StateNotifier<AsyncValue<AssignmentActivityResponseModel>> {
   final AssignmentsRepository _repository;
   final String _assignmentId;
 
   // Local pending mark edits map: studentId -> pending mark
-  final Map<String, int> _pendingMarks = {};
+  final Map<String, double> _pendingMarks = {};
 
   AssignmentActivityNotifier(this._repository, this._assignmentId)
       : super(const AsyncValue.loading()) {
     loadActivity();
   }
 
-  Map<String, int> get pendingMarks => Map.unmodifiable(_pendingMarks);
+  Map<String, double> get pendingMarks => Map.unmodifiable(_pendingMarks);
   bool get hasPendingChanges => _pendingMarks.isNotEmpty;
 
   Future<void> loadActivity() async {
     state = const AsyncValue.loading();
     try {
       final data = await _repository.getAssignmentActivity(_assignmentId);
+      if (!mounted) return;
       _pendingMarks.clear();
       state = AsyncValue.data(data);
     } catch (err, stack) {
+      if (!mounted) return;
       state = AsyncValue.error(err, stack);
     }
   }
 
-  void updateLocalMark(String studentId, int mark) {
+  void updateLocalMark(String studentId, double mark) {
     _pendingMarks[studentId] = mark;
 
     state.whenData((current) {
@@ -63,6 +70,7 @@ class AssignmentActivityNotifier
         return student;
       }).toList();
 
+      if (!mounted) return;
       state = AsyncValue.data(AssignmentActivityResponseModel(
         assignment: current.assignment,
         summary: current.summary,
@@ -81,10 +89,12 @@ class AssignmentActivityNotifier
 
     try {
       final updated = await _repository.recordMarks(_assignmentId, marksPayload);
+      if (!mounted) return true;
       _pendingMarks.clear();
       state = AsyncValue.data(updated);
       return true;
     } catch (err, stack) {
+      if (!mounted) return false;
       state = AsyncValue.error(err, stack);
       return false;
     }
@@ -192,6 +202,138 @@ class AssignmentActionNotifier extends StateNotifier<AssignmentActionState> {
     } catch (e) {
       state = AssignmentActionState(error: e.toString());
       return false;
+    }
+  }
+
+  Future<AssignmentModel?> updateAssignment({
+    required String id,
+    String? title,
+    String? description,
+    List<String>? questions,
+    AssignmentType? assignmentType,
+    String? dueDate,
+    String? dueTime,
+    int? maximumMarks,
+    List<AssignmentAttachmentModel>? attachments,
+  }) async {
+    state = const AssignmentActionState(isLoading: true);
+    try {
+      final updated = await _repo.updateAssignment(
+        id: id,
+        title: title,
+        description: description,
+        questions: questions,
+        assignmentType: assignmentType,
+        dueDate: dueDate,
+        dueTime: dueTime,
+        maximumMarks: maximumMarks,
+        attachments: attachments,
+      );
+      _ref.invalidate(facultyCourseAssignmentsProvider);
+      _ref.invalidate(assignmentDetailProvider(id));
+      state = const AssignmentActionState(isSuccess: true);
+      return updated;
+    } catch (e) {
+      state = AssignmentActionState(error: e.toString());
+      return null;
+    }
+  }
+
+  Future<bool> archiveAssignment(String id) async {
+    state = const AssignmentActionState(isLoading: true);
+    try {
+      await _repo.archiveAssignment(id);
+      _ref.invalidate(facultyCourseAssignmentsProvider);
+      _ref.invalidate(assignmentDetailProvider(id));
+      state = const AssignmentActionState(isSuccess: true);
+      return true;
+    } catch (e) {
+      state = AssignmentActionState(error: e.toString());
+      return false;
+    }
+  }
+
+  Future<bool> deleteAssignment(String id) async {
+    state = const AssignmentActionState(isLoading: true);
+    try {
+      await _repo.deleteAssignment(id);
+      _ref.invalidate(facultyCourseAssignmentsProvider);
+      state = const AssignmentActionState(isSuccess: true);
+      return true;
+    } catch (e) {
+      state = AssignmentActionState(error: e.toString());
+      return false;
+    }
+  }
+
+  Future<SubmissionModel?> saveDraftSubmission({
+    required String assignmentId,
+    String? textResponse,
+    List<SubmissionAttachmentModel>? attachments,
+  }) async {
+    state = const AssignmentActionState(isLoading: true);
+    try {
+      final sub = await _repo.saveDraftSubmission(
+        assignmentId: assignmentId,
+        textResponse: textResponse,
+        attachments: attachments,
+      );
+      _ref.invalidate(mySubmissionProvider(assignmentId));
+      state = const AssignmentActionState(isSuccess: true);
+      return sub;
+    } catch (e) {
+      state = AssignmentActionState(error: e.toString());
+      return null;
+    }
+  }
+
+  Future<SubmissionModel?> submitAssignment({
+    required String assignmentId,
+    String? textResponse,
+    List<SubmissionAttachmentModel>? attachments,
+  }) async {
+    state = const AssignmentActionState(isLoading: true);
+    try {
+      final sub = await _repo.submitAssignment(
+        assignmentId: assignmentId,
+        textResponse: textResponse,
+        attachments: attachments,
+      );
+      _ref.invalidate(mySubmissionProvider(assignmentId));
+      _ref.invalidate(studentAssignmentsProvider);
+      _ref.invalidate(assignmentDetailProvider(assignmentId));
+      _ref.invalidate(assignmentActivityProvider(assignmentId));
+      state = const AssignmentActionState(isSuccess: true);
+      return sub;
+    } catch (e) {
+      state = AssignmentActionState(error: e.toString());
+      return null;
+    }
+  }
+
+  Future<SubmissionModel?> reviewSingleSubmission({
+    required String assignmentId,
+    required String studentId,
+    double? marks,
+    String? feedback,
+    FacultyReviewStatus? reviewStatus,
+  }) async {
+    state = const AssignmentActionState(isLoading: true);
+    try {
+      final sub = await _repo.reviewSingleSubmission(
+        assignmentId: assignmentId,
+        studentId: studentId,
+        marks: marks,
+        feedback: feedback,
+        reviewStatus: reviewStatus,
+      );
+      _ref.invalidate(assignmentActivityProvider(assignmentId));
+      _ref.invalidate(mySubmissionProvider(assignmentId));
+      state = const AssignmentActionState(isSuccess: true);
+      return sub;
+    } catch (e) {
+      state = AssignmentActionState(error: e.toString());
+      return null;
     }
   }
 }

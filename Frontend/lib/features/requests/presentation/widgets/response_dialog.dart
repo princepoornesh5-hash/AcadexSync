@@ -75,13 +75,21 @@ class _ResponseDialogState extends ConsumerState<ResponseDialog> {
 
   Future<void> _submitResponse() async {
     if (_isSubmitting) return;
+    final message = _messageController.text.trim();
+    if (_selectedAction == 'REJECTED' && message.length < 5) {
+      AcadexSnackBar.showError(
+        context,
+        'Please provide a rejection reason (at least 5 characters).',
+      );
+      return;
+    }
     setState(() => _isSubmitting = true);
 
     try {
       final res = await ref.read(requestActionProvider.notifier).respondToRequest(
             id: widget.requestId,
             action: _selectedAction,
-            message: _messageController.text.trim(),
+            message: message,
           );
 
       if (mounted) {

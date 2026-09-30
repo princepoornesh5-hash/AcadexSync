@@ -16,4 +16,19 @@ abstract class CalendarRepository {
   Future<CalendarEventModel> cancelEvent(String id, {String? reason});
 
   Future<CalendarEventModel> publishEvent(String id);
+
+  Future<List<AcademicCalendarModel>> getAcademicCalendars({
+    String? academicYearId,
+    String? semesterId,
+  });
+
+  Future<AcademicCalendarModel> createAcademicCalendar(Map<String, dynamic> data);
+
+  Future<WorkingDayResolution> resolveWorkingDay(
+    String date, {
+    String? semesterId,
+    String? departmentId,
+  });
+
+  Future<void> declareHoliday(Map<String, dynamic> data);
 }

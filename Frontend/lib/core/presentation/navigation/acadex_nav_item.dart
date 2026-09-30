@@ -98,7 +98,18 @@ class AcadexNavigationService {
         '/academics/sections',
         '/academics/subjects',
         '/faculty-assignments',
+        '/academics/rooms',
       ],
+    ),
+    AcadexNavItem(
+      id: 'rooms',
+      label: 'Rooms',
+      icon: LucideIcons.doorClosed,
+      route: '/academics/rooms',
+      group: AcadexNavGroup.academics,
+      allowedRoles: const [AppRole.collegeAdmin, AppRole.hod, AppRole.superAdmin],
+      isPrimary: false,
+      matchingPrefixes: const ['/academics/rooms'],
     ),
     AcadexNavItem(
       id: 'colleges',

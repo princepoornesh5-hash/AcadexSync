@@ -1416,8 +1416,10 @@ class ApiAcademicRepository implements AcademicRepository {
     required String courseId,
     required String academicYearId,
     required String semesterId,
-    required String sectionId,
+    String? sectionId,
     String? enrollmentDate,
+    String? cohort,
+    String? academicStage,
   }) async {
     try {
       await _client.dio.post('/academics/enrollments', data: {
@@ -1425,11 +1427,25 @@ class ApiAcademicRepository implements AcademicRepository {
         'courseId': courseId,
         'academicYearId': academicYearId,
         'semesterId': semesterId,
-        'sectionId': sectionId,
+        if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
         if (enrollmentDate != null) 'enrollmentDate': enrollmentDate,
+        if (cohort != null) 'cohort': cohort,
+        if (academicStage != null) 'academicStage': academicStage,
       });
     } on DioException catch (e) {
-      throw _extractError(e, 'Failed to enroll student in section');
+      throw _extractError(e, 'Failed to enroll student');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getStudentCurrentEnrollment(String studentId) async {
+    try {
+      final res = await _client.dio.get('/academics/students/$studentId/current-enrollment');
+      final data = res.data['data'];
+      return data is Map<String, dynamic> ? data : null;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      throw _extractError(e, 'Failed to fetch current enrollment');
     }
   }
 
@@ -1732,6 +1748,22 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<Room?> getRoomById(String id) async {
+    try {
+      final response = await _client.dio.get('/timetables/rooms/$id');
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      if (data is Map<String, dynamic>) {
+        return Room.fromJson(data);
+      }
+      return null;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      throw _extractError(e, 'Failed to fetch room');
+    }
+  }
+
+  @override
   Future<Room> addRoom(Room room) async {
     try {
       final response = await _client.dio.post('/timetables/rooms', data: room.toJson());
@@ -1740,6 +1772,18 @@ class ApiAcademicRepository implements AcademicRepository {
       return Room.fromJson(data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _extractError(e, 'Failed to create room');
+    }
+  }
+
+  @override
+  Future<Room> updateRoom(Room room) async {
+    try {
+      final response = await _client.dio.put('/timetables/rooms/${room.id}', data: room.toJson());
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      return Room.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to update room');
     }
   }
 

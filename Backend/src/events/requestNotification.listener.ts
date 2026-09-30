@@ -4,6 +4,7 @@ import { NotificationType, NotificationPriority } from '../constants/notificatio
 import { RequestStatus, RequestType } from '../constants/request.constants';
 import { User } from '../models';
 import { logger } from '../utils/logger';
+import { realtimeEventBus, AcadexEventType } from '../realtime';
 
 function formatRequestType(type: RequestType | string): string {
   switch (type) {
@@ -69,10 +70,15 @@ export function initRequestNotificationListener(): void {
   if (isInitialized) return;
   isInitialized = true;
 
-  // 1. REQUEST CREATED -> Notify Responsible Authority
-  requestEvents.on(RequestEventType.REQUEST_CREATED, async (payload: RequestEventPayload) => {
+  // 1. REQUEST CREATED / SUBMITTED -> Notify Responsible Authority
+  const handleRequestCreatedOrSubmitted = async (payload: RequestEventPayload) => {
     try {
       const { request } = payload;
+      // Do not notify authorities for DRAFT requests
+      if (request.status === RequestStatus.DRAFT) {
+        return;
+      }
+
       const typeLabel = formatRequestType(request.requestType);
 
       // Determine recipient(s)
@@ -122,11 +128,40 @@ export function initRequestNotificationListener(): void {
           idempotencyKey,
         });
       }
+
+      // Emit Realtime Domain Event (Persistence-First)
+      const eventType =
+        request.status === RequestStatus.SUBMITTED
+          ? AcadexEventType.REQUEST_SUBMITTED
+          : AcadexEventType.REQUEST_CREATED;
+
+      realtimeEventBus.publish({
+        eventType,
+        aggregateType: 'Request',
+        aggregateId: (request._id || request.id).toString(),
+        action: request.status === RequestStatus.SUBMITTED ? 'SUBMITTED' : 'CREATED',
+        collegeId: request.collegeId.toString(),
+        scope: {
+          type: request.departmentId ? 'department' : 'college',
+          collegeId: request.collegeId.toString(),
+          departmentId: request.departmentId?.toString(),
+          userId: request.requesterUserId?.toString(),
+        },
+        payload: {
+          requestId: (request._id || request.id).toString(),
+          requestType: request.requestType,
+          status: request.status,
+          userId: request.requesterUserId?.toString(),
+        },
+      });
     } catch (err) {
       // Non-blocking error handling: Request remains authoritative
-      logger.error('Failed to create notification on REQUEST_CREATED event', err as Error);
+      logger.error('Failed to create notification on REQUEST_CREATED/SUBMITTED event', err as Error);
     }
-  });
+  };
+
+  requestEvents.on(RequestEventType.REQUEST_CREATED, handleRequestCreatedOrSubmitted);
+  requestEvents.on(RequestEventType.REQUEST_SUBMITTED, handleRequestCreatedOrSubmitted);
 
   // 2. REQUEST STATUS CHANGED or RESPONDED -> Notify Requester
   const handleStatusChangeOrResponse = async (payload: RequestEventPayload) => {
@@ -148,9 +183,12 @@ export function initRequestNotificationListener(): void {
       } else if (status === RequestStatus.RESOLVED) {
         notifType = NotificationType.REQUEST_RESPONDED;
         title = `${typeLabel} Resolved`;
-      } else if (status === RequestStatus.IN_REVIEW) {
+      } else if (status === RequestStatus.IN_REVIEW || status === RequestStatus.UNDER_REVIEW) {
         notifType = NotificationType.REQUEST_UPDATED;
         title = `${typeLabel} Under Review`;
+      } else if (status === RequestStatus.CANCELLED) {
+        notifType = NotificationType.REQUEST_CANCELLED;
+        title = `${typeLabel} Cancelled`;
       }
 
       let body = `Your ${typeLabel.toLowerCase()} has been marked as ${formatStatus(status).toLowerCase()}.`;
@@ -184,6 +222,35 @@ export function initRequestNotificationListener(): void {
         },
         idempotencyKey,
       });
+
+      // Map granular realtime event
+      let realtimeType = AcadexEventType.REQUEST_STATUS_CHANGED;
+      if (status === RequestStatus.APPROVED) realtimeType = AcadexEventType.REQUEST_APPROVED;
+      else if (status === RequestStatus.REJECTED) realtimeType = AcadexEventType.REQUEST_REJECTED;
+      else if (status === RequestStatus.UNDER_REVIEW || status === RequestStatus.IN_REVIEW) realtimeType = AcadexEventType.REQUEST_UNDER_REVIEW;
+      else if (status === RequestStatus.CANCELLED) realtimeType = AcadexEventType.REQUEST_CANCELLED;
+      else if (status === RequestStatus.CLOSED) realtimeType = AcadexEventType.REQUEST_CLOSED;
+
+      // Emit Realtime Domain Event (Persistence-First)
+      realtimeEventBus.publish({
+        eventType: realtimeType,
+        aggregateType: 'Request',
+        aggregateId: (request._id || request.id).toString(),
+        action: 'STATUS_CHANGED',
+        collegeId: request.collegeId.toString(),
+        scope: {
+          type: 'user',
+          collegeId: request.collegeId.toString(),
+          userId: recipientId,
+          departmentId: request.departmentId?.toString(),
+        },
+        payload: {
+          requestId: (request._id || request.id).toString(),
+          status,
+          previousStatus: payload.previousStatus,
+          userId: recipientId,
+        },
+      });
     } catch (err) {
       // Non-blocking: Request remains authoritative
       logger.error('Failed to create notification on request status/response event', err as Error);
@@ -192,4 +259,5 @@ export function initRequestNotificationListener(): void {
 
   requestEvents.on(RequestEventType.REQUEST_STATUS_CHANGED, handleStatusChangeOrResponse);
   requestEvents.on(RequestEventType.REQUEST_RESPONDED, handleStatusChangeOrResponse);
+  requestEvents.on(RequestEventType.REQUEST_CANCELLED, handleStatusChangeOrResponse);
 }

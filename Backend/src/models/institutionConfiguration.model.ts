@@ -4,9 +4,11 @@ import {
   IAcademicStructureConfig,
   ITerminologyConfig,
   IAttendanceAlertsConfig,
+  IAssessmentConfig,
   DEFAULT_ACADEMIC_STRUCTURE,
   DEFAULT_TERMINOLOGY,
   DEFAULT_ATTENDANCE_ALERTS,
+  DEFAULT_ASSESSMENT_CONFIG,
 } from '../constants/institutionConfig.constants';
 
 export interface IInstitutionConfiguration extends Document {
@@ -15,6 +17,7 @@ export interface IInstitutionConfiguration extends Document {
   academicStructure: IAcademicStructureConfig;
   terminology: ITerminologyConfig;
   attendanceAlerts: IAttendanceAlertsConfig;
+  assessmentConfig: IAssessmentConfig;
   isConfigured: boolean;
   updatedBy?: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -66,6 +69,33 @@ const AttendanceAlertsSchema = new Schema<IAttendanceAlertsConfig>(
   { _id: false }
 );
 
+const AssessmentComponentSchema = new Schema(
+  {
+    key: { type: String, required: true, trim: true },
+    name: { type: String, required: true, trim: true },
+    maxMarks: { type: Number, required: true, min: 1 },
+    weightage: { type: Number, default: 0 },
+    enabled: { type: Boolean, default: true },
+    appliesTo: { type: String, enum: ['all', 'theory', 'practical'], default: 'all' },
+    visibleToStudents: { type: Boolean, default: true },
+  },
+  { _id: false }
+);
+
+const AssessmentConfigSchema = new Schema<IAssessmentConfig>(
+  {
+    enabled: { type: Boolean, default: true },
+    maxTotalMarks: { type: Number, default: 50 },
+    allowDecimals: { type: Boolean, default: false },
+    requireHodApproval: { type: Boolean, default: false },
+    components: {
+      type: [AssessmentComponentSchema],
+      default: () => [...DEFAULT_ASSESSMENT_CONFIG.components],
+    },
+  },
+  { _id: false }
+);
+
 const InstitutionConfigurationSchema = new Schema<IInstitutionConfiguration>(
   {
     collegeId: {
@@ -92,6 +122,10 @@ const InstitutionConfigurationSchema = new Schema<IInstitutionConfiguration>(
     attendanceAlerts: {
       type: AttendanceAlertsSchema,
       default: () => ({ ...DEFAULT_ATTENDANCE_ALERTS }),
+    },
+    assessmentConfig: {
+      type: AssessmentConfigSchema,
+      default: () => ({ ...DEFAULT_ASSESSMENT_CONFIG }),
     },
     isConfigured: {
       type: Boolean,

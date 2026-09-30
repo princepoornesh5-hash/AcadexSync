@@ -1125,8 +1125,10 @@ class MockAcademicRepository implements AcademicRepository {
     required String courseId,
     required String academicYearId,
     required String semesterId,
-    required String sectionId,
+    String? sectionId,
     String? enrollmentDate,
+    String? cohort,
+    String? academicStage,
   }) async {
     await _delay();
     final index = _students.indexWhere((s) => s.id == studentId);
@@ -1136,16 +1138,18 @@ class MockAcademicRepository implements AcademicRepository {
     }
     final isAlreadyEnrolled = _enrollments.any((e) =>
         e.studentId == studentId &&
-        e.sectionId == sectionId &&
+        (sectionId != null ? e.sectionId == sectionId : e.semesterId == semesterId) &&
         e.status == 'active');
     if (isAlreadyEnrolled) {
-      throw const BackendValidationException('Student is already enrolled in this section.');
+      throw const BackendValidationException('Student is already enrolled in this academic context.');
     }
     _students[index] = _students[index].copyWith(
       courseId: courseId,
       academicYearId: academicYearId,
       semesterId: semesterId,
-      sectionId: sectionId,
+      sectionId: sectionId ?? '',
+      cohort: cohort,
+      academicStage: academicStage,
     );
     _enrollments.removeWhere((e) => e.studentId == studentId && e.semesterId == semesterId && e.status == 'active');
     _enrollments.add(StudentEnrollment(
@@ -1156,12 +1160,38 @@ class MockAcademicRepository implements AcademicRepository {
       academicYearId: academicYearId,
       semesterId: semesterId,
       sectionId: sectionId,
+      cohort: cohort,
+      academicStage: academicStage,
       studentId: studentId,
       status: 'active',
       enrollmentDate: enrollmentDate != null ? DateTime.tryParse(enrollmentDate) ?? DateTime.now() : DateTime.now(),
       student: {'id': student.id, 'name': student.name, 'rollNumber': student.rollNumber, 'email': student.email},
     ));
   }
+
+  @override
+  Future<Map<String, dynamic>?> getStudentCurrentEnrollment(String studentId) async {
+    await _delay();
+    final enrollment = _enrollments.firstWhere(
+      (e) => e.studentId == studentId && e.status == 'active',
+      orElse: () => StudentEnrollment.empty(),
+    );
+    if (enrollment.id.isEmpty) return null;
+    return {
+      'enrollment': enrollment.toJson(),
+      'academicContext': {
+        'departmentId': enrollment.departmentId,
+        'courseId': enrollment.courseId,
+        'academicYearId': enrollment.academicYearId,
+        'semesterId': enrollment.semesterId,
+        'sectionId': enrollment.sectionId,
+        'cohort': enrollment.cohort,
+        'academicStage': enrollment.academicStage,
+        'status': enrollment.status,
+      },
+    };
+  }
+
   @override
   Future<void> updateStudent(Student student) async {
     await _delay();
@@ -1705,7 +1735,10 @@ class MockAcademicRepository implements AcademicRepository {
     // Also sync subjectIds / sectionIds on the Faculty entity for fast lookups
     final facIdx = _faculty.indexOf(fac);
     final newSubs = Set<String>.from(fac.subjectIds)..add(assignment.subjectId);
-    final newSecs = Set<String>.from(fac.sectionIds)..add(assignment.sectionId);
+    final newSecs = Set<String>.from(fac.sectionIds);
+    if (assignment.sectionId != null && assignment.sectionId!.isNotEmpty) {
+      newSecs.add(assignment.sectionId!);
+    }
     _faculty[facIdx] = fac.copyWith(subjectIds: newSubs.toList(), sectionIds: newSecs.toList());
   }
 
@@ -1800,7 +1833,11 @@ class MockAcademicRepository implements AcademicRepository {
     return facultyList.map((fac) {
       final activeAssignments = _facultyAssignments.where((fa) => fa.facultyId == fac.id && fa.isActive).toList();
       final subjectNames = activeAssignments.map((fa) => subjectsMap[fa.subjectId] ?? fa.subjectId).toSet().toList();
-      final sectionNames = activeAssignments.map((fa) => sectionsMap[fa.sectionId] ?? fa.sectionId).toSet().toList();
+      final sectionNames = activeAssignments
+          .map((fa) => fa.sectionId != null ? (sectionsMap[fa.sectionId!] ?? fa.sectionId!) : null)
+          .whereType<String>()
+          .toSet()
+          .toList();
 
       return FacultyWorkloadSummary(
         facultyId: fac.id,
@@ -1954,11 +1991,29 @@ class MockAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<Room?> getRoomById(String id) async {
+    await _delay();
+    return _rooms.where((r) => r.id == id).firstOrNull;
+  }
+
+  @override
   Future<Room> addRoom(Room room) async {
     await _delay();
-    final newRoom = room.copyWith(id: 'room_${DateTime.now().millisecondsSinceEpoch}');
+    final newRoom = room.copyWith(id: room.id.isNotEmpty ? room.id : 'room_${DateTime.now().millisecondsSinceEpoch}');
     _rooms.add(newRoom);
     return newRoom;
+  }
+
+  @override
+  Future<Room> updateRoom(Room room) async {
+    await _delay();
+    final idx = _rooms.indexWhere((r) => r.id == room.id);
+    if (idx != -1) {
+      _rooms[idx] = room;
+    } else {
+      _rooms.add(room);
+    }
+    return room;
   }
 
   @override

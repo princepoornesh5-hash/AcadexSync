@@ -14,6 +14,7 @@ import { AuditLog } from '../models/auditLog.model';
 import { College } from '../models/college.model';
 import { Department } from '../models/department.model';
 import { FacultyAssignment } from '../models/facultyAssignment.model';
+import { InstitutionConfiguration } from '../models/institutionConfiguration.model';
 import { AppRole } from '../constants/roles';
 import { TimetableStatus, TimetableDay, CollegeStatus } from '../constants/status';
 import { NotificationService } from './notification.service';
@@ -25,6 +26,7 @@ import { DEFAULT_INSTITUTION_TIMEZONE, formatDateToCalendarString, getTimetableD
 import { logger } from '../utils/logger';
 import { ApiError } from '../utils/apiError';
 import { AuthenticatedUser } from '../types/auth.types';
+import { realtimeEventBus, AcadexEventType } from '../realtime';
 
 export function isTimeOverlapping(s1: string, e1: string, s2: string, e2: string): boolean {
   return isTimeOverlappingUtil(s1, e1, s2, e2);
@@ -46,7 +48,7 @@ export class TimetableService {
 
   static async createRoom(
     collegeId: string,
-    data: { departmentId?: string; name: string; code: string; capacity?: number; type?: string },
+    data: { departmentId?: string; buildingId?: string; building?: string; name: string; code: string; capacity?: number; type?: string },
     requester: AuthenticatedUser
   ): Promise<IRoom> {
     if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
@@ -88,9 +90,16 @@ export class TimetableService {
       deptId = dept._id;
     }
 
+    let bldId: mongoose.Types.ObjectId | null = null;
+    if (data.buildingId && mongoose.Types.ObjectId.isValid(data.buildingId)) {
+      bldId = new mongoose.Types.ObjectId(data.buildingId);
+    }
+
     const room = await Room.create({
       collegeId: new mongoose.Types.ObjectId(collegeId),
       departmentId: deptId,
+      buildingId: bldId,
+      building: data.building?.trim() || null,
       name: data.name.trim(),
       code: normalizedCode,
       capacity: data.capacity || 60,
@@ -113,7 +122,16 @@ export class TimetableService {
 
   static async listRooms(
     requester: AuthenticatedUser,
-    query: { collegeId?: string; departmentId?: string; type?: string; search?: string; page?: number; limit?: number } = {}
+    query: {
+      collegeId?: string;
+      departmentId?: string;
+      type?: string;
+      status?: string;
+      isActive?: boolean;
+      search?: string;
+      page?: number;
+      limit?: number;
+    } = {}
   ): Promise<{ items: IRoom[]; page: number; limit: number; total: number; totalPages: number }> {
     const mongoQuery: Record<string, unknown> = {};
 
@@ -130,10 +148,12 @@ export class TimetableService {
       mongoQuery.departmentId = new mongoose.Types.ObjectId(query.departmentId);
     }
     if (query.type) mongoQuery.type = query.type;
+    if (query.status) mongoQuery.status = query.status;
+    if (query.isActive !== undefined) mongoQuery.isActive = query.isActive;
 
     if (query.search && query.search.trim() !== '') {
       const searchRegex = new RegExp(query.search.trim(), 'i');
-      mongoQuery.$or = [{ name: searchRegex }, { code: searchRegex }];
+      mongoQuery.$or = [{ name: searchRegex }, { code: searchRegex }, { building: searchRegex }];
     }
 
     const page = Math.max(1, query.page || 1);
@@ -162,7 +182,17 @@ export class TimetableService {
 
   static async updateRoom(
     id: string,
-    update: { name?: string; code?: string; capacity?: number; type?: string; isActive?: boolean },
+    update: {
+      name?: string;
+      code?: string;
+      capacity?: number;
+      type?: string;
+      building?: string;
+      buildingId?: string | null;
+      departmentId?: string | null;
+      status?: 'active' | 'inactive' | 'retired' | 'archived';
+      isActive?: boolean;
+    },
     requester: AuthenticatedUser
   ): Promise<IRoom> {
     if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
@@ -178,7 +208,22 @@ export class TimetableService {
     if (update.name) room.name = update.name.trim();
     if (update.capacity) room.capacity = update.capacity;
     if (update.type) room.type = update.type;
-    if (update.isActive !== undefined) {
+    if (update.building !== undefined) room.building = update.building ? update.building.trim() : null;
+    if (update.buildingId !== undefined) {
+      room.buildingId = update.buildingId && mongoose.Types.ObjectId.isValid(update.buildingId)
+        ? new mongoose.Types.ObjectId(update.buildingId)
+        : null;
+    }
+    if (update.departmentId !== undefined && requester.role !== AppRole.HOD) {
+      room.departmentId = update.departmentId && mongoose.Types.ObjectId.isValid(update.departmentId)
+        ? new mongoose.Types.ObjectId(update.departmentId)
+        : null;
+    }
+
+    if (update.status) {
+      room.status = update.status;
+      room.isActive = update.status === 'active';
+    } else if (update.isActive !== undefined) {
       room.isActive = update.isActive;
       room.status = update.isActive ? 'active' : 'inactive';
     }
@@ -213,34 +258,103 @@ export class TimetableService {
     return room;
   }
 
+  static async deleteRoom(id: string, requester: AuthenticatedUser): Promise<{ retired: boolean; message: string }> {
+    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
+      throw ApiError.forbidden('Unauthorized to delete room');
+    }
+
+    const room = await this.getRoomById(id, requester);
+    if (requester.role === AppRole.HOD && room.departmentId && room.departmentId.toString() !== requester.departmentId) {
+      throw ApiError.forbidden('HODs can only delete rooms for their own department');
+    }
+
+    // Check if referenced by any Timetable entries or Attendance sessions
+    const [isReferencedInTimetable, isReferencedInAttendance] = await Promise.all([
+      Timetable.exists({ 'entries.roomId': room._id }),
+      AttendanceSession.exists({
+        $or: [
+          { roomNumber: room.code },
+          { building: room.name },
+        ],
+      }),
+    ]);
+
+    if (isReferencedInTimetable || isReferencedInAttendance) {
+      // Historical safety: Retire/deactivate room instead of hard-deleting
+      const prev = room.toJSON();
+      room.isActive = false;
+      room.status = 'retired';
+      await room.save();
+
+      await AuditLog.create({
+        collegeId: room.collegeId.toString(),
+        actorUserId: requester.id,
+        action: 'ROOM_RETIRED',
+        entityType: 'Room',
+        entityId: room.id,
+        previousValue: prev,
+        newValue: room.toJSON(),
+      });
+
+      return {
+        retired: true,
+        message: 'Room is referenced by existing timetable or attendance history and has been retired to preserve historical integrity.',
+      };
+    }
+
+    // Unreferenced draft/standalone room: Safe hard delete
+    await Room.findByIdAndDelete(room._id);
+
+    await AuditLog.create({
+      collegeId: room.collegeId.toString(),
+      actorUserId: requester.id,
+      action: 'ROOM_DELETED',
+      entityType: 'Room',
+      entityId: room.id,
+      previousValue: room.toJSON(),
+    });
+
+    return {
+      retired: false,
+      message: 'Room deleted successfully.',
+    };
+  }
+
   // =========================================================================
   // 2. CONFLICT & HIERARCHY VALIDATION
   // =========================================================================
 
   static async validateAcademicHierarchy(
     collegeId: string,
-    data: { departmentId: string; courseId: string; academicYearId: string; semesterId: string; sectionId: string }
-  ): Promise<{ section: InstanceType<typeof Section>; semester: InstanceType<typeof Semester> }> {
+    data: { departmentId: string; courseId: string; academicYearId: string; semesterId: string; sectionId?: string | null }
+  ): Promise<{ section: InstanceType<typeof Section> | null; semester: InstanceType<typeof Semester> }> {
+    const config = await InstitutionConfiguration.findOne({ collegeId });
+    const isSectionEnabled = config?.academicStructure?.section ?? true;
+
+    if (isSectionEnabled && (!data.sectionId || !mongoose.Types.ObjectId.isValid(data.sectionId))) {
+      throw ApiError.badRequest('Invalid or missing sectionId');
+    }
+
     const [dept, course, academicYear, semester, section] = await Promise.all([
       Department.findById(data.departmentId),
       Course.findById(data.courseId),
       AcademicYear.findById(data.academicYearId),
       Semester.findById(data.semesterId),
-      Section.findById(data.sectionId),
+      (data.sectionId && mongoose.Types.ObjectId.isValid(data.sectionId)) ? Section.findById(data.sectionId) : null,
     ]);
 
     if (!dept) throw ApiError.notFound('Department not found');
     if (!course) throw ApiError.notFound('Course not found');
     if (!academicYear) throw ApiError.notFound('Academic Year not found');
     if (!semester) throw ApiError.notFound('Semester not found');
-    if (!section) throw ApiError.notFound('Section not found');
+    if (isSectionEnabled && !section) throw ApiError.notFound('Section not found');
 
     if (
       dept.collegeId.toString() !== collegeId ||
       course.collegeId.toString() !== collegeId ||
       academicYear.collegeId.toString() !== collegeId ||
       semester.collegeId.toString() !== collegeId ||
-      section.collegeId.toString() !== collegeId
+      (section && section.collegeId.toString() !== collegeId)
     ) {
       throw ApiError.badRequest('Academic hierarchy entities must belong to the specified college');
     }
@@ -251,12 +365,14 @@ export class TimetableService {
     if (semester.courseId.toString() !== course.id || semester.academicYearId.toString() !== academicYear.id) {
       throw ApiError.badRequest('Semester does not match the course or academic year');
     }
-    if (section.semesterId.toString() !== semester.id || section.courseId.toString() !== course.id) {
-      throw ApiError.badRequest('Section does not match the semester or course');
-    }
+    if (section) {
+      if (section.semesterId.toString() !== semester.id || section.courseId.toString() !== course.id) {
+        throw ApiError.badRequest('Section does not match the semester or course');
+      }
 
-    if (!section.isActive || section.status === 'inactive') {
-      throw ApiError.forbidden('Cannot create or publish timetable for an inactive section');
+      if (!section.isActive || section.status === 'inactive') {
+        throw ApiError.forbidden('Cannot create or publish timetable for an inactive section');
+      }
     }
 
     return { section, semester };
@@ -266,7 +382,7 @@ export class TimetableService {
     collegeId: string,
     semesterId: string,
     courseId: string,
-    section: InstanceType<typeof Section>,
+    section: InstanceType<typeof Section> | null,
     entries: ITimetableGridEntry[],
     currentTimetableId?: string,
     academicYearId?: string,
@@ -274,24 +390,10 @@ export class TimetableService {
   ): Promise<void> {
     const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-    // 1. Time Format & Internal Overlap Checks (within the timetable itself)
-    for (let i = 0; i < entries.length; i++) {
-      const e1 = entries[i];
-      if (!timeRegex.test(e1.startTime) || !timeRegex.test(e1.endTime) || e1.startTime >= e1.endTime) {
-        throw ApiError.badRequest(`Entry has invalid time range: ${e1.startTime} - ${e1.endTime}`);
-      }
-
-      for (let j = i + 1; j < entries.length; j++) {
-        const e2 = entries[j];
-        if (e1.dayOfWeek === e2.dayOfWeek) {
-          const overlaps = isTimeOverlapping(e1.startTime, e1.endTime, e2.startTime, e2.endTime);
-          if (overlaps) {
-            // Section Conflict
-            throw ApiError.conflict(
-              `Section conflict: Multiple entries scheduled simultaneously on ${e1.dayOfWeek} (${e1.startTime}-${e1.endTime} and ${e2.startTime}-${e2.endTime})`
-            );
-          }
-        }
+    // 1. Time Format Checks
+    for (const e of entries) {
+      if (!timeRegex.test(e.startTime) || !timeRegex.test(e.endTime) || e.startTime >= e.endTime) {
+        throw ApiError.badRequest(`Entry has invalid time range: ${e.startTime} - ${e.endTime}`);
       }
     }
 
@@ -309,24 +411,24 @@ export class TimetableService {
       }
     }
 
-    // 3. Validate Subject, Faculty, Room, Faculty Assignment and External Conflicts
+    // 3. Validate Canonical FacultyAssignment, Subject, Faculty, and Room
     for (const entry of entries) {
-      // Validate Faculty Assignment (authoritative linkage) first
+      // Validate Faculty Assignment (canonical authoritative teaching relationship)
       if (entry.facultyAssignmentId) {
         if (!mongoose.Types.ObjectId.isValid(entry.facultyAssignmentId.toString())) {
           throw ApiError.badRequest('Invalid facultyAssignmentId');
         }
         const assignment = await FacultyAssignment.findById(entry.facultyAssignmentId);
-        if (!assignment || !assignment.isActive) {
+        if (!assignment || !assignment.isActive || assignment.status !== 'active') {
           throw ApiError.badRequest('Faculty assignment does not match this subject and section or is inactive');
         }
         if (assignment.collegeId.toString() !== collegeId) {
           throw ApiError.badRequest('Faculty assignment does not match this college');
         }
-        if (assignment.departmentId.toString() !== section.departmentId.toString()) {
+        if (section && assignment.departmentId.toString() !== section.departmentId.toString()) {
           throw ApiError.badRequest('Faculty assignment does not match this department');
         }
-        if (assignment.sectionId.toString() !== section.id.toString()) {
+        if (section && assignment.sectionId && assignment.sectionId.toString() !== section.id.toString()) {
           throw ApiError.badRequest('Faculty assignment does not match this section');
         }
         if (assignment.courseId.toString() !== courseId.toString()) {
@@ -343,13 +445,13 @@ export class TimetableService {
         if (!entry.subjectId) {
           entry.subjectId = assignment.subjectId;
         } else if (assignment.subjectId.toString() !== entry.subjectId.toString()) {
-          throw ApiError.badRequest('Faculty assignment does not match this subject and section');
+          throw ApiError.badRequest('Faculty assignment does not match the specified subject');
         }
 
         if (!entry.facultyId) {
           entry.facultyId = assignment.facultyId;
         } else if (assignment.facultyId.toString() !== entry.facultyId.toString()) {
-          throw ApiError.badRequest('Faculty assignment does not match this subject and section');
+          throw ApiError.badRequest('Faculty assignment does not match the specified faculty');
         }
       } else {
         if (!entry.subjectId || !entry.facultyId) {
@@ -357,11 +459,16 @@ export class TimetableService {
         }
         const assignmentQuery: Record<string, unknown> = {
           collegeId: new mongoose.Types.ObjectId(collegeId),
-          sectionId: section._id,
           subjectId: new mongoose.Types.ObjectId(entry.subjectId.toString()),
           facultyId: new mongoose.Types.ObjectId(entry.facultyId.toString()),
+          courseId: new mongoose.Types.ObjectId(courseId.toString()),
+          semesterId: new mongoose.Types.ObjectId(semesterId.toString()),
           isActive: true,
+          status: 'active',
         };
+        if (section) {
+          assignmentQuery.sectionId = section._id;
+        }
         if (academicYearId && mongoose.Types.ObjectId.isValid(academicYearId)) {
           assignmentQuery.academicYearId = new mongoose.Types.ObjectId(academicYearId);
         }
@@ -387,7 +494,7 @@ export class TimetableService {
         throw ApiError.badRequest(`Subject "${subject.code}" does not belong to the scheduled course`);
       }
 
-      // Validate Faculty
+      // Validate Faculty & Active Status
       let faculty = await Faculty.findById(entry.facultyId);
       if (!faculty) {
         faculty = await Faculty.findOne({ userId: entry.facultyId });
@@ -401,32 +508,74 @@ export class TimetableService {
       if (faculty.collegeId.toString() !== collegeId) {
         throw ApiError.badRequest(`Faculty "${faculty.name}" does not belong to this college`);
       }
+      if (!faculty.isActive || faculty.status === 'inactive' || faculty.status === 'suspended') {
+        throw ApiError.forbidden(`Faculty "${faculty.name}" is inactive/suspended and cannot be scheduled`);
+      }
 
       // Validate Room
       if (entry.roomId) {
         const room = await Room.findById(entry.roomId);
-        if (!room) throw ApiError.notFound(`Room with ID "${entry.roomId}" not found`);
+        if (!room) throw ApiError.notFound('Selected room was not found or is no longer available');
         if (room.collegeId.toString() !== collegeId) {
           throw ApiError.badRequest(`Room "${room.code}" does not belong to this college`);
         }
-        if (!room.isActive || room.status === 'inactive') {
-          throw ApiError.forbidden(`Room "${room.code}" is deactivated and cannot be scheduled`);
+        if (!room.isActive || room.status === 'inactive' || room.status === 'retired' || room.status === 'archived') {
+          throw ApiError.forbidden(`Room "${room.code}" is deactivated/retired and cannot be scheduled`);
         }
-        if (room.capacity < section.capacity) {
+        if (section && room.capacity < section.capacity) {
           throw ApiError.badRequest(
             `Room capacity (${room.capacity}) is insufficient for section capacity (${section.capacity})`
           );
         }
+        if (!entry.roomNumber) entry.roomNumber = room.code;
+        if (!entry.building && room.building) entry.building = room.building;
       }
+    }
 
-      // 3. External Conflict Detection against other Published Timetables
-      const otherPublished = await Timetable.find({
+    // 4. Internal Overlap Checks (within the timetable itself)
+    for (let i = 0; i < entries.length; i++) {
+      const e1 = entries[i];
+      for (let j = i + 1; j < entries.length; j++) {
+        const e2 = entries[j];
+        if (e1.dayOfWeek === e2.dayOfWeek) {
+          const overlaps = isTimeOverlapping(e1.startTime, e1.endTime, e2.startTime, e2.endTime);
+          if (overlaps) {
+            // Check Faculty Overlap
+            if (e1.facultyId && e2.facultyId && e1.facultyId.toString() === e2.facultyId.toString()) {
+              throw ApiError.conflict(
+                `Faculty conflict: Faculty member is already scheduled on ${e1.dayOfWeek} between ${e2.startTime} and ${e2.endTime}`
+              );
+            }
+            // Check Room Overlap
+            if (
+              (e1.roomId && e2.roomId && e1.roomId.toString() === e2.roomId.toString()) ||
+              (e1.roomNumber && e2.roomNumber && e1.roomNumber.trim().toUpperCase() === e2.roomNumber.trim().toUpperCase())
+            ) {
+              throw ApiError.conflict(
+                `Room conflict: Room is already booked on ${e1.dayOfWeek} between ${e2.startTime} and ${e2.endTime}`
+              );
+            }
+            // Section/Class Conflict
+            throw ApiError.conflict(
+              `Section conflict: Multiple entries scheduled simultaneously on ${e1.dayOfWeek} (${e1.startTime}-${e1.endTime} and ${e2.startTime}-${e2.endTime})`
+            );
+          }
+        }
+      }
+    }
+
+    // 5. External Conflict Detection against other Published Timetables
+    for (const entry of entries) {
+      const otherPublishedQuery: Record<string, unknown> = {
         collegeId: new mongoose.Types.ObjectId(collegeId),
         status: TimetableStatus.PUBLISHED,
         _id: currentTimetableId ? { $ne: new mongoose.Types.ObjectId(currentTimetableId) } : { $exists: true },
-        sectionId: { $ne: section._id },
         'entries.dayOfWeek': entry.dayOfWeek,
-      });
+      };
+      if (section) {
+        otherPublishedQuery.sectionId = { $ne: section._id };
+      }
+      const otherPublished = await Timetable.find(otherPublishedQuery);
 
       for (const other of otherPublished) {
         for (const otherEntry of other.entries) {
@@ -454,9 +603,15 @@ export class TimetableService {
                 );
               }
               // Check Section Overlap
-              if (other.sectionId.toString() === section.id.toString()) {
+              if (section && other.sectionId && other.sectionId.toString() === section.id.toString()) {
                 throw ApiError.conflict(
                   `Section conflict: Section is already scheduled on ${entry.dayOfWeek} between ${otherEntry.startTime} and ${otherEntry.endTime}`
+                );
+              }
+              // Check Course/Semester Overlap when section is disabled
+              if (!section && !other.sectionId && other.semesterId.toString() === semesterId.toString() && other.courseId.toString() === courseId.toString()) {
+                throw ApiError.conflict(
+                  `Timetable conflict: Academic context is already scheduled on ${entry.dayOfWeek} between ${otherEntry.startTime} and ${otherEntry.endTime}`
                 );
               }
             }
@@ -496,8 +651,9 @@ export class TimetableService {
       throw ApiError.forbidden('HOD can only create timetables within their assigned department');
     }
 
-    // Hierarchy validation
-    if (data.departmentId && data.courseId && data.academicYearId && data.semesterId && data.sectionId) {
+    // Hierarchy validation (section optional if section is disabled)
+    let resolvedSection: InstanceType<typeof Section> | null = null;
+    if (data.departmentId && data.courseId && data.academicYearId && data.semesterId) {
       const deptExists = await Department.findById(data.departmentId);
       if (deptExists) {
         const { section } = await this.validateAcademicHierarchy(collegeId, {
@@ -505,8 +661,9 @@ export class TimetableService {
           courseId: data.courseId.toString(),
           academicYearId: data.academicYearId.toString(),
           semesterId: data.semesterId.toString(),
-          sectionId: data.sectionId.toString(),
+          sectionId: data.sectionId ? data.sectionId.toString() : undefined,
         });
+        resolvedSection = section;
 
         // Validate entries if provided
         if (data.entries && data.entries.length > 0) {
@@ -514,7 +671,7 @@ export class TimetableService {
             collegeId,
             data.semesterId.toString(),
             data.courseId.toString(),
-            section,
+            resolvedSection,
             data.entries,
             undefined,
             data.academicYearId.toString(),
@@ -543,6 +700,27 @@ export class TimetableService {
         newValue: timetable.toJSON(),
       });
     }
+
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.TIMETABLE_CREATED,
+      aggregateType: 'Timetable',
+      aggregateId: timetable.id,
+      action: 'CREATED',
+      collegeId: timetable.collegeId.toString(),
+      scope: {
+        type: 'college',
+        collegeId: timetable.collegeId.toString(),
+        departmentId: timetable.departmentId?.toString(),
+      },
+      payload: {
+        timetableId: timetable.id,
+        departmentId: timetable.departmentId?.toString(),
+        academicYearId: timetable.academicYearId?.toString(),
+        semesterId: timetable.semesterId?.toString(),
+        status: timetable.status,
+      },
+    });
 
     return timetable;
   }
@@ -689,10 +867,11 @@ export class TimetableService {
 
     const effectiveBreaks = update.breaks !== undefined ? update.breaks : timetable.breaks;
 
-    if (update.entries !== undefined) {
-      const section = await Section.findById(timetable.sectionId);
-      if (!section) throw ApiError.notFound('Section not found');
+    const section = (timetable.sectionId && mongoose.Types.ObjectId.isValid(timetable.sectionId))
+      ? await Section.findById(timetable.sectionId)
+      : null;
 
+    if (update.entries !== undefined) {
       await this.validateTimetableEntries(
         timetable.collegeId.toString(),
         timetable.semesterId.toString(),
@@ -707,19 +886,16 @@ export class TimetableService {
       timetable.entries = update.entries;
     } else if (update.breaks !== undefined && timetable.entries && timetable.entries.length > 0) {
       // Validate existing entries against newly updated breaks
-      const section = await Section.findById(timetable.sectionId);
-      if (section) {
-        await this.validateTimetableEntries(
-          timetable.collegeId.toString(),
-          timetable.semesterId.toString(),
-          timetable.courseId.toString(),
-          section,
-          timetable.entries,
-          timetable.id,
-          timetable.academicYearId.toString(),
-          update.breaks
-        );
-      }
+      await this.validateTimetableEntries(
+        timetable.collegeId.toString(),
+        timetable.semesterId.toString(),
+        timetable.courseId.toString(),
+        section,
+        timetable.entries,
+        timetable.id,
+        timetable.academicYearId.toString(),
+        update.breaks
+      );
     }
 
     timetable.updatedBy = requester.id;
@@ -733,6 +909,27 @@ export class TimetableService {
       entityId: timetable.id,
       previousValue: prev,
       newValue: timetable.toJSON(),
+    });
+
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.TIMETABLE_UPDATED,
+      aggregateType: 'Timetable',
+      aggregateId: timetable.id,
+      action: 'UPDATED',
+      collegeId: timetable.collegeId.toString(),
+      scope: {
+        type: 'college',
+        collegeId: timetable.collegeId.toString(),
+        departmentId: timetable.departmentId?.toString(),
+      },
+      payload: {
+        timetableId: timetable.id,
+        departmentId: timetable.departmentId?.toString(),
+        academicYearId: timetable.academicYearId?.toString(),
+        semesterId: timetable.semesterId?.toString(),
+        status: timetable.status,
+      },
     });
 
     return timetable;
@@ -763,41 +960,46 @@ export class TimetableService {
       return timetable;
     }
 
-    // Run full conflict validation before publishing if section exists in DB
-    const section = await Section.findById(timetable.sectionId);
-    if (section) {
-      await this.validateAcademicHierarchy(timetable.collegeId.toString(), {
-        departmentId: timetable.departmentId.toString(),
-        courseId: timetable.courseId.toString(),
-        academicYearId: timetable.academicYearId.toString(),
-        semesterId: timetable.semesterId.toString(),
-        sectionId: timetable.sectionId.toString(),
-      });
+    // Run full hierarchy and conflict validation before publishing
+    const section = (timetable.sectionId && mongoose.Types.ObjectId.isValid(timetable.sectionId))
+      ? await Section.findById(timetable.sectionId)
+      : null;
 
-      if (timetable.entries && timetable.entries.length > 0) {
-        await this.validateTimetableEntries(
-          timetable.collegeId.toString(),
-          timetable.semesterId.toString(),
-          timetable.courseId.toString(),
-          section,
-          timetable.entries,
-          timetable.id,
-          timetable.academicYearId.toString(),
-          timetable.breaks || []
-        );
-      }
+    await this.validateAcademicHierarchy(timetable.collegeId.toString(), {
+      departmentId: timetable.departmentId.toString(),
+      courseId: timetable.courseId.toString(),
+      academicYearId: timetable.academicYearId.toString(),
+      semesterId: timetable.semesterId.toString(),
+      sectionId: timetable.sectionId ? timetable.sectionId.toString() : undefined,
+    });
+
+    if (timetable.entries && timetable.entries.length > 0) {
+      await this.validateTimetableEntries(
+        timetable.collegeId.toString(),
+        timetable.semesterId.toString(),
+        timetable.courseId.toString(),
+        section,
+        timetable.entries,
+        timetable.id,
+        timetable.academicYearId.toString(),
+        timetable.breaks || []
+      );
     }
 
-    // Atomically draft any existing published timetables for this same section
-    await Timetable.updateMany(
-      {
-        collegeId: timetable.collegeId,
-        sectionId: timetable.sectionId,
-        status: TimetableStatus.PUBLISHED,
-        _id: { $ne: timetable._id },
-      },
-      { status: TimetableStatus.DRAFT }
-    );
+    // Atomically draft any existing published timetables for this same section or context
+    const draftQuery: Record<string, unknown> = {
+      collegeId: timetable.collegeId,
+      courseId: timetable.courseId,
+      semesterId: timetable.semesterId,
+      status: TimetableStatus.PUBLISHED,
+      _id: { $ne: timetable._id },
+    };
+    if (timetable.sectionId) {
+      draftQuery.sectionId = timetable.sectionId;
+    } else {
+      draftQuery.sectionId = null;
+    }
+    await Timetable.updateMany(draftQuery, { status: TimetableStatus.DRAFT });
 
     timetable.status = TimetableStatus.PUBLISHED;
     timetable.publishedAt = new Date();
@@ -818,6 +1020,27 @@ export class TimetableService {
     await this.notifyTimetableRecipients(timetable, NotificationType.TIMETABLE_PUBLISHED).catch((err) =>
       logger.warn(`Failed to notify timetable recipients: ${err.message}`)
     );
+
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.TIMETABLE_PUBLISHED,
+      aggregateType: 'Timetable',
+      aggregateId: timetable.id,
+      action: 'PUBLISHED',
+      collegeId: timetable.collegeId.toString(),
+      scope: {
+        type: 'college',
+        collegeId: timetable.collegeId.toString(),
+        departmentId: timetable.departmentId?.toString(),
+      },
+      payload: {
+        timetableId: timetable.id,
+        departmentId: timetable.departmentId?.toString(),
+        academicYearId: timetable.academicYearId?.toString(),
+        semesterId: timetable.semesterId?.toString(),
+        status: timetable.status,
+      },
+    });
 
     return timetable;
   }
@@ -857,6 +1080,25 @@ export class TimetableService {
       logger.warn(`Failed to notify timetable unpublish: ${err.message}`)
     );
 
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.TIMETABLE_UNPUBLISHED,
+      aggregateType: 'Timetable',
+      aggregateId: timetable.id,
+      action: 'UNPUBLISHED',
+      collegeId: timetable.collegeId.toString(),
+      scope: {
+        type: 'college',
+        collegeId: timetable.collegeId.toString(),
+        departmentId: timetable.departmentId?.toString(),
+      },
+      payload: {
+        timetableId: timetable.id,
+        departmentId: timetable.departmentId?.toString(),
+        status: timetable.status,
+      },
+    });
+
     return timetable;
   }
 
@@ -894,6 +1136,25 @@ export class TimetableService {
     await this.notifyTimetableRecipients(timetable, NotificationType.TIMETABLE_CANCELLED).catch((err) =>
       logger.warn(`Failed to notify timetable archive: ${err.message}`)
     );
+
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.TIMETABLE_ARCHIVED,
+      aggregateType: 'Timetable',
+      aggregateId: timetable.id,
+      action: 'ARCHIVED',
+      collegeId: timetable.collegeId.toString(),
+      scope: {
+        type: 'college',
+        collegeId: timetable.collegeId.toString(),
+        departmentId: timetable.departmentId?.toString(),
+      },
+      payload: {
+        timetableId: timetable.id,
+        departmentId: timetable.departmentId?.toString(),
+        status: timetable.status,
+      },
+    });
 
     return timetable;
   }
@@ -935,6 +1196,24 @@ export class TimetableService {
       entityType: 'Timetable',
       entityId: timetable.id,
       previousValue: timetable.toJSON(),
+    });
+
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.TIMETABLE_ARCHIVED,
+      aggregateType: 'Timetable',
+      aggregateId: timetable.id,
+      action: 'ARCHIVED',
+      collegeId: timetable.collegeId.toString(),
+      scope: {
+        type: 'college',
+        collegeId: timetable.collegeId.toString(),
+        departmentId: timetable.departmentId?.toString(),
+      },
+      payload: {
+        timetableId: timetable.id,
+        departmentId: timetable.departmentId?.toString(),
+      },
     });
   }
 
@@ -1393,7 +1672,68 @@ export class TimetableService {
 
     const sectionId = activeEnrollment ? activeEnrollment.sectionId : studentProfile.sectionId;
     if (!sectionId) {
-      return [];
+      if (!activeEnrollment?.semesterId) return [];
+      const semTimetable = await Timetable.findOne({
+        collegeId: studentProfile.collegeId,
+        semesterId: activeEnrollment.semesterId,
+        status: TimetableStatus.PUBLISHED,
+      }).sort({ version: -1 });
+      if (!semTimetable) return [];
+
+      let targetDay = normalizeDay(day);
+      let calendarDateStr: string | undefined;
+
+      if (date) {
+        const collegeDoc = await College.findById(studentProfile.collegeId);
+        const tz = collegeDoc?.timezone || DEFAULT_INSTITUTION_TIMEZONE;
+        calendarDateStr = formatDateToCalendarString(date, tz);
+        targetDay = getTimetableDayFromDate(date, tz);
+      }
+
+      let entries = semTimetable.entries;
+      if (targetDay) {
+        entries = entries.filter((e) => e.dayOfWeek === targetDay);
+      }
+
+      const operationalEntries: ITimetableGridEntry[] = [];
+      for (const e of entries) {
+        let facultyId = e.facultyId;
+        let isSubstituted = false;
+
+        if (calendarDateStr) {
+          const activeOverride = await CalendarOverrideService.resolveActiveOverride({
+            collegeId: semTimetable.collegeId,
+            departmentId: semTimetable.departmentId,
+            timetableEntryId: e._id,
+            date: calendarDateStr,
+          });
+          if (activeOverride) continue;
+
+          const activeSub = await TeacherSubstitutionService.resolveActiveSubstitution({
+            timetableId: semTimetable._id,
+            timetableEntryId: e._id,
+            date: calendarDateStr,
+          });
+          if (activeSub) {
+            facultyId = activeSub.substituteFacultyId;
+            isSubstituted = true;
+          }
+        }
+
+        const entryObj = (e as any).toObject ? (e as any).toObject() : { ...(e as any) };
+        entryObj.facultyId = facultyId;
+        entryObj.timetableId = semTimetable._id;
+        entryObj.departmentId = semTimetable.departmentId;
+        entryObj.collegeId = semTimetable.collegeId;
+        entryObj.courseId = semTimetable.courseId;
+        entryObj.semesterId = semTimetable.semesterId;
+        entryObj.academicYearId = semTimetable.academicYearId;
+        if (isSubstituted) (entryObj as any).isSubstituted = true;
+        operationalEntries.push(entryObj as ITimetableGridEntry);
+      }
+
+      const enriched = await this.enrichTimetableEntries(operationalEntries);
+      return enriched.sort((a, b) => a.startTime.localeCompare(b.startTime));
     }
 
     return this.getSectionTimetable(sectionId.toString(), day, requester, date);

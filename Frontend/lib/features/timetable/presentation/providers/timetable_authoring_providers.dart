@@ -8,6 +8,7 @@ import '../../domain/models/timetable_models.dart';
 import '../../data/repositories/timetable_repository.dart';
 import 'timetable_providers.dart';
 import '../../../academic_structure/presentation/providers/department_setup_provider.dart';
+import '../../../../core/errors/acadex_error.dart';
 
 export 'timetable_authoring_state.dart';
 
@@ -178,7 +179,7 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       if (container == null) {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: 'Timetable not found: $timetableId',
+          errorMessage: 'Timetable not found. It may have been archived or removed.',
         );
         return;
       }
@@ -207,7 +208,7 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Failed to load timetable: $e',
+        errorMessage: AcadexException.sanitizedMessage(e, fallback: 'Failed to load timetable. Please try again.'),
       );
     }
   }
@@ -337,7 +338,7 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       if (!mounted) rethrow;
       state = state.copyWith(
         isSaving: false,
-        errorMessage: e.toString(),
+        errorMessage: AcadexException.sanitizedMessage(e, fallback: 'Failed to update schedule.'),
       );
       rethrow;
     }
@@ -818,7 +819,7 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       developer.log('[TimetableAuthoring] saveDraft error: $e\n$st', name: 'Acadex.Timetable');
       state = state.copyWith(
         isSaving: false,
-        errorMessage: 'Failed to save draft: $e',
+        errorMessage: AcadexException.sanitizedMessage(e, fallback: 'Failed to save draft timetable.'),
       );
       return false;
     }
@@ -852,7 +853,7 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       developer.log('[TimetableAuthoring] publish error: $e\n$st', name: 'Acadex.Timetable');
       state = state.copyWith(
         isPublishing: false,
-        errorMessage: 'Failed to publish: $e',
+        errorMessage: AcadexException.sanitizedMessage(e, fallback: 'Failed to publish timetable.'),
       );
       return false;
     }
@@ -880,7 +881,7 @@ class TimetableAuthoringNotifier extends StateNotifier<TimetableAuthoringState> 
       developer.log('[TimetableAuthoring] unpublish error: $e\n$st', name: 'Acadex.Timetable');
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Failed to unpublish: $e',
+        errorMessage: AcadexException.sanitizedMessage(e, fallback: 'Failed to unpublish timetable.'),
       );
       return false;
     }

@@ -14,6 +14,9 @@ export const createRequestSchema = z.object({
     .string()
     .min(3, 'Please provide details or a reason for your request (minimum 3 characters).')
     .max(5000, 'Description cannot exceed 5000 characters.'),
+  status: z.enum(['DRAFT', 'SUBMITTED']).optional(),
+  relatedEntityType: z.string().optional().nullable(),
+  relatedEntityId: z.string().optional().nullable(),
   academicContext: z
     .object({
       courseId: z.string().optional().nullable(),
@@ -41,6 +44,10 @@ export const createRequestSchema = z.object({
     })
     .optional()
     .nullable(),
+});
+
+export const cancelRequestSchema = z.object({
+  reason: z.string().max(1000, 'Reason cannot exceed 1000 characters.').optional().nullable(),
 });
 
 export const respondRequestSchema = z.object({

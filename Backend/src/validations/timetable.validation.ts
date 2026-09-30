@@ -12,6 +12,8 @@ const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 // Room Schemas
 export const createRoomSchema = z.object({
   departmentId: z.string().optional(),
+  buildingId: z.string().optional(),
+  building: z.string().trim().max(100).optional(),
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
   code: z.string().trim().min(1, 'Code is required').max(30).toUpperCase(),
   capacity: z.number().int().min(1, 'Capacity must be at least 1').max(1000).default(60),
@@ -22,11 +24,17 @@ export const createRoomSchema = z.object({
 });
 
 export const updateRoomSchema = z.object({
+  departmentId: z.string().optional().nullable(),
+  buildingId: z.string().optional().nullable(),
+  building: z.string().trim().max(100).optional(),
   name: z.string().trim().min(2).max(100).optional(),
   code: z.string().trim().min(1).max(30).toUpperCase().optional(),
   capacity: z.number().int().min(1).max(1000).optional(),
   type: z
     .preprocess((val) => (typeof val === 'string' ? val.toLowerCase() : val), z.enum(['lecture', 'lab', 'seminar', 'other']))
+    .optional(),
+  status: z
+    .preprocess((val) => (typeof val === 'string' ? val.toLowerCase() : val), z.enum(['active', 'inactive', 'retired', 'archived']))
     .optional(),
   isActive: z.boolean().optional(),
 });
@@ -37,6 +45,8 @@ export const roomQuerySchema = z.object({
   collegeId: z.string().optional(),
   departmentId: z.string().optional(),
   type: z.enum(['lecture', 'lab', 'seminar', 'other']).optional(),
+  status: z.enum(['active', 'inactive', 'retired', 'archived']).optional(),
+  isActive: z.string().optional().transform((v) => (v === 'true' ? true : v === 'false' ? false : undefined)),
   search: z.string().optional(),
 });
 
@@ -91,7 +101,7 @@ export const createTimetableSchema = z.object({
   courseId: z.string().min(1, 'courseId is required'),
   academicYearId: z.string().min(1, 'academicYearId is required'),
   semesterId: z.string().min(1, 'semesterId is required'),
-  sectionId: z.string().min(1, 'sectionId is required'),
+  sectionId: z.string().optional().nullable(),
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
   activeDays: z.array(z.nativeEnum(TimetableDay)).optional(),
   timingMode: z.nativeEnum(TimetableTimingMode).optional().default(TimetableTimingMode.SAME_EVERY_DAY),

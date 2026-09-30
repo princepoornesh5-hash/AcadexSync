@@ -24,15 +24,28 @@ class CalendarEventCard extends StatelessWidget {
       case CalendarEventType.institutionHoliday:
         return LucideIcons.sun;
       case CalendarEventType.exam:
+      case CalendarEventType.examination:
         return LucideIcons.fileCheck;
       case CalendarEventType.deadline:
+      case CalendarEventType.assignmentDeadline:
         return LucideIcons.clock;
-      case CalendarEventType.labViva:
+      case CalendarEventType.internalAssessment:
       case CalendarEventType.classTest:
+        return LucideIcons.clipboardCheck;
+      case CalendarEventType.practical:
+      case CalendarEventType.labViva:
         return LucideIcons.flaskConical;
+      case CalendarEventType.timetableClass:
+        return LucideIcons.bookOpen;
+      case CalendarEventType.resultPublication:
+        return LucideIcons.award;
+      case CalendarEventType.workingDay:
+        return LucideIcons.calendarCheck;
       case CalendarEventType.seminar:
       case CalendarEventType.workshop:
         return LucideIcons.presentation;
+      case CalendarEventType.academicEvent:
+      case CalendarEventType.collegeEvent:
       case CalendarEventType.event:
       case CalendarEventType.other:
         return LucideIcons.calendar;
@@ -46,15 +59,28 @@ class CalendarEventCard extends StatelessWidget {
       case CalendarEventType.institutionHoliday:
         return const Color(0xFF10B981); // Emerald
       case CalendarEventType.exam:
+      case CalendarEventType.examination:
         return const Color(0xFF8B5CF6); // Purple
       case CalendarEventType.deadline:
+      case CalendarEventType.assignmentDeadline:
         return const Color(0xFF3B82F6); // Blue
-      case CalendarEventType.labViva:
+      case CalendarEventType.internalAssessment:
       case CalendarEventType.classTest:
-        return const Color(0xFFEC4899); // Pink
+        return const Color(0xFFE11D48); // Rose
+      case CalendarEventType.practical:
+      case CalendarEventType.labViva:
+        return const Color(0xFFD97706); // Amber / Orange
+      case CalendarEventType.timetableClass:
+        return const Color(0xFF0284C7); // Sky blue
+      case CalendarEventType.resultPublication:
+        return const Color(0xFF7C3AED); // Deep violet
+      case CalendarEventType.workingDay:
+        return const Color(0xFF059669); // Forest green
       case CalendarEventType.seminar:
       case CalendarEventType.workshop:
         return const Color(0xFF06B6D4); // Cyan
+      case CalendarEventType.academicEvent:
+      case CalendarEventType.collegeEvent:
       case CalendarEventType.event:
       case CalendarEventType.other:
         return const Color(0xFFF59E0B); // Amber
@@ -254,18 +280,22 @@ class CalendarEventCard extends StatelessWidget {
                             Text('•', style: TextStyle(color: isDark ? AcadexColors.darkInkFaint : Colors.grey.shade400, fontSize: 10)),
                             const SizedBox(width: 6),
                           ],
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: isDark ? 0.2 : 0.08),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              event.eventType.displayName,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: color,
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: isDark ? 0.2 : 0.08),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                event.eventType.displayName,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: color,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ),

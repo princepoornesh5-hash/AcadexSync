@@ -7,7 +7,7 @@ export interface IFacultyAssignment extends Document {
   facultyName: string;
   courseId: mongoose.Types.ObjectId;
   semesterId: mongoose.Types.ObjectId;
-  sectionId: mongoose.Types.ObjectId;
+  sectionId?: mongoose.Types.ObjectId | null;
   subjectId: mongoose.Types.ObjectId;
   academicYearId: mongoose.Types.ObjectId;
   cohort?: string;
@@ -16,8 +16,10 @@ export interface IFacultyAssignment extends Document {
   maxStudents?: number;
   assignmentType?: string;
   assignedBy?: string;
+  status: 'active' | 'inactive' | 'ended' | 'archived';
   isActive: boolean;
   assignedAt: Date;
+  endedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,7 +32,7 @@ const FacultyAssignmentSchema = new Schema<IFacultyAssignment>(
     facultyName: { type: String, required: true, trim: true },
     courseId: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
     semesterId: { type: Schema.Types.ObjectId, ref: 'Semester', required: true },
-    sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: true, index: true },
+    sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: false, default: null, index: true },
     subjectId: { type: Schema.Types.ObjectId, ref: 'Subject', required: true, index: true },
     academicYearId: { type: Schema.Types.ObjectId, ref: 'AcademicYear', required: true },
     cohort: { type: String, default: null, trim: true },
@@ -39,8 +41,15 @@ const FacultyAssignmentSchema = new Schema<IFacultyAssignment>(
     maxStudents: { type: Number, default: null },
     assignmentType: { type: String, default: 'lecture' },
     assignedBy: { type: String, default: null },
-    isActive: { type: Boolean, default: true },
+    status: {
+      type: String,
+      enum: ['active', 'inactive', 'ended', 'archived'],
+      default: 'active',
+      index: true,
+    },
+    isActive: { type: Boolean, default: true, index: true },
     assignedAt: { type: Date, default: Date.now },
+    endedAt: { type: Date, default: null },
   },
   {
     timestamps: true,
@@ -63,12 +72,28 @@ const FacultyAssignmentSchema = new Schema<IFacultyAssignment>(
   }
 );
 
+// Bidirectional synchronization between status and isActive
+FacultyAssignmentSchema.pre('save', function (next) {
+  if (this.isModified('status')) {
+    this.isActive = this.status === 'active';
+  } else if (this.isModified('isActive')) {
+    this.status = this.isActive ? 'active' : 'inactive';
+  }
+  next();
+});
+
+// Authoritative uniqueness index: prevents duplicate active assignments while preserving historical records
 FacultyAssignmentSchema.index(
-  { collegeId: 1, facultyId: 1, sectionId: 1, subjectId: 1 },
-  { unique: true }
+  { collegeId: 1, facultyId: 1, subjectId: 1, academicYearId: 1, semesterId: 1, sectionId: 1 },
+  { unique: true, partialFilterExpression: { status: 'active' } }
 );
-FacultyAssignmentSchema.index({ collegeId: 1, sectionId: 1 });
-FacultyAssignmentSchema.index({ collegeId: 1, facultyId: 1 });
+
+FacultyAssignmentSchema.index({ collegeId: 1, facultyId: 1, status: 1 });
+FacultyAssignmentSchema.index({ collegeId: 1, sectionId: 1, status: 1 });
+FacultyAssignmentSchema.index({ collegeId: 1, departmentId: 1, status: 1 });
+FacultyAssignmentSchema.index({ collegeId: 1, subjectId: 1, status: 1 });
+FacultyAssignmentSchema.index({ collegeId: 1, semesterId: 1 });
+FacultyAssignmentSchema.index({ collegeId: 1, academicYearId: 1 });
 
 export const FacultyAssignment = mongoose.model<IFacultyAssignment>(
   'FacultyAssignment',

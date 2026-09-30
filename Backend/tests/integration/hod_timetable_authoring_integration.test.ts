@@ -1363,7 +1363,7 @@ describe('ACADEX — HOD Timetable Authoring Integration (Prompt 4 of 6)', () =>
     // Contract 25: Consistent Academic Context
     expect(assignment?.courseId.toString()).toBe(res.body.data.courseId);
     expect(assignment?.semesterId.toString()).toBe(res.body.data.semesterId);
-    expect(assignment?.sectionId.toString()).toBe(res.body.data.sectionId);
+    expect(assignment?.sectionId?.toString()).toBe(res.body.data.sectionId);
   });
 
   it('26. Published timetable can be retrieved by intended consumer roles', async () => {

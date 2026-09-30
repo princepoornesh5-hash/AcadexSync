@@ -21,6 +21,7 @@ import '../widgets/setup_continuation_dialog.dart';
 import '../providers/academic_providers.dart';
 import '../providers/department_setup_provider.dart';
 import '../../domain/models/academic_models.dart';
+import '../../../institution_config/presentation/providers/institution_config_providers.dart';
 
 class CourseListScreen extends ConsumerStatefulWidget {
   const CourseListScreen({super.key});
@@ -45,20 +46,24 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
         user?.role == AppRole.collegeAdmin ||
         user?.role == AppRole.hod;
 
+    final terminology = ref.watch(terminologyProvider);
+    final progLabel = terminology.programName();
+    final progsLabel = terminology.programName(plural: true);
+
     return AcadexPageContainer(
       scrollable: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AcadexPageHeader(
-            title: "Courses",
-            subtitle: "Manage academic courses, duration, and curricula offered across departments.",
+          AcadexPageHeader(
+            title: progsLabel,
+            subtitle: "Manage academic $progsLabel, duration, and curricula offered across departments.",
           ),
           AcadexSearchFilterBar(
-            searchHint: "Search courses by name, code, or department...",
+            searchHint: "Search ${progsLabel.toLowerCase()} by name, code, or department...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
             onActionTap: canManageCourses ? () => context.push('/academics/courses/new') : null,
-            actionLabel: "Create Course",
+            actionLabel: "+ Create $progLabel",
           ),
           const SizedBox(height: 10),
           // Status filter chips
@@ -117,15 +122,16 @@ class _CourseListScreenState extends ConsumerState<CourseListScreen> {
                     if (canManageCourses) {
                       return FreshDepartmentSetupCard(
                         currentStep: AcademicSetupStep.course,
-                        actionLabel: "Create First Course",
+                        actionLabel: "Create First $progLabel",
                         customMessage:
-                            "Step 1 of 3: Establish your department's initial degree course (e.g. Diploma in Computer Engineering), then select an Academic Year and configure Semesters.",
+                            "Step 1: Establish your department's initial $progLabel, then select an ${terminology.academicYearName()} and configure ${terminology.semesterName(plural: true)}.",
                         onAction: () => context.push('/academics/courses/new'),
+                        termHelper: terminology,
                       );
                     }
-                    return const AcadexEmptyState(
-                      title: "No Courses Found",
-                      subtitle: "Create a course to begin building the academic structure.",
+                    return AcadexEmptyState(
+                      title: "No $progsLabel Found",
+                      subtitle: "Create a ${progLabel.toLowerCase()} to begin building the academic structure.",
                       icon: LucideIcons.bookOpen,
                     );
                   }
@@ -422,17 +428,22 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
               (activeYears.isNotEmpty ? activeYears.first : null);
           final hasAy = effectiveAy != null;
 
+          final terminology = ref.read(terminologyProvider);
+          final progLabel = terminology.programName();
+          final semsLabel = terminology.semesterName(plural: true).toLowerCase();
+          final ayLabel = terminology.academicYearName();
+
           SetupContinuationDialog.show(
             context,
-            title: 'Course Created Successfully',
+            title: '$progLabel Created Successfully',
             entityName: '${createdCourse.name} (${createdCourse.code})',
             message: hasAy
-                ? 'Course is established. Continue to configure its teaching semesters.'
-                : 'Course is established. An Academic Year is required before semesters can be configured.',
-            primaryActionLabel: 'Continue to Semester',
+                ? '$progLabel is established. Continue to configure its teaching $semsLabel.'
+                : '$progLabel is established. An $ayLabel is required before $semsLabel can be configured.',
+            primaryActionLabel: 'Continue to ${terminology.semesterName()}',
             isWaitingOnAdmin: !hasAy && isHod,
             waitingNotice: !hasAy && isHod
-                ? 'Your college has not configured an academic year yet. Academic Year is managed by College Administration.'
+                ? 'Your college has not configured an academic year yet. $ayLabel is managed by College Administration.'
                 : null,
             onContinue: () {
               context.push(
@@ -486,17 +497,20 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
     final effectiveDeptName = deptMap[effectiveDeptId]?.name ??
         (effectiveDeptId.isNotEmpty ? effectiveDeptId : 'Assigned Department');
 
+    final terminology = ref.watch(terminologyProvider);
+    final progLabel = terminology.programName();
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
           onPressed: () => context.safePop(fallbackRoute: '/academics/courses'),
         ),
         title: Text(
-          isEdit ? "Edit Course" : "Create Course",
+          isEdit ? "Edit $progLabel" : "Create $progLabel",
           style: AcadexTypography.heading2(
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ).copyWith(fontSize: 18),
@@ -509,7 +523,8 @@ class _CourseFormScreenState extends ConsumerState<CourseFormScreen> {
               child: Form(
                 key: _formKey,
                 child: AcadexFormCard(
-                  title: "Course Details",
+                  title: "$progLabel Details",
+                  saveLabel: isEdit ? "Update $progLabel" : "Create $progLabel",
                   isSaving: _isLoading,
                   onCancel: () => context.safePop(fallbackRoute: '/academics/courses'),
                   onSave: () => _save(userCollegeId, isSuperAdmin),

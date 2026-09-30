@@ -12,6 +12,19 @@ import '../../../academic_structure/presentation/providers/academic_providers.da
 import '../../../timetable/presentation/providers/timetable_providers.dart';
 import '../../../notes/presentation/providers/notes_providers.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
+import '../../data/repositories/dashboard_repository.dart';
+import '../../domain/models/home_dashboard_models.dart';
+
+// ── Canonical Home Dashboard Provider (Prompt 49) ───────────────────────────
+
+final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
+  return DashboardRepository();
+});
+
+final homeDashboardProvider = FutureProvider.autoDispose<HomeDashboardModel>((ref) async {
+  final repo = ref.watch(dashboardRepositoryProvider);
+  return repo.getHomeDashboard();
+});
 
 // ── Super Admin (Platform Owner) ──────────────────────────────────────────────
 

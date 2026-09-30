@@ -20,6 +20,8 @@ import { NotificationType, NotificationCategory } from '../constants/notificatio
 import { logger } from '../utils/logger';
 import { ApiError } from '../utils/apiError';
 import { AuthenticatedUser } from '../types/auth.types';
+import { TeachingAuthorizationService } from './teachingAuthorization.service';
+import { realtimeEventBus, AcadexEventType } from '../realtime';
 
 export class NoteService {
   // =========================================================================
@@ -79,17 +81,28 @@ export class NoteService {
       throw ApiError.forbidden('Cannot upload notes for an inactive subject');
     }
 
-    // Check Department scope for HOD / Faculty
-    if (requester.role === AppRole.HOD && requester.departmentId && subject.departmentId.toString() !== requester.departmentId) {
-      throw ApiError.forbidden('HOD can only upload notes within their assigned department');
-    }
+    // Teaching Authorization: Assert that Faculty or HOD is authorized to manage notes for this subject
+    await TeachingAuthorizationService.assertSubjectTeachingAccess(
+      collegeId,
+      {
+        id: requester.id,
+        role: requester.role,
+        collegeId: requester.collegeId,
+        departmentId: requester.departmentId,
+        email: requester.email,
+        name: requester.name,
+      },
+      subject._id,
+      data.sectionId,
+      'academic notes'
+    );
 
     let facultyDoc: InstanceType<typeof Faculty> | null = null;
     if (requester.role === AppRole.FACULTY) {
-      facultyDoc = await Faculty.findOne({ userId: requester.id });
-      if (facultyDoc && facultyDoc.departmentId.toString() !== subject.departmentId.toString()) {
-        throw ApiError.forbidden('Faculty cannot upload notes for subjects in another department');
-      }
+      facultyDoc = await TeachingAuthorizationService.resolveFacultyProfile(collegeId, {
+        id: requester.id,
+        email: requester.email,
+      });
     }
 
     const noteId = new mongoose.Types.ObjectId();
@@ -224,6 +237,25 @@ export class NoteService {
       logger.warn(`Failed to notify students of note publication: ${err.message}`)
     );
 
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.NOTE_CREATED,
+      aggregateType: 'Note',
+      aggregateId: note.id,
+      action: 'CREATED',
+      collegeId: note.collegeId.toString(),
+      scope: {
+        type: 'department',
+        collegeId: note.collegeId.toString(),
+        departmentId: note.departmentId?.toString(),
+      },
+      payload: {
+        noteId: note.id,
+        title: note.title,
+        subjectId: note.subjectId?.toString(),
+      },
+    });
+
     return note;
   }
 
@@ -318,11 +350,27 @@ export class NoteService {
       throw ApiError.forbidden('Cross-college access is strictly prohibited');
     }
 
-    if (
-      requester.role === AppRole.FACULTY &&
-      note.authorUserId.toString() !== requester.id
-    ) {
-      throw ApiError.forbidden('Unauthorized to replace this note');
+    if (requester.role === AppRole.HOD) {
+      if (requester.departmentId && note.departmentId.toString() !== requester.departmentId) {
+        throw ApiError.forbidden('HOD can only replace notes within their assigned department');
+      }
+    } else if (requester.role === AppRole.FACULTY) {
+      if (note.authorUserId.toString() !== requester.id) {
+        throw ApiError.forbidden('Unauthorized to replace this note');
+      }
+      await TeachingAuthorizationService.assertSubjectTeachingAccess(
+        note.collegeId.toString(),
+        {
+          id: requester.id,
+          role: requester.role,
+          collegeId: requester.collegeId,
+          departmentId: requester.departmentId,
+          email: requester.email,
+        },
+        note.subjectId.toString(),
+        note.sectionId ? note.sectionId.toString() : null,
+        'academic notes'
+      );
     }
 
     const { valid, error } = ImageKitService.validateMimeAndExtension(data.mimeType, data.fileName);
@@ -428,11 +476,27 @@ export class NoteService {
       throw ApiError.forbidden('Cross-college access is strictly prohibited');
     }
 
-    if (
-      requester.role === AppRole.FACULTY &&
-      note.authorUserId.toString() !== requester.id
-    ) {
-      throw ApiError.forbidden('Unauthorized to delete this note');
+    if (requester.role === AppRole.HOD) {
+      if (requester.departmentId && note.departmentId.toString() !== requester.departmentId) {
+        throw ApiError.forbidden('HOD can only delete notes within their assigned department');
+      }
+    } else if (requester.role === AppRole.FACULTY) {
+      if (note.authorUserId.toString() !== requester.id) {
+        throw ApiError.forbidden('Unauthorized to delete this note');
+      }
+      await TeachingAuthorizationService.assertSubjectTeachingAccess(
+        note.collegeId.toString(),
+        {
+          id: requester.id,
+          role: requester.role,
+          collegeId: requester.collegeId,
+          departmentId: requester.departmentId,
+          email: requester.email,
+        },
+        note.subjectId.toString(),
+        note.sectionId ? note.sectionId.toString() : null,
+        'academic notes'
+      );
     }
 
     // Mark as DELETING
@@ -463,6 +527,24 @@ export class NoteService {
       entityId: note.id,
       newValue: {
         storageProvider: 'imagekit',
+      },
+    });
+
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.NOTE_ARCHIVED,
+      aggregateType: 'Note',
+      aggregateId: note.id,
+      action: 'ARCHIVED',
+      collegeId: note.collegeId.toString(),
+      scope: {
+        type: 'department',
+        collegeId: note.collegeId.toString(),
+        departmentId: note.departmentId?.toString(),
+      },
+      payload: {
+        noteId: note.id,
+        subjectId: note.subjectId?.toString(),
       },
     });
   }
@@ -636,11 +718,27 @@ export class NoteService {
   ): Promise<INote> {
     const note = await this.getNoteById(id, requester);
 
-    if (
-      requester.role === AppRole.FACULTY &&
-      note.authorUserId.toString() !== requester.id
-    ) {
-      throw ApiError.forbidden('Unauthorized to update this note');
+    if (requester.role === AppRole.HOD) {
+      if (requester.departmentId && note.departmentId.toString() !== requester.departmentId) {
+        throw ApiError.forbidden('HOD can only update notes within their assigned department');
+      }
+    } else if (requester.role === AppRole.FACULTY) {
+      if (note.authorUserId.toString() !== requester.id) {
+        throw ApiError.forbidden('Unauthorized to update this note');
+      }
+      await TeachingAuthorizationService.assertSubjectTeachingAccess(
+        note.collegeId.toString(),
+        {
+          id: requester.id,
+          role: requester.role,
+          collegeId: requester.collegeId,
+          departmentId: requester.departmentId,
+          email: requester.email,
+        },
+        note.subjectId.toString(),
+        note.sectionId ? note.sectionId.toString() : null,
+        'academic notes'
+      );
     }
 
     const prev = note.toJSON();
@@ -666,6 +764,25 @@ export class NoteService {
     await this.notifyEnrolledStudents(note, NotificationType.NOTE_UPDATED).catch((err) =>
       logger.warn(`Failed to notify students of note update: ${err.message}`)
     );
+
+    // Emit Realtime Domain Event (Persistence-First)
+    realtimeEventBus.publish({
+      eventType: AcadexEventType.NOTE_UPDATED,
+      aggregateType: 'Note',
+      aggregateId: note.id,
+      action: 'UPDATED',
+      collegeId: note.collegeId.toString(),
+      scope: {
+        type: 'department',
+        collegeId: note.collegeId.toString(),
+        departmentId: note.departmentId?.toString(),
+      },
+      payload: {
+        noteId: note.id,
+        title: note.title,
+        subjectId: note.subjectId?.toString(),
+      },
+    });
 
     return note;
   }

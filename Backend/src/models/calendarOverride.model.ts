@@ -3,6 +3,8 @@ import mongoose, { Document, Schema } from 'mongoose';
 export enum CalendarOverrideType {
   HOLIDAY = 'HOLIDAY',
   CANCELLED = 'CANCELLED',
+  SPECIAL_WORKING_DAY = 'SPECIAL_WORKING_DAY',
+  RESCHEDULED = 'RESCHEDULED',
 }
 
 export enum CalendarOverrideScope {

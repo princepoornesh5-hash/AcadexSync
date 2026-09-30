@@ -110,7 +110,7 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
 
-  Future<void> _submit() async {
+  Future<void> _submit({bool asDraft = false}) async {
     final reason = _reasonController.text.trim();
     if (reason.isEmpty) {
       AcadexSnackBar.showError(context, 'Please enter a reason or description.');
@@ -169,18 +169,24 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
             requestType: _selectedType,
             title: title,
             description: reason,
+            status: asDraft ? 'DRAFT' : 'SUBMITTED',
             academicContext: academicContext,
             details: details,
           );
 
       if (mounted) {
         if (res != null) {
-          AcadexSnackBar.showSuccess(context, 'Your request was submitted successfully.');
+          AcadexSnackBar.showSuccess(
+            context,
+            asDraft ? 'Draft request saved.' : 'Your request was submitted successfully.',
+          );
           context.pop();
         } else {
           AcadexSnackBar.showError(
             context,
-            "Couldn't submit your request. Please try again.",
+            asDraft
+                ? "Couldn't save draft. Please try again."
+                : "Couldn't submit your request. Please try again.",
           );
         }
       }
@@ -283,11 +289,14 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                           children: [
                             Icon(type.icon, size: 16, color: AcadexColors.primary),
                             const SizedBox(width: 10),
-                            Text(
-                              type.displayName,
-                              style: AcadexTypography.bodySmall().copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: AcadexColors.ink,
+                            Expanded(
+                              child: Text(
+                                type.displayName,
+                                style: AcadexTypography.bodySmall().copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: AcadexColors.ink,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -526,7 +535,8 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               Text(
                                 'Send to: ',
@@ -550,15 +560,28 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                 ),
               ),
 
-              // Submit Action
-              SizedBox(
-                width: double.infinity,
-                child: AcadexButton(
-                  label: 'Submit Request',
-                  icon: LucideIcons.send,
-                  isLoading: _isSubmitting,
-                  onPressed: _submit,
-                ),
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: AcadexButton(
+                      label: 'Save Draft',
+                      icon: LucideIcons.fileEdit,
+                      variant: AcadexButtonVariant.secondary,
+                      isLoading: _isSubmitting,
+                      onPressed: () => _submit(asDraft: true),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AcadexButton(
+                      label: 'Submit Request',
+                      icon: LucideIcons.send,
+                      isLoading: _isSubmitting,
+                      onPressed: () => _submit(asDraft: false),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

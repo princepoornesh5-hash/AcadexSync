@@ -97,6 +97,48 @@ final calendarEventsProvider =
 });
 
 /// Events matching the selected date
+bool _matchesFilter(CalendarEventModel e, String? filter) {
+  if (filter == null || filter.isEmpty) return true;
+  switch (filter.toUpperCase()) {
+    case 'HOLIDAY':
+      return e.eventType == CalendarEventType.holiday ||
+          e.eventType == CalendarEventType.publicHoliday ||
+          e.eventType == CalendarEventType.institutionHoliday;
+    case 'EXAM':
+      return e.eventType == CalendarEventType.exam ||
+          e.eventType == CalendarEventType.examination;
+    case 'ASSESSMENT':
+      return e.eventType == CalendarEventType.internalAssessment ||
+          e.eventType == CalendarEventType.classTest ||
+          e.sourceType == CalendarSourceType.assessment;
+    case 'DEADLINE':
+      return e.eventType == CalendarEventType.deadline ||
+          e.eventType == CalendarEventType.assignmentDeadline ||
+          e.sourceType == CalendarSourceType.assignment;
+    case 'CLASS':
+    case 'TIMETABLE_CLASS':
+      return e.eventType == CalendarEventType.timetableClass ||
+          e.sourceType == CalendarSourceType.timetable;
+    case 'PRACTICAL':
+      return e.eventType == CalendarEventType.practical ||
+          e.eventType == CalendarEventType.labViva ||
+          e.sourceType == CalendarSourceType.practical;
+    case 'RESULT':
+    case 'RESULT_PUBLICATION':
+      return e.eventType == CalendarEventType.resultPublication ||
+          e.sourceType == CalendarSourceType.academicResult;
+    case 'EVENT':
+      return e.eventType == CalendarEventType.event ||
+          e.eventType == CalendarEventType.seminar ||
+          e.eventType == CalendarEventType.workshop ||
+          e.eventType == CalendarEventType.collegeEvent ||
+          e.eventType == CalendarEventType.academicEvent;
+    default:
+      return true;
+  }
+}
+
+/// Events matching the selected date
 final selectedDayEventsProvider = Provider<List<CalendarEventModel>>((ref) {
   final eventsAsync = ref.watch(calendarEventsProvider);
   final selectedDate = ref.watch(selectedCalendarDateProvider);
@@ -104,28 +146,11 @@ final selectedDayEventsProvider = Provider<List<CalendarEventModel>>((ref) {
 
   return eventsAsync.maybeWhen(
     data: (events) {
-      final dateStr = '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}';
+      final dateStr =
+          '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}';
 
       return events.where((e) {
-        // Event type filter
-        if (filter != null) {
-          if (filter == 'HOLIDAY' &&
-              e.eventType != CalendarEventType.holiday &&
-              e.eventType != CalendarEventType.publicHoliday &&
-              e.eventType != CalendarEventType.institutionHoliday) {
-            return false;
-          } else if (filter == 'EXAM' && e.eventType != CalendarEventType.exam) {
-            return false;
-          } else if (filter == 'DEADLINE' && e.eventType != CalendarEventType.deadline) {
-            return false;
-          } else if (filter == 'EVENT' &&
-              e.eventType != CalendarEventType.event &&
-              e.eventType != CalendarEventType.seminar &&
-              e.eventType != CalendarEventType.workshop) {
-            return false;
-          }
-        }
-
+        if (!_matchesFilter(e, filter)) return false;
         // Check if selectedDate is within [startDate, endDate]
         return dateStr.compareTo(e.startDate) >= 0 && dateStr.compareTo(e.endDate) <= 0;
       }).toList();
@@ -139,31 +164,30 @@ final upcomingEventsProvider = Provider<List<CalendarEventModel>>((ref) {
   final eventsAsync = ref.watch(calendarEventsProvider);
   final filter = ref.watch(calendarFilterProvider);
   final now = DateTime.now();
-  final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  final todayStr =
+      '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
   return eventsAsync.maybeWhen(
     data: (events) {
       return events.where((e) {
-        if (filter != null) {
-          if (filter == 'HOLIDAY' &&
-              e.eventType != CalendarEventType.holiday &&
-              e.eventType != CalendarEventType.publicHoliday &&
-              e.eventType != CalendarEventType.institutionHoliday) {
-            return false;
-          } else if (filter == 'EXAM' && e.eventType != CalendarEventType.exam) {
-            return false;
-          } else if (filter == 'DEADLINE' && e.eventType != CalendarEventType.deadline) {
-            return false;
-          } else if (filter == 'EVENT' &&
-              e.eventType != CalendarEventType.event &&
-              e.eventType != CalendarEventType.seminar &&
-              e.eventType != CalendarEventType.workshop) {
-            return false;
-          }
-        }
+        if (!_matchesFilter(e, filter)) return false;
         return e.endDate.compareTo(todayStr) >= 0;
       }).toList();
     },
     orElse: () => [],
   );
+});
+
+/// Academic Calendars list provider
+final academicCalendarsProvider =
+    FutureProvider.autoDispose<List<AcademicCalendarModel>>((ref) async {
+  final repo = ref.watch(calendarRepositoryProvider);
+  return repo.getAcademicCalendars();
+});
+
+/// Working day resolution provider for a given date string (YYYY-MM-DD)
+final workingDayResolutionProvider =
+    FutureProvider.autoDispose.family<WorkingDayResolution, String>((ref, date) async {
+  final repo = ref.watch(calendarRepositoryProvider);
+  return repo.resolveWorkingDay(date);
 });

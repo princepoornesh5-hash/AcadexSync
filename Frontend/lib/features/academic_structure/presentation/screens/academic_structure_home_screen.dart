@@ -15,6 +15,7 @@ import '../../../../core/presentation/widgets/acadex_search_bar.dart';
 
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/domain/models/auth_state.dart';
+import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
@@ -29,6 +30,7 @@ enum AcademicWorkspaceModule {
   sections,
   subjects,
   faculty,
+  rooms,
 }
 
 class AcademicStructureHomeScreen extends ConsumerStatefulWidget {
@@ -97,7 +99,7 @@ class _AcademicStructureHomeScreenState
     final terminology = ref.watch(terminologyProvider);
     final isSectionEnabled = terminology.isSectionEnabled;
     final isHodOrBelow = userRole == AppRole.hod || userRole == AppRole.faculty || userRole == AppRole.student;
-    final tabLength = isHodOrBelow ? (isSectionEnabled ? 5 : 4) : (isSectionEnabled ? 6 : 5);
+    final tabLength = isHodOrBelow ? (isSectionEnabled ? 6 : 5) : (isSectionEnabled ? 7 : 6);
     _updateTabController(tabLength);
 
     if (userRole == AppRole.hod && currentUser?.departmentId != null && currentUser!.departmentId!.isNotEmpty) {
@@ -109,6 +111,7 @@ class _AcademicStructureHomeScreenState
     final semestersAsync = ref.watch(semestersProvider);
     final sectionsAsync = ref.watch(sectionsProvider);
     final subjectsAsync = ref.watch(subjectsProvider);
+    final roomsAsync = ref.watch(roomsProvider);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
@@ -121,6 +124,7 @@ class _AcademicStructureHomeScreenState
         ref.invalidate(semestersProvider);
         ref.invalidate(sectionsProvider);
         ref.invalidate(subjectsProvider);
+        ref.invalidate(roomsProvider);
         ref.invalidate(facultyProvider(null));
         if (currentUser?.departmentId != null) {
           ref.invalidate(facultyProvider(currentUser!.departmentId));
@@ -183,80 +187,271 @@ class _AcademicStructureHomeScreenState
           ),
           const SizedBox(height: 20),
 
-          // 4. Hierarchical Navigation Tabs
-          Container(
-            decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-              borderRadius: AcadexRadius.borderRadiusLg,
-              border: Border.all(
-                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          if (isMobile) ...[
+            // 4. Mobile Category Selector
+            _buildMobileCategorySelector(
+              context: context,
+              terminology: terminology,
+              isHodOrBelow: isHodOrBelow,
+              isSectionEnabled: isSectionEnabled,
+              isDark: isDark,
+              currentIndex: _currentTabIndex,
+              onSelect: (index) {
+                setState(() {
+                  _currentTabIndex = index;
+                  _tabController.animateTo(index);
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // 5. Mobile Active Tab Content
+            _buildActiveTabContent(
+              index: _currentTabIndex,
+              isHodOrBelow: isHodOrBelow,
+              isSectionEnabled: isSectionEnabled,
+              coursesAsync: coursesAsync,
+              deptsAsync: deptsAsync,
+              semestersAsync: semestersAsync,
+              sectionsAsync: sectionsAsync,
+              subjectsAsync: subjectsAsync,
+              roomsAsync: roomsAsync,
+              userRole: userRole,
+              currentUser: currentUser,
+              isDark: isDark,
+            ),
+          ] else ...[
+            // 4. Hierarchical Navigation Tabs (Desktop & Tablet)
+            Container(
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                borderRadius: AcadexRadius.borderRadiusLg,
+                border: Border.all(
+                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                ),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                labelColor: AcadexColors.primary,
+                unselectedLabelColor: AcadexColors.inkMuted,
+                indicatorColor: AcadexColors.primary,
+                indicatorWeight: 3,
+                onTap: (index) {
+                  if (_currentTabIndex != index) {
+                    setState(() {
+                      _currentTabIndex = index;
+                    });
+                  }
+                },
+                tabs: isHodOrBelow
+                    ? [
+                        Tab(icon: const Icon(LucideIcons.graduationCap, size: 16), text: terminology.label(AcademicConcept.program, plural: true)),
+                        Tab(icon: const Icon(LucideIcons.calendarDays, size: 16), text: terminology.label(AcademicConcept.semester, plural: true)),
+                        if (isSectionEnabled)
+                          Tab(icon: const Icon(LucideIcons.layoutGrid, size: 16), text: terminology.label(AcademicConcept.section, plural: true)),
+                        Tab(icon: const Icon(LucideIcons.bookOpen, size: 16), text: terminology.label(AcademicConcept.subject, plural: true)),
+                        const Tab(icon: Icon(LucideIcons.users, size: 16), text: 'Faculty'),
+                        Tab(icon: const Icon(LucideIcons.doorClosed, size: 16), text: terminology.label(AcademicConcept.room, plural: true)),
+                      ]
+                    : [
+                        Tab(icon: const Icon(LucideIcons.building2, size: 16), text: terminology.label(AcademicConcept.department, plural: true)),
+                        Tab(icon: const Icon(LucideIcons.graduationCap, size: 16), text: terminology.label(AcademicConcept.program, plural: true)),
+                        Tab(icon: const Icon(LucideIcons.calendarDays, size: 16), text: terminology.label(AcademicConcept.semester, plural: true)),
+                        if (isSectionEnabled)
+                          Tab(icon: const Icon(LucideIcons.layoutGrid, size: 16), text: terminology.label(AcademicConcept.section, plural: true)),
+                        Tab(icon: const Icon(LucideIcons.bookOpen, size: 16), text: terminology.label(AcademicConcept.subject, plural: true)),
+                        const Tab(icon: Icon(LucideIcons.users, size: 16), text: 'Faculty'),
+                        Tab(icon: const Icon(LucideIcons.doorClosed, size: 16), text: terminology.label(AcademicConcept.room, plural: true)),
+                      ],
               ),
             ),
-            child: TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              labelColor: AcadexColors.primary,
-              unselectedLabelColor: AcadexColors.inkMuted,
-              indicatorColor: AcadexColors.primary,
-              indicatorWeight: 3,
-              onTap: (index) {
-                if (_currentTabIndex != index) {
-                  setState(() {
-                    _currentTabIndex = index;
-                  });
-                }
-              },
-              tabs: isHodOrBelow
-                  ? [
-                      Tab(icon: const Icon(LucideIcons.graduationCap, size: 16), text: terminology.label(AcademicConcept.program, plural: true)),
-                      Tab(icon: const Icon(LucideIcons.calendarDays, size: 16), text: terminology.label(AcademicConcept.semester, plural: true)),
-                      if (isSectionEnabled)
-                        Tab(icon: const Icon(LucideIcons.layoutGrid, size: 16), text: terminology.label(AcademicConcept.section, plural: true)),
-                      Tab(icon: const Icon(LucideIcons.bookOpen, size: 16), text: terminology.label(AcademicConcept.subject, plural: true)),
-                      const Tab(icon: Icon(LucideIcons.users, size: 16), text: 'Faculty'),
-                    ]
-                  : [
-                      Tab(icon: const Icon(LucideIcons.building2, size: 16), text: terminology.label(AcademicConcept.department, plural: true)),
-                      Tab(icon: const Icon(LucideIcons.graduationCap, size: 16), text: terminology.label(AcademicConcept.program, plural: true)),
-                      Tab(icon: const Icon(LucideIcons.calendarDays, size: 16), text: terminology.label(AcademicConcept.semester, plural: true)),
-                      if (isSectionEnabled)
-                        Tab(icon: const Icon(LucideIcons.layoutGrid, size: 16), text: terminology.label(AcademicConcept.section, plural: true)),
-                      Tab(icon: const Icon(LucideIcons.bookOpen, size: 16), text: terminology.label(AcademicConcept.subject, plural: true)),
-                      const Tab(icon: Icon(LucideIcons.users, size: 16), text: 'Faculty'),
-                    ],
-            ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // 5. Tab Content Area
-          SizedBox(
-            height: 600,
-            child: TabBarView(
-              controller: _tabController,
-              children: isHodOrBelow
-                  ? [
-                      _buildCoursesTab(coursesAsync, deptsAsync, userRole, isDark),
-                      _buildSemestersTab(semestersAsync, coursesAsync, userRole, isDark),
-                      if (isSectionEnabled)
-                        _buildSectionsTab(sectionsAsync, semestersAsync, userRole, isDark),
-                      _buildSubjectsTab(subjectsAsync, deptsAsync, userRole, isDark),
-                      _buildFacultyTab(currentUser?.departmentId, userRole, isDark),
-                    ]
-                  : [
-                      _buildDepartmentsTab(deptsAsync, userRole, isDark),
-                      _buildCoursesTab(coursesAsync, deptsAsync, userRole, isDark),
-                      _buildSemestersTab(semestersAsync, coursesAsync, userRole, isDark),
-                      if (isSectionEnabled)
-                        _buildSectionsTab(sectionsAsync, semestersAsync, userRole, isDark),
-                      _buildSubjectsTab(subjectsAsync, deptsAsync, userRole, isDark),
-                      _buildFacultyTab(_selectedDepartmentFilter == 'ALL' ? null : _selectedDepartmentFilter, userRole, isDark),
-                    ],
+            // 5. Tab Content Area (Desktop & Tablet)
+            SizedBox(
+              height: 600,
+              child: TabBarView(
+                controller: _tabController,
+                children: isHodOrBelow
+                    ? [
+                        _buildCoursesTab(coursesAsync, deptsAsync, userRole, isDark),
+                        _buildSemestersTab(semestersAsync, coursesAsync, userRole, isDark),
+                        if (isSectionEnabled)
+                          _buildSectionsTab(sectionsAsync, semestersAsync, userRole, isDark),
+                        _buildSubjectsTab(subjectsAsync, deptsAsync, userRole, isDark),
+                        _buildFacultyTab(currentUser?.departmentId, userRole, isDark),
+                        _buildRoomsTab(roomsAsync, userRole, isDark),
+                      ]
+                    : [
+                        _buildDepartmentsTab(deptsAsync, userRole, isDark),
+                        _buildCoursesTab(coursesAsync, deptsAsync, userRole, isDark),
+                        _buildSemestersTab(semestersAsync, coursesAsync, userRole, isDark),
+                        if (isSectionEnabled)
+                          _buildSectionsTab(sectionsAsync, semestersAsync, userRole, isDark),
+                        _buildSubjectsTab(subjectsAsync, deptsAsync, userRole, isDark),
+                        _buildFacultyTab(_selectedDepartmentFilter == 'ALL' ? null : _selectedDepartmentFilter, userRole, isDark),
+                        _buildRoomsTab(roomsAsync, userRole, isDark),
+                      ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
+  }
+
+  Widget _buildMobileCategorySelector({
+    required BuildContext context,
+    required TerminologyHelper terminology,
+    required bool isHodOrBelow,
+    required bool isSectionEnabled,
+    required bool isDark,
+    required int currentIndex,
+    required ValueChanged<int> onSelect,
+  }) {
+    final categories = isHodOrBelow
+        ? [
+            (icon: LucideIcons.graduationCap, label: terminology.label(AcademicConcept.program, plural: true)),
+            (icon: LucideIcons.calendarDays, label: terminology.label(AcademicConcept.semester, plural: true)),
+            if (isSectionEnabled)
+              (icon: LucideIcons.layoutGrid, label: terminology.label(AcademicConcept.section, plural: true)),
+            (icon: LucideIcons.bookOpen, label: terminology.label(AcademicConcept.subject, plural: true)),
+            (icon: LucideIcons.users, label: 'Faculty'),
+            (icon: LucideIcons.doorClosed, label: terminology.label(AcademicConcept.room, plural: true)),
+          ]
+        : [
+            (icon: LucideIcons.building2, label: terminology.label(AcademicConcept.department, plural: true)),
+            (icon: LucideIcons.graduationCap, label: terminology.label(AcademicConcept.program, plural: true)),
+            (icon: LucideIcons.calendarDays, label: terminology.label(AcademicConcept.semester, plural: true)),
+            if (isSectionEnabled)
+              (icon: LucideIcons.layoutGrid, label: terminology.label(AcademicConcept.section, plural: true)),
+            (icon: LucideIcons.bookOpen, label: terminology.label(AcademicConcept.subject, plural: true)),
+            (icon: LucideIcons.users, label: 'Faculty'),
+            (icon: LucideIcons.doorClosed, label: terminology.label(AcademicConcept.room, plural: true)),
+          ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: List.generate(categories.length, (index) {
+          final cat = categories[index];
+          final isSelected = currentIndex == index;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: InkWell(
+              onTap: () => onSelect(index),
+              borderRadius: BorderRadius.circular(AcadexRadius.md),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AcadexColors.primary
+                      : (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface),
+                  borderRadius: BorderRadius.circular(AcadexRadius.md),
+                  border: Border.all(
+                    color: isSelected
+                        ? AcadexColors.primary
+                        : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                    width: 1,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: AcadexColors.primary.withValues(alpha: 0.25),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      cat.icon,
+                      size: 16,
+                      color: isSelected ? Colors.white : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      cat.label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected ? Colors.white : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildActiveTabContent({
+    required int index,
+    required bool isHodOrBelow,
+    required bool isSectionEnabled,
+    required AsyncValue<List<Course>> coursesAsync,
+    required AsyncValue<List<Department>> deptsAsync,
+    required AsyncValue<List<Semester>> semestersAsync,
+    required AsyncValue<List<Section>> sectionsAsync,
+    required AsyncValue<List<Subject>> subjectsAsync,
+    required AsyncValue<List<Room>> roomsAsync,
+    required AppRole userRole,
+    required UserModel? currentUser,
+    required bool isDark,
+  }) {
+    if (isHodOrBelow) {
+      if (index == 0) return _buildCoursesTab(coursesAsync, deptsAsync, userRole, isDark, true);
+      if (index == 1) return _buildSemestersTab(semestersAsync, coursesAsync, userRole, isDark, true);
+      if (isSectionEnabled) {
+        if (index == 2) return _buildSectionsTab(sectionsAsync, semestersAsync, userRole, isDark, true);
+        if (index == 3) return _buildSubjectsTab(subjectsAsync, deptsAsync, userRole, isDark, true);
+        if (index == 4) return _buildFacultyTab(currentUser?.departmentId, userRole, isDark, true);
+        if (index == 5) return _buildRoomsTab(roomsAsync, userRole, isDark, true);
+      } else {
+        if (index == 2) return _buildSubjectsTab(subjectsAsync, deptsAsync, userRole, isDark, true);
+        if (index == 3) return _buildFacultyTab(currentUser?.departmentId, userRole, isDark, true);
+        if (index == 4) return _buildRoomsTab(roomsAsync, userRole, isDark, true);
+      }
+    } else {
+      if (index == 0) return _buildDepartmentsTab(deptsAsync, userRole, isDark, true);
+      if (index == 1) return _buildCoursesTab(coursesAsync, deptsAsync, userRole, isDark, true);
+      if (index == 2) return _buildSemestersTab(semestersAsync, coursesAsync, userRole, isDark, true);
+      if (isSectionEnabled) {
+        if (index == 3) return _buildSectionsTab(sectionsAsync, semestersAsync, userRole, isDark, true);
+        if (index == 4) return _buildSubjectsTab(subjectsAsync, deptsAsync, userRole, isDark, true);
+        if (index == 5) {
+          return _buildFacultyTab(
+            _selectedDepartmentFilter == 'ALL' ? null : _selectedDepartmentFilter,
+            userRole,
+            isDark,
+            true,
+          );
+        }
+        if (index == 6) return _buildRoomsTab(roomsAsync, userRole, isDark, true);
+      } else {
+        if (index == 3) return _buildSubjectsTab(subjectsAsync, deptsAsync, userRole, isDark, true);
+        if (index == 4) {
+          return _buildFacultyTab(
+            _selectedDepartmentFilter == 'ALL' ? null : _selectedDepartmentFilter,
+            userRole,
+            isDark,
+            true,
+          );
+        }
+        if (index == 5) return _buildRoomsTab(roomsAsync, userRole, isDark, true);
+      }
+    }
+    return const SizedBox.shrink();
   }
 
   String _getSubtitleForRole(AppRole role) {
@@ -294,8 +489,10 @@ class _AcademicStructureHomeScreenState
         currentModule = isSectionEnabled ? AcademicWorkspaceModule.sections : AcademicWorkspaceModule.subjects;
       } else if (tabIdx == 3) {
         currentModule = isSectionEnabled ? AcademicWorkspaceModule.subjects : AcademicWorkspaceModule.faculty;
+      } else if (tabIdx == 4) {
+        currentModule = isSectionEnabled ? AcademicWorkspaceModule.faculty : AcademicWorkspaceModule.rooms;
       } else {
-        currentModule = AcademicWorkspaceModule.faculty;
+        currentModule = AcademicWorkspaceModule.rooms;
       }
     } else {
       if (tabIdx == 0) {
@@ -308,8 +505,10 @@ class _AcademicStructureHomeScreenState
         currentModule = isSectionEnabled ? AcademicWorkspaceModule.sections : AcademicWorkspaceModule.subjects;
       } else if (tabIdx == 4) {
         currentModule = isSectionEnabled ? AcademicWorkspaceModule.subjects : AcademicWorkspaceModule.faculty;
+      } else if (tabIdx == 5) {
+        currentModule = isSectionEnabled ? AcademicWorkspaceModule.faculty : AcademicWorkspaceModule.rooms;
       } else {
-        currentModule = AcademicWorkspaceModule.faculty;
+        currentModule = AcademicWorkspaceModule.rooms;
       }
     }
 
@@ -362,6 +561,14 @@ class _AcademicStructureHomeScreenState
             label: '+ Add Faculty',
             icon: LucideIcons.userPlus,
             onPressed: () => context.push('/academics/faculty/new'),
+          );
+          break;
+        case AcademicWorkspaceModule.rooms:
+          dynamicCreateButton = AcadexButton(
+            key: const Key('acad_create_room'),
+            label: '+ Add ${terminology.label(AcademicConcept.room)}',
+            icon: LucideIcons.plus,
+            onPressed: () => context.push('/academics/rooms/new'),
           );
           break;
       }
@@ -424,6 +631,14 @@ class _AcademicStructureHomeScreenState
             label: '+ Add Faculty',
             icon: LucideIcons.userPlus,
             onPressed: () => context.push('/academics/faculty/new'),
+          );
+          break;
+        case AcademicWorkspaceModule.rooms:
+          dynamicCreateButton = AcadexButton(
+            key: const Key('hod_acad_create_room'),
+            label: '+ Add ${terminology.label(AcademicConcept.room)}',
+            icon: LucideIcons.plus,
+            onPressed: () => context.push('/academics/rooms/new'),
           );
           break;
         default:
@@ -808,7 +1023,7 @@ class _AcademicStructureHomeScreenState
 
   // --- TAB 1: DEPARTMENTS ---
   Widget _buildDepartmentsTab(
-      AsyncValue<List<Department>> deptsAsync, AppRole role, bool isDark) {
+      AsyncValue<List<Department>> deptsAsync, AppRole role, bool isDark, [bool isMobile = false]) {
     return deptsAsync.when(
       loading: () => const AcadexLoadingState(message: 'Loading departments...'),
       error: (e, _) => AcadexErrorState.fromError(
@@ -839,6 +1054,8 @@ class _AcademicStructureHomeScreenState
         }
 
         return ListView.separated(
+          physics: isMobile ? const NeverScrollableScrollPhysics() : null,
+          shrinkWrap: isMobile,
           padding: const EdgeInsets.only(top: 8),
           itemCount: filtered.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -897,7 +1114,7 @@ class _AcademicStructureHomeScreenState
 
   // --- TAB 2: COURSES & PROGRAMS ---
   Widget _buildCoursesTab(AsyncValue<List<Course>> coursesAsync,
-      AsyncValue<List<Department>> deptsAsync, AppRole role, bool isDark) {
+      AsyncValue<List<Department>> deptsAsync, AppRole role, bool isDark, [bool isMobile = false]) {
     return coursesAsync.when(
       loading: () => const AcadexLoadingState(message: 'Loading courses...'),
       error: (e, _) => AcadexErrorState.fromError(
@@ -928,6 +1145,8 @@ class _AcademicStructureHomeScreenState
         }
 
         return ListView.separated(
+          physics: isMobile ? const NeverScrollableScrollPhysics() : null,
+          shrinkWrap: isMobile,
           padding: const EdgeInsets.only(top: 8),
           itemCount: filtered.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -992,7 +1211,7 @@ class _AcademicStructureHomeScreenState
 
   // --- TAB 3: SEMESTERS ---
   Widget _buildSemestersTab(AsyncValue<List<Semester>> semestersAsync,
-      AsyncValue<List<Course>> coursesAsync, AppRole role, bool isDark) {
+      AsyncValue<List<Course>> coursesAsync, AppRole role, bool isDark, [bool isMobile = false]) {
     return semestersAsync.when(
       loading: () => const AcadexLoadingState(message: 'Loading semesters...'),
       error: (e, _) => AcadexErrorState.fromError(
@@ -1020,6 +1239,8 @@ class _AcademicStructureHomeScreenState
         }
 
         return ListView.separated(
+          physics: isMobile ? const NeverScrollableScrollPhysics() : null,
+          shrinkWrap: isMobile,
           padding: const EdgeInsets.only(top: 8),
           itemCount: filtered.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -1090,7 +1311,7 @@ class _AcademicStructureHomeScreenState
 
   // --- TAB 4: SECTIONS ---
   Widget _buildSectionsTab(AsyncValue<List<Section>> sectionsAsync,
-      AsyncValue<List<Semester>> semestersAsync, AppRole role, bool isDark) {
+      AsyncValue<List<Semester>> semestersAsync, AppRole role, bool isDark, [bool isMobile = false]) {
     return sectionsAsync.when(
       loading: () => const AcadexLoadingState(message: 'Loading sections...'),
       error: (e, _) => AcadexErrorState.fromError(
@@ -1117,6 +1338,8 @@ class _AcademicStructureHomeScreenState
         }
 
         return ListView.separated(
+          physics: isMobile ? const NeverScrollableScrollPhysics() : null,
+          shrinkWrap: isMobile,
           padding: const EdgeInsets.only(top: 8),
           itemCount: filtered.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -1187,7 +1410,7 @@ class _AcademicStructureHomeScreenState
 
   // --- TAB 5: SUBJECTS ---
   Widget _buildSubjectsTab(AsyncValue<List<Subject>> subjectsAsync,
-      AsyncValue<List<Department>> deptsAsync, AppRole role, bool isDark) {
+      AsyncValue<List<Department>> deptsAsync, AppRole role, bool isDark, [bool isMobile = false]) {
     return subjectsAsync.when(
       loading: () => const AcadexLoadingState(message: 'Loading subjects...'),
       error: (e, _) => AcadexErrorState.fromError(
@@ -1218,6 +1441,8 @@ class _AcademicStructureHomeScreenState
         }
 
         return ListView.separated(
+          physics: isMobile ? const NeverScrollableScrollPhysics() : null,
+          shrinkWrap: isMobile,
           padding: const EdgeInsets.only(top: 8),
           itemCount: filtered.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -1275,7 +1500,7 @@ class _AcademicStructureHomeScreenState
   }
 
   // --- TAB 6: FACULTY ---
-  Widget _buildFacultyTab(String? departmentId, AppRole role, bool isDark) {
+  Widget _buildFacultyTab(String? departmentId, AppRole role, bool isDark, [bool isMobile = false]) {
     final facultyState = ref.watch(facultyProvider(departmentId));
     if (facultyState.isLoading && facultyState.items.isEmpty) {
       return const AcadexLoadingState(message: 'Loading department faculty...');
@@ -1309,6 +1534,8 @@ class _AcademicStructureHomeScreenState
     }
 
     return ListView.separated(
+      physics: isMobile ? const NeverScrollableScrollPhysics() : null,
+      shrinkWrap: isMobile,
       padding: const EdgeInsets.only(top: 8),
       itemCount: filtered.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -1360,6 +1587,136 @@ class _AcademicStructureHomeScreenState
               onTap: () => context.push('/academics/faculty/${fac.id}'),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  // --- TAB 7: ROOMS ---
+  Widget _buildRoomsTab(
+    AsyncValue<List<Room>> roomsAsync,
+    AppRole role,
+    bool isDark, [
+    bool isMobile = false,
+  ]) {
+    final deptMap = ref.watch(departmentMapProvider);
+    final terminology = ref.watch(terminologyProvider);
+    final roomLabel = terminology.roomName();
+    final roomsLabel = terminology.roomName(plural: true);
+    final canManage = role == AppRole.collegeAdmin || role == AppRole.superAdmin || role == AppRole.hod;
+
+    return roomsAsync.when(
+      loading: () => AcadexLoadingState(message: 'Loading $roomsLabel...'),
+      error: (e, _) => AcadexErrorState.fromError(
+        error: e,
+        title: 'Unable to load $roomsLabel',
+        onRetry: () => ref.invalidate(roomsProvider),
+      ),
+      data: (rooms) {
+        final filtered = rooms.where((r) {
+          final matchesQuery = _searchQuery.isEmpty ||
+              r.name.toLowerCase().contains(_searchQuery) ||
+              r.code.toLowerCase().contains(_searchQuery) ||
+              r.type.toLowerCase().contains(_searchQuery);
+          final matchesDept = _selectedDepartmentFilter == 'ALL' ||
+              r.departmentId == null ||
+              r.departmentId!.isEmpty ||
+              r.departmentId == _selectedDepartmentFilter;
+          return matchesQuery && matchesDept;
+        }).toList();
+
+        if (filtered.isEmpty) {
+          return AcadexEmptyState(
+            title: 'No $roomsLabel Found',
+            subtitle: 'Establish classrooms, laboratories, and lecture halls for timetable scheduling.',
+            icon: LucideIcons.doorClosed,
+            actionLabel: canManage ? '+ Add $roomLabel' : null,
+            onActionTap: () => context.push('/academics/rooms/new'),
+          );
+        }
+
+        return ListView.separated(
+          physics: isMobile ? const NeverScrollableScrollPhysics() : null,
+          shrinkWrap: isMobile,
+          padding: const EdgeInsets.only(top: 8),
+          itemCount: filtered.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final room = filtered[index];
+            final deptName = room.departmentId != null && room.departmentId!.isNotEmpty
+                ? (deptMap[room.departmentId]?.name ?? 'Department')
+                : 'Campus Shared';
+
+            return AcadexCard(
+              child: Material(
+                type: MaterialType.transparency,
+                child: ListTile(
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AcadexColors.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(LucideIcons.doorClosed,
+                        color: AcadexColors.primary, size: 20),
+                  ),
+                  title: Row(
+                    children: [
+                      Text(
+                        room.name,
+                        style: AcadexTypography.heading3(
+                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AcadexColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          room.code,
+                          style: const TextStyle(
+                            color: AcadexColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  subtitle: Text(
+                    'Capacity: ${room.capacity} seats • Type: ${room.type.toUpperCase()} • $deptName',
+                    style: AcadexTypography.bodySmall(
+                      color: isDark
+                          ? AcadexColors.darkInkMuted
+                          : AcadexColors.inkMuted,
+                    ),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AcadexBadge(
+                        label: room.isActive ? 'Active' : 'Inactive',
+                        variant: room.isActive ? AcadexBadgeVariant.success : AcadexBadgeVariant.neutral,
+                      ),
+                      if (canManage) ...[
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(LucideIcons.edit, size: 16),
+                          tooltip: 'Edit $roomLabel',
+                          onPressed: () => context.push('/academics/rooms/edit/${room.id}'),
+                        ),
+                      ],
+                    ],
+                  ),
+                  onTap: canManage ? () => context.push('/academics/rooms/edit/${room.id}') : null,
+                ),
+              ),
+            );
+          },
         );
       },
     );

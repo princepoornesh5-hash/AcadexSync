@@ -8,7 +8,7 @@ export interface IAttendanceRecord extends Document {
   studentId: mongoose.Types.ObjectId;
   studentName: string;
   rollNumber: string;
-  sectionId: mongoose.Types.ObjectId;
+  sectionId?: mongoose.Types.ObjectId | null;
   subjectId: mongoose.Types.ObjectId;
   courseId?: mongoose.Types.ObjectId;
   academicYearId?: mongoose.Types.ObjectId;
@@ -34,7 +34,7 @@ const AttendanceRecordSchema = new Schema<IAttendanceRecord>(
     studentId: { type: Schema.Types.ObjectId, ref: 'Student', required: true, index: true },
     studentName: { type: String, required: true },
     rollNumber: { type: String, required: true },
-    sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: true, index: true },
+    sectionId: { type: Schema.Types.ObjectId, ref: 'Section', default: null, index: true },
     subjectId: { type: Schema.Types.ObjectId, ref: 'Subject', required: true, index: true },
     courseId: { type: Schema.Types.ObjectId, ref: 'Course', default: null, index: true },
     academicYearId: { type: Schema.Types.ObjectId, ref: 'AcademicYear', default: null, index: true },
@@ -68,7 +68,7 @@ const AttendanceRecordSchema = new Schema<IAttendanceRecord>(
         if (ret.departmentId) ret.departmentId = ret.departmentId.toString();
         ret.sessionId = ret.sessionId?.toString();
         ret.studentId = ret.studentId?.toString();
-        ret.sectionId = ret.sectionId?.toString();
+        if (ret.sectionId) ret.sectionId = ret.sectionId.toString();
         ret.subjectId = ret.subjectId?.toString();
         if (ret.courseId) ret.courseId = ret.courseId.toString();
         if (ret.academicYearId) ret.academicYearId = ret.academicYearId.toString();

@@ -306,6 +306,15 @@ class _FilterBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentFilter = ref.watch(notificationFilterProvider);
 
+    final canonicalFilters = [
+      NotificationFilter.all,
+      NotificationFilter.unread,
+      NotificationFilter.academic,
+      NotificationFilter.tasks,
+      NotificationFilter.calendar,
+      NotificationFilter.system,
+    ];
+
     return Container(
       height: 48,
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -320,7 +329,7 @@ class _FilterBar extends ConsumerWidget {
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        children: NotificationFilter.values.map((filter) {
+        children: canonicalFilters.map((filter) {
           final isSelected = currentFilter == filter;
           String label = filter.toString().split('.').last;
           label = label[0].toUpperCase() + label.substring(1);

@@ -1381,7 +1381,11 @@ class Student {
   final String? address;
   final DateTime? dateOfBirth;
   final bool isActive;
+  final String? cohort;
+  final String? academicStage;
   final List<AcademicTimelineRecord> history;
+
+  String get status => isActive ? 'active' : 'inactive';
 
   Student({
     required this.id,
@@ -1407,6 +1411,8 @@ class Student {
     this.address,
     this.dateOfBirth,
     this.isActive = true,
+    this.cohort,
+    this.academicStage,
     this.history = const [],
   });
 
@@ -1434,6 +1440,8 @@ class Student {
     String? address,
     DateTime? dateOfBirth,
     bool? isActive,
+    String? cohort,
+    String? academicStage,
     List<AcademicTimelineRecord>? history,
   }) {
     return Student(
@@ -1460,6 +1468,8 @@ class Student {
       address: address ?? this.address,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       isActive: isActive ?? this.isActive,
+      cohort: cohort ?? this.cohort,
+      academicStage: academicStage ?? this.academicStage,
       history: history ?? this.history,
     );
   }
@@ -1497,6 +1507,8 @@ class Student {
         address: profile['address'] as String?,
         dateOfBirth: profile['dateOfBirth'] != null ? DateTime.tryParse(profile['dateOfBirth'].toString()) : null,
         isActive: profile['isActive'] as bool? ?? (rawStatus == 'active'),
+        cohort: profile['cohort'] as String?,
+        academicStage: profile['academicStage'] as String?,
         history: (profile['history'] as List<dynamic>?)
                 ?.map((e) => AcademicTimelineRecord.fromJson(e as Map<String, dynamic>))
                 .toList() ??
@@ -1531,6 +1543,8 @@ class Student {
       address: json['address'] as String?,
       dateOfBirth: json['dateOfBirth'] != null ? DateTime.tryParse(json['dateOfBirth'].toString()) : null,
       isActive: json['isActive'] as bool? ?? (rawStatus == 'active'),
+      cohort: json['cohort'] as String?,
+      academicStage: json['academicStage'] as String?,
       history: (json['history'] as List<dynamic>?)
               ?.map((e) => AcademicTimelineRecord.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -1563,6 +1577,8 @@ class Student {
       if (address != null) 'address': address,
       if (dateOfBirth != null) 'dateOfBirth': dateOfBirth!.toIso8601String(),
       'isActive': isActive,
+      if (cohort != null) 'cohort': cohort,
+      if (academicStage != null) 'academicStage': academicStage,
       'history': history.map((h) => h.toJson()).toList(),
     };
   }
@@ -1606,11 +1622,13 @@ class FacultyAssignment {
   final String facultyName;
   final String courseId;
   final String semesterId;
-  final String sectionId;
+  final String? sectionId;
   final String subjectId;
   final String academicYearId;
+  final String? status;
   final bool isActive;
   final DateTime? assignedAt;
+  final DateTime? endedAt;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final String? assignedBy;
@@ -1621,6 +1639,8 @@ class FacultyAssignment {
   final String? cohort;
   final String? academicStage;
 
+  String get effectiveStatus => status ?? (isActive ? 'active' : 'inactive');
+
   FacultyAssignment({
     required this.id,
     required this.collegeId,
@@ -1629,11 +1649,13 @@ class FacultyAssignment {
     required this.facultyName,
     required this.courseId,
     required this.semesterId,
-    required this.sectionId,
+    this.sectionId,
     required this.subjectId,
     required this.academicYearId,
+    this.status = 'active',
     this.isActive = true,
     this.assignedAt,
+    this.endedAt,
     this.createdAt,
     this.updatedAt,
     this.assignedBy,
@@ -1644,6 +1666,21 @@ class FacultyAssignment {
     this.cohort,
     this.academicStage,
   });
+
+  factory FacultyAssignment.empty() => FacultyAssignment(
+        id: '',
+        collegeId: '',
+        departmentId: '',
+        facultyId: '',
+        facultyName: '',
+        courseId: '',
+        semesterId: '',
+        sectionId: null,
+        subjectId: '',
+        academicYearId: '',
+        isActive: true,
+        status: 'active',
+      );
 
   FacultyAssignment copyWith({
     String? id,
@@ -1656,8 +1693,10 @@ class FacultyAssignment {
     String? sectionId,
     String? subjectId,
     String? academicYearId,
+    String? status,
     bool? isActive,
     DateTime? assignedAt,
+    DateTime? endedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
     String? assignedBy,
@@ -1679,8 +1718,10 @@ class FacultyAssignment {
       sectionId: sectionId ?? this.sectionId,
       subjectId: subjectId ?? this.subjectId,
       academicYearId: academicYearId ?? this.academicYearId,
+      status: status ?? this.status,
       isActive: isActive ?? this.isActive,
       assignedAt: assignedAt ?? this.assignedAt,
+      endedAt: endedAt ?? this.endedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       assignedBy: assignedBy ?? this.assignedBy,
@@ -1695,6 +1736,7 @@ class FacultyAssignment {
 
   factory FacultyAssignment.fromJson(Map<String, dynamic> json) {
     final rawAssignedAt = json['assignedAt'] != null ? DateTime.tryParse(json['assignedAt'] as String) : null;
+    final rawEndedAt = json['endedAt'] != null ? DateTime.tryParse(json['endedAt'] as String) : null;
     final rawCreatedAt = json['createdAt'] != null ? DateTime.tryParse(json['createdAt'] as String) : rawAssignedAt;
     final rawUpdatedAt = json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null;
 
@@ -1708,11 +1750,13 @@ class FacultyAssignment {
       facultyName: json['facultyName'] as String? ?? '',
       courseId: json['courseId'] as String? ?? '',
       semesterId: json['semesterId'] as String? ?? '',
-      sectionId: json['sectionId'] as String? ?? '',
+      sectionId: json['sectionId'] as String?,
       subjectId: json['subjectId'] as String? ?? '',
       academicYearId: json['academicYearId'] as String? ?? '',
-      isActive: json['isActive'] as bool? ?? true,
+      status: json['status'] as String? ?? ((json['isActive'] as bool? ?? true) ? 'active' : 'inactive'),
+      isActive: json['isActive'] as bool? ?? (json['status'] == null || json['status'] == 'active'),
       assignedAt: rawAssignedAt,
+      endedAt: rawEndedAt,
       createdAt: rawCreatedAt,
       updatedAt: rawUpdatedAt,
       assignedBy: creator,
@@ -1734,11 +1778,13 @@ class FacultyAssignment {
       'facultyName': facultyName,
       'courseId': courseId,
       'semesterId': semesterId,
-      'sectionId': sectionId,
+      if (sectionId != null && sectionId!.isNotEmpty) 'sectionId': sectionId,
       'subjectId': subjectId,
       'academicYearId': academicYearId,
+      'status': effectiveStatus,
       'isActive': isActive,
       'assignedAt': (assignedAt ?? createdAt)?.toIso8601String(),
+      if (endedAt != null) 'endedAt': endedAt?.toIso8601String(),
       'createdAt': (createdAt ?? assignedAt)?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'assignedBy': assignedBy ?? createdBy,
@@ -1757,10 +1803,11 @@ class FacultyAssignment {
         facultyId == other.facultyId &&
         courseId == other.courseId &&
         semesterId == other.semesterId &&
-        sectionId == other.sectionId &&
+        (sectionId ?? '') == (other.sectionId ?? '') &&
         subjectId == other.subjectId &&
         academicYearId == other.academicYearId &&
-        isActive && other.isActive;
+        isActive &&
+        other.isActive;
   }
 
   @override
@@ -1812,7 +1859,9 @@ class StudentEnrollment {
   final String courseId;
   final String academicYearId;
   final String semesterId;
-  final String sectionId;
+  final String? sectionId;
+  final String? cohort;
+  final String? academicStage;
   final String status;
   final DateTime? enrollmentDate;
   final DateTime? createdAt;
@@ -1827,13 +1876,29 @@ class StudentEnrollment {
     required this.courseId,
     required this.academicYearId,
     required this.semesterId,
-    required this.sectionId,
+    this.sectionId,
+    this.cohort,
+    this.academicStage,
     this.status = 'active',
     this.enrollmentDate,
     this.createdAt,
     this.updatedAt,
     this.student,
   });
+
+  factory StudentEnrollment.empty() {
+    return StudentEnrollment(
+      id: '',
+      collegeId: '',
+      departmentId: '',
+      studentId: '',
+      courseId: '',
+      academicYearId: '',
+      semesterId: '',
+      sectionId: null,
+      status: 'active',
+    );
+  }
 
   bool get isActive => status == 'active';
 
@@ -1853,7 +1918,9 @@ class StudentEnrollment {
       courseId: json['courseId'] as String? ?? '',
       academicYearId: json['academicYearId'] as String? ?? '',
       semesterId: json['semesterId'] as String? ?? '',
-      sectionId: json['sectionId'] as String? ?? '',
+      sectionId: json['sectionId'] as String?,
+      cohort: json['cohort'] as String?,
+      academicStage: json['academicStage'] as String?,
       status: json['status'] as String? ?? 'active',
       enrollmentDate: json['enrollmentDate'] != null
           ? DateTime.tryParse(json['enrollmentDate'] as String)
@@ -1877,7 +1944,9 @@ class StudentEnrollment {
       'courseId': courseId,
       'academicYearId': academicYearId,
       'semesterId': semesterId,
-      'sectionId': sectionId,
+      if (sectionId != null) 'sectionId': sectionId,
+      if (cohort != null) 'cohort': cohort,
+      if (academicStage != null) 'academicStage': academicStage,
       'status': status,
       if (enrollmentDate != null) 'enrollmentDate': enrollmentDate!.toIso8601String(),
       if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
@@ -1895,6 +1964,8 @@ class StudentEnrollment {
     String? academicYearId,
     String? semesterId,
     String? sectionId,
+    String? cohort,
+    String? academicStage,
     String? status,
     DateTime? enrollmentDate,
     DateTime? createdAt,
@@ -1910,6 +1981,8 @@ class StudentEnrollment {
       academicYearId: academicYearId ?? this.academicYearId,
       semesterId: semesterId ?? this.semesterId,
       sectionId: sectionId ?? this.sectionId,
+      cohort: cohort ?? this.cohort,
+      academicStage: academicStage ?? this.academicStage,
       status: status ?? this.status,
       enrollmentDate: enrollmentDate ?? this.enrollmentDate,
       createdAt: createdAt ?? this.createdAt,
@@ -1966,7 +2039,7 @@ class Room {
     return {
       'id': id,
       'collegeId': collegeId,
-      if (departmentId != null) 'departmentId': departmentId,
+      if (departmentId != null && departmentId!.isNotEmpty) 'departmentId': departmentId,
       'name': name,
       'code': code,
       'capacity': capacity,

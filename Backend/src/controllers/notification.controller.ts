@@ -42,6 +42,36 @@ export class NotificationController {
     ApiResponse.success(res, notification, 'Notification marked as read');
   };
 
+  static markAsUnread = async (req: Request, res: Response): Promise<void> => {
+    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
+    const notification = await NotificationService.markAsUnread(
+      req.params.id,
+      req.user!.id,
+      collegeId
+    );
+    ApiResponse.success(res, notification, 'Notification marked as unread');
+  };
+
+  static archive = async (req: Request, res: Response): Promise<void> => {
+    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
+    const notification = await NotificationService.archiveNotification(
+      req.params.id,
+      req.user!.id,
+      collegeId
+    );
+    ApiResponse.success(res, notification, 'Notification archived');
+  };
+
+  static delete = async (req: Request, res: Response): Promise<void> => {
+    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
+    await NotificationService.deleteNotification(
+      req.params.id,
+      req.user!.id,
+      collegeId
+    );
+    ApiResponse.success(res, null, 'Notification deleted successfully');
+  };
+
   static markAllAsRead = async (req: Request, res: Response): Promise<void> => {
     const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
     const result = await NotificationService.markAllAsRead(

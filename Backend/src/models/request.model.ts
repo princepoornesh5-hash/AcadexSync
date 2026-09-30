@@ -46,6 +46,8 @@ export interface IRequest extends Document {
   requestType: RequestType;
   title: string;
   description: string;
+  relatedEntityType?: string;
+  relatedEntityId?: string;
   academicContext?: IAcademicContext;
   details?: IRequestDetails;
   status: RequestStatus;
@@ -122,6 +124,8 @@ const RequestSchema = new Schema<IRequest>(
     requestType: { type: String, required: true, index: true },
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
+    relatedEntityType: { type: String, default: null, index: true },
+    relatedEntityId: { type: Schema.Types.Mixed, default: null, index: true },
     academicContext: { type: AcademicContextSchema, default: null },
     details: { type: RequestDetailsSchema, default: null },
     status: {
@@ -147,6 +151,7 @@ const RequestSchema = new Schema<IRequest>(
         if (ret.requesterUserId) ret.requesterUserId = ret.requesterUserId.toString();
         if (ret.targetUserId) ret.targetUserId = ret.targetUserId.toString();
         if (ret.respondedBy) ret.respondedBy = ret.respondedBy.toString();
+        if (ret.relatedEntityId) ret.relatedEntityId = ret.relatedEntityId.toString();
         if (ret.academicContext) {
           if (ret.academicContext.courseId) ret.academicContext.courseId = ret.academicContext.courseId.toString();
           if (ret.academicContext.academicYearId) ret.academicContext.academicYearId = ret.academicContext.academicYearId.toString();
@@ -172,6 +177,7 @@ const RequestSchema = new Schema<IRequest>(
 RequestSchema.index({ collegeId: 1, requesterUserId: 1, status: 1 });
 RequestSchema.index({ collegeId: 1, targetRole: 1, departmentId: 1, status: 1 });
 RequestSchema.index({ collegeId: 1, targetUserId: 1, status: 1 });
+RequestSchema.index({ collegeId: 1, relatedEntityType: 1, relatedEntityId: 1 });
 RequestSchema.index({ collegeId: 1, createdAt: -1 });
 
 export const RequestModel = mongoose.model<IRequest>('Request', RequestSchema);

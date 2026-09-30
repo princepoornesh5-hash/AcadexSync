@@ -1221,9 +1221,9 @@ final facultyAssignedSectionsProvider = Provider.autoDispose.family<List<Section
   final Set<String> seenIds = {};
   final List<Section> result = [];
   for (final a in myAssignments) {
-    if (!seenIds.contains(a.sectionId) && sectionMap.containsKey(a.sectionId)) {
-      seenIds.add(a.sectionId);
-      result.add(sectionMap[a.sectionId]!);
+    if (a.sectionId != null && !seenIds.contains(a.sectionId!) && sectionMap.containsKey(a.sectionId!)) {
+      seenIds.add(a.sectionId!);
+      result.add(sectionMap[a.sectionId!]!);
     }
   }
   return result;
@@ -1268,6 +1268,12 @@ final facultyAssignmentsByFacultyProvider = Provider.autoDispose.family<List<Fac
 final facultyAssignmentsBySectionProvider = Provider.autoDispose.family<List<FacultyAssignment>, String>((ref, sectionId) {
   final assignments = ref.watch(facultyAssignmentsProvider).valueOrNull ?? [];
   return assignments.where((a) => a.sectionId == sectionId && a.isActive).toList();
+});
+
+// --- Parameterized Faculty Assignments by Semester ID (Section-disabled context) ---
+final facultyAssignmentsBySemesterProvider = Provider.autoDispose.family<List<FacultyAssignment>, String>((ref, semesterId) {
+  final assignments = ref.watch(facultyAssignmentsProvider).valueOrNull ?? [];
+  return assignments.where((a) => a.semesterId == semesterId && a.isActive).toList();
 });
 
 // --- Parameterized Faculty Assignments by Subject ID ---
@@ -1535,9 +1541,25 @@ class RoomNotifier extends AutoDisposeAsyncNotifier<List<Room>> {
     ref.invalidateSelf();
     return created;
   }
+
+  Future<Room> updateRoom(Room room) async {
+    final updated = await ref.read(academicRepositoryProvider).updateRoom(room);
+    ref.invalidateSelf();
+    ref.invalidate(roomByIdProvider(room.id));
+    return updated;
+  }
 }
 
 final roomsProvider = AsyncNotifierProvider.autoDispose<RoomNotifier, List<Room>>(RoomNotifier.new);
+
+final roomByIdProvider = FutureProvider.autoDispose.family<Room?, String>((ref, id) async {
+  return ref.watch(academicRepositoryProvider).getRoomById(id);
+});
+
+final roomMapProvider = Provider.autoDispose<Map<String, Room>>((ref) {
+  final rooms = ref.watch(roomsProvider).valueOrNull ?? [];
+  return {for (final r in rooms) r.id: r};
+});
 
 // --- Authoritative Current Academic Context Providers (Prompt 24) ---
 final currentAcademicContextProvider = FutureProvider.autoDispose.family<CurrentAcademicContext, ({String? departmentId, String? courseId})>((ref, params) async {

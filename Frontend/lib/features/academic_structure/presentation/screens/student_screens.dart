@@ -22,6 +22,8 @@ import '../providers/department_setup_provider.dart';
 import '../widgets/import_data_dialog.dart';
 import '../widgets/student_bulk_action_dialogs.dart';
 import '../widgets/student_promotion_stepper_dialog.dart';
+import '../widgets/progressive_enrollment_dialog.dart';
+import '../../../institution_config/presentation/providers/institution_config_providers.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 import '../../../../core/errors/acadex_error.dart';
 
@@ -72,6 +74,20 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
       initialSectionId: s.sectionId,
       initialSemesterId: s.semesterId,
       initialDepartmentId: s.departmentId,
+    );
+    if (result == true) {
+      ref.invalidate(studentsProvider);
+    }
+  }
+
+  void _showEnrollStudentDialog([Student? s]) async {
+    final result = await ProgressiveEnrollmentDialog.show(
+      context,
+      initialStudent: s,
+      initialDepartmentId: s?.departmentId ?? _departmentFilter,
+      initialCourseId: s?.courseId,
+      initialSemesterId: s?.semesterId,
+      initialSectionId: s?.sectionId,
     );
     if (result == true) {
       ref.invalidate(studentsProvider);
@@ -219,6 +235,11 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                   ),
                 ] else ...[
                   IconButton(
+                    icon: const Icon(LucideIcons.userCheck, size: 20),
+                    tooltip: "Enroll Student",
+                    onPressed: () => _showEnrollStudentDialog(),
+                  ),
+                  IconButton(
                     icon: const Icon(LucideIcons.uploadCloud, size: 20),
                     tooltip: "Import CSV",
                     onPressed: _showImportDialog,
@@ -238,6 +259,12 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                 ),
                 Row(
                   children: [
+                    OutlinedButton.icon(
+                      onPressed: () => _showEnrollStudentDialog(),
+                      icon: const Icon(LucideIcons.userCheck, size: 16),
+                      label: const Text("Enroll Student"),
+                    ),
+                    const SizedBox(width: 12),
                     OutlinedButton.icon(
                       onPressed: _showImportDialog,
                       icon: const Icon(LucideIcons.uploadCloud, size: 16),
@@ -451,6 +478,11 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                     Row(
                       children: [
                         IconButton(
+                          tooltip: "Enroll",
+                          icon: const Icon(LucideIcons.userCheck, size: 18, color: AcadexColors.primary),
+                          onPressed: () => _showEnrollStudentDialog(s),
+                        ),
+                        IconButton(
                           tooltip: "Promote",
                           icon: const Icon(LucideIcons.arrowUpRight, size: 18, color: AcadexColors.success),
                           onPressed: () => _showSinglePromotionDialog(s),
@@ -546,6 +578,11 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                     tooltip: "View Profile",
                     icon: const Icon(LucideIcons.user, size: 18, color: AcadexColors.primary),
                     onPressed: () => context.push('/academics/students/${s.id}'),
+                  ),
+                  IconButton(
+                    tooltip: "Enroll Student",
+                    icon: const Icon(LucideIcons.userCheck, size: 18, color: AcadexColors.primary),
+                    onPressed: () => _showEnrollStudentDialog(s),
                   ),
                   IconButton(
                     tooltip: "Promote Student",
@@ -854,6 +891,12 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
     final isStaff = authState is AuthAuthenticated &&
         (authState.user.role == AppRole.hod || authState.user.role == AppRole.faculty);
 
+    final terminology = ref.watch(terminologyProvider);
+    final isSectionEnabled = terminology.isSectionEnabled;
+    final progLabel = terminology.programName();
+    final semLabel = terminology.semesterName();
+    final secLabel = terminology.sectionName();
+
     final departmentsAsync = ref.watch(departmentsProvider);
     final coursesAsync = ref.watch(coursesProvider);
     final academicYearsAsync = ref.watch(academicYearsProvider);
@@ -861,10 +904,10 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
     final sectionsAsync = ref.watch(sectionsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft),
           onPressed: () => context.safePop(fallbackRoute: '/academics/students'),
@@ -1022,9 +1065,9 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                         return DropdownButtonFormField<String>(
                                           dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                                           decoration: InputDecoration(
-                                            labelText: "Course",
+                                            labelText: progLabel,
                                             prefixIcon: const Icon(LucideIcons.book, size: 18),
-                                            hintText: _selectedDeptId == null ? 'Select Department first' : 'Choose Course',
+                                            hintText: _selectedDeptId == null ? 'Select Department first' : 'Choose $progLabel',
                                           ),
                                           initialValue: _selectedCourseId,
                                           items: filtered.map((c) => DropdownMenuItem(value: c.id, child: Text("${c.name} (${c.code})"))).toList(),
@@ -1085,12 +1128,12 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                                         return DropdownButtonFormField<String>(
                                           dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                                           decoration: InputDecoration(
-                                            labelText: "Semester",
+                                            labelText: semLabel,
                                             prefixIcon: const Icon(LucideIcons.layers, size: 18),
-                                            hintText: _selectedCourseId == null ? 'Select Course first' : 'Choose Semester',
+                                            hintText: _selectedCourseId == null ? 'Select $progLabel first' : 'Choose $semLabel',
                                           ),
                                           initialValue: _selectedSemesterId,
-                                          items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name.isNotEmpty ? s.name : "Semester ${s.semesterNumber}"))).toList(),
+                                          items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name.isNotEmpty ? s.name : "$semLabel ${s.semesterNumber}"))).toList(),
                                           onChanged: _selectedCourseId == null
                                               ? null
                                               : (val) => setState(() {
@@ -1107,37 +1150,39 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
                               ),
                               const SizedBox(height: 16),
 
-                              // Section & Roll Number
+                              // Section & Roll Number (Section optional based on config)
                               Row(
                                 children: [
-                                  Expanded(
-                                    child: sectionsAsync.when(
-                                      data: (sections) {
-                                        final filtered = _selectedSemesterId != null
-                                            ? sections.where((s) {
-                                                if (s.semesterId != _selectedSemesterId) return false;
-                                                return s.isActive;
-                                              }).toList()
-                                            : <Section>[];
-                                        return DropdownButtonFormField<String>(
-                                          dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                                          decoration: InputDecoration(
-                                            labelText: "Section",
-                                            prefixIcon: const Icon(LucideIcons.layoutGrid, size: 18),
-                                            hintText: _selectedSemesterId == null ? 'Select Semester first' : 'Choose Section',
-                                          ),
-                                          initialValue: _selectedSectionId,
-                                          items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text("Section ${s.name}"))).toList(),
-                                          onChanged: _selectedSemesterId == null
-                                              ? null
-                                              : (val) => setState(() => _selectedSectionId = val),
-                                        );
-                                      },
-                                      loading: () => const LinearProgressIndicator(),
-                                      error: (e, _) => Text('Error: $e', style: const TextStyle(color: AcadexColors.error)),
+                                  if (isSectionEnabled) ...[
+                                    Expanded(
+                                      child: sectionsAsync.when(
+                                        data: (sections) {
+                                          final filtered = _selectedSemesterId != null
+                                              ? sections.where((s) {
+                                                  if (s.semesterId != _selectedSemesterId) return false;
+                                                  return s.isActive;
+                                                }).toList()
+                                              : <Section>[];
+                                          return DropdownButtonFormField<String>(
+                                            dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                            decoration: InputDecoration(
+                                              labelText: secLabel,
+                                              prefixIcon: const Icon(LucideIcons.layoutGrid, size: 18),
+                                              hintText: _selectedSemesterId == null ? 'Select $semLabel first' : 'Choose $secLabel',
+                                            ),
+                                            initialValue: _selectedSectionId,
+                                            items: filtered.map((s) => DropdownMenuItem(value: s.id, child: Text("$secLabel ${s.name}"))).toList(),
+                                            onChanged: _selectedSemesterId == null
+                                                ? null
+                                                : (val) => setState(() => _selectedSectionId = val),
+                                          );
+                                        },
+                                        loading: () => const LinearProgressIndicator(),
+                                        error: (e, _) => Text('Error: $e', style: const TextStyle(color: AcadexColors.error)),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 16),
+                                    const SizedBox(width: 16),
+                                  ],
                                   Expanded(
                                     child: TextFormField(
                                       controller: _rollNumberController,

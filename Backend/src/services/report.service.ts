@@ -8,7 +8,9 @@ import {
   Subject,
   User,
   Student,
+  StudentEnrollment,
   Faculty,
+  FacultyAssignment,
   AttendanceSession,
   AttendanceRecord,
   Timetable,
@@ -492,11 +494,19 @@ export class ReportService {
         ? Math.round(((attSummary.present + attSummary.late) / attSummary.totalRecords) * 10000) / 100
         : 0;
 
+    const activeAssignments = await FacultyAssignment.find({
+      facultyId: faculty._id,
+      collegeId: faculty.collegeId,
+      status: 'active',
+    });
+    const uniqueSubjects = new Set(activeAssignments.map((a) => a.subjectId.toString())).size;
+    const uniqueSections = new Set(activeAssignments.map((a) => a.sectionId?.toString()).filter(Boolean)).size;
+
     return {
       role: AppRole.FACULTY,
       metrics: {
-        assignedSubjectsCount: faculty.subjectIds?.length || 0,
-        assignedSectionsCount: faculty.sectionIds?.length || 0,
+        assignedSubjectsCount: uniqueSubjects > 0 ? uniqueSubjects : faculty.subjectIds?.length || 0,
+        assignedSectionsCount: uniqueSections > 0 ? uniqueSections : faculty.sectionIds?.length || 0,
         conductedSessionsCount: conductedSessions,
         notesPublishedCount: notesCount,
         overallAttendanceRate,
@@ -517,16 +527,28 @@ export class ReportService {
     const student = await Student.findOne({ userId: requester.id });
     if (!student) throw ApiError.notFound('Student profile not found');
 
+    const activeEnrollment = await StudentEnrollment.findOne({
+      studentId: student._id,
+      status: 'active',
+    }).sort({ createdAt: -1 });
+
+    const currentSectionId = activeEnrollment?.sectionId || student.sectionId;
+    const currentSemesterId = activeEnrollment?.semesterId || student.semesterId;
+    const currentCourseId = activeEnrollment?.courseId || student.courseId;
+
+    const noteOrConditions: any[] = [];
+    if (currentSectionId) noteOrConditions.push({ sectionId: currentSectionId });
+    if (currentSemesterId) noteOrConditions.push({ semesterId: currentSemesterId });
+    if (currentCourseId) noteOrConditions.push({ courseId: currentCourseId });
+
     const [attendanceSummary, notesCount, subjectsBreakdown] = await Promise.all([
       this.computeStudentAttendanceSummary(student._id, dateMatch),
-      Note.countDocuments({
-        $or: [
-          { sectionId: student.sectionId },
-          { semesterId: student.semesterId },
-          { courseId: student.courseId },
-        ],
-        status: NoteStatus.PUBLISHED,
-      }),
+      noteOrConditions.length > 0
+        ? Note.countDocuments({
+            $or: noteOrConditions,
+            status: NoteStatus.PUBLISHED,
+          })
+        : 0,
       this.computeStudentSubjectsBreakdown(student._id, dateMatch),
     ]);
 
@@ -535,9 +557,9 @@ export class ReportService {
       metrics: {
         ...attendanceSummary,
         availableNotesCount: notesCount,
-        enrolledSectionId: student.sectionId?.toString(),
-        enrolledCourseId: student.courseId?.toString(),
-        enrolledSemesterId: student.semesterId?.toString(),
+        enrolledSectionId: currentSectionId?.toString(),
+        enrolledCourseId: currentCourseId?.toString(),
+        enrolledSemesterId: currentSemesterId?.toString(),
       },
       quickStats: {
         overallAttendance: attendanceSummary.percentage,

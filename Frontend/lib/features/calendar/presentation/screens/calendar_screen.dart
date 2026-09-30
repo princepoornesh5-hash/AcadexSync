@@ -210,11 +210,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             children: [
               _buildFilterChip('All', null, activeFilter),
               const SizedBox(width: 6),
+              _buildFilterChip('Classes', 'CLASS', activeFilter),
+              const SizedBox(width: 6),
               _buildFilterChip('Holidays', 'HOLIDAY', activeFilter),
               const SizedBox(width: 6),
               _buildFilterChip('Exams', 'EXAM', activeFilter),
               const SizedBox(width: 6),
+              _buildFilterChip('Assessments', 'ASSESSMENT', activeFilter),
+              const SizedBox(width: 6),
+              _buildFilterChip('Practicals', 'PRACTICAL', activeFilter),
+              const SizedBox(width: 6),
               _buildFilterChip('Deadlines', 'DEADLINE', activeFilter),
+              const SizedBox(width: 6),
+              _buildFilterChip('Results', 'RESULT', activeFilter),
               const SizedBox(width: 6),
               _buildFilterChip('Events', 'EVENT', activeFilter),
             ],
@@ -597,10 +605,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           ev.eventType == CalendarEventType.publicHoliday ||
                           ev.eventType == CalendarEventType.institutionHoliday) {
                         dotColor = const Color(0xFF10B981);
-                      } else if (ev.eventType == CalendarEventType.exam) {
+                      } else if (ev.eventType == CalendarEventType.exam ||
+                          ev.eventType == CalendarEventType.examination) {
                         dotColor = const Color(0xFF8B5CF6);
-                      } else if (ev.eventType == CalendarEventType.deadline) {
+                      } else if (ev.eventType == CalendarEventType.deadline ||
+                          ev.eventType == CalendarEventType.assignmentDeadline) {
                         dotColor = const Color(0xFF3B82F6);
+                      } else if (ev.eventType == CalendarEventType.internalAssessment ||
+                          ev.eventType == CalendarEventType.classTest) {
+                        dotColor = const Color(0xFFE11D48);
+                      } else if (ev.eventType == CalendarEventType.practical ||
+                          ev.eventType == CalendarEventType.labViva) {
+                        dotColor = const Color(0xFFD97706);
+                      } else if (ev.eventType == CalendarEventType.timetableClass) {
+                        dotColor = const Color(0xFF0284C7);
+                      } else if (ev.eventType == CalendarEventType.resultPublication) {
+                        dotColor = const Color(0xFF7C3AED);
                       }
                       return Container(
                         width: 4,

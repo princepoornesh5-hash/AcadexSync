@@ -16,6 +16,12 @@ class NotificationPreferencesScreen extends ConsumerStatefulWidget {
 }
 
 class _NotificationPreferencesScreenState extends ConsumerState<NotificationPreferencesScreen> {
+  bool _inAppEnabled = true;
+  bool _pushEnabled = true;
+  bool _assignments = true;
+  bool _practicals = true;
+  bool _assessments = true;
+  bool _calendar = true;
   bool _attendanceAlerts = true;
   bool _academicUpdates = true;
   bool _announcements = true;
@@ -69,6 +75,12 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
         ),
         data: (prefs) {
           if (!_isInitialized) {
+            _inAppEnabled = prefs.inAppEnabled;
+            _pushEnabled = prefs.pushEnabled;
+            _assignments = prefs.assignments;
+            _practicals = prefs.practicals;
+            _assessments = prefs.assessments;
+            _calendar = prefs.calendar;
             _attendanceAlerts = prefs.attendanceAlerts;
             _academicUpdates = prefs.academicUpdates;
             _announcements = prefs.announcements;
@@ -99,14 +111,14 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'System & Security Alerts',
+                            'System & Official Academic Results',
                             style: AcadexTypography.body(
                               color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                             ).copyWith(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Critical security notifications, account authentications, and emergency college broadcasts are mandatory and cannot be disabled.',
+                            'Critical security notifications, official academic result releases, and emergency broadcasts are mandatory and cannot be disabled.',
                             style: AcadexTypography.bodySmall(
                               color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
                             ),
@@ -116,6 +128,33 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 24),
+
+              // Delivery Channels Group
+              Text(
+                'Delivery Channels',
+                style: AcadexTypography.heading3(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              _buildPreferenceTile(
+                title: 'In-App Notifications',
+                subtitle: 'Receive alerts in the ACADEX Notification Center.',
+                icon: LucideIcons.bell,
+                value: _inAppEnabled,
+                onChanged: (val) => setState(() => _inAppEnabled = val),
+              ),
+              const SizedBox(height: 10),
+
+              _buildPreferenceTile(
+                title: 'Push Notifications (FCM)',
+                subtitle: 'Receive background push banners when ACADEX is closed.',
+                icon: LucideIcons.smartphone,
+                value: _pushEnabled,
+                onChanged: (val) => setState(() => _pushEnabled = val),
               ),
               const SizedBox(height: 24),
 
@@ -129,8 +168,44 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
               const SizedBox(height: 12),
 
               _buildPreferenceTile(
+                title: 'Assignments & Tasks',
+                subtitle: 'New homework, due date reminders, and grading notices.',
+                icon: LucideIcons.bookMarked,
+                value: _assignments,
+                onChanged: (val) => setState(() => _assignments = val),
+              ),
+              const SizedBox(height: 10),
+
+              _buildPreferenceTile(
+                title: 'Practical Lab Sessions',
+                subtitle: 'Lab scheduling, rescheduling, and session completion notices.',
+                icon: LucideIcons.flaskConical,
+                value: _practicals,
+                onChanged: (val) => setState(() => _practicals = val),
+              ),
+              const SizedBox(height: 10),
+
+              _buildPreferenceTile(
+                title: 'Assessments & Internal Tests',
+                subtitle: 'Test schedules, syllabus updates, and internal mark releases.',
+                icon: LucideIcons.clipboardCheck,
+                value: _assessments,
+                onChanged: (val) => setState(() => _assessments = val),
+              ),
+              const SizedBox(height: 10),
+
+              _buildPreferenceTile(
+                title: 'Academic Calendar & Holidays',
+                subtitle: 'Declared holidays, term dates, and calendar event updates.',
+                icon: LucideIcons.calendar,
+                value: _calendar,
+                onChanged: (val) => setState(() => _calendar = val),
+              ),
+              const SizedBox(height: 10),
+
+              _buildPreferenceTile(
                 title: 'Attendance Alerts',
-                subtitle: 'Low attendance warnings, drop threshold notices, and daily attendance logs.',
+                subtitle: 'Low attendance warnings, drop threshold notices, and daily logs.',
                 icon: LucideIcons.calendarCheck,
                 value: _attendanceAlerts,
                 onChanged: (val) => setState(() => _attendanceAlerts = val),
@@ -138,17 +213,8 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
               const SizedBox(height: 10),
 
               _buildPreferenceTile(
-                title: 'Academic Updates',
-                subtitle: 'Course assignments, semester milestones, exam timetables, and grade releases.',
-                icon: LucideIcons.bookOpen,
-                value: _academicUpdates,
-                onChanged: (val) => setState(() => _academicUpdates = val),
-              ),
-              const SizedBox(height: 10),
-
-              _buildPreferenceTile(
                 title: 'Study Notes & Materials',
-                subtitle: 'New study guides, chapter PDFs, and lecture slides uploaded by your professors.',
+                subtitle: 'New study guides, chapter PDFs, and lecture slides.',
                 icon: LucideIcons.fileText,
                 value: _notesUploaded,
                 onChanged: (val) => setState(() => _notesUploaded = val),
@@ -175,7 +241,7 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
 
               _buildPreferenceTile(
                 title: 'Certificates & Documents',
-                subtitle: 'Status updates on digital diploma requests, transcripts, and verified certificates.',
+                subtitle: 'Status updates on digital diploma requests and verified certificates.',
                 icon: LucideIcons.award,
                 value: _certificateUpdates,
                 onChanged: (val) => setState(() => _certificateUpdates = val),
@@ -185,7 +251,7 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
               _buildPreferenceTile(
                 title: 'General Campus Notifications',
                 subtitle: 'Library reminders, campus club updates, and scheduled maintenance notices.',
-                icon: LucideIcons.bell,
+                icon: LucideIcons.bellRing,
                 value: _generalNotifications,
                 onChanged: (val) => setState(() => _generalNotifications = val),
               ),
@@ -272,8 +338,14 @@ class _NotificationPreferencesScreenState extends ConsumerState<NotificationPref
     setState(() => _isSaving = true);
     try {
       final updated = NotificationPreferences(
+        inAppEnabled: _inAppEnabled,
+        pushEnabled: _pushEnabled,
         attendanceAlerts: _attendanceAlerts,
         academicUpdates: _academicUpdates,
+        assignments: _assignments,
+        practicals: _practicals,
+        assessments: _assessments,
+        calendar: _calendar,
         announcements: _announcements,
         notesUploaded: _notesUploaded,
         certificateUpdates: _certificateUpdates,

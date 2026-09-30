@@ -142,9 +142,12 @@ abstract class AcademicRepository {
     required String courseId,
     required String academicYearId,
     required String semesterId,
-    required String sectionId,
+    String? sectionId,
     String? enrollmentDate,
+    String? cohort,
+    String? academicStage,
   });
+  Future<Map<String, dynamic>?> getStudentCurrentEnrollment(String studentId);
   Future<void> updateEnrollment(String id, {String? sectionId, String? status});
   Future<void> deleteEnrollment(String id);
   Future<void> bulkPromoteStudents(List<String> studentIds, String newSemesterId, String newSectionId);
@@ -195,7 +198,9 @@ abstract class AcademicRepository {
   Future<Map<String, int>> getDepartmentStudentCounts();
   Future<Map<String, int>> getDepartmentFacultyCounts();
   Future<List<Room>> getRooms({String? collegeId, String? departmentId});
+  Future<Room?> getRoomById(String id);
   Future<Room> addRoom(Room room);
+  Future<Room> updateRoom(Room room);
 
   // Authoritative Current Academic Context & History (Prompt 24)
   Future<CurrentAcademicContext> getCurrentAcademicContext({String? departmentId, String? courseId});

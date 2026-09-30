@@ -1,502 +1,209 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/presentation/widgets/acadex_page_container.dart';
-import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
-import '../../../../core/presentation/widgets/acadex_adaptive_gradient_text.dart';
-import '../../../auth/domain/models/auth_state.dart';
-import '../../../auth/domain/models/user_model.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../academic_structure/presentation/providers/academic_providers.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../domain/models/home_dashboard_models.dart';
 import '../providers/dashboard_providers.dart';
-import '../widgets/acadex_hero_card.dart';
-import '../widgets/activity_feed.dart';
-import '../widgets/section_header.dart';
-import '../widgets/stat_card.dart';
-import '../../../timetable/presentation/providers/timetable_providers.dart';
-import '../../../timetable/presentation/widgets/timetable_widgets.dart';
-import '../../../academic_structure/presentation/widgets/academic_structure_summary_widget.dart';
-import '../../../academic_structure/presentation/widgets/department_setup_card.dart';
-import '../../../auth/domain/models/role_enum.dart';
-import 'package:campus_management/features/requests/presentation/widgets/dashboard_request_card.dart';
-import 'package:campus_management/features/requests/presentation/providers/requests_providers.dart';
-import '../../../institution_config/domain/models/institution_config_models.dart';
-import '../../../institution_config/presentation/providers/institution_config_providers.dart';
+import '../widgets/home_dashboard_widgets.dart';
 
 class HodDashboard extends ConsumerWidget {
   const HodDashboard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stats = ref.watch(hodStatsProvider);
-    final activity = ref.watch(hodActivityProvider);
-    final authState = ref.watch(authProvider);
-    final terminology = ref.watch(terminologyProvider);
+    final dashboardAsync = ref.watch(homeDashboardProvider);
 
-    UserModel? user;
-    if (authState is AuthAuthenticated) user = authState.user;
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final departmentId = user?.departmentId ?? '';
-
-    return LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final statCols = AcadexLayout.statGridColumns(context);
-          final firstName = user?.name.split(' ').first ?? 'HOD';
-
-          final deptMap = ref.watch(departmentMapProvider);
-          final dept = departmentId.isNotEmpty ? deptMap[departmentId] : null;
-          final deptName = dept?.name ?? (departmentId.isNotEmpty ? 'Department Administration' : 'Department Administration');
-          final deptCode = dept?.code ?? '';
-
-          final isMobile = AcadexBreakpoints.isMobile(context);
-
-          return AcadexPageContainer(
-            topPadding: isMobile ? 16 : 24,
-            onRefresh: () async {
-              ref.invalidate(hodStatsProvider);
-              ref.invalidate(hodActivityProvider);
-              ref.invalidate(dateScheduleProvider);
-              ref.invalidate(todayScheduleProvider);
-              ref.invalidate(weeklyTimetableProvider);
-              ref.invalidate(facultyAssignmentsProvider);
-              ref.invalidate(requestSummaryCountsProvider);
-            },
+    return AcadexPageContainer(
+      onRefresh: () async {
+        ref.invalidate(homeDashboardProvider);
+      },
+      child: dashboardAsync.when(
+        loading: () => const Center(
+          child: AcadexLoadingState(message: 'Loading department dashboard...'),
+        ),
+        error: (err, _) => AcadexErrorState.fromError(
+          error: err,
+          title: 'Unable to load dashboard',
+          onRetry: () => ref.invalidate(homeDashboardProvider),
+        ),
+        data: (dashboard) {
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top Greeting & Role Badge
-                if (isMobile) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: AcadexAdaptiveGradientText(
-                          'Welcome, Dr. $firstName 👋',
-                          style: AcadexTypography.heading2(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const AcadexBadge(
-                        label: 'HOD',
-                        variant: AcadexBadgeVariant.primary,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  AcadexAdaptiveGradientText(
-                    'Departmental operations, faculty workload, and attendance overview.',
-                    style: AcadexTypography.caption(),
-                    isSecondary: true,
-                  ),
-                ] else ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AcadexAdaptiveGradientText(
-                              'Welcome, Dr. $firstName 👋',
-                              style: AcadexTypography.heading1(),
-                            ),
-                            const SizedBox(height: 4),
-                            AcadexAdaptiveGradientText(
-                              'Departmental operations, faculty teaching workload, and student attendance overview.',
-                              style: AcadexTypography.body(),
-                              isSecondary: true,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const AcadexBadge(
-                        label: 'HOD',
-                        variant: AcadexBadgeVariant.primary,
-                      ),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 20),
+                // 1. Welcome & Greeting
+                DashboardGreetingHeader(greeting: dashboard.greeting),
 
-                // Department Identification Hero Card
-                AcadexHeroCard(
-                  eyebrow: 'Department Health & Operations',
-                  badge: AcadexBadge(
-                    label: deptCode.isNotEmpty ? 'DEPT: $deptCode' : 'OPERATIONAL',
-                    variant: AcadexBadgeVariant.primary,
-                  ),
-                  icon: LucideIcons.building,
-                  title: deptName,
-                  subtitle: 'Oversee academic performance, faculty teaching allocations, and student attendance.',
-                  primaryActionLabel: 'Department Analytics',
-                  primaryActionIcon: LucideIcons.barChart3,
-                  onPrimaryAction: () => context.go('/analytics'),
-                  secondaryActionLabel: 'Faculty Workload',
-                  onSecondaryAction: () => context.go('/academics/faculty'),
+                // 2. Department Scoped Context
+                DashboardContextCard(
+                  role: dashboard.role,
+                  contextModel: dashboard.context,
                 ),
-                const SizedBox(height: 14),
 
-                // Quick Operations (Dynamic HOD actions + Continue Setup)
-                _buildQuickOperations(context, isDark, isMobile, width, terminology, departmentId),
-                AcadexLayout.sectionSpacer,
+                // 3. Department Alerts
+                DashboardAlertsSection(alerts: dashboard.alerts),
 
-                // Request Center Status Card (Prompt 29)
-                const DashboardRequestCard(role: AppRole.hod),
-                AcadexLayout.sectionSpacer,
-
-                // Department Key Metrics
-                const SectionHeader(title: 'Department Overview'),
-                AcadexLayout.headerGap,
-                stats.when(
-                  loading: () => const AcadexLoadingState(message: 'Loading department metrics...'),
-                  error: (err, _) => AcadexErrorState(
-                    message: 'Failed to load department metrics. Please check your connection and try again.',
-                    onRetry: () => ref.refresh(hodStatsProvider),
-                  ),
-                  data: (data) => GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    itemCount: data.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: statCols,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: isMobile
-                          ? (width >= 375 ? 1.05 : 0.98)
-                          : (width > 600 ? 1.25 : 1.1),
-                    ),
-                    itemBuilder: (_, i) => StatCard(stat: data[i]),
-                  ),
+                // 4. Items Requiring Attention
+                DashboardPendingActionsSection(
+                  pendingActions: dashboard.pendingActions,
                 ),
-                AcadexLayout.sectionSpacer,
 
-                // Today's Timetable Preview
-                const SectionHeader(title: "Today's Department Timetable"),
-                AcadexLayout.headerGap,
-                Consumer(
-                  builder: (context, ref, _) {
-                    final todayAsync = ref.watch(todayScheduleProvider);
-                    return todayAsync.when(
-                      loading: () => const AcadexLoadingState(message: "Loading today's department sessions..."),
-                      error: (err, _) => AcadexErrorState(
-                        message: "Unable to load today's department timetable. Tap to retry.",
-                        onRetry: () => ref.refresh(todayScheduleProvider),
-                      ),
-                      data: (data) => TodayScheduleWidget(
-                        todayEntries: data,
-                        emptyTitle: 'No timetable published yet',
-                        emptySubtitle: 'There are no active timetable sessions or lectures scheduled for your department today.',
-                        actionLabel: 'Manage Timetable',
-                        onAction: () => context.go('/timetable/manage'),
-                      ),
-                    );
-                  },
+                // 5. Department Schedule & Upcoming
+                DashboardUpcomingSection(upcoming: dashboard.upcoming),
+
+                // 6. Department Quick Shortcuts
+                DashboardQuickActionsGrid(
+                  quickActions: dashboard.quickActions,
                 ),
-                AcadexLayout.sectionSpacer,
 
-                // Department Setup Progressive Onboarding Summary
-                if (departmentId.isNotEmpty) ...[
-                  DepartmentSetupCard(departmentId: departmentId),
-                  AcadexLayout.sectionSpacer,
-                ],
+                // 7. Department Scoped Summary Metrics
+                _buildDepartmentMetricsSummary(context, dashboard.summary),
 
-                // Department Academic Structure Summary
-                if (departmentId.isNotEmpty) ...[
-                  AcademicStructureSummaryWidget(departmentId: departmentId),
-                  AcadexLayout.sectionSpacer,
-                ],
+                // 8. Recent Activity
+                DashboardRecentActivitySection(recent: dashboard.recent),
 
-                // Active Faculty Allocations (Live from facultyAssignmentsProvider)
-                SectionHeader(
-                  title: 'Faculty Teaching Allocations',
-                  actionLabel: 'Manage All',
-                  onAction: () => context.go('/faculty-assignments'),
-                ),
-                AcadexLayout.headerGap,
-                Consumer(
-                  builder: (context, ref, _) {
-                    final assignmentsAsync = ref.watch(facultyAssignmentsProvider);
-                    final subMap = ref.watch(subjectMapProvider);
-                    final secMap = ref.watch(sectionMapProvider);
-
-                    return assignmentsAsync.when(
-                      loading: () => const AcadexLoadingState(message: 'Loading teaching allocations...'),
-                      error: (err, _) => AcadexErrorState(
-                        message: 'Unable to load teaching allocations. Tap to retry.',
-                        onRetry: () => ref.refresh(facultyAssignmentsProvider),
-                      ),
-                      data: (allAssignments) {
-                        final deptAssignments = departmentId.isNotEmpty
-                            ? allAssignments.where((a) => a.departmentId == departmentId && a.isActive).take(4).toList()
-                            : allAssignments.where((a) => a.isActive).take(4).toList();
-
-                        if (deptAssignments.isEmpty) {
-                          return const AcadexEmptyState(
-                            title: 'No Teaching Allocations',
-                            subtitle: 'No faculty assignments are currently recorded for this department.',
-                            icon: LucideIcons.briefcase,
-                          );
-                        }
-
-                        return GridView.builder(
-                          physics: const NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          itemCount: deptAssignments.length,
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: width > 900 ? 4 : (width > 600 ? 2 : 1),
-                            crossAxisSpacing: AcadexLayout.gridSpacing,
-                            mainAxisSpacing: AcadexLayout.gridSpacing,
-                            childAspectRatio: width > 600 ? 1.6 : 2.0,
-                          ),
-                          itemBuilder: (context, i) {
-                            final a = deptAssignments[i];
-                            final sub = subMap[a.subjectId];
-                            final sec = secMap[a.sectionId];
-
-                            return Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                                borderRadius: AcadexRadius.borderRadiusMd,
-                                border: Border.all(
-                                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          a.facultyName,
-                                          style: AcadexTypography.body(
-                                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                          ).copyWith(fontWeight: FontWeight.w600),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: AcadexColors.primary.withValues(alpha: 0.12),
-                                          borderRadius: AcadexRadius.borderRadiusSm,
-                                        ),
-                                        child: Text(
-                                          'Sec ${sec?.name ?? a.sectionId}',
-                                          style: const TextStyle(
-                                            color: AcadexColors.primary,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Text(
-                                    sub?.name ?? a.subjectId,
-                                    style: AcadexTypography.caption(
-                                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    sub?.code ?? '',
-                                    style: const TextStyle(
-                                      color: AcadexColors.primary,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
-                ),
-                AcadexLayout.sectionSpacer,
-
-                // Recent Notifications
-                SectionHeader(
-                  title: 'Recent Activity & Notifications',
-                  actionLabel: 'View All',
-                  onAction: () => context.go('/notifications'),
-                ),
-                AcadexLayout.headerGap,
-                activity.when(
-                  loading: () => const AcadexLoadingState(message: 'Loading departmental updates...'),
-                  error: (err, _) => AcadexErrorState(
-                    message: 'Unable to load departmental activity. Tap to retry.',
-                    onRetry: () => ref.refresh(hodActivityProvider),
-                  ),
-                  data: (data) => ActivityFeed(items: data),
-                ),
+                const SizedBox(height: 32),
               ],
             ),
           );
         },
-      );
+      ),
+    );
   }
 
-  Widget _buildQuickOperations(
+  Widget _buildDepartmentMetricsSummary(
     BuildContext context,
-    bool isDark,
-    bool isMobile,
-    double width,
-    TerminologyHelper terminology,
-    String departmentId,
+    DashboardSummaryModel summary,
   ) {
-    final courseTerm = terminology.label(AcademicConcept.program);
-    final subjectTerm = terminology.label(AcademicConcept.subject);
-
-    final operations = [
-      (
-        label: 'Add $courseTerm',
-        icon: LucideIcons.graduationCap,
-        color: AcadexColors.primary,
-        onTap: () => context.push('/academics/courses/new'),
-      ),
-      (
-        label: 'Add $subjectTerm',
-        icon: LucideIcons.bookOpen,
-        color: AcadexColors.accentGreen,
-        onTap: () => context.push('/academics/subjects/new'),
-      ),
-      (
-        label: 'Add Student',
-        icon: LucideIcons.userPlus,
-        color: const Color(0xFF2563EB),
-        onTap: () => context.push(
-          '/academics/students/new${departmentId.isNotEmpty ? '?departmentId=$departmentId' : ''}',
-        ),
-      ),
-      (
-        label: 'Assign Faculty',
-        icon: LucideIcons.userCheck,
-        color: AcadexColors.warning,
-        onTap: () => context.push('/faculty-assignments'),
-      ),
-    ];
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionHeader(
-          title: 'Quick Operations',
-          actionLabel: 'Continue Setup',
-          actionIcon: LucideIcons.compass,
-          onAction: () => context.push('/academics/setup'),
+        const SizedBox(height: 18),
+        Text(
+          'Department Status',
+          style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.2,
+              ),
         ),
-        AcadexLayout.headerGap,
-        if (isMobile)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: operations.map((op) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: InkWell(
-                    onTap: op.onTap,
-                    borderRadius: AcadexRadius.borderRadiusMd,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                        borderRadius: AcadexRadius.borderRadiusMd,
-                        border: Border.all(
-                          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-                        ),
-                        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(op.icon, size: 16, color: op.color),
-                          const SizedBox(width: 8),
-                          Text(
-                            op.label,
-                            style: AcadexTypography.bodySmall(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                            ).copyWith(fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          )
-        else
-          LayoutBuilder(
-            builder: (context, boxConstraints) {
-              final availableWidth = boxConstraints.maxWidth;
-              final itemWidth = availableWidth > 900
-                  ? (availableWidth - 36) / 4
-                  : (availableWidth - 12) / 2;
-              return Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: operations.map((op) {
-                  return SizedBox(
-                    width: itemWidth,
-                    child: InkWell(
-                  onTap: op.onTap,
-                  borderRadius: AcadexRadius.borderRadiusMd,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                      borderRadius: AcadexRadius.borderRadiusMd,
-                      border: Border.all(
-                        color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-                      ),
-                      boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: op.color.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(op.icon, size: 18, color: op.color),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            op.label,
-                            style: AcadexTypography.body(
-                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                            ).copyWith(fontWeight: FontWeight.w600),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const Icon(LucideIcons.arrowUpRight, size: 16, color: AcadexColors.inkMuted),
-                      ],
-                    ),
-                  ),
+        const SizedBox(height: 10),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isNarrow = constraints.maxWidth < 380;
+            return GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: isNarrow ? 2 : 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: isNarrow ? 1.6 : 1.8,
+              children: [
+                _buildMetricTile(
+                  context,
+                  title: 'Active Students',
+                  value: '${summary.activeStudentsCount}',
+                  subtitle: 'Enrolled in department',
+                  icon: LucideIcons.graduationCap,
+                  color: AcadexColors.primary,
+                  isDark: isDark,
                 ),
-              );
-            }).toList(),
-          );
-        },
+                _buildMetricTile(
+                  context,
+                  title: 'Faculty Members',
+                  value: '${summary.activeFacultyCount}',
+                  subtitle: 'Teaching in department',
+                  icon: LucideIcons.users,
+                  color: Colors.teal,
+                  isDark: isDark,
+                ),
+                _buildMetricTile(
+                  context,
+                  title: 'Pending Attendance',
+                  value: '${summary.pendingAttendanceCount}',
+                  subtitle: 'Faculty sessions pending',
+                  icon: LucideIcons.checkSquare,
+                  color: summary.pendingAttendanceCount > 0 ? AcadexColors.warning : Colors.teal,
+                  isDark: isDark,
+                ),
+                _buildMetricTile(
+                  context,
+                  title: 'Incomplete Marks',
+                  value: '${summary.pendingAssessmentsCount}',
+                  subtitle: 'Assessments pending finalization',
+                  icon: LucideIcons.penTool,
+                  color: summary.pendingAssessmentsCount > 0 ? Colors.deepOrange : Colors.purple,
+                  isDark: isDark,
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMetricTile(
+    BuildContext context, {
+    required String title,
+    required String value,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required bool isDark,
+  }) {
+    final theme = Theme.of(context);
+
+    return AcadexCard(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? Colors.grey[500] : Colors.grey[500],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
-    ],
     );
   }
 }

@@ -117,12 +117,18 @@ class ApiRequestsRepository implements RequestsRepository {
     required String description,
     AcademicContextModel? academicContext,
     RequestDetailsModel? details,
+    String? status,
+    String? relatedEntityType,
+    String? relatedEntityId,
   }) async {
     try {
       final payload = <String, dynamic>{
         'requestType': requestType.value,
         if (title != null && title.isNotEmpty) 'title': title,
         'description': description,
+        if (status != null && status.isNotEmpty) 'status': status,
+        if (relatedEntityType != null && relatedEntityType.isNotEmpty) 'relatedEntityType': relatedEntityType,
+        if (relatedEntityId != null && relatedEntityId.isNotEmpty) 'relatedEntityId': relatedEntityId,
         if (academicContext != null) 'academicContext': academicContext.toJson(),
         if (details != null) 'details': details.toJson(),
       };
@@ -144,6 +150,68 @@ class ApiRequestsRepository implements RequestsRepository {
       );
     } on DioException catch (e) {
       throw AcadexException.fromDio(e, fallback: "Couldn't submit your request. Please try again.");
+    }
+  }
+
+  @override
+  Future<RequestModel> submitRequest(String id) async {
+    try {
+      final response = await _apiClient.dio.post('/requests/$id/submit');
+      if (response.data != null && response.data['data'] != null) {
+        return RequestModel.fromJson(
+          Map<String, dynamic>.from(response.data['data'] as Map),
+        );
+      }
+      throw const AcadexException(
+        category: ErrorCategory.unknown,
+        technicalMessage: 'Empty response payload on submit request',
+        userMessage: 'Unable to submit request.',
+      );
+    } on DioException catch (e) {
+      throw AcadexException.fromDio(e, fallback: 'Unable to submit request.');
+    }
+  }
+
+  @override
+  Future<RequestModel> cancelRequest(String id, {String? reason}) async {
+    try {
+      final response = await _apiClient.dio.post(
+        '/requests/$id/cancel',
+        data: {
+          if (reason != null && reason.isNotEmpty) 'reason': reason,
+        },
+      );
+      if (response.data != null && response.data['data'] != null) {
+        return RequestModel.fromJson(
+          Map<String, dynamic>.from(response.data['data'] as Map),
+        );
+      }
+      throw const AcadexException(
+        category: ErrorCategory.unknown,
+        technicalMessage: 'Empty response payload on cancel request',
+        userMessage: 'Unable to cancel request.',
+      );
+    } on DioException catch (e) {
+      throw AcadexException.fromDio(e, fallback: 'Unable to cancel request.');
+    }
+  }
+
+  @override
+  Future<RequestModel> startReview(String id) async {
+    try {
+      final response = await _apiClient.dio.post('/requests/$id/review');
+      if (response.data != null && response.data['data'] != null) {
+        return RequestModel.fromJson(
+          Map<String, dynamic>.from(response.data['data'] as Map),
+        );
+      }
+      throw const AcadexException(
+        category: ErrorCategory.unknown,
+        technicalMessage: 'Empty response payload on review request',
+        userMessage: 'Unable to put request in review.',
+      );
+    } on DioException catch (e) {
+      throw AcadexException.fromDio(e, fallback: 'Unable to put request in review.');
     }
   }
 

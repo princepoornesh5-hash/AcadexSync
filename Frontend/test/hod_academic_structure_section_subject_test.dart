@@ -12,7 +12,6 @@ import 'package:campus_management/features/academic_structure/presentation/provi
 import 'package:campus_management/features/academic_structure/presentation/screens/section_screens.dart';
 import 'package:campus_management/features/academic_structure/presentation/screens/subject_screens.dart';
 import 'package:campus_management/features/academic_structure/presentation/widgets/fresh_department_setup_card.dart';
-import 'package:campus_management/core/presentation/widgets/acadex_button.dart';
 
 class MockAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
   MockAuthNotifier(super.state);

@@ -12,17 +12,40 @@ export enum NotificationType {
   TEACHER_SUBSTITUTION = 'TEACHER_SUBSTITUTION',
   ANNOUNCEMENT = 'ANNOUNCEMENT',
   SYSTEM = 'SYSTEM',
-  // Request Center lifecycle types (Prompt 19)
+  // Request Center lifecycle types (Prompt 19 / Prompt 47)
+  REQUEST_SUBMITTED = 'REQUEST_SUBMITTED',
   REQUEST_RECEIVED = 'REQUEST_RECEIVED',
   REQUEST_UPDATED = 'REQUEST_UPDATED',
   REQUEST_RESPONDED = 'REQUEST_RESPONDED',
   REQUEST_APPROVED = 'REQUEST_APPROVED',
   REQUEST_REJECTED = 'REQUEST_REJECTED',
-  // Assignment notification types (Prompt 20)
+  REQUEST_CANCELLED = 'REQUEST_CANCELLED',
+  ANNOUNCEMENT_PUBLISHED = 'ANNOUNCEMENT_PUBLISHED',
+  ANNOUNCEMENT_CANCELLED = 'ANNOUNCEMENT_CANCELLED',
+  // Assignment notification types (Prompt 20 / Prompt 40)
   ASSIGNMENT_PUBLISHED = 'ASSIGNMENT_PUBLISHED',
   ASSIGNMENT_DUE_SOON = 'ASSIGNMENT_DUE_SOON',
   ASSIGNMENT_OVERDUE = 'ASSIGNMENT_OVERDUE',
   ASSIGNMENT_GRADED = 'ASSIGNMENT_GRADED',
+  SUBMISSION_RECEIVED = 'SUBMISSION_RECEIVED',
+  // Practical / Lab session notification types (Prompt 41)
+  PRACTICAL_SESSION_SCHEDULED = 'PRACTICAL_SESSION_SCHEDULED',
+  PRACTICAL_SESSION_CANCELLED = 'PRACTICAL_SESSION_CANCELLED',
+  PRACTICAL_SESSION_COMPLETED = 'PRACTICAL_SESSION_COMPLETED',
+  // Academic Record notification types (Prompt 42)
+  ACADEMIC_RECORD_INITIALIZED = 'ACADEMIC_RECORD_INITIALIZED',
+  ACADEMIC_PROGRESSION_UPDATED = 'ACADEMIC_PROGRESSION_UPDATED',
+  // Assessment notification types (Prompt 43)
+  ASSESSMENT_PUBLISHED = 'ASSESSMENT_PUBLISHED',
+  ASSESSMENT_MARK_UPDATED = 'ASSESSMENT_MARK_UPDATED',
+  // Academic Result notification types (Prompt 44)
+  ACADEMIC_RESULT_PUBLISHED = 'ACADEMIC_RESULT_PUBLISHED',
+  ACADEMIC_RESULT_REOPENED = 'ACADEMIC_RESULT_REOPENED',
+  // Calendar notification types (Prompt 45 / Prompt 46)
+  CALENDAR_HOLIDAY_DECLARED = 'CALENDAR_HOLIDAY_DECLARED',
+  CALENDAR_EVENT_CREATED = 'CALENDAR_EVENT_CREATED',
+  CALENDAR_EVENT_CANCELLED = 'CALENDAR_EVENT_CANCELLED',
+  GRADE_POSTED = 'GRADE_POSTED',
   // Reserved for future prompts
   HOLIDAY = 'HOLIDAY',
   TIMETABLE_CHANGE = 'TIMETABLE_CHANGE',
@@ -33,12 +56,16 @@ export enum NotificationType {
 export enum NotificationCategory {
   REQUEST = 'request',
   ASSIGNMENT = 'assignment',
+  PRACTICAL = 'practical',
   NOTES = 'notes',
   ATTENDANCE = 'attendance',
   TIMETABLE = 'timetable',
   SYSTEM = 'system',
   ACADEMIC = 'academic',
   ANNOUNCEMENT = 'announcement',
+  ASSESSMENT = 'assessment',
+  RESULT = 'result',
+  CALENDAR = 'calendar',
   GENERAL = 'general',
 }
 
@@ -47,6 +74,14 @@ export enum NotificationPriority {
   NORMAL = 'normal',
   HIGH = 'high',
   CRITICAL = 'critical',
+  URGENT = 'urgent',
+}
+
+export enum NotificationStatus {
+  UNREAD = 'UNREAD',
+  READ = 'READ',
+  ARCHIVED = 'ARCHIVED',
+  EXPIRED = 'EXPIRED',
 }
 
 export enum DevicePlatform {
@@ -67,6 +102,9 @@ export enum AudienceScope {
 
 export enum AnnouncementStatus {
   DRAFT = 'DRAFT',
+  SCHEDULED = 'SCHEDULED',
   PUBLISHED = 'PUBLISHED',
+  EXPIRED = 'EXPIRED',
   ARCHIVED = 'ARCHIVED',
+  CANCELLED = 'CANCELLED',
 }

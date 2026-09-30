@@ -56,7 +56,7 @@ export interface ITimetable extends Document {
   courseId: mongoose.Types.ObjectId;
   academicYearId: mongoose.Types.ObjectId;
   semesterId: mongoose.Types.ObjectId;
-  sectionId: mongoose.Types.ObjectId;
+  sectionId?: mongoose.Types.ObjectId | null;
   name: string;
   status: TimetableStatus;
   version: number;
@@ -129,7 +129,7 @@ const TimetableSchema = new Schema<ITimetable>(
     courseId: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
     academicYearId: { type: Schema.Types.ObjectId, ref: 'AcademicYear', required: true },
     semesterId: { type: Schema.Types.ObjectId, ref: 'Semester', required: true },
-    sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: true, index: true },
+    sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: false, default: null, index: true },
     name: { type: String, required: true, trim: true },
     status: {
       type: String,

@@ -4,9 +4,11 @@ import { RequestStatus } from '../constants/request.constants';
 
 export enum RequestEventType {
   REQUEST_CREATED = 'REQUEST_CREATED',
+  REQUEST_SUBMITTED = 'REQUEST_SUBMITTED',
   REQUEST_RECEIVED = 'REQUEST_RECEIVED',
   REQUEST_STATUS_CHANGED = 'REQUEST_STATUS_CHANGED',
   REQUEST_RESPONDED = 'REQUEST_RESPONDED',
+  REQUEST_CANCELLED = 'REQUEST_CANCELLED',
 }
 
 export interface RequestEventPayload {
@@ -19,6 +21,14 @@ export interface RequestEventPayload {
 class RequestEventBus extends EventEmitter {
   emitCreated(request: IRequest): void {
     this.emit(RequestEventType.REQUEST_CREATED, {
+      request,
+      newStatus: request.status,
+      timestamp: new Date(),
+    } as RequestEventPayload);
+  }
+
+  emitSubmitted(request: IRequest): void {
+    this.emit(RequestEventType.REQUEST_SUBMITTED, {
       request,
       newStatus: request.status,
       timestamp: new Date(),
@@ -46,6 +56,14 @@ class RequestEventBus extends EventEmitter {
     this.emit(RequestEventType.REQUEST_RESPONDED, {
       request,
       newStatus: request.status,
+      timestamp: new Date(),
+    } as RequestEventPayload);
+  }
+
+  emitCancelled(request: IRequest): void {
+    this.emit(RequestEventType.REQUEST_CANCELLED, {
+      request,
+      newStatus: RequestStatus.CANCELLED,
       timestamp: new Date(),
     } as RequestEventPayload);
   }

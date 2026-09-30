@@ -59,6 +59,43 @@ class TerminologyHelper {
   bool get isBuildingEnabled => config.academicStructure.building;
   bool get isRoomEnabled => config.academicStructure.room;
 
+  String programName({bool plural = false}) => label(AcademicConcept.program, plural: plural);
+  String semesterName({bool plural = false}) => label(AcademicConcept.semester, plural: plural);
+  String sectionName({bool plural = false}) => label(AcademicConcept.section, plural: plural);
+  String subjectName({bool plural = false}) => label(AcademicConcept.subject, plural: plural);
+  String roomName({bool plural = false}) => label(AcademicConcept.room, plural: plural);
+  String departmentName({bool plural = false}) => label(AcademicConcept.department, plural: plural);
+  String academicYearName({bool plural = false}) => label(AcademicConcept.academicYear, plural: plural);
+  String programsName() => programName(plural: true);
+  String semestersName() => semesterName(plural: true);
+  String sectionsName() => sectionName(plural: true);
+  String subjectsName() => subjectName(plural: true);
+  String roomsName() => roomName(plural: true);
+  String departmentsName() => departmentName(plural: true);
+  String academicYearsName() => academicYearName(plural: true);
+  String periodName({bool plural = false}) => semesterName(plural: plural);
+  String cohortLabel() => 'Cohort';
+  String stageLabel() => 'Academic Stage';
+  String createActionLabel(AcademicConcept concept) => '+ Create ${label(concept)}';
+  String addActionLabel(AcademicConcept concept) => '+ Add ${label(concept)}';
+  String createLabel(AcademicConcept concept) => 'Create ${label(concept)}';
+  String addLabel(AcademicConcept concept) => 'Add ${label(concept)}';
+
+  /// Formats the progression line cleanly distinguishing Stage vs Cohort vs AY
+  String formatProgressionContext({
+    String? stage,
+    String? cohort,
+    String? academicYear,
+    String? period,
+  }) {
+    final parts = <String>[];
+    if (stage != null && stage.isNotEmpty) parts.add(stage);
+    if (period != null && period.isNotEmpty) parts.add(period);
+    if (cohort != null && cohort.isNotEmpty) parts.add('Cohort: $cohort');
+    if (academicYear != null && academicYear.isNotEmpty) parts.add('AY: $academicYear');
+    return parts.join(' • ');
+  }
+
   /// Formats teaching context consistently based on whether section is enabled
   String formatTeachingContext({
     required String subject,

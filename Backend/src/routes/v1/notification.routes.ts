@@ -57,9 +57,14 @@ router.post('/read-all', asyncHandler(NotificationController.markAllAsRead));
 router.patch('/mark-all-read', asyncHandler(NotificationController.markAllAsRead));
 router.post('/mark-all-read', asyncHandler(NotificationController.markAllAsRead));
 
-// 5. Individual Notification
+// 5. Individual Notification Lifecycle
 router.patch('/:id/read', asyncHandler(NotificationController.markAsRead));
 router.post('/:id/read', asyncHandler(NotificationController.markAsRead));
+router.patch('/:id/unread', asyncHandler(NotificationController.markAsUnread));
+router.post('/:id/unread', asyncHandler(NotificationController.markAsUnread));
+router.patch('/:id/archive', asyncHandler(NotificationController.archive));
+router.post('/:id/archive', asyncHandler(NotificationController.archive));
+router.delete('/:id', asyncHandler(NotificationController.delete));
 router.get('/:id', asyncHandler(NotificationController.getById));
 
 // 6. List Notifications

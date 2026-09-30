@@ -7,7 +7,7 @@ export interface IStudentEnrollment extends Document {
   courseId: mongoose.Types.ObjectId;
   academicYearId: mongoose.Types.ObjectId;
   semesterId: mongoose.Types.ObjectId;
-  sectionId: mongoose.Types.ObjectId;
+  sectionId?: mongoose.Types.ObjectId | null;
   cohort?: string;
   academicStage?: string;
   enrollmentDate: Date;
@@ -24,7 +24,7 @@ const StudentEnrollmentSchema = new Schema<IStudentEnrollment>(
     courseId: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
     academicYearId: { type: Schema.Types.ObjectId, ref: 'AcademicYear', required: true },
     semesterId: { type: Schema.Types.ObjectId, ref: 'Semester', required: true },
-    sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: true, index: true },
+    sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: false, default: null, index: true },
     cohort: { type: String, default: null, trim: true },
     academicStage: { type: String, default: null, trim: true },
     enrollmentDate: { type: Date, default: Date.now },
@@ -56,12 +56,15 @@ const StudentEnrollmentSchema = new Schema<IStudentEnrollment>(
 );
 
 StudentEnrollmentSchema.index(
-  { collegeId: 1, studentId: 1, semesterId: 1, sectionId: 1 },
-  { unique: true }
+  { collegeId: 1, studentId: 1, semesterId: 1 },
+  { unique: true, partialFilterExpression: { status: 'active' } }
 );
-StudentEnrollmentSchema.index({ collegeId: 1, sectionId: 1 });
+StudentEnrollmentSchema.index({ collegeId: 1, studentId: 1, status: 1 });
+StudentEnrollmentSchema.index({ collegeId: 1, sectionId: 1, status: 1 });
+StudentEnrollmentSchema.index({ collegeId: 1, departmentId: 1, academicYearId: 1, semesterId: 1, status: 1 });
 
 export const StudentEnrollment = mongoose.model<IStudentEnrollment>(
   'StudentEnrollment',
   StudentEnrollmentSchema
 );
+

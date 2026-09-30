@@ -259,12 +259,135 @@ class AttendanceAlertsConfig {
   }
 }
 
+class AssessmentComponentConfig {
+  final String key;
+  final String name;
+  final int maxMarks;
+  final double weightage;
+  final bool enabled;
+  final String appliesTo; // 'all' | 'theory' | 'practical'
+  final bool visibleToStudents;
+
+  const AssessmentComponentConfig({
+    required this.key,
+    required this.name,
+    required this.maxMarks,
+    this.weightage = 0,
+    this.enabled = true,
+    this.appliesTo = 'all',
+    this.visibleToStudents = true,
+  });
+
+  factory AssessmentComponentConfig.fromJson(Map<String, dynamic> json) {
+    return AssessmentComponentConfig(
+      key: json['key']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      maxMarks: (json['maxMarks'] as num?)?.toInt() ?? 10,
+      weightage: (json['weightage'] as num?)?.toDouble() ?? 0.0,
+      enabled: json['enabled'] as bool? ?? true,
+      appliesTo: json['appliesTo']?.toString() ?? 'all',
+      visibleToStudents: json['visibleToStudents'] as bool? ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'key': key,
+    'name': name,
+    'maxMarks': maxMarks,
+    'weightage': weightage,
+    'enabled': enabled,
+    'appliesTo': appliesTo,
+    'visibleToStudents': visibleToStudents,
+  };
+
+  AssessmentComponentConfig copyWith({
+    String? key,
+    String? name,
+    int? maxMarks,
+    double? weightage,
+    bool? enabled,
+    String? appliesTo,
+    bool? visibleToStudents,
+  }) {
+    return AssessmentComponentConfig(
+      key: key ?? this.key,
+      name: name ?? this.name,
+      maxMarks: maxMarks ?? this.maxMarks,
+      weightage: weightage ?? this.weightage,
+      enabled: enabled ?? this.enabled,
+      appliesTo: appliesTo ?? this.appliesTo,
+      visibleToStudents: visibleToStudents ?? this.visibleToStudents,
+    );
+  }
+}
+
+class AssessmentConfig {
+  final bool enabled;
+  final int maxTotalMarks;
+  final bool allowDecimals;
+  final bool requireHodApproval;
+  final List<AssessmentComponentConfig> components;
+
+  const AssessmentConfig({
+    this.enabled = true,
+    this.maxTotalMarks = 50,
+    this.allowDecimals = false,
+    this.requireHodApproval = false,
+    this.components = const [
+      AssessmentComponentConfig(key: 'internalTest', name: 'Internal Test', maxMarks: 20, weightage: 40, enabled: true, appliesTo: 'all'),
+      AssessmentComponentConfig(key: 'assignment', name: 'Assignment', maxMarks: 10, weightage: 20, enabled: true, appliesTo: 'all'),
+      AssessmentComponentConfig(key: 'lab', name: 'Lab / Practical', maxMarks: 10, weightage: 20, enabled: true, appliesTo: 'practical'),
+      AssessmentComponentConfig(key: 'record', name: 'Record Book', maxMarks: 5, weightage: 10, enabled: true, appliesTo: 'practical'),
+      AssessmentComponentConfig(key: 'viva', name: 'Viva Voce', maxMarks: 5, weightage: 10, enabled: true, appliesTo: 'practical'),
+    ],
+  });
+
+  factory AssessmentConfig.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const AssessmentConfig();
+    final rawComponents = json['components'] as List<dynamic>? ?? [];
+    return AssessmentConfig(
+      enabled: json['enabled'] as bool? ?? true,
+      maxTotalMarks: (json['maxTotalMarks'] as num?)?.toInt() ?? 50,
+      allowDecimals: json['allowDecimals'] as bool? ?? false,
+      requireHodApproval: json['requireHodApproval'] as bool? ?? false,
+      components: rawComponents.isNotEmpty
+          ? rawComponents.map((c) => AssessmentComponentConfig.fromJson(c as Map<String, dynamic>)).toList()
+          : const AssessmentConfig().components,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'enabled': enabled,
+    'maxTotalMarks': maxTotalMarks,
+    'allowDecimals': allowDecimals,
+    'requireHodApproval': requireHodApproval,
+    'components': components.map((c) => c.toJson()).toList(),
+  };
+
+  AssessmentConfig copyWith({
+    bool? enabled,
+    int? maxTotalMarks,
+    bool? allowDecimals,
+    bool? requireHodApproval,
+    List<AssessmentComponentConfig>? components,
+  }) {
+    return AssessmentConfig(
+      enabled: enabled ?? this.enabled,
+      maxTotalMarks: maxTotalMarks ?? this.maxTotalMarks,
+      allowDecimals: allowDecimals ?? this.allowDecimals,
+      requireHodApproval: requireHodApproval ?? this.requireHodApproval,
+      components: components ?? this.components,
+    );
+  }
+}
+
 class InstitutionConfigModel {
   final String collegeId;
   final InstitutionType institutionType;
   final AcademicStructureConfig academicStructure;
   final TerminologyConfig terminology;
   final AttendanceAlertsConfig attendanceAlerts;
+  final AssessmentConfig assessmentConfig;
   final bool isConfigured;
 
   const InstitutionConfigModel({
@@ -273,6 +396,7 @@ class InstitutionConfigModel {
     this.academicStructure = const AcademicStructureConfig(),
     this.terminology = const TerminologyConfig(),
     this.attendanceAlerts = const AttendanceAlertsConfig(),
+    this.assessmentConfig = const AssessmentConfig(),
     this.isConfigured = false,
   });
 
@@ -289,6 +413,9 @@ class InstitutionConfigModel {
       attendanceAlerts: AttendanceAlertsConfig.fromJson(
         json['attendanceAlerts'] as Map<String, dynamic>?,
       ),
+      assessmentConfig: AssessmentConfig.fromJson(
+        json['assessmentConfig'] as Map<String, dynamic>?,
+      ),
       isConfigured: json['isConfigured'] as bool? ?? false,
     );
   }
@@ -299,6 +426,7 @@ class InstitutionConfigModel {
     'academicStructure': academicStructure.toJson(),
     'terminology': terminology.toJson(),
     'attendanceAlerts': attendanceAlerts.toJson(),
+    'assessmentConfig': assessmentConfig.toJson(),
     'isConfigured': isConfigured,
   };
 
@@ -308,6 +436,7 @@ class InstitutionConfigModel {
     AcademicStructureConfig? academicStructure,
     TerminologyConfig? terminology,
     AttendanceAlertsConfig? attendanceAlerts,
+    AssessmentConfig? assessmentConfig,
     bool? isConfigured,
   }) {
     return InstitutionConfigModel(
@@ -316,6 +445,7 @@ class InstitutionConfigModel {
       academicStructure: academicStructure ?? this.academicStructure,
       terminology: terminology ?? this.terminology,
       attendanceAlerts: attendanceAlerts ?? this.attendanceAlerts,
+      assessmentConfig: assessmentConfig ?? this.assessmentConfig,
       isConfigured: isConfigured ?? this.isConfigured,
     );
   }

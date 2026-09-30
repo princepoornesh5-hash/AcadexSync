@@ -12,6 +12,10 @@ enum NotificationCategory {
   certificates,
   timetable,
   announcement,
+  practical,
+  assessment,
+  result,
+  calendar,
   general,
 }
 
@@ -20,6 +24,13 @@ enum NotificationPriority {
   normal,
   high,
   critical,
+}
+
+enum NotificationStatus {
+  unread,
+  read,
+  archived,
+  expired,
 }
 
 enum NotificationAudienceType {
@@ -41,6 +52,21 @@ enum NotificationType {
   assignmentDueSoon,
   assignmentOverdue,
   assignmentGraded,
+  gradePosted,
+  submissionReceived,
+  practicalSessionScheduled,
+  practicalSessionCancelled,
+  practicalSessionCompleted,
+  assessmentPublished,
+  assessmentMarkUpdated,
+  academicResultPublished,
+  academicResultReopened,
+  academicRecordInitialized,
+  academicProgressionUpdated,
+  calendarHolidayDeclared,
+  calendarEventCreated,
+  calendarEventCancelled,
+  calendarOverride,
   holiday,
   timetableChange,
   attendanceAlert,
@@ -78,6 +104,36 @@ extension NotificationTypeExtension on NotificationType {
         return 'ASSIGNMENT_OVERDUE';
       case NotificationType.assignmentGraded:
         return 'ASSIGNMENT_GRADED';
+      case NotificationType.gradePosted:
+        return 'GRADE_POSTED';
+      case NotificationType.submissionReceived:
+        return 'SUBMISSION_RECEIVED';
+      case NotificationType.practicalSessionScheduled:
+        return 'PRACTICAL_SESSION_SCHEDULED';
+      case NotificationType.practicalSessionCancelled:
+        return 'PRACTICAL_SESSION_CANCELLED';
+      case NotificationType.practicalSessionCompleted:
+        return 'PRACTICAL_SESSION_COMPLETED';
+      case NotificationType.assessmentPublished:
+        return 'ASSESSMENT_PUBLISHED';
+      case NotificationType.assessmentMarkUpdated:
+        return 'ASSESSMENT_MARK_UPDATED';
+      case NotificationType.academicResultPublished:
+        return 'ACADEMIC_RESULT_PUBLISHED';
+      case NotificationType.academicResultReopened:
+        return 'ACADEMIC_RESULT_REOPENED';
+      case NotificationType.academicRecordInitialized:
+        return 'ACADEMIC_RECORD_INITIALIZED';
+      case NotificationType.academicProgressionUpdated:
+        return 'ACADEMIC_PROGRESSION_UPDATED';
+      case NotificationType.calendarHolidayDeclared:
+        return 'CALENDAR_HOLIDAY_DECLARED';
+      case NotificationType.calendarEventCreated:
+        return 'CALENDAR_EVENT_CREATED';
+      case NotificationType.calendarEventCancelled:
+        return 'CALENDAR_EVENT_CANCELLED';
+      case NotificationType.calendarOverride:
+        return 'CALENDAR_OVERRIDE';
       case NotificationType.holiday:
         return 'HOLIDAY';
       case NotificationType.timetableChange:
@@ -126,6 +182,7 @@ class NotificationModel {
   final NotificationType? notificationType;
   final NotificationCategory category;
   final NotificationPriority priority;
+  final NotificationStatus status;
   final NotificationAudienceType audienceType;
   final DateTime timestamp;
   final bool isRead;
@@ -151,6 +208,7 @@ class NotificationModel {
     this.notificationType,
     required this.category,
     required this.priority,
+    this.status = NotificationStatus.unread,
     required this.audienceType,
     required this.timestamp,
     this.isRead = false,
@@ -179,6 +237,7 @@ class NotificationModel {
     NotificationType? notificationType,
     NotificationCategory? category,
     NotificationPriority? priority,
+    NotificationStatus? status,
     NotificationAudienceType? audienceType,
     DateTime? timestamp,
     bool? isRead,
@@ -200,6 +259,7 @@ class NotificationModel {
       notificationType: notificationType ?? this.notificationType,
       category: category ?? this.category,
       priority: priority ?? this.priority,
+      status: status ?? this.status,
       audienceType: audienceType ?? this.audienceType,
       timestamp: timestamp ?? this.timestamp,
       isRead: isRead ?? this.isRead,
@@ -226,29 +286,37 @@ class NotificationModel {
     
     // Resolve deep link or default to related entity route
     String? rawDeepLink = json['deepLink'] ?? json['navigationTarget'];
-    if ((rawDeepLink == null || rawDeepLink.isEmpty) &&
-        rawEntityType?.toString().toUpperCase() == 'REQUEST' &&
-        rawEntityId != null) {
-      final internalId = (json['metadata'] is Map && json['metadata']['internalId'] != null)
-          ? json['metadata']['internalId']
-          : rawEntityId;
-      rawDeepLink = '/requests/$internalId';
-    } else if ((rawDeepLink == null || rawDeepLink.isEmpty) &&
-        rawEntityType?.toString().toUpperCase() == 'ASSIGNMENT' &&
-        rawEntityId != null) {
-      rawDeepLink = '/assignments/$rawEntityId';
-    } else if ((rawDeepLink == null || rawDeepLink.isEmpty) &&
-        (rawEntityType?.toString().toUpperCase() == 'ATTENDANCESESSION' ||
-            json['category']?.toString().toLowerCase() == 'attendance')) {
-      final subjectId = (json['metadata'] is Map) ? json['metadata']['subjectId']?.toString() : null;
-      if (subjectId != null && subjectId.isNotEmpty) {
-        rawDeepLink = '/attendance/student/subject/$subjectId';
-      } else {
-        rawDeepLink = '/attendance/student';
+    if (rawDeepLink == null || rawDeepLink.isEmpty) {
+      final entityUpper = rawEntityType?.toString().toUpperCase();
+      if (entityUpper == 'REQUEST' && rawEntityId != null) {
+        final internalId = (json['metadata'] is Map && json['metadata']['internalId'] != null)
+            ? json['metadata']['internalId']
+            : rawEntityId;
+        rawDeepLink = '/requests/$internalId';
+      } else if (entityUpper == 'ASSIGNMENT' && rawEntityId != null) {
+        rawDeepLink = '/assignments/$rawEntityId';
+      } else if (entityUpper == 'ASSESSMENT' && rawEntityId != null) {
+        rawDeepLink = '/assessments/$rawEntityId';
+      } else if ((entityUpper == 'PRACTICAL' || entityUpper == 'PRACTICALSESSION') && rawEntityId != null) {
+        rawDeepLink = '/practicals/$rawEntityId';
+      } else if ((entityUpper == 'CALENDAR' || entityUpper == 'CALENDAREVENT') && rawEntityId != null) {
+        rawDeepLink = '/calendar/event/$rawEntityId';
+      } else if (entityUpper == 'ACADEMICRESULT') {
+        rawDeepLink = '/academic-results';
+      } else if (entityUpper == 'ATTENDANCESESSION' ||
+          json['category']?.toString().toLowerCase() == 'attendance') {
+        final subjectId = (json['metadata'] is Map) ? json['metadata']['subjectId']?.toString() : null;
+        if (subjectId != null && subjectId.isNotEmpty) {
+          rawDeepLink = '/attendance/student/subject/$subjectId';
+        } else {
+          rawDeepLink = '/attendance/student';
+        }
       }
     }
 
     final rawTypeStr = json['notificationType'] ?? json['type'];
+    final rawStatusStr = json['status']?.toString().toLowerCase();
+    final isReadVal = json['isRead'] ?? false;
 
     return NotificationModel(
       id: rawId.toString(),
@@ -263,6 +331,10 @@ class NotificationModel {
         (e) => e.name.toLowerCase() == (json['priority']?.toString().toLowerCase() ?? ''),
         orElse: () => NotificationPriority.normal,
       ),
+      status: NotificationStatus.values.firstWhere(
+        (e) => e.name == rawStatusStr,
+        orElse: () => isReadVal ? NotificationStatus.read : NotificationStatus.unread,
+      ),
       audienceType: NotificationAudienceType.values.firstWhere(
         (e) => e.name.toLowerCase() == (json['audienceType']?.toString().toLowerCase() ?? ''),
         orElse: () => NotificationAudienceType.personal,
@@ -270,7 +342,7 @@ class NotificationModel {
       timestamp: rawCreatedAt != null 
           ? DateTime.tryParse(rawCreatedAt.toString()) ?? DateTime.now() 
           : DateTime.now(),
-      isRead: json['isRead'] ?? false,
+      isRead: isReadVal,
       readAt: json['readAt'] != null ? DateTime.tryParse(json['readAt'].toString()) : null,
       recipientUserId: json['recipientUserId']?.toString(),
       recipientRole: json['recipientRole'] != null
@@ -299,6 +371,7 @@ class NotificationModel {
       },
       'category': category.name,
       'priority': priority.name,
+      'status': status.name,
       'audienceType': audienceType.name,
       'timestamp': timestamp.toIso8601String(),
       'createdAt': timestamp.toIso8601String(),

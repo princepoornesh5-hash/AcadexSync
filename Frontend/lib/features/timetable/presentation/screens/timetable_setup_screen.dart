@@ -14,6 +14,8 @@ import '../../../academic_structure/presentation/utils/academic_prerequisite_gua
 import '../../domain/models/timetable_models.dart';
 import '../providers/timetable_providers.dart';
 import '../providers/timetable_lookup_providers.dart';
+import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../institution_config/presentation/providers/institution_config_providers.dart';
 import '../widgets/timetable_spreadsheet_grid.dart';
 import 'timetable_designer_screen.dart';
 export 'timetable_creation_screen.dart';
@@ -160,10 +162,11 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
     if (authState is! AuthAuthenticated) return;
     final user = authState.user;
 
+    final terminology = ref.read(terminologyProvider);
     if (_selectedDepartmentId == null ||
         _selectedCourseId == null ||
         _selectedSemesterId == null ||
-        _selectedSectionId == null) {
+        (terminology.isSectionEnabled && _selectedSectionId == null)) {
       return;
     }
 
@@ -189,12 +192,16 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
     final courseMap = ref.read(timetableCourseMapProvider);
     final sectionMap = ref.read(timetableSectionMapProvider);
 
+    final termHelper = ref.read(terminologyProvider);
+    final semLabel = termHelper.semesterName();
+    final secLabel = termHelper.sectionName();
     final course = courseMap[_selectedCourseId]?.name ?? courseMap[_selectedCourseId]?.code ?? '';
     final section = sectionMap[_selectedSectionId]?.name ?? '';
-    final sem = _selectedSemesterId != null ? 'Sem $_selectedSemesterId' : '';
+    final semObj = ref.read(timetableSemesterMapProvider)[_selectedSemesterId];
+    final sem = semObj != null ? '$semLabel ${semObj.number}' : (_selectedSemesterId != null ? '$semLabel $_selectedSemesterId' : '');
 
     if (course.isNotEmpty || section.isNotEmpty) {
-      final generated = [course, sem, section.isNotEmpty ? 'Sec $section' : ''].where((s) => s.isNotEmpty).join(' - ');
+      final generated = [course, sem, section.isNotEmpty ? '$secLabel $section' : ''].where((s) => s.isNotEmpty).join(' - ');
       _nameController.text = generated;
       _lastAutoName = generated;
     }
@@ -413,6 +420,11 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
     final allAssignments = assignmentsAsync.valueOrNull ?? [];
     final allRooms = roomsAsync.valueOrNull ?? [];
 
+    final termHelper = ref.watch(terminologyProvider);
+    final courseLabel = termHelper.programName();
+    final semesterLabel = termHelper.semesterName();
+    final sectionLabel = termHelper.sectionName();
+
     final prereqResult = AcademicPrerequisiteGuard.checkTimetablePrerequisites(
       courses: allCourses,
       academicYears: allYears,
@@ -421,6 +433,9 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
       subjects: allSubjects,
       facultyAssignments: allAssignments,
       rooms: allRooms,
+      isSectionEnabled: termHelper.isSectionEnabled,
+      isRoomRequired: false,
+      termHelper: termHelper,
     );
 
     final availableDepts = (deptsAsync.valueOrNull ?? []).where((d) {
@@ -471,7 +486,7 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                     style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
                   ),
                   Text(
-                    'Select the department, course, and section for this timetable',
+                    'Select the department, $courseLabel, and $sectionLabel for this timetable',
                     style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
                   ),
                 ],
@@ -547,8 +562,8 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                 ? _selectedCourseId
                 : null,
             decoration: InputDecoration(
-              labelText: 'Course / Degree Program *',
-              hintText: _selectedDepartmentId == null ? 'Select Department first' : 'Select Degree Program / Course',
+              labelText: '$courseLabel *',
+              hintText: _selectedDepartmentId == null ? 'Select Department first' : 'Select $courseLabel',
             ),
             items: availableCourses.map((c) {
               return DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.code})'));
@@ -597,11 +612,11 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                       ? _selectedSemesterId
                       : null,
                   decoration: InputDecoration(
-                    labelText: 'Semester *',
-                    hintText: _selectedCourseId == null ? 'Select Course first' : 'Select Semester',
+                    labelText: '$semesterLabel *',
+                    hintText: _selectedCourseId == null ? 'Select $courseLabel first' : 'Select $semesterLabel',
                   ),
                   items: availableSemesters.map((s) {
-                    return DropdownMenuItem(value: s.id, child: Text('Semester ${s.number}'));
+                    return DropdownMenuItem(value: s.id, child: Text('$semesterLabel ${s.number}'));
                   }).toList(),
                   onChanged: _selectedCourseId == null
                       ? null
@@ -615,28 +630,30 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                         },
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _selectedSectionId != null && availableSections.any((s) => s.id == _selectedSectionId)
-                      ? _selectedSectionId
-                      : null,
-                  decoration: InputDecoration(
-                    labelText: 'Section *',
-                    hintText: _selectedSemesterId == null ? 'Select Semester first' : 'Select Section',
+              if (termHelper.isSectionEnabled) ...[
+                const SizedBox(width: 16),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedSectionId != null && availableSections.any((s) => s.id == _selectedSectionId)
+                        ? _selectedSectionId
+                        : null,
+                    decoration: InputDecoration(
+                      labelText: '$sectionLabel *',
+                      hintText: _selectedSemesterId == null ? 'Select $semesterLabel first' : 'Select $sectionLabel',
+                    ),
+                    items: availableSections.map((s) {
+                      return DropdownMenuItem(value: s.id, child: Text(s.name));
+                    }).toList(),
+                    onChanged: _selectedSemesterId == null
+                        ? null
+                        : (val) {
+                            setState(() => _selectedSectionId = val);
+                            _autoGenerateName();
+                            _checkExistingContainers();
+                          },
                   ),
-                  items: availableSections.map((s) {
-                    return DropdownMenuItem(value: s.id, child: Text(s.name));
-                  }).toList(),
-                  onChanged: _selectedSemesterId == null
-                      ? null
-                      : (val) {
-                          setState(() => _selectedSectionId = val);
-                          _autoGenerateName();
-                          _checkExistingContainers();
-                        },
                 ),
-              ),
+              ],
             ],
           ),
 
@@ -1235,7 +1252,12 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
   Widget _buildStep5Preview(bool isDark, bool isMobile) {
     final deptMap = ref.watch(timetableDepartmentMapProvider);
     final courseMap = ref.watch(timetableCourseMapProvider);
+    final semesterMap = ref.watch(timetableSemesterMapProvider);
     final sectionMap = ref.watch(timetableSectionMapProvider);
+    final termHelper = ref.watch(terminologyProvider);
+    final courseLabel = termHelper.programName();
+    final semesterLabel = termHelper.semesterName();
+    final sectionLabel = termHelper.sectionName();
 
     final previewContainer = TimetableContainerModel(
       id: 'preview-container',
@@ -1291,9 +1313,10 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
                 runSpacing: 10,
                 children: [
                   _buildSummaryBadge('Department', deptMap[_selectedDepartmentId]?.name ?? _selectedDepartmentId ?? '-', isDark),
-                  _buildSummaryBadge('Course', courseMap[_selectedCourseId]?.name ?? _selectedCourseId ?? '-', isDark),
-                  _buildSummaryBadge('Semester', 'Sem ${_selectedSemesterId ?? '-'}', isDark),
-                  _buildSummaryBadge('Section', sectionMap[_selectedSectionId]?.name ?? _selectedSectionId ?? '-', isDark),
+                  _buildSummaryBadge(courseLabel, courseMap[_selectedCourseId]?.name ?? _selectedCourseId ?? '-', isDark),
+                  _buildSummaryBadge(semesterLabel, semesterMap[_selectedSemesterId] != null ? '$semesterLabel ${semesterMap[_selectedSemesterId]!.number}' : (_selectedSemesterId ?? '-'), isDark),
+                  if (termHelper.isSectionEnabled)
+                    _buildSummaryBadge(sectionLabel, sectionMap[_selectedSectionId]?.name ?? _selectedSectionId ?? '-', isDark),
                   _buildSummaryBadge('Active Days', '${_activeDays.length} Days', isDark),
                   _buildSummaryBadge('Periods', '${_periods.length} Slots', isDark),
                   _buildSummaryBadge('Breaks', '${_breaks.length} Breaks', isDark),
@@ -1396,6 +1419,7 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
   bool _validateCurrentStep() {
     switch (_currentStep) {
       case 0:
+        final terminology = ref.read(terminologyProvider);
         final prereqResult = AcademicPrerequisiteGuard.checkTimetablePrerequisites(
           courses: ref.read(coursesProvider).valueOrNull ?? [],
           academicYears: ref.read(academicYearsProvider).valueOrNull ?? [],
@@ -1404,6 +1428,9 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
           subjects: ref.read(subjectsProvider).valueOrNull ?? [],
           facultyAssignments: ref.read(facultyAssignmentsProvider).valueOrNull ?? [],
           rooms: ref.read(roomsProvider).valueOrNull ?? [],
+          isSectionEnabled: terminology.isSectionEnabled,
+          isRoomRequired: false,
+          termHelper: terminology,
         );
         if (!prereqResult.isAllowed) return false;
 
@@ -1411,7 +1438,7 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
             _selectedCourseId != null &&
             _selectedAcademicYearId != null &&
             _selectedSemesterId != null &&
-            _selectedSectionId != null &&
+            (!terminology.isSectionEnabled || _selectedSectionId != null) &&
             _nameController.text.trim().isNotEmpty;
       case 1:
         return _activeDays.isNotEmpty;
@@ -1443,7 +1470,7 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
         courseId: _selectedCourseId!,
         academicYearId: _selectedAcademicYearId!,
         semesterId: _selectedSemesterId!,
-        sectionId: _selectedSectionId!,
+        sectionId: _selectedSectionId ?? '',
         name: _nameController.text.trim(),
         status: TimetableStatus.draft,
         version: 1,
@@ -1481,9 +1508,7 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
         _isCreating = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create timetable: $e'), backgroundColor: AcadexColors.error),
-        );
+        AcadexSnackBar.showError(context, e);
       }
     }
   }

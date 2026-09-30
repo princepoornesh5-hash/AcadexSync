@@ -7,6 +7,7 @@ import {
   createRequestSchema,
   respondRequestSchema,
   updateRequestStatusSchema,
+  cancelRequestSchema,
   requestQuerySchema,
 } from '../../validations/request.validation';
 
@@ -49,6 +50,22 @@ router.post(
   '/:id/respond',
   validateBody(respondRequestSchema),
   RequestController.respondToRequest
+);
+
+router.post(
+  '/:id/submit',
+  RequestController.submitRequest
+);
+
+router.post(
+  '/:id/cancel',
+  validateBody(cancelRequestSchema),
+  RequestController.cancelRequest
+);
+
+router.post(
+  '/:id/review',
+  RequestController.startReview
 );
 
 router.patch(

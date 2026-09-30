@@ -139,4 +139,89 @@ class ApiCalendarRepository implements CalendarRepository {
       throw AcadexException.fromDio(e, context: 'Failed to publish calendar event');
     }
   }
+
+  @override
+  Future<List<AcademicCalendarModel>> getAcademicCalendars({
+    String? academicYearId,
+    String? semesterId,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        if (academicYearId != null) 'academicYearId': academicYearId,
+        if (semesterId != null) 'semesterId': semesterId,
+      };
+
+      final response = await _apiClient.dio.get(
+        '/academic-calendars',
+        queryParameters: queryParams,
+      );
+
+      if (response.data != null && response.data['data'] is List) {
+        final list = response.data['data'] as List;
+        return list
+            .map((item) => AcademicCalendarModel.fromJson(Map<String, dynamic>.from(item as Map)))
+            .toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      throw AcadexException.fromDio(e, context: 'Failed to load academic calendars');
+    }
+  }
+
+  @override
+  Future<AcademicCalendarModel> createAcademicCalendar(Map<String, dynamic> data) async {
+    try {
+      final response = await _apiClient.dio.post('/academic-calendars', data: data);
+      if (response.data != null && response.data['data'] != null) {
+        return AcademicCalendarModel.fromJson(
+          Map<String, dynamic>.from(response.data['data'] as Map),
+        );
+      }
+      throw const AcadexException(
+        category: ErrorCategory.unknown,
+        technicalMessage: 'Failed to create academic calendar',
+        userMessage: 'Failed to create calendar. Please try again.',
+      );
+    } on DioException catch (e) {
+      throw AcadexException.fromDio(e, context: 'Failed to create academic calendar');
+    }
+  }
+
+  @override
+  Future<WorkingDayResolution> resolveWorkingDay(
+    String date, {
+    String? semesterId,
+    String? departmentId,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'date': date,
+        if (semesterId != null) 'semesterId': semesterId,
+        if (departmentId != null) 'departmentId': departmentId,
+      };
+
+      final response = await _apiClient.dio.get(
+        '/academic-calendars/resolve-working-day',
+        queryParameters: queryParams,
+      );
+
+      if (response.data != null && response.data['data'] != null) {
+        return WorkingDayResolution.fromJson(
+          Map<String, dynamic>.from(response.data['data'] as Map),
+        );
+      }
+      return WorkingDayResolution(date: date, isWorkingDay: true, isHoliday: false);
+    } on DioException catch (e) {
+      throw AcadexException.fromDio(e, context: 'Failed to resolve working day');
+    }
+  }
+
+  @override
+  Future<void> declareHoliday(Map<String, dynamic> data) async {
+    try {
+      await _apiClient.dio.post('/academic-calendars/declare-holiday', data: data);
+    } on DioException catch (e) {
+      throw AcadexException.fromDio(e, context: 'Failed to declare holiday');
+    }
+  }
 }

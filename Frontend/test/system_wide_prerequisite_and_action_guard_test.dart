@@ -109,7 +109,7 @@ void main() {
       expect(res.isAllowed, isFalse);
       expect(res.isSatisfied, isFalse);
       expect(res.missingType, equals(AcademicPrerequisiteType.course));
-      expect(res.message, contains('Please create a course first'));
+      expect(res.message, contains('Course is required'));
       expect(res.actionLabel, equals('Create Course'));
     });
 
@@ -121,7 +121,7 @@ void main() {
 
       expect(res.isAllowed, isFalse);
       expect(res.missingType, equals(AcademicPrerequisiteType.academicYear));
-      expect(res.message, contains('create an academic year'));
+      expect(res.message, contains('Academic Year is required'));
       expect(res.actionLabel, equals('Create Academic Year'));
     });
 
@@ -133,7 +133,7 @@ void main() {
 
       expect(res.isAllowed, isFalse);
       expect(res.missingType, equals(AcademicPrerequisiteType.semester));
-      expect(res.message, contains('Create a semester for this course first'));
+      expect(res.message, contains('Create a Semester for this Course first'));
       expect(res.actionLabel, equals('Create Semester'));
     });
 
@@ -148,7 +148,7 @@ void main() {
 
       expect(res.isAllowed, isFalse);
       expect(res.missingType, equals(AcademicPrerequisiteType.subject));
-      expect(res.message, contains('Add a subject for this semester first'));
+      expect(res.message, contains('Add a Subject for this Semester first'));
       expect(res.actionLabel, equals('Add Subject'));
     });
 
@@ -191,12 +191,13 @@ void main() {
 
       expect(res.isAllowed, isFalse);
       expect(res.missingType, equals(AcademicPrerequisiteType.facultyAssignment));
-      expect(res.message, contains('Assign a faculty member to the subject before creating the timetable'));
+      expect(res.message, contains('At least one teaching assignment is required'));
       expect(res.actionLabel, equals('Assign Faculty'));
     });
 
-    test('7. No Room -> checkTimetablePrerequisites blocks and provides guidance', () {
-      final res = AcademicPrerequisiteGuard.checkTimetablePrerequisites(
+    test('7. Room Optionality -> checkTimetablePrerequisites allows by default, blocks when isRoomRequired: true', () {
+      // Default: room is optional, timetable allowed
+      final resOptional = AcademicPrerequisiteGuard.checkTimetablePrerequisites(
         courses: [mockCourse],
         academicYears: [mockAcademicYear],
         semesters: [mockSemester],
@@ -205,11 +206,25 @@ void main() {
         facultyAssignments: [mockFacultyAssignment],
         rooms: [],
       );
+      expect(resOptional.isAllowed, isTrue);
 
-      expect(res.isAllowed, isFalse);
-      expect(res.missingType, equals(AcademicPrerequisiteType.room));
-      expect(res.message, contains('classroom/room'));
-      expect(res.actionLabel, equals('Add Room'));
+      // When institution requires rooms, check blocks with clear guidance
+      final resRequired = AcademicPrerequisiteGuard.checkTimetablePrerequisites(
+        courses: [mockCourse],
+        academicYears: [mockAcademicYear],
+        semesters: [mockSemester],
+        sections: [mockSection],
+        subjects: [mockSubject],
+        facultyAssignments: [mockFacultyAssignment],
+        rooms: [],
+        isRoomRequired: true,
+      );
+
+      expect(resRequired.isAllowed, isFalse);
+      expect(resRequired.missingType, equals(AcademicPrerequisiteType.room));
+      expect(resRequired.message, contains('requires rooms for timetable scheduling'));
+      expect(resRequired.actionLabel, equals('Add Room'));
+      expect(resRequired.actionRoute, equals('/academics/rooms/new'));
     });
 
     test('8. Full Academic Foundation -> checkTimetablePrerequisites allows continuation', () {
@@ -280,8 +295,8 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Missing Prerequisite'), findsOneWidget);
-      expect(find.text('Create a course first.'), findsOneWidget);
+      expect(find.text('Timetable needs a little setup'), findsOneWidget);
+      expect(find.text('Create a Course first.'), findsOneWidget);
       expect(find.text('Create Course'), findsOneWidget);
     });
   });

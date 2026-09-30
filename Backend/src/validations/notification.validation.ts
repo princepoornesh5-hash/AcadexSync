@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DevicePlatform, NotificationCategory } from '../constants/notification.constants';
+import { DevicePlatform, NotificationCategory, NotificationStatus } from '../constants/notification.constants';
 
 export const registerDeviceTokenSchema = z.object({
   deviceToken: z.string().min(1, 'deviceToken is required'),
@@ -10,10 +10,17 @@ export const registerDeviceTokenSchema = z.object({
 });
 
 export const updateNotificationPreferencesSchema = z.object({
+  inAppEnabled: z.boolean().optional(),
+  pushEnabled: z.boolean().optional(),
+  academic: z.boolean().optional(),
+  assignments: z.boolean().optional(),
+  practicals: z.boolean().optional(),
+  assessments: z.boolean().optional(),
+  calendar: z.boolean().optional(),
+  announcements: z.boolean().optional(),
   notes: z.boolean().optional(),
   attendance: z.boolean().optional(),
   timetable: z.boolean().optional(),
-  pushEnabled: z.boolean().optional(),
 });
 
 export const notificationQuerySchema = z.object({
@@ -25,6 +32,11 @@ export const notificationQuerySchema = z.object({
       if (val === 'false') return false;
       return undefined;
     }),
+  status: z.nativeEnum(NotificationStatus).optional(),
+  includeArchived: z
+    .string()
+    .optional()
+    .transform((val) => val === 'true'),
   category: z.nativeEnum(NotificationCategory).optional(),
   page: z
     .string()

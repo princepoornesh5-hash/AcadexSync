@@ -118,6 +118,9 @@ class FakeRequestsRepoForNotif implements RequestsRepository {
     required String description,
     AcademicContextModel? academicContext,
     RequestDetailsModel? details,
+    String? status,
+    String? relatedEntityType,
+    String? relatedEntityId,
   }) async {
     return RequestModel(
       id: 'req_created_1',

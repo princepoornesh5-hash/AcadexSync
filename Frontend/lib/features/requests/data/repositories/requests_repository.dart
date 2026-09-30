@@ -25,7 +25,16 @@ abstract class RequestsRepository {
     required String description,
     AcademicContextModel? academicContext,
     RequestDetailsModel? details,
+    String? status,
+    String? relatedEntityType,
+    String? relatedEntityId,
   });
+
+  Future<RequestModel> submitRequest(String id);
+
+  Future<RequestModel> cancelRequest(String id, {String? reason});
+
+  Future<RequestModel> startReview(String id);
 
   Future<RequestModel> respondToRequest({
     required String id,

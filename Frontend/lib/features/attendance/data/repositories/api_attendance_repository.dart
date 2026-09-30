@@ -234,9 +234,13 @@ class ApiAttendanceRepository implements AttendanceRepository {
   }) async {
     try {
       // 1. Fetch real active enrollments for this section directly
+      final Map<String, dynamic> enrollParams = {'status': 'active', 'limit': 100};
+      if (sectionId.isNotEmpty && sectionId != 'none' && sectionId != 'null') {
+        enrollParams['sectionId'] = sectionId;
+      }
       final enrollResponse = await _client.dio.get(
         '/academics/enrollments',
-        queryParameters: {'sectionId': sectionId, 'status': 'active', 'limit': 100},
+        queryParameters: enrollParams,
       );
       final enrollBody = enrollResponse.data;
       final enrollData = enrollBody is Map<String, dynamic> ? (enrollBody['data'] ?? enrollBody) : enrollBody;
@@ -251,15 +255,18 @@ class ApiAttendanceRepository implements AttendanceRepository {
       try {
         final fromDate = DateTime(date.year, date.month, date.day);
         final toDate = DateTime(date.year, date.month, date.day, 23, 59, 59);
+        final Map<String, dynamic> sessionParams = {
+          'subjectId': subjectId,
+          'from': fromDate.toIso8601String(),
+          'to': toDate.toIso8601String(),
+          'limit': 1,
+        };
+        if (sectionId.isNotEmpty && sectionId != 'none' && sectionId != 'null') {
+          sessionParams['sectionId'] = sectionId;
+        }
         final sessionResp = await _client.dio.get(
           '/attendance/sessions',
-          queryParameters: {
-            'sectionId': sectionId,
-            'subjectId': subjectId,
-            'from': fromDate.toIso8601String(),
-            'to': toDate.toIso8601String(),
-            'limit': 1,
-          },
+          queryParameters: sessionParams,
         );
         final sessionBody = sessionResp.data;
         final sData = sessionBody is Map<String, dynamic> ? (sessionBody['data'] ?? sessionBody) : sessionBody;
@@ -335,8 +342,6 @@ class ApiAttendanceRepository implements AttendanceRepository {
   Future<bool> saveSession(AttendanceSession session) async {
     try {
       final payload = <String, dynamic>{
-        'sectionId': session.sectionId,
-        'sectionName': session.sectionName,
         'subjectId': session.subjectId,
         'subjectName': session.subjectName,
         'timeSlot': session.timeSlot,
@@ -348,6 +353,10 @@ class ApiAttendanceRepository implements AttendanceRepository {
           'status': (r.status?.name ?? 'present').toLowerCase(),
         }).toList(),
       };
+      if (session.sectionId.isNotEmpty && session.sectionId != 'none' && session.sectionId != 'null') {
+        payload['sectionId'] = session.sectionId;
+        payload['sectionName'] = session.sectionName;
+      }
       if (session.timetableId != null && session.timetableId!.isNotEmpty) {
         payload['timetableId'] = session.timetableId;
       }
@@ -365,15 +374,18 @@ class ApiAttendanceRepository implements AttendanceRepository {
         try {
           final fromDate = DateTime(session.date.year, session.date.month, session.date.day);
           final toDate = DateTime(session.date.year, session.date.month, session.date.day, 23, 59, 59);
+          final Map<String, dynamic> fallbackParams = {
+            'subjectId': session.subjectId,
+            'from': fromDate.toIso8601String(),
+            'to': toDate.toIso8601String(),
+            'limit': 1,
+          };
+          if (session.sectionId.isNotEmpty && session.sectionId != 'none' && session.sectionId != 'null') {
+            fallbackParams['sectionId'] = session.sectionId;
+          }
           final existingResp = await _client.dio.get(
             '/attendance/sessions',
-            queryParameters: {
-              'sectionId': session.sectionId,
-              'subjectId': session.subjectId,
-              'from': fromDate.toIso8601String(),
-              'to': toDate.toIso8601String(),
-              'limit': 1,
-            },
+            queryParameters: fallbackParams,
           );
           final eBody = existingResp.data;
           final eData = eBody is Map<String, dynamic> ? (eBody['data'] ?? eBody) : eBody;

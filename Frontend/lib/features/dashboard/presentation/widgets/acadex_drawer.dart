@@ -149,54 +149,72 @@ class AcadexDrawer extends ConsumerWidget {
                     padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 8 : 14, vertical: 4),
                     child: isCollapsed
                         ? Center(
-                            child: Tooltip(
-                              message: '${user?.name ?? "User"} (${role.displayName})',
-                              child: AcadexAvatar(
-                                name: user?.name ?? 'User',
-                                size: 34,
-                                isOnline: true,
-                              ),
-                            ),
-                          )
-                        : Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                            child: InkWell(
+                              onTap: () {
+                                if (isModal && Scaffold.of(context).isDrawerOpen) {
+                                  Navigator.of(context).pop();
+                                }
+                                context.push('/profile');
+                              },
                               borderRadius: AcadexRadius.borderRadiusMd,
-                              border: Border.all(
-                                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                AcadexAvatar(
+                              child: Tooltip(
+                                message: '${user?.name ?? "User"} (${role.displayName}) - View Profile',
+                                child: AcadexAvatar(
                                   name: user?.name ?? 'User',
                                   size: 34,
                                   isOnline: true,
                                 ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        user?.name ?? 'Guest User',
-                                        style: AcadexTypography.bodySmall(
-                                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                        ).copyWith(fontWeight: FontWeight.w600),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      AcadexBadge(
-                                        label: role.displayName,
-                                        variant: AcadexBadgeVariant.primary,
-                                      ),
-                                    ],
-                                  ),
+                              ),
+                            ),
+                          )
+                        : InkWell(
+                            onTap: () {
+                              if (isModal && Scaffold.of(context).isDrawerOpen) {
+                                Navigator.of(context).pop();
+                              }
+                              context.push('/profile');
+                            },
+                            borderRadius: AcadexRadius.borderRadiusMd,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                                borderRadius: AcadexRadius.borderRadiusMd,
+                                border: Border.all(
+                                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                  width: 1,
                                 ),
-                              ],
+                              ),
+                              child: Row(
+                                children: [
+                                  AcadexAvatar(
+                                    name: user?.name ?? 'User',
+                                    size: 34,
+                                    isOnline: true,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          user?.name ?? 'Guest User',
+                                          style: AcadexTypography.bodySmall(
+                                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                          ).copyWith(fontWeight: FontWeight.w600),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 2),
+                                        AcadexBadge(
+                                          label: role.displayName,
+                                          variant: AcadexBadgeVariant.primary,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                   ),

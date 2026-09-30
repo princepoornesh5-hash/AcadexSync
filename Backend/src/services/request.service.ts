@@ -11,6 +11,11 @@ import { RequestModel, IRequest } from '../models/request.model';
 import { Department } from '../models/department.model';
 import { FacultyAssignment } from '../models/facultyAssignment.model';
 import { Faculty } from '../models/faculty.model';
+import { AttendanceSession } from '../models/attendanceSession.model';
+import { Assignment } from '../models/assignment.model';
+import { InternalAssessment } from '../models/internalAssessment.model';
+import { PracticalSession } from '../models/practicalSession.model';
+import { StudentEnrollment } from '../models/studentEnrollment.model';
 import { requestEvents } from '../events/request.events';
 import { AuthenticatedUser } from '../types/auth.types';
 
@@ -18,6 +23,9 @@ export interface CreateRequestInput {
   requestType: RequestType;
   title?: string;
   description: string;
+  status?: RequestStatus.DRAFT | RequestStatus.SUBMITTED;
+  relatedEntityType?: string;
+  relatedEntityId?: string;
   academicContext?: {
     courseId?: string;
     academicYearId?: string;
@@ -191,6 +199,97 @@ export class RequestService {
   }
 
   /**
+   * Validates linked entity belongs to the same tenant and exists
+   */
+  private static async validateLinkedEntity(
+    entityType: string,
+    entityId: string,
+    collegeId: string
+  ): Promise<void> {
+    if (!mongoose.Types.ObjectId.isValid(entityId)) {
+      throw ApiError.badRequest('Invalid relatedEntityId provided.');
+    }
+    const objId = new mongoose.Types.ObjectId(entityId);
+
+    switch (entityType.toUpperCase()) {
+      case 'ATTENDANCE_SESSION':
+      case 'ATTENDANCE': {
+        const session = await AttendanceSession.findById(objId);
+        if (!session || session.collegeId.toString() !== collegeId) {
+          throw ApiError.badRequest('Referenced attendance session does not exist in your college.');
+        }
+        break;
+      }
+      case 'ASSIGNMENT': {
+        const assignment = await Assignment.findById(objId);
+        if (!assignment || assignment.collegeId.toString() !== collegeId) {
+          throw ApiError.badRequest('Referenced assignment does not exist in your college.');
+        }
+        break;
+      }
+      case 'INTERNAL_ASSESSMENT':
+      case 'ASSESSMENT': {
+        const assessment = await InternalAssessment.findById(objId);
+        if (!assessment || assessment.collegeId.toString() !== collegeId) {
+          throw ApiError.badRequest('Referenced assessment does not exist in your college.');
+        }
+        break;
+      }
+      case 'PRACTICAL_SESSION':
+      case 'PRACTICAL': {
+        const practical = await PracticalSession.findById(objId);
+        if (!practical || practical.collegeId.toString() !== collegeId) {
+          throw ApiError.badRequest('Referenced practical session does not exist in your college.');
+        }
+        break;
+      }
+      case 'STUDENT_ENROLLMENT':
+      case 'ENROLLMENT': {
+        const enrollment = await StudentEnrollment.findById(objId);
+        if (!enrollment || enrollment.collegeId.toString() !== collegeId) {
+          throw ApiError.badRequest('Referenced enrollment does not exist in your college.');
+        }
+        break;
+      }
+      default:
+        // Accept other custom entity types
+        break;
+    }
+  }
+
+  /**
+   * Helper to verify responder permission on a request
+   */
+  private static verifyReviewerPermission(request: IRequest, user: AuthenticatedUser): void {
+    if (
+      user.role !== AppRole.SUPER_ADMIN &&
+      request.collegeId.toString() !== user.collegeId?.toString()
+    ) {
+      throw ApiError.forbidden('You no longer have access to this request.');
+    }
+
+    if (request.requesterUserId.toString() === user.id.toString()) {
+      throw ApiError.forbidden('Requesters cannot respond to or resolve their own request.');
+    }
+
+    const isSuperAdmin = user.role === AppRole.SUPER_ADMIN;
+    const isCollegeAdmin = user.role === AppRole.COLLEGE_ADMIN;
+    const isAssignedHOD =
+      user.role === AppRole.HOD &&
+      (request.targetUserId?.toString() === user.id.toString() ||
+        (request.departmentId && request.departmentId.toString() === user.departmentId?.toString()) ||
+        request.targetRole === AppRole.HOD);
+    const isAssignedFaculty =
+      user.role === AppRole.FACULTY &&
+      (request.targetUserId?.toString() === user.id.toString() ||
+        request.targetRole === AppRole.FACULTY);
+
+    if (!isSuperAdmin && !isCollegeAdmin && !isAssignedHOD && !isAssignedFaculty) {
+      throw ApiError.forbidden('You do not have permission to respond to this request.');
+    }
+  }
+
+  /**
    * 1. CREATE REQUEST
    */
   static async createRequest(
@@ -209,20 +308,30 @@ export class RequestService {
       throw ApiError.badRequest("We couldn't find the responsible person for this request.");
     }
 
-    // Prevent duplicate re-entrant submissions (same user, same type, within 30 seconds)
-    const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
-    const recentDuplicate = await RequestModel.findOne({
-      collegeId: new mongoose.Types.ObjectId(collegeId),
-      requesterUserId: user.id,
-      requestType: input.requestType,
-      status: { $in: [RequestStatus.SUBMITTED, RequestStatus.IN_REVIEW] },
-      createdAt: { $gte: thirtySecondsAgo },
-    });
+    const initialStatus =
+      input.status === RequestStatus.DRAFT ? RequestStatus.DRAFT : RequestStatus.SUBMITTED;
 
-    if (recentDuplicate) {
-      throw ApiError.conflict(
-        'A similar request was recently submitted and is currently being processed.'
-      );
+    // Validate linked entity if supplied
+    if (input.relatedEntityType && input.relatedEntityId) {
+      await this.validateLinkedEntity(input.relatedEntityType, input.relatedEntityId, collegeId);
+    }
+
+    if (initialStatus === RequestStatus.SUBMITTED) {
+      // Prevent duplicate re-entrant submissions (same user, same type, within 30 seconds)
+      const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
+      const recentDuplicate = await RequestModel.findOne({
+        collegeId: new mongoose.Types.ObjectId(collegeId),
+        requesterUserId: user.id,
+        requestType: input.requestType,
+        status: { $in: [RequestStatus.SUBMITTED, RequestStatus.IN_REVIEW, RequestStatus.UNDER_REVIEW] },
+        createdAt: { $gte: thirtySecondsAgo },
+      });
+
+      if (recentDuplicate) {
+        throw ApiError.conflict(
+          'A similar request was recently submitted and is currently being processed.'
+        );
+      }
     }
 
     // Resolve routing
@@ -233,10 +342,10 @@ export class RequestService {
 
     const initialHistory = [
       {
-        status: RequestStatus.SUBMITTED,
+        status: initialStatus,
         changedBy: user.id,
         changedByName: user.name,
-        note: 'Request submitted',
+        note: initialStatus === RequestStatus.DRAFT ? 'Request draft saved' : 'Request submitted',
         timestamp: new Date(),
       },
     ];
@@ -256,14 +365,164 @@ export class RequestService {
       requestType: input.requestType,
       title,
       description: input.description.trim(),
+      relatedEntityType: input.relatedEntityType || null,
+      relatedEntityId: input.relatedEntityId || null,
       academicContext: input.academicContext || null,
       details: input.details || null,
-      status: RequestStatus.SUBMITTED,
+      status: initialStatus,
       history: initialHistory,
     });
 
-    requestEvents.emitCreated(newRequest);
+    if (initialStatus === RequestStatus.SUBMITTED) {
+      requestEvents.emitCreated(newRequest);
+    }
     return newRequest;
+  }
+
+  /**
+   * 1b. SUBMIT DRAFT REQUEST
+   */
+  static async submitRequest(id: string, user: AuthenticatedUser): Promise<IRequest> {
+    const query = mongoose.Types.ObjectId.isValid(id) ? { _id: id } : { requestId: id };
+    const request = await RequestModel.findOne(query);
+    if (!request) {
+      throw ApiError.notFound('The requested record could not be found.');
+    }
+
+    if (request.requesterUserId.toString() !== user.id.toString()) {
+      throw ApiError.forbidden('Only the requester can submit their draft request.');
+    }
+
+    if (request.status !== RequestStatus.DRAFT) {
+      throw ApiError.badRequest(`Cannot submit a request that is in ${request.status} status.`);
+    }
+
+    const historyEntry = {
+      status: RequestStatus.SUBMITTED,
+      changedBy: user.id,
+      changedByName: user.name,
+      note: 'Request submitted',
+      timestamp: new Date(),
+    };
+
+    const updated = await RequestModel.findOneAndUpdate(
+      { _id: request._id, status: RequestStatus.DRAFT },
+      {
+        $set: { status: RequestStatus.SUBMITTED },
+        $push: { history: historyEntry },
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      throw ApiError.conflict('The request was concurrently modified. Please refresh.');
+    }
+
+    requestEvents.emitSubmitted(updated);
+    return updated;
+  }
+
+  /**
+   * 1c. CANCEL REQUEST (Requester or Admin)
+   */
+  static async cancelRequest(
+    id: string,
+    reason: string | undefined,
+    user: AuthenticatedUser
+  ): Promise<IRequest> {
+    const query = mongoose.Types.ObjectId.isValid(id) ? { _id: id } : { requestId: id };
+    const request = await RequestModel.findOne(query);
+    if (!request) {
+      throw ApiError.notFound('The requested record could not be found.');
+    }
+
+    const isRequester = request.requesterUserId.toString() === user.id.toString();
+    const isAdmin = user.role === AppRole.COLLEGE_ADMIN || user.role === AppRole.SUPER_ADMIN;
+
+    if (!isRequester && !isAdmin) {
+      throw ApiError.forbidden('You do not have permission to cancel this request.');
+    }
+
+    const allowedCancelStatuses = [
+      RequestStatus.DRAFT,
+      RequestStatus.SUBMITTED,
+      RequestStatus.RECEIVED,
+      RequestStatus.IN_REVIEW,
+      RequestStatus.UNDER_REVIEW,
+    ];
+
+    if (!allowedCancelStatuses.includes(request.status)) {
+      throw ApiError.badRequest(`Cannot cancel a request that is already ${request.status}.`);
+    }
+
+    const historyEntry = {
+      status: RequestStatus.CANCELLED,
+      changedBy: user.id,
+      changedByName: user.name,
+      note: reason?.trim() || 'Request cancelled by requester',
+      timestamp: new Date(),
+    };
+
+    const updated = await RequestModel.findOneAndUpdate(
+      { _id: request._id, status: { $in: allowedCancelStatuses } },
+      {
+        $set: { status: RequestStatus.CANCELLED },
+        $push: { history: historyEntry },
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      throw ApiError.conflict('The request was concurrently modified or resolved. Please refresh.');
+    }
+
+    requestEvents.emitCancelled(updated);
+    return updated;
+  }
+
+  /**
+   * 1d. START REVIEW (Authorized Responder moves request to UNDER_REVIEW)
+   */
+  static async startReview(id: string, user: AuthenticatedUser): Promise<IRequest> {
+    const query = mongoose.Types.ObjectId.isValid(id) ? { _id: id } : { requestId: id };
+    const request = await RequestModel.findOne(query);
+    if (!request) {
+      throw ApiError.notFound('The requested record could not be found.');
+    }
+
+    this.verifyReviewerPermission(request, user);
+
+    const validStatuses = [RequestStatus.SUBMITTED, RequestStatus.RECEIVED];
+    if (!validStatuses.includes(request.status)) {
+      if (request.status === RequestStatus.UNDER_REVIEW || request.status === RequestStatus.IN_REVIEW) {
+        return request; // Idempotent
+      }
+      throw ApiError.badRequest(`Cannot move request from ${request.status} to UNDER_REVIEW.`);
+    }
+
+    const historyEntry = {
+      status: RequestStatus.UNDER_REVIEW,
+      changedBy: user.id,
+      changedByName: user.name,
+      note: 'Request taken under review by responsible authority',
+      timestamp: new Date(),
+    };
+
+    const updated = await RequestModel.findOneAndUpdate(
+      { _id: request._id, status: { $in: validStatuses } },
+      {
+        $set: { status: RequestStatus.UNDER_REVIEW },
+        $push: { history: historyEntry },
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      throw ApiError.conflict('The request was concurrently updated. Please refresh.');
+    }
+
+    requestEvents.emitStatusChanged(updated, request.status, RequestStatus.UNDER_REVIEW);
+    return updated;
   }
 
   /**
@@ -382,6 +641,7 @@ export class RequestService {
       RequestStatus.SUBMITTED,
       RequestStatus.RECEIVED,
       RequestStatus.IN_REVIEW,
+      RequestStatus.UNDER_REVIEW,
     ];
 
     const myPendingFilter: Record<string, unknown> = {
@@ -543,6 +803,13 @@ export class RequestService {
       );
     }
 
+    // Rejection reason check: Meaningful reason (at least 5 characters) required
+    if (targetStatus === RequestStatus.REJECTED) {
+      if (!input.message || input.message.trim().length < 5) {
+        throw ApiError.badRequest('A meaningful rejection reason (at least 5 characters) is required.');
+      }
+    }
+
     const defaultMessage =
       targetStatus === RequestStatus.APPROVED
         ? 'Request approved.'
@@ -550,23 +817,40 @@ export class RequestService {
         ? 'Request rejected.'
         : 'Request resolved.';
 
-    request.status = targetStatus;
-    request.respondedAt = new Date();
-    request.respondedBy = user.id;
-    request.respondedByName = user.name;
-    request.responseMessage = input.message?.trim() || defaultMessage;
+    const responseMessage = input.message?.trim() || defaultMessage;
 
-    request.history.push({
+    const historyEntry = {
       status: targetStatus,
       changedBy: user.id,
       changedByName: user.name,
-      note: request.responseMessage,
+      note: responseMessage,
       timestamp: new Date(),
-    });
+    };
 
-    await request.save();
-    requestEvents.emitResponded(request);
-    return request;
+    // Atomic update with status condition to protect against concurrent reviews
+    const updated = await RequestModel.findOneAndUpdate(
+      { _id: request._id, status: request.status },
+      {
+        $set: {
+          status: targetStatus,
+          respondedAt: new Date(),
+          respondedBy: user.id,
+          respondedByName: user.name,
+          responseMessage,
+        },
+        $push: {
+          history: historyEntry,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      throw ApiError.conflict('The request was concurrently updated or resolved by another action. Please refresh.');
+    }
+
+    requestEvents.emitResponded(updated);
+    return updated;
   }
 
   /**
@@ -636,17 +920,29 @@ export class RequestService {
     }
 
     const previousStatus = request.status;
-    request.status = newStatus;
-    request.history.push({
+    const historyEntry = {
       status: newStatus,
       changedBy: user.id,
       changedByName: user.name,
       note: note?.trim() || `Status updated to ${newStatus}`,
       timestamp: new Date(),
-    });
+    };
 
-    await request.save();
-    requestEvents.emitStatusChanged(request, previousStatus, newStatus);
-    return request;
+    // Atomic update with status condition to protect against concurrent transitions
+    const updated = await RequestModel.findOneAndUpdate(
+      { _id: request._id, status: request.status },
+      {
+        $set: { status: newStatus },
+        $push: { history: historyEntry },
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      throw ApiError.conflict('The request was concurrently updated by another action. Please refresh.');
+    }
+
+    requestEvents.emitStatusChanged(updated, previousStatus, newStatus);
+    return updated;
   }
 }

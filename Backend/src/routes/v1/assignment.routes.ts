@@ -5,7 +5,11 @@ import { validateBody } from '../../middleware/validate.middleware';
 import { AssignmentController } from '../../controllers/assignment.controller';
 import {
   createAssignmentSchema,
+  updateAssignmentSchema,
   recordMarksSchema,
+  submissionUploadAuthSchema,
+  submitAssignmentSchema,
+  singleReviewSchema,
 } from '../../validations/assignment.validation';
 
 const router = Router();
@@ -38,7 +42,14 @@ router.get(
   AssignmentController.getAssignmentDetail
 );
 
-// Publish & Close actions
+// Edit assignment
+router.put(
+  '/:id',
+  validateBody(updateAssignmentSchema),
+  AssignmentController.updateAssignment
+);
+
+// Publish & Close & Archive actions
 router.post(
   '/:id/publish',
   AssignmentController.publishAssignment
@@ -49,10 +60,50 @@ router.post(
   AssignmentController.closeAssignment
 );
 
-// Student marks Done
+router.post(
+  '/:id/archive',
+  AssignmentController.archiveAssignment
+);
+
+// Safe delete draft assignment
+router.delete(
+  '/:id',
+  AssignmentController.deleteAssignment
+);
+
+// Student marks Done (Legacy / quick submit)
 router.post(
   '/:id/complete',
   AssignmentController.completeAssignment
+);
+
+// Student Submission Endpoints (Prompt 40)
+router.get(
+  '/:id/submission',
+  AssignmentController.getStudentSubmission
+);
+
+router.post(
+  '/:id/submission/upload-auth',
+  validateBody(submissionUploadAuthSchema),
+  AssignmentController.getSubmissionUploadAuth
+);
+
+router.post(
+  '/:id/submission/draft',
+  validateBody(submitAssignmentSchema),
+  AssignmentController.saveDraftSubmission
+);
+
+router.post(
+  '/:id/submission',
+  validateBody(submitAssignmentSchema),
+  AssignmentController.submitAssignment
+);
+
+router.get(
+  '/:id/submission/files/:fileId/download-url',
+  AssignmentController.getSubmissionFileDownloadUrl
 );
 
 // Faculty Activity & Marks
@@ -65,6 +116,13 @@ router.patch(
   '/:id/marks',
   validateBody(recordMarksSchema),
   AssignmentController.recordMarks
+);
+
+// Single Submission Review & Grading (Prompt 40)
+router.patch(
+  '/:id/submissions/:submissionId/review',
+  validateBody(singleReviewSchema),
+  AssignmentController.reviewSingleSubmission
 );
 
 export const assignmentRouter = router;

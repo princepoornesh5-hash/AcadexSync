@@ -20,6 +20,7 @@ import '../providers/timetable_lookup_providers.dart';
 import '../widgets/timetable_widgets.dart';
 import '../widgets/timetable_class_editor_dialog.dart';
 import '../widgets/teacher_substitution_dialog.dart';
+import '../../../institution_config/presentation/providers/institution_config_providers.dart';
 import 'timetable_setup_screen.dart';
 import 'timetable_designer_screen.dart';
 
@@ -203,6 +204,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     final facultyAssignments = ref.read(facultyAssignmentsProvider).value ?? [];
     final rooms = ref.read(roomsProvider).value ?? [];
 
+    final terminology = ref.read(terminologyProvider);
     final check = AcademicPrerequisiteGuard.checkTimetablePrerequisites(
       courses: courses,
       academicYears: academicYears,
@@ -211,6 +213,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
       subjects: subjects,
       facultyAssignments: facultyAssignments,
       rooms: rooms,
+      isSectionEnabled: terminology.isSectionEnabled,
+      isRoomRequired: false,
+      termHelper: terminology,
     );
 
     if (!check.isSatisfied) {
@@ -422,6 +427,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
           final facultyAssignments = ref.watch(facultyAssignmentsProvider).value ?? [];
           final rooms = ref.watch(roomsProvider).value ?? [];
 
+          final terminology = ref.watch(terminologyProvider);
           final prereqCheck = AcademicPrerequisiteGuard.checkTimetablePrerequisites(
             courses: courses,
             academicYears: academicYears,
@@ -430,6 +436,9 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
             subjects: subjects,
             facultyAssignments: facultyAssignments,
             rooms: rooms,
+            isSectionEnabled: terminology.isSectionEnabled,
+            isRoomRequired: false,
+            termHelper: terminology,
           );
 
           if (!prereqCheck.isSatisfied && canCreate) {
@@ -2190,7 +2199,9 @@ class HodTimetableReadinessCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final List<Subject> subjects = ref.watch(subjectsForSemesterProvider(semesterId));
-    final List<FacultyAssignment> assignments = ref.watch(facultyAssignmentsBySectionProvider(sectionId));
+    final List<FacultyAssignment> assignments = sectionId.isNotEmpty && sectionId != 'none'
+        ? ref.watch(facultyAssignmentsBySectionProvider(sectionId))
+        : ref.watch(facultyAssignmentsBySemesterProvider(semesterId));
     final List<Subject> unassignedSubjects = ref.watch(
       unassignedSubjectsForSectionProvider((semesterId: semesterId, sectionId: sectionId)),
     );

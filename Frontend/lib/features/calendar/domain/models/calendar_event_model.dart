@@ -4,19 +4,60 @@ import '../../../auth/domain/models/role_enum.dart';
 enum CalendarSourceType {
   manual('MANUAL'),
   derived('DERIVED'),
-  system('SYSTEM');
+  system('SYSTEM'),
+  timetable('TIMETABLE'),
+  assignment('ASSIGNMENT'),
+  practical('PRACTICAL'),
+  assessment('ASSESSMENT'),
+  academicResult('ACADEMIC_RESULT'),
+  override('OVERRIDE');
 
   final String value;
   const CalendarSourceType(this.value);
 
   static CalendarSourceType fromString(String? val) {
     switch (val?.toUpperCase()) {
+      case 'TIMETABLE':
+        return CalendarSourceType.timetable;
+      case 'ASSIGNMENT':
+        return CalendarSourceType.assignment;
+      case 'PRACTICAL':
+        return CalendarSourceType.practical;
+      case 'ASSESSMENT':
+        return CalendarSourceType.assessment;
+      case 'ACADEMIC_RESULT':
+        return CalendarSourceType.academicResult;
+      case 'OVERRIDE':
+        return CalendarSourceType.override;
       case 'DERIVED':
         return CalendarSourceType.derived;
       case 'SYSTEM':
         return CalendarSourceType.system;
       default:
         return CalendarSourceType.manual;
+    }
+  }
+
+  String get displayName {
+    switch (this) {
+      case CalendarSourceType.timetable:
+        return 'Timetable Class';
+      case CalendarSourceType.assignment:
+        return 'Assignment';
+      case CalendarSourceType.practical:
+        return 'Practical Session';
+      case CalendarSourceType.assessment:
+        return 'Internal Assessment';
+      case CalendarSourceType.academicResult:
+        return 'Academic Result';
+      case CalendarSourceType.override:
+        return 'Calendar Override';
+      case CalendarSourceType.derived:
+        return 'Academic Activity';
+      case CalendarSourceType.system:
+        return 'System Event';
+      case CalendarSourceType.manual:
+        return 'College Event';
     }
   }
 }
@@ -26,6 +67,15 @@ enum CalendarEventType {
   holiday('HOLIDAY'),
   publicHoliday('PUBLIC_HOLIDAY'),
   institutionHoliday('INSTITUTION_HOLIDAY'),
+  workingDay('WORKING_DAY'),
+  academicEvent('ACADEMIC_EVENT'),
+  examination('EXAMINATION'),
+  internalAssessment('INTERNAL_ASSESSMENT'),
+  practical('PRACTICAL'),
+  assignmentDeadline('ASSIGNMENT_DEADLINE'),
+  timetableClass('TIMETABLE_CLASS'),
+  collegeEvent('COLLEGE_EVENT'),
+  resultPublication('RESULT_PUBLICATION'),
   exam('EXAM'),
   seminar('SEMINAR'),
   workshop('WORKSHOP'),
@@ -45,8 +95,28 @@ enum CalendarEventType {
         return CalendarEventType.publicHoliday;
       case 'INSTITUTION_HOLIDAY':
         return CalendarEventType.institutionHoliday;
+      case 'WORKING_DAY':
+        return CalendarEventType.workingDay;
+      case 'ACADEMIC_EVENT':
+        return CalendarEventType.academicEvent;
+      case 'EXAMINATION':
+        return CalendarEventType.examination;
       case 'EXAM':
         return CalendarEventType.exam;
+      case 'INTERNAL_ASSESSMENT':
+        return CalendarEventType.internalAssessment;
+      case 'PRACTICAL':
+        return CalendarEventType.practical;
+      case 'ASSIGNMENT_DEADLINE':
+        return CalendarEventType.assignmentDeadline;
+      case 'DEADLINE':
+        return CalendarEventType.deadline;
+      case 'TIMETABLE_CLASS':
+        return CalendarEventType.timetableClass;
+      case 'COLLEGE_EVENT':
+        return CalendarEventType.collegeEvent;
+      case 'RESULT_PUBLICATION':
+        return CalendarEventType.resultPublication;
       case 'SEMINAR':
         return CalendarEventType.seminar;
       case 'WORKSHOP':
@@ -55,8 +125,6 @@ enum CalendarEventType {
         return CalendarEventType.labViva;
       case 'CLASS_TEST':
         return CalendarEventType.classTest;
-      case 'DEADLINE':
-        return CalendarEventType.deadline;
       case 'OTHER':
         return CalendarEventType.other;
       default:
@@ -72,8 +140,27 @@ enum CalendarEventType {
         return 'Public Holiday';
       case CalendarEventType.institutionHoliday:
         return 'Institution Holiday';
+      case CalendarEventType.workingDay:
+        return 'Working Day';
+      case CalendarEventType.academicEvent:
+        return 'Academic Event';
+      case CalendarEventType.examination:
       case CalendarEventType.exam:
         return 'Examination';
+      case CalendarEventType.internalAssessment:
+        return 'Internal Assessment';
+      case CalendarEventType.practical:
+        return 'Practical Session';
+      case CalendarEventType.assignmentDeadline:
+      case CalendarEventType.deadline:
+        return 'Assignment Deadline';
+      case CalendarEventType.timetableClass:
+        return 'Timetable Class';
+      case CalendarEventType.collegeEvent:
+      case CalendarEventType.event:
+        return 'College Event';
+      case CalendarEventType.resultPublication:
+        return 'Result Publication';
       case CalendarEventType.seminar:
         return 'Seminar';
       case CalendarEventType.workshop:
@@ -82,12 +169,8 @@ enum CalendarEventType {
         return 'Lab Viva';
       case CalendarEventType.classTest:
         return 'Class Test';
-      case CalendarEventType.deadline:
-        return 'Assignment Deadline';
       case CalendarEventType.other:
         return 'Academic Activity';
-      case CalendarEventType.event:
-        return 'College Event';
     }
   }
 }
@@ -169,6 +252,7 @@ class CalendarEventModel {
   final String? startTime; // HH:mm
   final String? endTime; // HH:mm
   final bool allDay;
+  final String? academicCalendarId;
   final String? departmentId;
   final String? courseId;
   final String? academicYearId;
@@ -200,6 +284,7 @@ class CalendarEventModel {
     this.startTime,
     this.endTime,
     this.allDay = false,
+    this.academicCalendarId,
     this.departmentId,
     this.courseId,
     this.academicYearId,
@@ -252,6 +337,7 @@ class CalendarEventModel {
       startTime: json['startTime'] as String?,
       endTime: json['endTime'] as String?,
       allDay: json['allDay'] as bool? ?? false,
+      academicCalendarId: json['academicCalendarId']?.toString(),
       departmentId: json['departmentId']?.toString(),
       courseId: json['courseId']?.toString(),
       academicYearId: json['academicYearId']?.toString(),
@@ -286,6 +372,7 @@ class CalendarEventModel {
       'startTime': startTime,
       'endTime': endTime,
       'allDay': allDay,
+      'academicCalendarId': academicCalendarId,
       'departmentId': departmentId,
       'courseId': courseId,
       'academicYearId': academicYearId,
@@ -319,6 +406,7 @@ class CalendarEventModel {
     String? startTime,
     String? endTime,
     bool? allDay,
+    String? academicCalendarId,
     String? departmentId,
     String? courseId,
     String? academicYearId,
@@ -350,6 +438,7 @@ class CalendarEventModel {
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       allDay: allDay ?? this.allDay,
+      academicCalendarId: academicCalendarId ?? this.academicCalendarId,
       departmentId: departmentId ?? this.departmentId,
       courseId: courseId ?? this.courseId,
       academicYearId: academicYearId ?? this.academicYearId,
@@ -367,6 +456,121 @@ class CalendarEventModel {
       navigationTarget: navigationTarget ?? this.navigationTarget,
       canEdit: canEdit ?? this.canEdit,
       canCancel: canCancel ?? this.canCancel,
+    );
+  }
+}
+
+@immutable
+class AcademicCalendarModel {
+  final String id;
+  final String collegeId;
+  final String academicYearId;
+  final String? courseId;
+  final String? departmentId;
+  final String? semesterId;
+  final String title;
+  final String? description;
+  final String startDate;
+  final String endDate;
+  final String status;
+  final List<String> workingDays;
+  final List<Map<String, dynamic>> holidays;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  const AcademicCalendarModel({
+    required this.id,
+    required this.collegeId,
+    required this.academicYearId,
+    this.courseId,
+    this.departmentId,
+    this.semesterId,
+    required this.title,
+    this.description,
+    required this.startDate,
+    required this.endDate,
+    required this.status,
+    this.workingDays = const ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
+    this.holidays = const [],
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  factory AcademicCalendarModel.fromJson(Map<String, dynamic> json) {
+    return AcademicCalendarModel(
+      id: (json['id'] ?? json['_id'])?.toString() ?? '',
+      collegeId: json['collegeId']?.toString() ?? '',
+      academicYearId: json['academicYearId']?.toString() ?? '',
+      courseId: json['courseId']?.toString(),
+      departmentId: json['departmentId']?.toString(),
+      semesterId: json['semesterId']?.toString(),
+      title: json['title'] as String? ?? 'Academic Calendar',
+      description: json['description'] as String?,
+      startDate: json['startDate'] as String? ?? '',
+      endDate: json['endDate'] as String? ?? '',
+      status: json['status'] as String? ?? 'ACTIVE',
+      workingDays: (json['workingDays'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
+      holidays: (json['holidays'] as List<dynamic>?)
+              ?.map((e) => Map<String, dynamic>.from(e as Map))
+              .toList() ??
+          const [],
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'].toString())
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'collegeId': collegeId,
+      'academicYearId': academicYearId,
+      'courseId': courseId,
+      'departmentId': departmentId,
+      'semesterId': semesterId,
+      'title': title,
+      'description': description,
+      'startDate': startDate,
+      'endDate': endDate,
+      'status': status,
+      'workingDays': workingDays,
+      'holidays': holidays,
+    };
+  }
+}
+
+@immutable
+class WorkingDayResolution {
+  final String date;
+  final bool isWorkingDay;
+  final bool isHoliday;
+  final bool isOverride;
+  final String? reason;
+  final String? overrideType;
+
+  const WorkingDayResolution({
+    required this.date,
+    required this.isWorkingDay,
+    required this.isHoliday,
+    this.isOverride = false,
+    this.reason,
+    this.overrideType,
+  });
+
+  factory WorkingDayResolution.fromJson(Map<String, dynamic> json) {
+    return WorkingDayResolution(
+      date: json['date'] as String? ?? '',
+      isWorkingDay: json['isWorkingDay'] as bool? ?? true,
+      isHoliday: json['isHoliday'] as bool? ?? false,
+      isOverride: json['isOverride'] as bool? ?? false,
+      reason: json['reason'] as String?,
+      overrideType: json['overrideType'] as String?,
     );
   }
 }

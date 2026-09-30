@@ -7,10 +7,12 @@ import {
   DEFAULT_ACADEMIC_STRUCTURE,
   DEFAULT_TERMINOLOGY,
   DEFAULT_ATTENDANCE_ALERTS,
+  DEFAULT_ASSESSMENT_CONFIG,
   INSTITUTION_PRESETS,
   IAcademicStructureConfig,
   ITerminologyConfig,
   IAttendanceAlertsConfig,
+  IAssessmentConfig,
 } from '../constants/institutionConfig.constants';
 import { UpdateInstitutionConfigInput } from '../validations/institutionConfig.validation';
 
@@ -36,6 +38,7 @@ export class InstitutionConfigService {
       academicStructure: { ...DEFAULT_ACADEMIC_STRUCTURE },
       terminology: { ...DEFAULT_TERMINOLOGY },
       attendanceAlerts: { ...DEFAULT_ATTENDANCE_ALERTS },
+      assessmentConfig: { ...DEFAULT_ASSESSMENT_CONFIG },
       isConfigured: false,
     };
   }
@@ -106,6 +109,12 @@ export class InstitutionConfigService {
       ...(input.attendanceAlerts || {}),
     };
 
+    const mergedAssessmentConfig: IAssessmentConfig = {
+      ...(existing?.assessmentConfig || DEFAULT_ASSESSMENT_CONFIG),
+      ...(input.assessmentConfig || {}),
+      components: input.assessmentConfig?.components || existing?.assessmentConfig?.components || DEFAULT_ASSESSMENT_CONFIG.components,
+    };
+
     const institutionType =
       input.institutionType || existing?.institutionType || InstitutionType.ENGINEERING;
 
@@ -118,6 +127,7 @@ export class InstitutionConfigService {
           academicStructure: mergedStructure,
           terminology: mergedTerminology,
           attendanceAlerts: mergedAttendanceAlerts,
+          assessmentConfig: mergedAssessmentConfig,
           isConfigured: true,
           updatedBy: new mongoose.Types.ObjectId(userId),
         },

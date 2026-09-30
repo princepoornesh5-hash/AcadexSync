@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { User, IUser } from '../models/user.model';
 import { Faculty, IFaculty } from '../models/faculty.model';
+import { FacultyAssignment } from '../models/facultyAssignment.model';
 import { College } from '../models/college.model';
 import { Department } from '../models/department.model';
 import { Invitation } from '../models/invitation.model';
@@ -534,14 +535,24 @@ export class FacultyService {
       user.departmentId ? Department.findById(user.departmentId) : null,
     ]);
 
+    const activeAssignments = faculty
+      ? await FacultyAssignment.find({
+          collegeId: faculty.collegeId,
+          facultyId: faculty._id,
+          isActive: true,
+        }).lean()
+      : [];
+    const uniqueSubjects = new Set(activeAssignments.map((a) => a.subjectId.toString()));
+    const uniqueSections = new Set(activeAssignments.map((a) => a.sectionId?.toString()).filter(Boolean));
+
     return {
       user: user.toJSON(),
       faculty: faculty ? faculty.toJSON() : null,
       college: college ? college.toJSON() : null,
       department: department ? department.toJSON() : null,
-      assignmentCount: 0,
-      sectionCount: faculty?.sectionIds?.length || 0,
-      subjectCount: faculty?.subjectIds?.length || 0,
+      assignmentCount: activeAssignments.length,
+      sectionCount: uniqueSections.size > 0 ? uniqueSections.size : faculty?.sectionIds?.length || 0,
+      subjectCount: uniqueSubjects.size > 0 ? uniqueSubjects.size : faculty?.subjectIds?.length || 0,
     };
   }
 

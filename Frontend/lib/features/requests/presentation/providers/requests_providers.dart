@@ -117,6 +117,9 @@ class RequestActionNotifier extends AsyncNotifier<void> {
     required String description,
     AcademicContextModel? academicContext,
     RequestDetailsModel? details,
+    String? status,
+    String? relatedEntityType,
+    String? relatedEntityId,
   }) async {
     // Re-entrancy guard against double taps
     if (_isSubmitting) return null;
@@ -133,6 +136,9 @@ class RequestActionNotifier extends AsyncNotifier<void> {
           description: description,
           academicContext: academicContext,
           details: details,
+          status: status,
+          relatedEntityType: relatedEntityType,
+          relatedEntityId: relatedEntityId,
         );
         ref.invalidate(myRequestsProvider);
         ref.invalidate(requestSummaryCountsProvider);
@@ -144,6 +150,75 @@ class RequestActionNotifier extends AsyncNotifier<void> {
     });
 
     return created;
+  }
+
+  Future<RequestModel?> submitRequest(String id) async {
+    if (_isSubmitting) return null;
+    _isSubmitting = true;
+    state = const AsyncLoading();
+
+    RequestModel? result;
+    state = await AsyncValue.guard(() async {
+      try {
+        final repo = ref.read(requestsRepositoryProvider);
+        result = await repo.submitRequest(id);
+        ref.invalidate(myRequestsProvider);
+        ref.invalidate(requestDetailProvider(id));
+        ref.invalidate(requestSummaryCountsProvider);
+        ref.invalidate(unreadNotificationCountProvider);
+        ref.invalidate(notificationsProvider);
+      } finally {
+        _isSubmitting = false;
+      }
+    });
+
+    return result;
+  }
+
+  Future<RequestModel?> cancelRequest(String id, {String? reason}) async {
+    if (_isSubmitting) return null;
+    _isSubmitting = true;
+    state = const AsyncLoading();
+
+    RequestModel? result;
+    state = await AsyncValue.guard(() async {
+      try {
+        final repo = ref.read(requestsRepositoryProvider);
+        result = await repo.cancelRequest(id, reason: reason);
+        ref.invalidate(myRequestsProvider);
+        ref.invalidate(incomingRequestsProvider);
+        ref.invalidate(requestDetailProvider(id));
+        ref.invalidate(requestSummaryCountsProvider);
+        ref.invalidate(unreadNotificationCountProvider);
+        ref.invalidate(notificationsProvider);
+      } finally {
+        _isSubmitting = false;
+      }
+    });
+
+    return result;
+  }
+
+  Future<RequestModel?> startReview(String id) async {
+    if (_isSubmitting) return null;
+    _isSubmitting = true;
+    state = const AsyncLoading();
+
+    RequestModel? result;
+    state = await AsyncValue.guard(() async {
+      try {
+        final repo = ref.read(requestsRepositoryProvider);
+        result = await repo.startReview(id);
+        ref.invalidate(myRequestsProvider);
+        ref.invalidate(incomingRequestsProvider);
+        ref.invalidate(requestDetailProvider(id));
+        ref.invalidate(requestSummaryCountsProvider);
+      } finally {
+        _isSubmitting = false;
+      }
+    });
+
+    return result;
   }
 
   Future<RequestModel?> respondToRequest({

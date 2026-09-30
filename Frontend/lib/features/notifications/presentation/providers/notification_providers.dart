@@ -34,7 +34,7 @@ final attendanceNotificationDispatcherProvider = Provider<AttendanceNotification
 
 
 // --- Filter Providers ---
-enum NotificationFilter { all, unread, read, announcements, attendance, academic, notes, timetable, system, security }
+enum NotificationFilter { all, unread, academic, tasks, calendar, system, read, announcements, attendance, notes, timetable, security }
 
 final notificationFilterProvider = StateProvider<NotificationFilter>((ref) => NotificationFilter.all);
 
@@ -49,15 +49,7 @@ class NotificationsNotifier extends AutoDisposeStreamNotifier<List<NotificationM
       return Stream.value([]);
     }
     
-    final prefs = prefsAsync.value ??
-        NotificationPreferences(
-          attendanceAlerts: true,
-          academicUpdates: true,
-          announcements: true,
-          notesUploaded: true,
-          certificateUpdates: true,
-          generalNotifications: true,
-        );
+    final prefs = prefsAsync.value ?? NotificationPreferences.defaults();
 
     final repo = ref.watch(notificationRepositoryProvider);
     return repo.watchNotifications(authState.user, prefs);
@@ -75,6 +67,13 @@ class NotificationsNotifier extends AutoDisposeStreamNotifier<List<NotificationM
     if (authState is! AuthAuthenticated) return;
     
     await ref.read(notificationRepositoryProvider).markAsUnread(id, authState.user.id);
+  }
+
+  Future<void> archiveNotification(String id) async {
+    final authState = ref.read(authProvider);
+    if (authState is! AuthAuthenticated) return;
+
+    await ref.read(apiNotificationRepositoryProvider).archiveNotification(id);
   }
 
   Future<void> markAllAsRead() async {
@@ -126,18 +125,39 @@ final filteredNotificationsProvider = Provider.autoDispose<List<NotificationMode
           return notifications.where((n) => !n.isRead).toList();
         case NotificationFilter.read:
           return notifications.where((n) => n.isRead).toList();
+        case NotificationFilter.academic:
+          return notifications
+              .where((n) =>
+                  n.category == NotificationCategory.academic ||
+                  n.category == NotificationCategory.assessment ||
+                  n.category == NotificationCategory.result)
+              .toList();
+        case NotificationFilter.tasks:
+          return notifications
+              .where((n) =>
+                  n.category == NotificationCategory.assignment ||
+                  n.category == NotificationCategory.practical)
+              .toList();
+        case NotificationFilter.calendar:
+          return notifications
+              .where((n) =>
+                  n.category == NotificationCategory.calendar ||
+                  n.category == NotificationCategory.timetable)
+              .toList();
+        case NotificationFilter.system:
+          return notifications
+              .where((n) =>
+                  n.category == NotificationCategory.system ||
+                  n.category == NotificationCategory.security)
+              .toList();
         case NotificationFilter.attendance:
           return notifications.where((n) => n.category == NotificationCategory.attendance).toList();
         case NotificationFilter.announcements:
           return notifications.where((n) => n.category == NotificationCategory.announcement).toList();
-        case NotificationFilter.academic:
-          return notifications.where((n) => n.category == NotificationCategory.academic).toList();
         case NotificationFilter.notes:
           return notifications.where((n) => n.category == NotificationCategory.notes).toList();
         case NotificationFilter.timetable:
           return notifications.where((n) => n.category == NotificationCategory.timetable).toList();
-        case NotificationFilter.system:
-          return notifications.where((n) => n.category == NotificationCategory.system).toList();
         case NotificationFilter.security:
           return notifications.where((n) => n.category == NotificationCategory.security).toList();
       }
@@ -214,6 +234,20 @@ class AnnouncementCreationNotifier extends StateNotifier<AsyncValue<void>> {
       _ref.invalidate(adminAnnouncementsProvider);
       _ref.invalidate(notificationsProvider);
       _ref.invalidate(unreadNotificationCountProvider);
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+
+  Future<void> cancelAnnouncement(String id) async {
+    state = const AsyncLoading();
+    try {
+      final repo = _ref.read(apiNotificationRepositoryProvider);
+      await repo.cancelAnnouncement(id);
+      _ref.invalidate(announcementsProvider);
+      _ref.invalidate(adminAnnouncementsProvider);
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);

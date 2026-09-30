@@ -1133,8 +1133,10 @@ class FirebaseAcademicRepository implements AcademicRepository {
     required String courseId,
     required String academicYearId,
     required String semesterId,
-    required String sectionId,
+    String? sectionId,
     String? enrollmentDate,
+    String? cohort,
+    String? academicStage,
   }) async {
     final doc = await _firestoreService.getDocument('students', studentId);
     if (doc != null) {
@@ -1143,9 +1145,30 @@ class FirebaseAcademicRepository implements AcademicRepository {
         academicYearId: academicYearId,
         semesterId: semesterId,
         sectionId: sectionId,
+        cohort: cohort,
+        academicStage: academicStage,
       );
       await _firestoreService.setDocument('students', studentId, updated.toJson());
     }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getStudentCurrentEnrollment(String studentId) async {
+    final doc = await _firestoreService.getDocument('students', studentId);
+    if (doc == null) return null;
+    final student = Student.fromJson(doc);
+    return {
+      'academicContext': {
+        'departmentId': student.departmentId,
+        'courseId': student.courseId,
+        'academicYearId': student.academicYearId,
+        'semesterId': student.semesterId,
+        'sectionId': student.sectionId,
+        'cohort': student.cohort,
+        'academicStage': student.academicStage,
+        'status': student.status,
+      },
+    };
   }
 
   @override
@@ -1762,7 +1785,10 @@ class FirebaseAcademicRepository implements AcademicRepository {
 
       // Add subjectId & sectionId to faculty entity for rapid lookups
       final updatedSubs = Set<String>.from(faculty.subjectIds)..add(assignment.subjectId);
-      final updatedSecs = Set<String>.from(faculty.sectionIds)..add(assignment.sectionId);
+      final updatedSecs = Set<String>.from(faculty.sectionIds);
+      if (assignment.sectionId != null && assignment.sectionId!.isNotEmpty) {
+        updatedSecs.add(assignment.sectionId!);
+      }
       final updatedFaculty = faculty.copyWith(
         subjectIds: updatedSubs.toList(),
         sectionIds: updatedSecs.toList(),
@@ -1890,7 +1916,11 @@ class FirebaseAcademicRepository implements AcademicRepository {
     return facultyList.map((fac) {
       final activeAssignments = assignments.where((fa) => fa.facultyId == fac.id && fa.isActive).toList();
       final subjectNames = activeAssignments.map((fa) => subjectsMap[fa.subjectId] ?? fa.subjectId).toSet().toList();
-      final sectionNames = activeAssignments.map((fa) => sectionsMap[fa.sectionId] ?? fa.sectionId).toSet().toList();
+      final sectionNames = activeAssignments
+          .map((fa) => fa.sectionId != null ? (sectionsMap[fa.sectionId!] ?? fa.sectionId!) : null)
+          .whereType<String>()
+          .toSet()
+          .toList();
 
       return FacultyWorkloadSummary(
         facultyId: fac.id,
@@ -1997,6 +2027,21 @@ class FirebaseAcademicRepository implements AcademicRepository {
 
   @override
   Future<Room> addRoom(Room room) async {
+    final effectiveId = room.id.isNotEmpty ? room.id : 'room_${DateTime.now().millisecondsSinceEpoch}';
+    final toSave = room.copyWith(id: effectiveId);
+    await _firestoreService.setDocument('rooms', effectiveId, toSave.toJson());
+    return toSave;
+  }
+
+  @override
+  Future<Room?> getRoomById(String id) async {
+    final doc = await _firestoreService.getDocument('rooms', id);
+    if (doc == null) return null;
+    return Room.fromJson(doc);
+  }
+
+  @override
+  Future<Room> updateRoom(Room room) async {
     await _firestoreService.setDocument('rooms', room.id, room.toJson());
     return room;
   }

@@ -170,7 +170,7 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
             searchHint: "Search faculty by name, ID, or department...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
             onActionTap: () => context.push('/academics/faculty/new'),
-            actionLabel: "Add Faculty",
+            actionLabel: "+ Add Faculty",
           ),
           const SizedBox(height: 8),
           // Filter Chips
@@ -222,7 +222,7 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                                 title: "No faculty members have been added yet.",
                                 subtitle: "Add faculty members to allocate courses and manage teaching assignments.",
                                 icon: LucideIcons.graduationCap,
-                                actionLabel: "Add Faculty",
+                                actionLabel: "+ Add Faculty",
                                 onActionTap: () => context.push('/academics/faculty/new'),
                               )
                             : AcadexEmptyState.filterEmpty(
@@ -254,12 +254,20 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
       itemBuilder: (context, index) {
         final f = items[index];
         final deptName = deptMap[f.departmentId]?.name ?? (f.departmentId.isNotEmpty ? f.departmentId : 'Unassigned');
-        final facultyAssignments = allAssignments.where((a) => a.facultyId == f.id).toList();
-        final assignmentCount = facultyAssignments.isNotEmpty ? facultyAssignments.length : (f.subjectIds.length);
         final isPending = f.accountStatus == AccountStatus.pendingActivation;
 
-        return GestureDetector(
+        // Extract clean initials
+        final cleanName = f.name.replaceAll(RegExp(r'^(Dr\.|Prof\.|Mr\.|Mrs\.|Ms\.)\s*', caseSensitive: false), '').trim();
+        final nameParts = cleanName.split(RegExp(r'\s+'));
+        final initials = nameParts.length > 1
+            ? '${nameParts.first[0]}${nameParts.last[0]}'.toUpperCase()
+            : (cleanName.isNotEmpty ? cleanName.substring(0, 1).toUpperCase() : 'F');
+
+        final designation = f.designation?.isNotEmpty == true ? f.designation! : 'Faculty Member';
+
+        return InkWell(
           onTap: () => context.push('/academics/faculty/${f.id}'),
+          borderRadius: AcadexRadius.borderRadiusLg,
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -268,45 +276,79 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
               border: Border.all(
                 color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
               ),
+              boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AcadexColors.primary.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              f.employeeId.isNotEmpty ? f.employeeId : (f.instituteId ?? 'FAC'),
-                              style: const TextStyle(
-                                color: AcadexColors.primary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              f.name,
-                              style: AcadexTypography.body(
-                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                              ).copyWith(fontWeight: FontWeight.w700),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+                // Avatar with Initials
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AcadexColors.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: AcadexColors.primary.withValues(alpha: 0.25),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      initials,
+                      style: const TextStyle(
+                        color: AcadexColors.primary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Faculty Details (Name, Designation, Department/Context)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        f.name,
+                        style: AcadexTypography.body(
+                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                        ).copyWith(fontWeight: FontWeight.w700),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        designation,
+                        style: TextStyle(
+                          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        deptName,
+                        style: AcadexTypography.caption(
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+
+                // Status Badge & Navigation Chevron
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -318,7 +360,7 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                         borderRadius: AcadexRadius.borderRadiusFull,
                       ),
                       child: Text(
-                        isPending ? "Pending Activation" : (f.isActive ? "Active" : "Inactive"),
+                        isPending ? "Pending" : (f.isActive ? "Active" : "Inactive"),
                         style: TextStyle(
                           color: isPending ? AcadexColors.warning : (f.isActive ? AcadexColors.success : AcadexColors.inkMuted),
                           fontSize: 11,
@@ -326,80 +368,11 @@ class _FacultyListScreenState extends ConsumerState<FacultyListScreen> {
                         ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(LucideIcons.building2, size: 14, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        deptName,
-                        style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                        ).copyWith(fontWeight: FontWeight.w600),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(LucideIcons.mail, size: 13, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        f.email,
-                        style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: assignmentCount > 0
-                            ? AcadexColors.primary.withValues(alpha: 0.1)
-                            : AcadexColors.warning.withValues(alpha: 0.1),
-                        borderRadius: AcadexRadius.borderRadiusSm,
-                      ),
-                      child: Text(
-                        assignmentCount > 0
-                            ? "$assignmentCount Active Class${assignmentCount == 1 ? '' : 'es'}"
-                            : "No Assignments",
-                        style: TextStyle(
-                          color: assignmentCount > 0 ? AcadexColors.primary : AcadexColors.warning,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          tooltip: "View Profile",
-                          icon: const Icon(LucideIcons.arrowRight, size: 18, color: AcadexColors.primary),
-                          onPressed: () => context.push('/academics/faculty/${f.id}'),
-                        ),
-                        IconButton(
-                          tooltip: "Edit Faculty",
-                          icon: Icon(
-                            LucideIcons.edit,
-                            size: 18,
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                          ),
-                          onPressed: () => context.push('/academics/faculty/edit/${f.id}'),
-                        ),
-                      ],
+                    const SizedBox(height: 6),
+                    Icon(
+                      LucideIcons.chevronRight,
+                      size: 16,
+                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                     ),
                   ],
                 ),
@@ -931,11 +904,12 @@ class _FacultyFormScreenState extends ConsumerState<FacultyFormScreen> {
   Widget build(BuildContext context) {
     final isEdit = widget.id != null;
     final departmentsAsync = ref.watch(departmentsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface),

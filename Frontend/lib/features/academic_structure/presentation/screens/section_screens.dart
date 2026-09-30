@@ -41,10 +41,11 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
   String? _selectedAcademicYearId;
   String? _selectedSemesterId;
 
-  void _navigateCreateSection(BuildContext context, List<Course> courses, List<Semester> semesters) {
+  void _navigateCreateSection(BuildContext context, List<Course> courses, List<Semester> semesters, TerminologyHelper terminology) {
     final check = AcademicPrerequisiteGuard.checkSectionPrerequisites(
       courses: courses,
       semesters: semesters,
+      termHelper: terminology,
     );
     if (!check.isSatisfied) {
       AcademicPrerequisiteGuard.showBlockerDialog(context, check);
@@ -76,20 +77,27 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
       return true;
     }).toList();
 
+    final terminology = ref.watch(terminologyProvider);
+    final secTitle = terminology.sectionName(plural: true);
+    final secSingular = terminology.sectionName();
+    final semTitle = terminology.semesterName(plural: true);
+    final semSingular = terminology.semesterName();
+    final progPlural = terminology.programName(plural: true);
+
     return AcadexPageContainer(
       scrollable: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AcadexPageHeader(
-            title: "Sections",
-            subtitle: "Manage section capacity, classroom cohorts, and academic assignments.",
+          AcadexPageHeader(
+            title: secTitle,
+            subtitle: "Manage $secSingular capacity, classroom cohorts, and academic assignments.",
           ),
           AcadexSearchFilterBar(
-            searchHint: "Search sections, courses, or semesters...",
+            searchHint: "Search ${secTitle.toLowerCase()}, ${progPlural.toLowerCase()}, or ${semTitle.toLowerCase()}...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
-            onActionTap: () => _navigateCreateSection(context, coursesList, semsList),
-            actionLabel: "Create Section",
+            onActionTap: () => _navigateCreateSection(context, coursesList, semsList, terminology),
+            actionLabel: "Create $secSingular",
           ),
           const SizedBox(height: 10),
 
@@ -115,7 +123,7 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
                       isDense: true,
                       dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                       items: [
-                        const DropdownMenuItem(value: 'all', child: Text('All Courses', style: TextStyle(fontSize: 12))),
+                        DropdownMenuItem(value: 'all', child: Text('All $progPlural', style: const TextStyle(fontSize: 12))),
                         for (final c in coursesList)
                           DropdownMenuItem(value: c.id, child: Text("${c.name} (${c.code})", style: const TextStyle(fontSize: 12))),
                       ],
@@ -173,7 +181,7 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
                       isDense: true,
                       dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                       items: [
-                        const DropdownMenuItem(value: 'all', child: Text('All Semesters', style: TextStyle(fontSize: 12))),
+                        DropdownMenuItem(value: 'all', child: Text('All $semTitle', style: const TextStyle(fontSize: 12))),
                         for (final s in availableSems)
                           DropdownMenuItem(value: s.id, child: Text("${s.name} (Term ${s.number})", style: const TextStyle(fontSize: 12))),
                       ],
@@ -238,29 +246,41 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
                 onRetry: () => ref.invalidate(sectionsProvider),
               ),
               data: (sections) {
+                // If sections concept is disabled for this college
+                if (!terminology.isSectionEnabled) {
+                  return AcadexEmptyState(
+                    title: "$secTitle Not Enabled",
+                    subtitle: "This institution is configured to operate directly at the ${semSingular.toLowerCase()} level without separate class ${secTitle.toLowerCase()}.",
+                    icon: LucideIcons.layoutGrid,
+                  );
+                }
+
                 // If department has no sections at all, show guided roadmap
                 if (sections.isEmpty) {
                   if (coursesList.isEmpty) {
                     return FreshDepartmentSetupCard(
                       currentStep: AcademicSetupStep.course,
-                      actionLabel: "Create Course",
+                      actionLabel: "Create ${terminology.programName()}",
                       onAction: () => context.push('/academics/courses/new'),
-                      customMessage: "No courses found. Create a course first before creating sections.",
+                      customMessage: "No ${progPlural.toLowerCase()} found. Create a ${terminology.programName().toLowerCase()} first before creating ${secTitle.toLowerCase()}.",
+                      termHelper: terminology,
                     );
                   }
                   if (semsList.isEmpty) {
                     return FreshDepartmentSetupCard(
                       currentStep: AcademicSetupStep.semester,
-                      actionLabel: "Create Semester",
+                      actionLabel: "Create ${terminology.semesterName()}",
                       onAction: () => context.push('/academics/semesters/new'),
-                      customMessage: "No semesters found. Create semesters for your courses before creating sections.",
+                      customMessage: "No ${semTitle.toLowerCase()} found. Create ${semTitle.toLowerCase()} for your ${progPlural.toLowerCase()} before creating ${secTitle.toLowerCase()}.",
+                      termHelper: terminology,
                     );
                   }
                   return FreshDepartmentSetupCard(
                     currentStep: AcademicSetupStep.section,
-                    actionLabel: "Create First Section",
+                    actionLabel: "Create First $secSingular",
                     onAction: () => context.push('/academics/sections/new'),
-                    customMessage: "Courses and semesters are configured. Create your first class section.",
+                    customMessage: "$progPlural and ${semTitle.toLowerCase()} are configured. Create your first class ${secSingular.toLowerCase()}.",
+                    termHelper: terminology,
                   );
                 }
 
@@ -594,14 +614,19 @@ class _SectionFormScreenState extends ConsumerState<SectionFormScreen> {
             s.name.toUpperCase() == section.name.toUpperCase()).firstOrNull ?? section;
 
         if (mounted) {
-          AcadexSnackBar.showSuccess(context, 'Section created successfully.');
+          final terminology = ref.read(terminologyProvider);
+          final secLabel = terminology.sectionName();
+          final subLabel = terminology.subjectName();
+          final semLabel = terminology.semesterName();
+
+          AcadexSnackBar.showSuccess(context, '$secLabel created successfully.');
 
           SetupContinuationDialog.show(
             context,
-            title: 'Section Created Successfully',
-            entityName: 'Section ${createdSection.name}',
-            message: 'Section ${createdSection.name} is ready. Continue to define syllabus subjects for this semester.',
-            primaryActionLabel: 'Continue to Subject',
+            title: '$secLabel Created Successfully',
+            entityName: '$secLabel ${createdSection.name}',
+            message: '$secLabel ${createdSection.name} is ready. Continue to define syllabus ${terminology.subjectName(plural: true).toLowerCase()} for this ${semLabel.toLowerCase()}.',
+            primaryActionLabel: 'Continue to $subLabel',
             onContinue: () {
               context.push(
                 '/academics/subjects/new?courseId=${createdSection.courseId}&semesterId=${createdSection.semesterId}&sectionId=${createdSection.id}',
@@ -619,7 +644,9 @@ class _SectionFormScreenState extends ConsumerState<SectionFormScreen> {
         }
 
         if (mounted) {
-          AcadexSnackBar.showSuccess(context, 'Section updated successfully.');
+          final terminology = ref.read(terminologyProvider);
+          final secLabel = terminology.sectionName();
+          AcadexSnackBar.showSuccess(context, '$secLabel updated successfully.');
           context.safePop(fallbackRoute: '/academics/sections');
         }
       }
@@ -638,6 +665,8 @@ class _SectionFormScreenState extends ConsumerState<SectionFormScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final coursesAsync = ref.watch(coursesProvider);
     final semestersAsync = ref.watch(semestersProvider);
+    final terminology = ref.watch(terminologyProvider);
+    final secLabel = terminology.sectionName();
     final authState = ref.watch(authProvider);
     final user = authState is AuthAuthenticated ? authState.user : null;
     final isHod = user?.role == AppRole.hod;
@@ -647,16 +676,16 @@ class _SectionFormScreenState extends ConsumerState<SectionFormScreen> {
         (userDepartmentId.isNotEmpty ? userDepartmentId : 'Assigned Department');
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         elevation: 0,
         leading: IconButton(
           icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
           onPressed: () => context.safePop(fallbackRoute: '/academics/sections'),
         ),
         title: Text(
-          isEdit ? "Edit Section" : "Create Section",
+          isEdit ? "Edit $secLabel" : "Create $secLabel",
           style: AcadexTypography.heading2(
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ).copyWith(fontSize: 18),
@@ -669,9 +698,9 @@ class _SectionFormScreenState extends ConsumerState<SectionFormScreen> {
               child: Form(
                 key: _formKey,
                 child: AcadexFormCard(
-                  title: isEdit ? "Edit Section" : "Section Information",
+                  title: isEdit ? "Edit $secLabel" : "$secLabel Information",
                   isSaving: _isLoading,
-                  saveLabel: isEdit ? "Update Section" : "Create Section",
+                  saveLabel: isEdit ? "Update $secLabel" : "Create $secLabel",
                   onCancel: () => context.safePop(fallbackRoute: '/academics/sections'),
                   onSave: _save,
                   child: Column(

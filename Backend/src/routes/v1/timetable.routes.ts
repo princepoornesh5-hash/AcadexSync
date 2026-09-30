@@ -12,6 +12,7 @@ router.post('/rooms', requireHodOrAbove, TimetableController.createRoom);
 router.get('/rooms', TimetableController.listRooms);
 router.get('/rooms/:id', TimetableController.getRoomById);
 router.put('/rooms/:id', requireHodOrAbove, TimetableController.updateRoom);
+router.delete('/rooms/:id', requireHodOrAbove, TimetableController.deleteRoom);
 
 // Specialized Timetable Lookups
 router.get('/students/me', TimetableController.getStudentTimetable);

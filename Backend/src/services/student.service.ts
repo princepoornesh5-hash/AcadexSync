@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import { User, IUser } from '../models/user.model';
 import { Student, IStudent } from '../models/student.model';
 import { StudentEnrollment } from '../models/studentEnrollment.model';
+import { Faculty } from '../models/faculty.model';
+import { FacultyAssignment } from '../models/facultyAssignment.model';
 import { College } from '../models/college.model';
 import { Department } from '../models/department.model';
 import { Invitation } from '../models/invitation.model';
@@ -253,9 +255,46 @@ export class StudentService {
       return { user, student };
     }
 
-    if (requester.role === AppRole.HOD || requester.role === AppRole.FACULTY) {
+    if (requester.role === AppRole.HOD) {
+      if (!requester.departmentId || user.departmentId?.toString() !== requester.departmentId.toString()) {
+        throw ApiError.forbidden('Cross-department access is strictly prohibited for HOD');
+      }
+      return { user, student };
+    }
+
+    if (requester.role === AppRole.FACULTY) {
       if (!requester.departmentId || user.departmentId?.toString() !== requester.departmentId.toString()) {
         throw ApiError.forbidden('Cross-department access is strictly prohibited for staff');
+      }
+      // Faculty student visibility is limited to authorized teaching contexts
+      if (student) {
+        const facultyDoc = await Faculty.findOne({
+          $or: [{ userId: requester.id }, { _id: requester.id }],
+          collegeId: requester.collegeId,
+        });
+        if (facultyDoc) {
+          const assignments = await FacultyAssignment.find({
+            facultyId: facultyDoc._id,
+            collegeId: requester.collegeId,
+            isActive: true,
+          });
+          const assignedSectionIds = assignments.map((a) => a.sectionId?.toString()).filter(Boolean);
+          const assignedSemesterIds = assignments.map((a) => a.semesterId?.toString()).filter(Boolean);
+
+          const activeEnrollment = await StudentEnrollment.findOne({
+            studentId: student._id,
+            status: 'active',
+          });
+
+          const hasTeaching = activeEnrollment && (
+            (activeEnrollment.sectionId && assignedSectionIds.includes(activeEnrollment.sectionId.toString())) ||
+            (!activeEnrollment.sectionId && assignedSemesterIds.includes(activeEnrollment.semesterId.toString()))
+          );
+
+          if (!hasTeaching) {
+            throw ApiError.forbidden('Faculty student visibility is limited to authorized teaching contexts');
+          }
+        }
       }
       return { user, student };
     }
@@ -294,7 +333,7 @@ export class StudentService {
         throw ApiError.forbidden('Cross-college tenant access is strictly prohibited');
       }
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
-    } else if (requester.role === AppRole.HOD || requester.role === AppRole.FACULTY) {
+    } else if (requester.role === AppRole.HOD) {
       if (!requester.collegeId || !requester.departmentId) {
         return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
       }
@@ -302,10 +341,47 @@ export class StudentService {
         throw ApiError.forbidden('Cross-college tenant access is strictly prohibited');
       }
       if (query.departmentId && query.departmentId.toString() !== requester.departmentId.toString()) {
-        throw ApiError.forbidden('Staff cannot access students outside their assigned department');
+        throw ApiError.forbidden('HOD cannot access students outside their assigned department');
       }
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
       mongoQuery.departmentId = new mongoose.Types.ObjectId(requester.departmentId);
+    } else if (requester.role === AppRole.FACULTY) {
+      if (!requester.collegeId || !requester.departmentId) {
+        return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
+      }
+      mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+      const facultyDoc = await Faculty.findOne({
+        $or: [{ userId: requester.id }, { _id: requester.id }],
+        collegeId: requester.collegeId,
+      });
+      if (!facultyDoc) {
+        return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
+      }
+      const assignments = await FacultyAssignment.find({
+        facultyId: facultyDoc._id,
+        collegeId: requester.collegeId,
+        isActive: true,
+      });
+      if (assignments.length === 0) {
+        return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
+      }
+      const assignedSectionIds = assignments.map((a) => a.sectionId).filter(Boolean);
+      const assignedSemesterIds = assignments.map((a) => a.semesterId).filter(Boolean);
+
+      const enrollments = await StudentEnrollment.find({
+        collegeId: requester.collegeId,
+        status: 'active',
+        $or: [
+          { sectionId: { $in: assignedSectionIds } },
+          { semesterId: { $in: assignedSemesterIds }, sectionId: null },
+        ],
+      }).select('studentId');
+
+      const enrolledStudentIds = enrollments.map((e) => e.studentId);
+      const studentProfiles = await Student.find({ _id: { $in: enrolledStudentIds } }).select('userId');
+      const enrolledUserIds = studentProfiles.map((s) => s.userId).filter(Boolean);
+
+      mongoQuery._id = { $in: enrolledUserIds };
     } else if (query.collegeId) {
       if (!mongoose.Types.ObjectId.isValid(query.collegeId)) {
         throw ApiError.badRequest(`Invalid College ID format: "${query.collegeId}"`);
@@ -585,11 +661,20 @@ export class StudentService {
     user.collegeId = targetDept.collegeId;
     await user.save();
 
-    // Update Student Profile
+    // Update Student Profile & transition active enrollment to transferred
     if (student) {
       student.departmentId = targetDept._id;
       student.collegeId = targetDept.collegeId;
+      // Clear derived placement pointers until new placement in new department is made
+      student.courseId = undefined;
+      student.sectionId = undefined;
+      student.semesterId = undefined;
       await student.save();
+
+      await StudentEnrollment.updateMany(
+        { studentId: student._id, status: 'active' },
+        { status: 'transferred' }
+      );
     }
 
     await AuditLog.create({

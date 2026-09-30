@@ -44,17 +44,26 @@ enum AnnouncementAudienceScope {
 
 enum AnnouncementStatus {
   draft,
+  scheduled,
   published,
-  archived;
+  expired,
+  archived,
+  cancelled;
 
   String get label {
     switch (this) {
       case AnnouncementStatus.draft:
         return 'Draft';
+      case AnnouncementStatus.scheduled:
+        return 'Scheduled';
       case AnnouncementStatus.published:
         return 'Published';
+      case AnnouncementStatus.expired:
+        return 'Expired';
       case AnnouncementStatus.archived:
         return 'Archived';
+      case AnnouncementStatus.cancelled:
+        return 'Cancelled';
     }
   }
 

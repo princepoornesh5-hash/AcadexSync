@@ -157,6 +157,15 @@ class _RequestCenterScreenState extends ConsumerState<RequestCenterScreen>
                       ),
                       const SizedBox(width: 6),
                       _FilterChip(
+                        label: 'Draft',
+                        isSelected: filter.status == RequestStatus.draft,
+                        onTap: () {
+                          ref.read(requestsFilterProvider.notifier).state =
+                              filter.copyWith(status: RequestStatus.draft);
+                        },
+                      ),
+                      const SizedBox(width: 6),
+                      _FilterChip(
                         label: 'Submitted',
                         isSelected: filter.status == RequestStatus.submitted,
                         onTap: () {
@@ -184,11 +193,29 @@ class _RequestCenterScreenState extends ConsumerState<RequestCenterScreen>
                       ),
                       const SizedBox(width: 6),
                       _FilterChip(
+                        label: 'Rejected',
+                        isSelected: filter.status == RequestStatus.rejected,
+                        onTap: () {
+                          ref.read(requestsFilterProvider.notifier).state =
+                              filter.copyWith(status: RequestStatus.rejected);
+                        },
+                      ),
+                      const SizedBox(width: 6),
+                      _FilterChip(
                         label: 'Resolved',
                         isSelected: filter.status == RequestStatus.resolved,
                         onTap: () {
                           ref.read(requestsFilterProvider.notifier).state =
                               filter.copyWith(status: RequestStatus.resolved);
+                        },
+                      ),
+                      const SizedBox(width: 6),
+                      _FilterChip(
+                        label: 'Cancelled',
+                        isSelected: filter.status == RequestStatus.cancelled,
+                        onTap: () {
+                          ref.read(requestsFilterProvider.notifier).state =
+                              filter.copyWith(status: RequestStatus.cancelled);
                         },
                       ),
                       const SizedBox(width: 6),

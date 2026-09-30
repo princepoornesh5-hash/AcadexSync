@@ -4,6 +4,7 @@ import {
   NotificationType,
   NotificationCategory,
   NotificationPriority,
+  NotificationStatus,
 } from '../constants/notification.constants';
 
 export interface INotification extends Document {
@@ -15,10 +16,14 @@ export interface INotification extends Document {
   body: string;
   message?: string;
   notificationType: NotificationType;
+  type?: NotificationType;
   category: NotificationCategory;
   priority: NotificationPriority;
+  status: NotificationStatus;
   entityType?: string;
   entityId?: string;
+  sourceType?: string;
+  sourceId?: string;
   relatedEntityType?: string;
   relatedEntityId?: string;
   deepLink?: string;
@@ -57,6 +62,12 @@ const NotificationSchema = new Schema<INotification>(
       enum: Object.values(NotificationPriority),
       default: NotificationPriority.NORMAL,
     },
+    status: {
+      type: String,
+      enum: Object.values(NotificationStatus),
+      default: NotificationStatus.UNREAD,
+      index: true,
+    },
     entityType: { type: String, default: null },
     entityId: { type: String, default: null },
     deepLink: { type: String, default: null },
@@ -78,9 +89,12 @@ const NotificationSchema = new Schema<INotification>(
         if (ret.departmentId) ret.departmentId = ret.departmentId.toString();
         ret.message = ret.body;
         ret.type = ret.notificationType;
+        ret.sourceType = ret.entityType;
+        ret.sourceId = ret.entityId;
         ret.relatedEntityType = ret.entityType;
         ret.relatedEntityId = ret.entityId;
         ret.navigationTarget = ret.deepLink;
+        ret.status = ret.status || (ret.isRead ? NotificationStatus.READ : NotificationStatus.UNREAD);
         delete ret.__v;
         return ret;
       },
@@ -91,6 +105,8 @@ const NotificationSchema = new Schema<INotification>(
 // High performance compound indexes for fast inbox & unread counts
 NotificationSchema.index({ recipientUserId: 1, isRead: 1, createdAt: -1 });
 NotificationSchema.index({ collegeId: 1, recipientUserId: 1, createdAt: -1 });
+NotificationSchema.index({ collegeId: 1, recipientUserId: 1, isRead: 1, createdAt: -1 });
+NotificationSchema.index({ collegeId: 1, recipientUserId: 1, status: 1, createdAt: -1 });
 NotificationSchema.index({ recipientUserId: 1, idempotencyKey: 1 }, { unique: true, sparse: true });
 
 export const Notification = mongoose.model<INotification>(

@@ -83,6 +83,8 @@ class AcadexPageHeader extends StatelessWidget {
                       style: AcadexTypography.heading1(
                         color: standardTitleColor,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
