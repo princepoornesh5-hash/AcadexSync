@@ -13,11 +13,12 @@ import 'package:campus_management/features/academic_structure/presentation/provi
 import 'package:campus_management/features/academic_structure/presentation/screens/academic_structure_home_screen.dart';
 import 'package:campus_management/features/academic_structure/presentation/screens/subject_detail_screen.dart';
 import 'package:campus_management/features/academic_structure/data/repositories/mock_academic_repository.dart';
+import 'package:campus_management/features/dashboard/domain/models/home_dashboard_models.dart';
+import 'package:campus_management/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:campus_management/features/notifications/data/repositories/mock_notification_repository.dart';
 import 'package:campus_management/features/notifications/presentation/providers/notification_providers.dart';
 import 'package:campus_management/features/dashboard/domain/models/dashboard_stat_model.dart';
 import 'package:campus_management/features/dashboard/domain/models/activity_item_model.dart';
-import 'package:campus_management/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:campus_management/features/dashboard/presentation/screens/hod_dashboard.dart';
 import 'package:campus_management/features/dashboard/presentation/widgets/acadex_app_bar.dart';
 import 'package:campus_management/features/dashboard/presentation/widgets/acadex_drawer.dart';
@@ -33,6 +34,9 @@ class MockAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier 
 }
 
 class MockCalendarRepository implements CalendarRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   @override
   Future<List<CalendarEventModel>> getCalendar({String? startDate, String? endDate, String? eventType}) async {
     return [
@@ -81,6 +85,17 @@ void main() {
       calendarRepositoryProvider.overrideWithValue(MockCalendarRepository()),
       hodStatsProvider.overrideWith((ref) async => <DashboardStatModel>[]),
       hodActivityProvider.overrideWith((ref) async => <ActivityItemModel>[]),
+      homeDashboardProvider.overrideWith((ref) async => HomeDashboardModel.fromJson({
+        'role': 'HOD',
+        'metrics': {'activeStudents': 120, 'faculty': 18, 'attendanceRate': 94.0, 'pendingApprovals': 3},
+        'quickActions': [
+          {'title': 'Add Course', 'route': '/academics/courses/new', 'icon': 'book-open'},
+          {'title': 'Add Subject', 'route': '/academics/subjects/new', 'icon': 'library'},
+          {'title': 'Add Student', 'route': '/students/new', 'icon': 'user-plus'},
+          {'title': 'Assign Faculty', 'route': '/faculty-assignments', 'icon': 'users'},
+          {'title': 'Continue Setup', 'route': '/academics/setup', 'icon': 'settings'}
+        ],
+      })),
     ];
   }
 

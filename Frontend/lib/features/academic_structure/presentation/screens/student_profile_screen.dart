@@ -15,6 +15,7 @@ import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
 import '../widgets/student_bulk_action_dialogs.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
 
 class StudentProfileScreen extends ConsumerStatefulWidget {
   final String studentId;
@@ -428,11 +429,11 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                 Text("Academic Structure Mapping", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
                 const SizedBox(height: 12),
                 _buildDetailRow("College ID", student.collegeId),
-                _buildDetailRow("Department", profile.department?.name ?? student.departmentId),
-                _buildDetailRow("Course", "${profile.course?.name ?? student.courseId} (${profile.course?.code ?? ''})"),
-                _buildDetailRow("Academic Year", profile.academicYear?.name ?? (student.academicYearId.isNotEmpty ? student.academicYearId : 'Current')),
-                _buildDetailRow("Semester", profile.semester?.name ?? student.semesterId),
-                _buildDetailRow("Section", "Section ${profile.section?.name ?? student.sectionId}"),
+                _buildDetailRow("Department", AcadexEntityFormatters.formatDepartmentLabel(profile.department?.name, rawId: student.departmentId)),
+                _buildDetailRow("Course", "${AcadexEntityFormatters.formatCourseLabel(profile.course?.name, rawId: student.courseId)}${profile.course?.code != null && !AcadexEntityFormatters.isRawIdentifier(profile.course!.code) ? ' (${profile.course!.code})' : ''}"),
+                _buildDetailRow("Academic Year", AcadexEntityFormatters.formatAcademicYearLabel(profile.academicYear?.name, rawId: student.academicYearId)),
+                _buildDetailRow("Semester", AcadexEntityFormatters.formatSemesterLabel(profile.semester?.name, semesterNumber: profile.semester?.semesterNumber, rawId: student.semesterId)),
+                _buildDetailRow("Section", AcadexEntityFormatters.formatSectionLabel(profile.section?.name, rawId: student.sectionId, fallback: 'Section Not Assigned')),
                 _buildDetailRow("Admission Date", student.admissionDate != null ? "${student.admissionDate!.day}/${student.admissionDate!.month}/${student.admissionDate!.year}" : "—"),
                 if (student.graduationDate != null)
                   _buildDetailRow("Graduation Date", "${student.graduationDate!.day}/${student.graduationDate!.month}/${student.graduationDate!.year}"),
@@ -527,7 +528,10 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "${item.semesterName.isNotEmpty ? item.semesterName : item.semesterId} • ${item.sectionName.isNotEmpty ? 'Section ' + item.sectionName : item.sectionId}",
+                      AcadexEntityFormatters.formatAcademicContext(
+                        semester: AcadexEntityFormatters.formatSemesterLabel(item.semesterName, rawId: item.semesterId),
+                        section: AcadexEntityFormatters.formatSectionLabel(item.sectionName, rawId: item.sectionId, fallback: 'Section Not Assigned'),
+                      ),
                       style: AcadexTypography.body(color: theme.colorScheme.onSurface),
                     ),
                     if (item.remarks != null && item.remarks!.isNotEmpty) ...[

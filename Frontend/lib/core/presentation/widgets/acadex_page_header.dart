@@ -46,18 +46,18 @@ class AcadexPageHeader extends StatelessWidget {
                   ),
                 ),
                 if (i < breadcrumbs!.length - 1) ...[
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
                   Icon(
                     LucideIcons.chevronRight,
-                    size: 12,
+                    size: 11,
                     color: isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint,
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
                 ],
               ],
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
         ],
         if (isMobile)
           Column(
@@ -70,17 +70,17 @@ class AcadexPageHeader extends StatelessWidget {
                       icon: Icon(LucideIcons.arrowLeft, size: 20, color: standardTitleColor),
                       onPressed: onBack,
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                   ] else if (leading != null) ...[
                     leading!,
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                   ],
                   Expanded(
                     child: Text(
                       title,
-                      style: AcadexTypography.heading1(
+                      style: AcadexTypography.heading2(
                         color: standardTitleColor,
                       ),
                       maxLines: 2,
@@ -89,20 +89,23 @@ class AcadexPageHeader extends StatelessWidget {
                   ),
                 ],
               ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 4),
+              if (subtitle != null && subtitle!.isNotEmpty) ...[
+                const SizedBox(height: 3),
                 Text(
                   subtitle!,
                   style: AcadexTypography.bodySmall(
                     color: standardSubtitleColor,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
               if (actions != null && actions!.isNotEmpty) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: actions!,
                 ),
               ],
@@ -121,12 +124,12 @@ class AcadexPageHeader extends StatelessWidget {
                         icon: Icon(LucideIcons.arrowLeft, size: 20, color: standardTitleColor),
                         onPressed: onBack,
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
+                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                     ] else if (leading != null) ...[
                       leading!,
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                     ],
                     Expanded(
                       child: Column(
@@ -139,7 +142,7 @@ class AcadexPageHeader extends StatelessWidget {
                             ),
                           ),
                           if (subtitle != null) ...[
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 3),
                             Text(
                               subtitle!,
                               style: AcadexTypography.bodySmall(
@@ -169,9 +172,9 @@ class AcadexPageHeader extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.only(
-        top: AcadexSpacing.space16,
-        bottom: AcadexSpacing.space24,
+      padding: EdgeInsets.only(
+        top: isMobile ? AcadexSpacing.space2 : AcadexSpacing.space12,
+        bottom: isMobile ? AcadexSpacing.space12 : AcadexSpacing.space20,
       ),
       child: headerContent,
     );
@@ -211,14 +214,14 @@ class AcadexSectionHeader extends StatelessWidget {
             horizontal: AcadexSpacing.space8,
             vertical: AcadexSpacing.space4,
           ),
-          minimumSize: Size.zero,
+          minimumSize: const Size(0, 36),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           foregroundColor: AcadexColors.primary,
         ),
         child: Text(
           actionLabel!,
           style: const TextStyle(
-            fontSize: 13,
+            fontSize: 12.5,
             fontWeight: FontWeight.w600,
             color: AcadexColors.primary,
           ),
@@ -231,7 +234,7 @@ class AcadexSectionHeader extends StatelessWidget {
       children: [
         Container(
           width: 3,
-          height: 16,
+          height: 14,
           decoration: BoxDecoration(
             color: AcadexColors.primary,
             borderRadius: BorderRadius.circular(2),
@@ -248,9 +251,9 @@ class AcadexSectionHeader extends StatelessWidget {
           ),
         ),
         if (count != null) ...[
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
             decoration: BoxDecoration(
               color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
               borderRadius: AcadexRadius.borderRadiusFull,
@@ -281,10 +284,10 @@ class AcadexSectionHeader extends StatelessWidget {
             children: [
               headerTitleRow,
               if (subtitle != null) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   subtitle!,
-                  style: AcadexTypography.bodySmall(
+                  style: AcadexTypography.caption(
                     color: standardSubtitleColor,
                   ),
                 ),
@@ -297,7 +300,7 @@ class AcadexSectionHeader extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: const EdgeInsets.only(bottom: 8.0, top: 2.0),
       child: rowContent,
     );
   }

@@ -202,6 +202,13 @@ final collegeAdminStatsProvider = FutureProvider.autoDispose<List<DashboardStatM
 
 final collegeAdminQuickActionsProvider = Provider<List<QuickActionModel>>((ref) => [
       const QuickActionModel(
+        label: 'Department Setup',
+        icon: LucideIcons.compass,
+        iconColor: DashboardColors.primary,
+        iconBackground: DashboardColors.primaryLight,
+        route: '/academics/setup',
+      ),
+      const QuickActionModel(
         label: 'Academic Years',
         icon: LucideIcons.calendarDays,
         iconColor: DashboardColors.primary,

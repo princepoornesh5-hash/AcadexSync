@@ -11,6 +11,7 @@ import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../reports/presentation/providers/reports_providers.dart';
+import '../../../timetable/presentation/widgets/dashboard_timetable_live_card.dart';
 
 class RoleDashboardScreen extends ConsumerWidget {
   const RoleDashboardScreen({super.key});
@@ -296,7 +297,9 @@ class RoleDashboardScreen extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: AcadexSpacing.xl),
+        const SizedBox(height: AcadexSpacing.lg),
+        const DashboardTimetableLiveCard(role: AppRole.faculty),
+        const SizedBox(height: AcadexSpacing.md),
         const AcadexSectionHeader(title: 'Quick Tools'),
         const SizedBox(height: AcadexSpacing.sm),
         _buildActionRow(context, [
@@ -355,7 +358,9 @@ class RoleDashboardScreen extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: AcadexSpacing.xl),
+        const SizedBox(height: AcadexSpacing.lg),
+        const DashboardTimetableLiveCard(role: AppRole.student),
+        const SizedBox(height: AcadexSpacing.md),
         const AcadexSectionHeader(title: 'Student Hub'),
         const SizedBox(height: AcadexSpacing.sm),
         _buildActionRow(context, [

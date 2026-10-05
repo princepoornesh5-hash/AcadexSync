@@ -10,6 +10,7 @@ export 'acadex_feedback.dart';
 export 'acadex_form_card.dart';
 export 'acadex_form_controls.dart';
 export 'acadex_list_tile.dart';
+export 'acadex_motion.dart';
 export 'acadex_page_container.dart';
 export 'acadex_page_header.dart';
 export 'acadex_search_bar.dart';

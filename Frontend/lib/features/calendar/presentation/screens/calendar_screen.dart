@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -79,6 +81,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     final isWide = MediaQuery.of(context).size.width >= 860;
 
+    // The calendar grid is ALWAYS rendered unconditionally.
+    // Events data provides indicator dots only; event failure or loading NEVER removes the calendar grid.
     final calendarCard = Container(
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
@@ -117,30 +121,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           const Divider(height: 1, color: AcadexColors.hairline),
           const SizedBox(height: 6),
 
-          // Days Grid
-          eventsAsync.when(
-            data: (events) => _buildMonthDaysGrid(currentMonth, selectedDate, events),
-            loading: () => const Padding(
-              padding: EdgeInsets.symmetric(vertical: 30),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            error: (err, _) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Center(
-                child: Column(
-                  children: [
-                    Text('Failed to load events: $err'),
-                    const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: () => ref
-                          .read(calendarEventsProvider.notifier)
-                          .loadEvents(currentMonth, force: true),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          // Days Grid - Unconditionally rendered from date math.
+          // Event failure or loading does NOT unmount or hide this grid!
+          _buildMonthDaysGrid(
+            currentMonth,
+            selectedDate,
+            eventsAsync.valueOrNull ?? const [],
           ),
         ],
       ),
@@ -149,25 +135,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final leftCalendarBlock = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Month Header
+        // Month Header - Chevrons, Month/Year label, and Today button
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Flexible(
-                    child: Text(
-                      '${_monthNames[currentMonth.month]} ${currentMonth.year}',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
                   IconButton(
                     icon: const Icon(LucideIcons.chevronLeft, size: 18),
                     onPressed: _previousMonth,
@@ -176,6 +151,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     padding: const EdgeInsets.all(4),
                     constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      '${_monthNames[currentMonth.month]} ${currentMonth.year}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
                   IconButton(
                     icon: const Icon(LucideIcons.chevronRight, size: 18),
                     onPressed: _nextMonth,
@@ -187,7 +175,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 ],
               ),
             ),
-            const SizedBox(width: 6),
             TextButton.icon(
               onPressed: _jumpToToday,
               icon: const Icon(LucideIcons.calendarCheck, size: 14),
@@ -237,7 +224,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final rightEventsBlock = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Selected Day Events Section
+        // Selected Day Events Header
         Row(
           children: [
             const Icon(LucideIcons.calendarDays, size: 17, color: AcadexColors.primary),
@@ -245,59 +232,137 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             Expanded(
               child: Text(
                 '${_weekDays[selectedDate.weekday - 1]}, ${selectedDate.day} ${_monthNames[selectedDate.month]} ${selectedDate.year}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
+                  color: isDark ? AcadexColors.darkInk : const Color(0xFF0F172A),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: AcadexColors.primary.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '${selectedDayEvents.length} event${selectedDayEvents.length == 1 ? '' : 's'}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AcadexColors.primary,
+            if (eventsAsync.hasValue) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AcadexColors.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${selectedDayEvents.length} event${selectedDayEvents.length == 1 ? '' : 's'}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AcadexColors.primary,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
         const SizedBox(height: 10),
 
-        if (selectedDayEvents.isEmpty)
+        // Event State Section: Loading, Error, Empty, or Content
+        if (eventsAsync.isLoading && !eventsAsync.hasValue)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: isDark ? AcadexColors.darkSurfaceCard : const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AcadexColors.hairline),
+              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
             ),
-            child: Center(
-              child: Column(
+            child: const Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(LucideIcons.calendarX, size: 24, color: Colors.grey.shade400),
-                  const SizedBox(height: 6),
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 10),
                   Text(
-                    'No events for this day.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade600,
-                    ),
+                    'Loading events...',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
+            ),
+          )
+        else if (eventsAsync.hasError && !eventsAsync.hasValue)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+            decoration: BoxDecoration(
+              color: isDark ? AcadexColors.darkSurfaceCard : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+            ),
+            child: Row(
+              children: [
+                const Icon(LucideIcons.alertCircle, size: 18, color: AcadexColors.warning),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Unable to load events.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Check your connection and try again.',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                AcadexButton(
+                  label: 'Try Again',
+                  icon: LucideIcons.refreshCw,
+                  size: AcadexButtonSize.sm,
+                  variant: AcadexButtonVariant.secondary,
+                  onPressed: () => ref
+                      .read(calendarEventsProvider.notifier)
+                      .loadEvents(currentMonth, force: true),
+                ),
+              ],
+            ),
+          )
+        else if (selectedDayEvents.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+            decoration: BoxDecoration(
+              color: isDark ? AcadexColors.darkSurfaceCard : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(LucideIcons.calendarX, size: 18, color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade400),
+                const SizedBox(width: 8),
+                Text(
+                  'No events for this day.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade600,
+                  ),
+                ),
+              ],
             ),
           )
         else
@@ -313,37 +378,41 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
         // Upcoming Events Section
         Row(
-          children: const [
-            Icon(LucideIcons.sparkles, size: 17, color: Color(0xFF8B5CF6)),
-            SizedBox(width: 8),
+          children: [
+            const Icon(LucideIcons.sparkles, size: 17, color: Color(0xFF8B5CF6)),
+            const SizedBox(width: 8),
             Text(
               'UPCOMING EVENTS',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.6,
-                color: Color(0xFF0F172A),
+                color: isDark ? AcadexColors.darkInk : const Color(0xFF0F172A),
               ),
             ),
           ],
         ),
         const SizedBox(height: 10),
 
-        if (upcomingEvents.isEmpty)
+        if (eventsAsync.isLoading && !eventsAsync.hasValue)
+          const SizedBox.shrink()
+        else if (eventsAsync.hasError && !eventsAsync.hasValue)
+          const SizedBox.shrink()
+        else if (upcomingEvents.isEmpty)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: isDark ? AcadexColors.darkSurfaceCard : const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AcadexColors.hairline),
+              border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
             ),
             child: Row(
               children: [
-                Icon(LucideIcons.calendarCheck, size: 18, color: Colors.grey.shade400),
+                Icon(LucideIcons.calendarCheck, size: 18, color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade400),
                 const SizedBox(width: 10),
                 Text(
                   'No upcoming events.',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 13, color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade600),
                 ),
               ],
             ),
@@ -418,58 +487,54 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               ),
             )
           : null,
-      body: RefreshIndicator(
-        onRefresh: () => ref.read(calendarEventsProvider.notifier).loadEvents(currentMonth, force: true),
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.symmetric(horizontal: isWide ? 24 : 16, vertical: 16),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1140),
-              child: Column(
+      body: AcadexPageContainer(
+        scrollable: true,
+        bottomPadding: !isWide ? 84.0 : null,
+        onRefresh: () async {
+          await ref.read(calendarEventsProvider.notifier).loadEvents(currentMonth, force: true);
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AcadexPageHeader(
+              title: 'Academic Calendar',
+              subtitle: 'Institutional schedule, exams, holidays, and academic milestones',
+              actions: [
+                if (canCreate && isWide)
+                  AcadexButton(
+                    label: 'Add Event',
+                    icon: LucideIcons.plus,
+                    size: AcadexButtonSize.sm,
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => const CreateCalendarEventDialog(),
+                      );
+                    },
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (isWide)
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (canCreate && isWide) ...[
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: AcadexButton(
-                          label: 'Add Event',
-                          icon: LucideIcons.plus,
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (_) => const CreateCalendarEventDialog(),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (isWide)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(width: 400, child: leftCalendarBlock),
-                        const SizedBox(width: 24),
-                        Expanded(child: rightEventsBlock),
-                      ],
-                    )
-                  else
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        leftCalendarBlock,
-                        const SizedBox(height: 18),
-                        rightEventsBlock,
-                        const SizedBox(height: 32),
-                      ],
-                    ),
+                  SizedBox(width: 400, child: leftCalendarBlock),
+                  const SizedBox(width: 24),
+                  Expanded(child: rightEventsBlock),
+                ],
+              )
+            else
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  leftCalendarBlock,
+                  const SizedBox(height: 18),
+                  rightEventsBlock,
+                  const SizedBox(height: 32),
                 ],
               ),
-            ),
-          ),
+          ],
         ),
       ),
     );
@@ -483,7 +548,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       onSelected: (_) {
         ref.read(calendarFilterProvider.notifier).state = value;
       },
-      selectedColor: AcadexColors.primary.withOpacity(0.12),
+      selectedColor: AcadexColors.primary.withValues(alpha: 0.12),
       backgroundColor: const Color(0xFFF1F5F9),
       labelStyle: TextStyle(
         fontSize: 12,
@@ -575,7 +640,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             decoration: BoxDecoration(
               color: isSelected
                   ? AcadexColors.primary
-                  : (isToday ? AcadexColors.primary.withOpacity(0.08) : Colors.transparent),
+                  : (isToday ? AcadexColors.primary.withValues(alpha: 0.08) : Colors.transparent),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Column(

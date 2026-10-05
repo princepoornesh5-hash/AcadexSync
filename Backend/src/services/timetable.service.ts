@@ -1314,7 +1314,8 @@ export class TimetableService {
       operationalEntries.push(entryObj as ITimetableGridEntry);
     }
 
-    return operationalEntries.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    const enriched = await this.enrichTimetableEntries(operationalEntries);
+    return enriched.sort((a, b) => a.startTime.localeCompare(b.startTime));
   }
 
   static async getDepartmentTimetable(
@@ -1441,13 +1442,15 @@ export class TimetableService {
     const semesterIds = Array.from(new Set(entries.map((e) => (e as any).semesterId?.toString()).filter(Boolean)));
     const courseIds = Array.from(new Set(entries.map((e) => (e as any).courseId?.toString()).filter(Boolean)));
     const faIds = Array.from(new Set(entries.map((e) => e.facultyAssignmentId?.toString()).filter(Boolean)));
+    const facultyIds = Array.from(new Set(entries.map((e) => e.facultyId?.toString()).filter(Boolean)));
 
-    const [subjects, sections, semesters, courses, facultyAssignments] = await Promise.all([
+    const [subjects, sections, semesters, courses, facultyAssignments, faculties] = await Promise.all([
       Subject.find({ _id: { $in: subjectIds } }).lean(),
       Section.find({ _id: { $in: sectionIds } }).lean(),
       Semester.find({ _id: { $in: semesterIds } }).lean(),
       Course.find({ _id: { $in: courseIds } }).lean(),
       FacultyAssignment.find({ _id: { $in: faIds } }).lean(),
+      Faculty.find({ _id: { $in: facultyIds } }).lean(),
     ]);
 
     const subjectMap = new Map(subjects.map((s: any) => [s._id.toString(), s]));
@@ -1455,6 +1458,7 @@ export class TimetableService {
     const semesterMap = new Map(semesters.map((s: any) => [s._id.toString(), s]));
     const courseMap = new Map(courses.map((c: any) => [c._id.toString(), c]));
     const faMap = new Map(facultyAssignments.map((fa: any) => [fa._id.toString(), fa]));
+    const facultyMap = new Map(faculties.map((f: any) => [f._id.toString(), f]));
 
     return entries.map((e: any) => {
       const subject = e.subjectId ? subjectMap.get(e.subjectId.toString()) : null;
@@ -1462,6 +1466,7 @@ export class TimetableService {
       const semester = e.semesterId ? semesterMap.get(e.semesterId.toString()) : null;
       const course = e.courseId ? courseMap.get(e.courseId.toString()) : null;
       const fa = e.facultyAssignmentId ? faMap.get(e.facultyAssignmentId.toString()) : null;
+      const faculty = e.facultyId ? facultyMap.get(e.facultyId.toString()) : null;
 
       const cohort = fa?.cohort || null;
       const academicStage = fa?.academicStage || null;
@@ -1470,6 +1475,9 @@ export class TimetableService {
       const sectionName = section?.name || 'A';
       const semesterName = semester?.name || 'Semester';
       const courseName = course?.name || '';
+      const facultyName = faculty?.name || 'Faculty';
+      const facultyEmail = faculty?.email || undefined;
+      const facultyDesignation = faculty?.designation || undefined;
 
       const descParts = [
         cohort,
@@ -1485,6 +1493,9 @@ export class TimetableService {
         sectionName,
         semesterName,
         courseName,
+        facultyName,
+        facultyEmail,
+        facultyDesignation,
         cohort,
         academicStage,
         contextualDescription: descParts.join(' · '),

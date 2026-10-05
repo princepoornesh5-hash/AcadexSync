@@ -347,9 +347,19 @@ class AcadexNavigationService {
   /// Excludes groups that have no accessible items for the given role.
   static Map<AcadexNavGroup, List<AcadexNavItem>> getGroupedNavItems(AppRole role) {
     final dashboardRoute = getDashboardRoute(role);
-    final allowedItems = _allNavItems.where((item) => item.allowedRoles.contains(role)).toList();
+    // Exclude redundant items from drawer grouping:
+    // Notifications has a dedicated high-priority icon in the app bar;
+    // Profile is directly accessible via the top drawer profile context header;
+    // Rooms is managed directly within the Academics structure module.
+    final allowedItems = _allNavItems
+        .where((item) =>
+            item.allowedRoles.contains(role) &&
+            item.id != 'notifications' &&
+            item.id != 'rooms')
+        .toList();
 
     final Map<AcadexNavGroup, List<AcadexNavItem>> grouped = {};
+
 
     for (final group in AcadexNavGroup.values) {
       final itemsInGroup = allowedItems.where((item) => item.group == group).map((item) {

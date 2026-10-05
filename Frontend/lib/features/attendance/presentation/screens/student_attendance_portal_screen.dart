@@ -56,9 +56,9 @@ class _StudentAttendancePortalScreenState extends ConsumerState<StudentAttendanc
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       body: AcadexPageContainer(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
         scrollable: false,
         maxWidth: AcadexLayout.contentMaxWidth,
         child: Column(

@@ -25,21 +25,21 @@ class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendan
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             LucideIcons.arrowLeft,
-            color: Colors.white,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
           onPressed: () => context.safePop(fallbackRoute: '/attendance'),
         ),
         title: Text(
           "Attendance Sessions History",
           style: AcadexTypography.title(
-            color: Colors.white,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
         ),
       ),

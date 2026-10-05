@@ -30,45 +30,42 @@ class FacultyDashboard extends ConsumerWidget {
           onRetry: () => ref.invalidate(homeDashboardProvider),
         ),
         data: (dashboard) {
-          return SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. Welcome & Greeting
-                DashboardGreetingHeader(greeting: dashboard.greeting),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Welcome & Greeting
+              DashboardGreetingHeader(greeting: dashboard.greeting),
 
-                // 2. Current Teaching Context (FacultyAssignment)
-                DashboardContextCard(
-                  role: dashboard.role,
-                  contextModel: dashboard.context,
-                ),
+              // 2. Current Teaching Context (FacultyAssignment)
+              DashboardContextCard(
+                role: dashboard.role,
+                contextModel: dashboard.context,
+              ),
 
-                // 3. Operational Alerts
-                DashboardAlertsSection(alerts: dashboard.alerts),
+              // 3. Operational Alerts
+              DashboardAlertsSection(alerts: dashboard.alerts),
 
-                // 4. Pending Operational Work (Attendance, Submissions, Marks)
-                DashboardPendingActionsSection(
-                  pendingActions: dashboard.pendingActions,
-                ),
+              // 4. Pending Operational Work (Attendance, Submissions, Marks)
+              DashboardPendingActionsSection(
+                pendingActions: dashboard.pendingActions,
+              ),
 
-                // 5. Today / Upcoming Teaching Schedule
-                DashboardUpcomingSection(upcoming: dashboard.upcoming),
+              // 5. Today / Upcoming Teaching Schedule
+              DashboardUpcomingSection(upcoming: dashboard.upcoming),
 
-                // 6. Role Quick Shortcuts
-                DashboardQuickActionsGrid(
-                  quickActions: dashboard.quickActions,
-                ),
+              // 6. Role Quick Shortcuts
+              DashboardQuickActionsGrid(
+                quickActions: dashboard.quickActions,
+              ),
 
-                // 7. Faculty Operational Metrics
-                _buildFacultyOperationalSummary(context, dashboard.summary),
+              // 7. Faculty Operational Metrics
+              _buildFacultyOperationalSummary(context, dashboard.summary),
 
-                // 8. Recent Activity Feed
-                DashboardRecentActivitySection(recent: dashboard.recent),
+              // 8. Recent Activity Feed
+              DashboardRecentActivitySection(recent: dashboard.recent),
 
-                const SizedBox(height: 32),
-              ],
-            ),
+              const SizedBox(height: 16),
+            ],
           );
         },
       ),
@@ -79,37 +76,35 @@ class FacultyDashboard extends ConsumerWidget {
     BuildContext context,
     DashboardSummaryModel summary,
   ) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         Text(
           'Teaching & Evaluation Snapshot',
-          style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.2,
-              ),
+          style: AcadexTypography.heading3(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ).copyWith(fontSize: 14.5, fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         LayoutBuilder(
           builder: (context, constraints) {
             final isNarrow = constraints.maxWidth < 380;
             return GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: isNarrow ? 2 : 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: isNarrow ? 1.6 : 1.8,
+              crossAxisCount: 2,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: isNarrow ? 2.0 : 2.2,
               children: [
                 _buildMetricTile(
                   context,
                   title: 'Assigned Classes',
                   value: '${summary.assignedClassesCount}',
-                  subtitle: 'Active teaching sections',
+                  subtitle: 'Teaching sections',
                   icon: LucideIcons.bookOpen,
                   color: AcadexColors.primary,
                   isDark: isDark,
@@ -120,7 +115,7 @@ class FacultyDashboard extends ConsumerWidget {
                   value: '${summary.submissionsAwaitingReview}',
                   subtitle: 'Awaiting grading',
                   icon: LucideIcons.fileSpreadsheet,
-                  color: summary.submissionsAwaitingReview > 0 ? Colors.amber[800]! : Colors.teal,
+                  color: summary.submissionsAwaitingReview > 0 ? AcadexColors.warning : AcadexColors.inkMuted,
                   isDark: isDark,
                 ),
                 _buildMetricTile(
@@ -129,7 +124,7 @@ class FacultyDashboard extends ConsumerWidget {
                   value: '${summary.pendingAttendanceSessions}',
                   subtitle: 'Sessions to complete',
                   icon: LucideIcons.checkSquare,
-                  color: summary.pendingAttendanceSessions > 0 ? AcadexColors.warning : Colors.teal,
+                  color: summary.pendingAttendanceSessions > 0 ? AcadexColors.warning : AcadexColors.inkMuted,
                   isDark: isDark,
                 ),
                 _buildMetricTile(
@@ -138,7 +133,7 @@ class FacultyDashboard extends ConsumerWidget {
                   value: '${summary.pendingAssessmentMarks}',
                   subtitle: 'Marks pending entry',
                   icon: LucideIcons.penTool,
-                  color: summary.pendingAssessmentMarks > 0 ? Colors.deepOrange : Colors.purple,
+                  color: summary.pendingAssessmentMarks > 0 ? AcadexColors.error : AcadexColors.inkMuted,
                   isDark: isDark,
                 ),
               ],
@@ -158,47 +153,54 @@ class FacultyDashboard extends ConsumerWidget {
     required Color color,
     required bool isDark,
   }) {
-    final theme = Theme.of(context);
-
     return AcadexCard(
-      padding: const EdgeInsets.all(12),
+      isFlat: true,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              Icon(icon, size: 14, color: color),
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Center(
+                  child: Icon(icon, size: 12, color: color),
+                ),
+              ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   title,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: AcadexTypography.caption(
+                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                  ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: AcadexTypography.heading2(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ).copyWith(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.3),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 2),
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 11,
-              color: isDark ? Colors.grey[500] : Colors.grey[500],
-            ),
+            style: AcadexTypography.caption(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ).copyWith(fontSize: 10),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

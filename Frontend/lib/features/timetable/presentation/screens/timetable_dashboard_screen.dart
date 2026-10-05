@@ -109,7 +109,7 @@ class TimetableDashboardScreen extends ConsumerWidget {
 
             // Main Content Body
             Expanded(
-              child: isMobile || viewMode == TimetableViewMode.day
+              child: viewMode == TimetableViewMode.day
                   ? SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: EdgeInsets.only(
@@ -185,10 +185,18 @@ class TimetableDashboardScreen extends ConsumerWidget {
                             title: 'Unable to load weekly timetable',
                             onRetry: () => ref.refresh(weeklyTimetableProvider),
                           ),
-                          data: (weeklyData) => SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            child: WeeklyTimetableGrid(weeklyData: weeklyData),
+                          data: (weeklyData) => Padding(
+                            padding: EdgeInsets.only(
+                              bottom: isMobile ? (MediaQuery.paddingOf(context).bottom + 80) : 32,
+                            ),
+                            child: SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isMobile ? 12 : 24,
+                                vertical: 12,
+                              ),
+                              child: WeeklyTimetableGrid(weeklyData: weeklyData),
+                            ),
                           ),
                         )
                       : weeklyAsync.when(
@@ -198,7 +206,12 @@ class TimetableDashboardScreen extends ConsumerWidget {
                             title: 'Unable to load timetable list',
                             onRetry: () => ref.refresh(weeklyTimetableProvider),
                           ),
-                          data: (weeklyData) => TimetableListView(weeklyData: weeklyData),
+                          data: (weeklyData) => Padding(
+                            padding: EdgeInsets.only(
+                              bottom: isMobile ? (MediaQuery.paddingOf(context).bottom + 80) : 32,
+                            ),
+                            child: TimetableListView(weeklyData: weeklyData),
+                          ),
                         )),
             ),
           ],

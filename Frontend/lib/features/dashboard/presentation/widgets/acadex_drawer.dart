@@ -73,9 +73,9 @@ class AcadexDrawer extends ConsumerWidget {
             child: SafeArea(
               child: Column(
                 children: [
-                  // Top Brand Area
+                  // Top Brand & User Identity Area (Compact, Mobile-First)
                   Padding(
-                    padding: EdgeInsets.fromLTRB(isCollapsed ? 12 : 20, 16, isCollapsed ? 12 : 20, 12),
+                    padding: EdgeInsets.fromLTRB(isCollapsed ? 8 : 16, 12, isCollapsed ? 8 : 16, 8),
                     child: isCollapsed
                         ? Center(
                             child: InkWell(
@@ -94,132 +94,125 @@ class AcadexDrawer extends ConsumerWidget {
                                   child: Icon(
                                     LucideIcons.graduationCap,
                                     color: Colors.white,
-                                    size: 20,
+                                    size: 18,
                                   ),
                                 ),
                               ),
                             ),
                           )
-                        : Row(
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: AcadexColors.primary,
-                                  borderRadius: AcadexRadius.borderRadiusMd,
-                                ),
-                                child: const Icon(
-                                  LucideIcons.graduationCap,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Acadex',
+                              // Brand Row
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: AcadexColors.primary,
+                                      borderRadius: AcadexRadius.borderRadiusSm,
+                                    ),
+                                    child: const Center(
+                                      child: Icon(
+                                        LucideIcons.graduationCap,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'ACADEX',
                                       style: AcadexTypography.heading3(
                                         color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
                                       ).copyWith(
                                         fontWeight: FontWeight.w800,
-                                        fontSize: 17,
+                                        fontSize: 16,
+                                        letterSpacing: 0.5,
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                    Text(
-                                      'Campus Platform',
-                                      style: AcadexTypography.caption(
+                                  ),
+                                  if (isModal)
+                                    IconButton(
+                                      icon: Icon(
+                                        LucideIcons.x,
+                                        size: 18,
                                         color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                                       ),
-                                      overflow: TextOverflow.ellipsis,
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                      onPressed: () => Navigator.of(context).pop(),
+                                      tooltip: 'Close Menu',
                                     ),
-                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+
+                              // User Identity Strip
+                              InkWell(
+                                onTap: () {
+                                  if (isModal && Scaffold.of(context).isDrawerOpen) {
+                                    Navigator.of(context).pop();
+                                  }
+                                  context.push('/profile');
+                                },
+                                borderRadius: AcadexRadius.borderRadiusMd,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                                    borderRadius: AcadexRadius.borderRadiusMd,
+                                    border: Border.all(
+                                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      AcadexAvatar(
+                                        name: user?.name ?? 'User',
+                                        size: 30,
+                                        isOnline: true,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              user?.name ?? 'Guest User',
+                                              style: AcadexTypography.bodySmall(
+                                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                              ).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            AcadexBadge(
+                                              label: role.displayName,
+                                              variant: AcadexBadgeVariant.primary,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Icon(
+                                        LucideIcons.chevronRight,
+                                        size: 14,
+                                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                   ),
 
-                  // User Identity Area
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 8 : 14, vertical: 4),
-                    child: isCollapsed
-                        ? Center(
-                            child: InkWell(
-                              onTap: () {
-                                if (isModal && Scaffold.of(context).isDrawerOpen) {
-                                  Navigator.of(context).pop();
-                                }
-                                context.push('/profile');
-                              },
-                              borderRadius: AcadexRadius.borderRadiusMd,
-                              child: Tooltip(
-                                message: '${user?.name ?? "User"} (${role.displayName}) - View Profile',
-                                child: AcadexAvatar(
-                                  name: user?.name ?? 'User',
-                                  size: 34,
-                                  isOnline: true,
-                                ),
-                              ),
-                            ),
-                          )
-                        : InkWell(
-                            onTap: () {
-                              if (isModal && Scaffold.of(context).isDrawerOpen) {
-                                Navigator.of(context).pop();
-                              }
-                              context.push('/profile');
-                            },
-                            borderRadius: AcadexRadius.borderRadiusMd,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
-                                borderRadius: AcadexRadius.borderRadiusMd,
-                                border: Border.all(
-                                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  AcadexAvatar(
-                                    name: user?.name ?? 'User',
-                                    size: 34,
-                                    isOnline: true,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          user?.name ?? 'Guest User',
-                                          style: AcadexTypography.bodySmall(
-                                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                          ).copyWith(fontWeight: FontWeight.w600),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 2),
-                                        AcadexBadge(
-                                          label: role.displayName,
-                                          variant: AcadexBadgeVariant.primary,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                  ),
-
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Divider(
                     height: 1,
                     color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
@@ -283,9 +276,6 @@ class AcadexDrawer extends ConsumerWidget {
                       iconColor: AcadexColors.error,
                       textColor: AcadexColors.error,
                       onTap: () async {
-                        if (isModal && Scaffold.of(context).isDrawerOpen) {
-                          Navigator.of(context).pop();
-                        }
                         final confirmed = await AcadexConfirmationDialog.show(
                           context: context,
                           title: 'Logout',
@@ -293,9 +283,11 @@ class AcadexDrawer extends ConsumerWidget {
                           confirmLabel: 'Sign Out',
                           isDestructive: true,
                         );
-                        if (confirmed == true && context.mounted) {
+                        if (confirmed == true) {
+                          if (isModal && context.mounted && Scaffold.of(context).isDrawerOpen) {
+                            Navigator.of(context).pop();
+                          }
                           await ref.read(authProvider.notifier).logout();
-                          if (context.mounted) context.go('/login');
                         }
                       },
                     ),
@@ -383,7 +375,7 @@ class _DrawerTile extends StatelessWidget {
 
     final content = Container(
       margin: const EdgeInsets.only(bottom: 4),
-      constraints: const BoxConstraints(minHeight: 40.0),
+      constraints: const BoxConstraints(minHeight: 44.0),
       decoration: BoxDecoration(
         color: isActive ? activeBg : Colors.transparent,
         borderRadius: AcadexRadius.borderRadiusMd,

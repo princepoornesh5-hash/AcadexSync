@@ -10,6 +10,7 @@ class AcadexCard extends StatelessWidget {
   final BorderRadius? borderRadius;
   final double? width;
   final double? height;
+  final bool isFlat;
 
   const AcadexCard({
     super.key,
@@ -21,6 +22,7 @@ class AcadexCard extends StatelessWidget {
     this.borderRadius,
     this.width,
     this.height,
+    this.isFlat = false,
   });
 
   @override
@@ -29,16 +31,19 @@ class AcadexCard extends StatelessWidget {
     final bg = backgroundColor ?? (isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface);
     final border = borderColor ?? (isDark ? AcadexColors.darkHairline : AcadexColors.hairline);
     final radius = borderRadius ?? AcadexRadius.borderRadiusLg;
+    final effectivePadding = padding ?? AcadexBreakpoints.responsiveCardPadding(context);
 
     final content = Container(
       width: width,
       height: height,
-      padding: padding ?? AcadexSpacing.cardPadding,
+      padding: effectivePadding,
       decoration: BoxDecoration(
         color: bg,
         borderRadius: radius,
         border: Border.all(color: border, width: 1),
-        boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
+        boxShadow: isFlat
+            ? null
+            : (isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm),
       ),
       child: child,
     );
@@ -88,11 +93,16 @@ class AcadexStatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final defaultIconColor = iconColor ?? AcadexColors.primary;
-    final defaultIconBg = iconBackgroundColor ?? (isDark ? AcadexColors.primary.withValues(alpha: 0.15) : AcadexColors.primaryLight);
+    final defaultIconBg = iconBackgroundColor ??
+        (isDark ? AcadexColors.primary.withValues(alpha: 0.15) : AcadexColors.primaryLight);
+    final isSmall = AcadexBreakpoints.isSmallMobile(context);
+
+    final cardPadding = padding ??
+        EdgeInsets.all(isSmall ? AcadexSpacing.space10 : AcadexSpacing.space14);
 
     return AcadexCard(
       onTap: onTap,
-      padding: padding ?? const EdgeInsets.all(16),
+      padding: cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -106,36 +116,45 @@ class AcadexStatCard extends StatelessWidget {
                   style: AcadexTypography.caption(
                     color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                   ).copyWith(fontWeight: FontWeight.w600),
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 8),
               Container(
-                width: 36,
-                height: 36,
+                width: isSmall ? 30 : 34,
+                height: isSmall ? 30 : 34,
                 decoration: BoxDecoration(
                   color: defaultIconBg,
                   borderRadius: AcadexRadius.borderRadiusMd,
                 ),
-                child: Icon(icon, size: 18, color: defaultIconColor),
+                child: Icon(icon, size: isSmall ? 15 : 17, color: defaultIconColor),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: AcadexTypography.heading1(
-              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          SizedBox(height: isSmall ? 6 : 10),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: isSmall
+                  ? AcadexTypography.heading2(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    )
+                  : AcadexTypography.heading1(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ),
             ),
           ),
           if (subtitle != null || trend != null) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: isSmall ? 4 : 6),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (trend != null) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                     decoration: BoxDecoration(
                       color: (isPositiveTrend ?? true)
                           ? AcadexColors.successLight
@@ -145,11 +164,13 @@ class AcadexStatCard extends StatelessWidget {
                     child: Text(
                       trend!,
                       style: AcadexTypography.eyebrow(
-                        color: (isPositiveTrend ?? true) ? AcadexColors.success : AcadexColors.error,
+                        color: (isPositiveTrend ?? true)
+                            ? AcadexColors.successDark
+                            : AcadexColors.errorDark,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                 ],
                 if (subtitle != null)
                   Flexible(
@@ -158,6 +179,7 @@ class AcadexStatCard extends StatelessWidget {
                       style: AcadexTypography.caption(
                         color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
                       ),
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

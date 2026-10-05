@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/presentation/utils/navigation_extensions.dart';
+import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../domain/models/assignment_models.dart';
 import '../providers/assignments_providers.dart';
 
@@ -16,62 +18,51 @@ class StudentAssignmentsScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final assignmentsAsync = ref.watch(studentAssignmentsProvider);
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
-        leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-          onPressed: () => context.safePop(fallbackRoute: '/dashboard'),
-        ),
-        title: Text(
-          'Assignments',
-          style: AcadexTypography.title(
-            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+    return AcadexPageContainer(
+      onRefresh: () async => ref.refresh(studentAssignmentsProvider),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AcadexPageHeader(
+            title: 'Assignments',
+            subtitle: 'View active coursework, track deadlines, and submit your work.',
           ),
-        ),
-      ),
-      body: assignmentsAsync.when(
-        loading: () => const AcadexLoadingState(message: 'Loading assignments...'),
-        error: (err, stack) => Center(
-          child: AcadexErrorState(
-            message: "Couldn't load assignments.",
-            retryLabel: 'Retry',
-            onRetry: () => ref.refresh(studentAssignmentsProvider),
-          ),
-        ),
-        data: (assignments) {
-          if (assignments.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: () async => ref.refresh(studentAssignmentsProvider),
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: const [
-                  SizedBox(height: 120),
-                  Center(
-                    child: AcadexEmptyState(
-                      icon: LucideIcons.bookCheck,
-                      title: 'No assignments yet.',
-                      subtitle: 'No published assignments are waiting for you.',
-                    ),
-                  ),
-                ],
+          const SizedBox(height: 8),
+          assignmentsAsync.when(
+            loading: () => const AcadexLoadingState(message: 'Loading assignments...'),
+            error: (err, stack) => Center(
+              child: AcadexErrorState.fromError(
+                error: err,
+                title: "Couldn't load assignments.",
+                retryLabel: 'Retry',
+                onRetry: () => ref.refresh(studentAssignmentsProvider),
               ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () async => ref.refresh(studentAssignmentsProvider),
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              itemCount: assignments.length,
-              itemBuilder: (context, index) {
-                final asgn = assignments[index];
-                return _buildStudentAssignmentCard(context, asgn, isDark);
-              },
             ),
-          );
-        },
+            data: (assignments) {
+              if (assignments.isEmpty) {
+                return const Center(
+                  child: AcadexEmptyState(
+                    icon: LucideIcons.bookCheck,
+                    title: 'No assignments yet.',
+                    subtitle: 'No published assignments are waiting for you.',
+                    isCompact: true,
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                itemCount: assignments.length,
+                itemBuilder: (context, index) {
+                  final asgn = assignments[index];
+                  return _buildStudentAssignmentCard(context, asgn, isDark);
+                },
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -99,7 +90,7 @@ class StudentAssignmentsScreen extends ConsumerWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusMd,
@@ -111,9 +102,10 @@ class StudentAssignmentsScreen extends ConsumerWidget {
         onTap: () => context.push('/assignments/${asgn.id}'),
         borderRadius: AcadexRadius.borderRadiusMd,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,7 +124,7 @@ class StudentAssignmentsScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          asgn.subjectName ?? 'Subject',
+                          AcadexEntityFormatters.formatSubjectLabel(asgn.subjectName),
                           style: AcadexTypography.caption(
                             color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
                           ),
@@ -140,6 +132,7 @@ class StudentAssignmentsScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
@@ -157,55 +150,57 @@ class StudentAssignmentsScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              Row(
+              const SizedBox(height: 8),
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 12,
+                runSpacing: 6,
                 children: [
-                  Icon(LucideIcons.calendar, size: 14, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Due: ${asgn.dueDate}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(LucideIcons.calendar, size: 14, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Due: ${asgn.dueDate}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 14),
-                  Icon(LucideIcons.award, size: 14, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Max: ${asgn.maximumMarks}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(LucideIcons.award, size: 14, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Max: ${asgn.maximumMarks}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        ),
+                      ),
+                    ],
                   ),
-                  const Spacer(),
-                  if (asgn.marks != null) ...[
+                  if (asgn.marks != null)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
+                        color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.primaryTint,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        'Marks: ${asgn.marks} / ${asgn.maximumMarks}',
+                        'Score: ${asgn.marks}/${asgn.maximumMarks}',
                         style: const TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF15803D),
+                          fontWeight: FontWeight.w600,
+                          color: AcadexColors.primary,
                         ),
                       ),
                     ),
-                  ] else ...[
-                    Text(
-                      'View >',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AcadexColors.primary,
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ],

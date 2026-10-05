@@ -3,9 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
+import '../../../../core/presentation/widgets/acadex_motion.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../domain/models/home_dashboard_models.dart';
 
-// ── 1. GREETING & HEADER ─────────────────────────────────────────────────────
+// ── 1. GREETING & HEADER (COMPACT & MOBILE-FIRST) ───────────────────────────
 
 class DashboardGreetingHeader extends StatelessWidget {
   final DashboardGreetingModel greeting;
@@ -17,48 +19,73 @@ class DashboardGreetingHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final now = DateTime.now();
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final dateStr = 'Today, ${now.day} ${months[now.month - 1]}';
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primary.withValues(alpha: 0.1),
-            backgroundImage: greeting.avatarUrl != null && greeting.avatarUrl!.isNotEmpty
-                ? NetworkImage(greeting.avatarUrl!)
-                : null,
-            child: greeting.avatarUrl == null || greeting.avatarUrl!.isEmpty
-                ? Text(
-                    greeting.displayName.isNotEmpty ? greeting.displayName[0].toUpperCase() : 'U',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AcadexColors.primary,
-                    ),
-                  )
-                : null,
+          // Avatar
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+              border: Border.all(
+                color: AcadexColors.primary.withValues(alpha: 0.25),
+                width: 1.5,
+              ),
+            ),
+            child: ClipOval(
+              child: greeting.avatarUrl != null && greeting.avatarUrl!.isNotEmpty
+                  ? Image.network(
+                      greeting.avatarUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _buildInitials(),
+                    )
+                  : _buildInitials(),
+            ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
+
+          // User Name & Role & Date
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  greeting.greetingText,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  ),
-                ),
-                Text(
                   greeting.displayName,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AcadexTypography.heading2(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ).copyWith(fontSize: 16.5, fontWeight: FontWeight.w700, letterSpacing: -0.2),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    AcadexBadge(
+                      label: greeting.role.replaceAll('_', ' '),
+                      variant: AcadexBadgeVariant.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '•  $dateStr',
+                        style: AcadexTypography.caption(
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        ).copyWith(fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -67,9 +94,23 @@ class DashboardGreetingHeader extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildInitials() {
+    final initial = greeting.displayName.isNotEmpty ? greeting.displayName[0].toUpperCase() : 'U';
+    return Center(
+      child: Text(
+        initial,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: AcadexColors.primary,
+        ),
+      ),
+    );
+  }
 }
 
-// ── 2. CONTEXT CARD ─────────────────────────────────────────────────────────
+// ── 2. CONTEXT CARD (COMPACT STRIP) ─────────────────────────────────────────
 
 class DashboardContextCard extends StatelessWidget {
   final String role;
@@ -83,8 +124,7 @@ class DashboardContextCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     Widget content;
     switch (role.toUpperCase()) {
@@ -92,51 +132,59 @@ class DashboardContextCard extends StatelessWidget {
         if (!contextModel.isEnrollmentAvailable) {
           content = Row(
             children: [
-              Icon(LucideIcons.alertCircle, color: AcadexColors.warning, size: 20),
-              const SizedBox(width: 12),
+              const Icon(LucideIcons.alertCircle, color: AcadexColors.warning, size: 16),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Your current academic enrollment is not available.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: isDark ? Colors.grey[300] : Colors.grey[700],
-                    fontStyle: FontStyle.italic,
+                  'Academic enrollment not assigned yet.',
+                  style: AcadexTypography.caption(
+                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                   ),
                 ),
               ),
             ],
           );
         } else {
-          content = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          content = Row(
             children: [
-              Row(
-                children: [
-                  Icon(LucideIcons.graduationCap, color: AcadexColors.primary, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                  borderRadius: AcadexRadius.borderRadiusSm,
+                ),
+                child: const Icon(LucideIcons.graduationCap, color: AcadexColors.primary, size: 15),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
                       contextModel.courseName ?? 'Enrolled Program',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AcadexTypography.bodySmall(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 12,
-                runSpacing: 6,
-                children: [
-                  if (contextModel.semesterNumber != null)
-                    _buildPill(context, 'Semester ${contextModel.semesterNumber}', LucideIcons.bookOpen),
-                  if (contextModel.sectionName != null && contextModel.sectionName!.isNotEmpty)
-                    _buildPill(context, contextModel.sectionName!, LucideIcons.layoutGrid),
-                  if (contextModel.rollNumber != null && contextModel.rollNumber!.isNotEmpty)
-                    _buildPill(context, 'Roll: ${contextModel.rollNumber}', LucideIcons.hash),
-                ],
+                    const SizedBox(height: 3),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        if (contextModel.semesterNumber != null)
+                          _buildChip(context, 'Sem ${contextModel.semesterNumber}', isDark),
+                        if (contextModel.sectionName != null && contextModel.sectionName!.isNotEmpty)
+                          _buildChip(context, 'Sec ${contextModel.sectionName!}', isDark),
+                        if (contextModel.rollNumber != null && contextModel.rollNumber!.isNotEmpty)
+                          _buildChip(context, 'Roll: ${contextModel.rollNumber}', isDark),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           );
@@ -144,99 +192,126 @@ class DashboardContextCard extends StatelessWidget {
         break;
 
       case 'FACULTY':
-        content = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        content = Row(
           children: [
-            Row(
-              children: [
-                Icon(LucideIcons.briefcase, color: AcadexColors.primary, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                borderRadius: AcadexRadius.borderRadiusSm,
+              ),
+              child: const Icon(LucideIcons.briefcase, color: AcadexColors.primary, size: 15),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
                     contextModel.departmentName ?? 'Department Faculty',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AcadexTypography.bodySmall(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 12,
-              runSpacing: 6,
-              children: [
-                if (contextModel.designation != null)
-                  _buildPill(context, contextModel.designation!, LucideIcons.user),
-                _buildPill(
-                  context,
-                  '${contextModel.activeTeachingAssignmentsCount} Assigned Class${contextModel.activeTeachingAssignmentsCount == 1 ? '' : 'es'}',
-                  LucideIcons.calendarCheck,
-                ),
-              ],
+                  const SizedBox(height: 3),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      if (contextModel.designation != null)
+                        _buildChip(context, contextModel.designation!, isDark),
+                      _buildChip(
+                        context,
+                        '${contextModel.activeTeachingAssignmentsCount} Class${contextModel.activeTeachingAssignmentsCount == 1 ? '' : 'es'}',
+                        isDark,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         );
         break;
 
       case 'HOD':
-        content = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        content = Row(
           children: [
-            Row(
-              children: [
-                Icon(LucideIcons.layers, color: AcadexColors.primary, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                borderRadius: AcadexRadius.borderRadiusSm,
+              ),
+              child: const Icon(LucideIcons.layers, color: AcadexColors.primary, size: 15),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
                     contextModel.departmentName ?? 'Department',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AcadexTypography.bodySmall(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 12,
-              runSpacing: 6,
-              children: [
-                _buildPill(context, 'Head of Department', LucideIcons.shieldCheck),
-                if (contextModel.departmentCode != null)
-                  _buildPill(context, contextModel.departmentCode!, LucideIcons.code),
-              ],
+                  const SizedBox(height: 3),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      _buildChip(context, 'Head of Department', isDark),
+                      if (contextModel.departmentCode != null)
+                        _buildChip(context, contextModel.departmentCode!, isDark),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         );
         break;
 
       case 'COLLEGE_ADMIN':
-        content = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        content = Row(
           children: [
-            Row(
-              children: [
-                Icon(LucideIcons.building, color: AcadexColors.primary, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                borderRadius: AcadexRadius.borderRadiusSm,
+              ),
+              child: const Icon(LucideIcons.building, color: AcadexColors.primary, size: 15),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
                     contextModel.collegeName ?? 'Institution Operations',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AcadexTypography.bodySmall(
+                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    ).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 3),
+                  _buildChip(context, 'College Administration', isDark),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
-            _buildPill(context, 'College Administration', LucideIcons.shield),
           ],
         );
         break;
@@ -244,14 +319,24 @@ class DashboardContextCard extends StatelessWidget {
       default:
         content = Row(
           children: [
-            Icon(LucideIcons.globe, color: AcadexColors.primary, size: 18),
-            const SizedBox(width: 8),
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                borderRadius: AcadexRadius.borderRadiusSm,
+              ),
+              child: const Icon(LucideIcons.globe, color: AcadexColors.primary, size: 15),
+            ),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 'ACADEX Platform Administration',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AcadexTypography.bodySmall(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -259,32 +344,28 @@ class DashboardContextCard extends StatelessWidget {
     }
 
     return AcadexCard(
+      isFlat: true,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: content,
     );
   }
 
-  Widget _buildPill(BuildContext context, String text, IconData icon) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
+  Widget _buildChip(BuildContext context, String text, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.grey.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+        borderRadius: AcadexRadius.borderRadiusSm,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          width: 0.8,
+        ),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: isDark ? Colors.grey[400] : Colors.grey[600]),
-          const SizedBox(width: 5),
-          Text(
-            text,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+      child: Text(
+        text,
+        style: AcadexTypography.caption(
+          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+        ).copyWith(fontSize: 10.5, fontWeight: FontWeight.w500),
       ),
     );
   }
@@ -305,7 +386,7 @@ class DashboardAlertsSection extends StatelessWidget {
     if (alerts.isEmpty) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.only(top: 10),
       child: Column(
         children: alerts.map((alert) {
           final isWarning = alert.severity == 'WARNING';
@@ -313,18 +394,21 @@ class DashboardAlertsSection extends StatelessWidget {
           final color = isCritical
               ? AcadexColors.error
               : (isWarning ? AcadexColors.warning : AcadexColors.primary);
+          final bgColor = isCritical
+              ? AcadexColors.errorLight
+              : (isWarning ? AcadexColors.warningLight : AcadexColors.primaryLight);
 
           return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: InkWell(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: AcadexPressable(
               onTap: alert.route != null ? () => context.push(alert.route!) : null,
-              borderRadius: BorderRadius.circular(12),
+              pressedScale: 0.985,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: color.withValues(alpha: 0.3)),
+                  color: bgColor,
+                  borderRadius: AcadexRadius.borderRadiusMd,
+                  border: Border.all(color: color.withValues(alpha: 0.35), width: 1),
                 ),
                 child: Row(
                   children: [
@@ -333,9 +417,9 @@ class DashboardAlertsSection extends StatelessWidget {
                           ? LucideIcons.alertOctagon
                           : (isWarning ? LucideIcons.alertTriangle : LucideIcons.info),
                       color: color,
-                      size: 20,
+                      size: 16,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,12 +429,15 @@ class DashboardAlertsSection extends StatelessWidget {
                             style: TextStyle(
                               color: color,
                               fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                              fontSize: 12.5,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           Text(
                             alert.message,
-                            style: Theme.of(context).textTheme.bodySmall,
+                            style: AcadexTypography.caption(color: AcadexColors.inkSecondary)
+                                .copyWith(fontSize: 11),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -358,7 +445,7 @@ class DashboardAlertsSection extends StatelessWidget {
                       ),
                     ),
                     if (alert.route != null)
-                      Icon(LucideIcons.chevronRight, size: 16, color: color),
+                      Icon(LucideIcons.chevronRight, size: 14, color: color),
                   ],
                 ),
               ),
@@ -370,7 +457,7 @@ class DashboardAlertsSection extends StatelessWidget {
   }
 }
 
-// ── 4. PENDING ACTIONS SECTION ──────────────────────────────────────────────
+// ── 4. PENDING ACTIONS SECTION (STREAMLINED LIST) ───────────────────────────
 
 class DashboardPendingActionsSection extends StatelessWidget {
   final List<DashboardPendingActionModel> pendingActions;
@@ -383,115 +470,126 @@ class DashboardPendingActionsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (pendingActions.isEmpty) return const SizedBox.shrink();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
               child: Text(
                 'Actions Requiring Attention',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.2,
-                    ),
+                style: AcadexTypography.heading3(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ).copyWith(fontSize: 14.5, fontWeight: FontWeight.w700),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             const SizedBox(width: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
               decoration: BoxDecoration(
-                color: AcadexColors.primary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
+                color: AcadexColors.errorLight,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AcadexColors.error.withValues(alpha: 0.25), width: 0.8),
               ),
               child: Text(
                 '${pendingActions.length}',
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: AcadexColors.primary,
+                  color: AcadexColors.error,
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        ...pendingActions.map((action) => _buildActionCard(context, action)),
+        const SizedBox(height: 6),
+        ...pendingActions.map((action) => _buildActionCard(context, action, isDark)),
       ],
     );
   }
 
-  Widget _buildActionCard(BuildContext context, DashboardPendingActionModel action) {
-    final theme = Theme.of(context);
+  Widget _buildActionCard(BuildContext context, DashboardPendingActionModel action, bool isDark) {
     final isHigh = action.priority == 'HIGH';
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: AcadexCard(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: isHigh ? AcadexColors.error.withValues(alpha: 0.1) : AcadexColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+      padding: const EdgeInsets.only(bottom: 6),
+      child: AcadexPressable(
+        onTap: () => context.push(action.route),
+        pressedScale: 0.985,
+        child: AcadexCard(
+          isFlat: true,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: isHigh ? AcadexColors.errorLight : AcadexColors.primaryLight,
+                  borderRadius: AcadexRadius.borderRadiusSm,
+                ),
+                child: Icon(
+                  isHigh ? LucideIcons.clock : LucideIcons.checkSquare,
+                  size: 16,
+                  color: isHigh ? AcadexColors.error : AcadexColors.primary,
+                ),
               ),
-              child: Icon(
-                isHigh ? LucideIcons.clock : LucideIcons.checkSquare,
-                size: 18,
-                color: isHigh ? AcadexColors.error : AcadexColors.primary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    action.title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (action.description != null)
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      action.description!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                      action.title,
+                      style: AcadexTypography.bodySmall(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                ],
+                    if (action.description != null)
+                      Text(
+                        action.description!,
+                        style: AcadexTypography.caption(
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        ).copyWith(fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            TextButton(
-              onPressed: () => context.push(action.route),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                  borderRadius: AcadexRadius.borderRadiusSm,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      action.actionLabel,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: AcadexColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 3),
+                    const Icon(LucideIcons.arrowRight, size: 12, color: AcadexColors.primary),
+                  ],
+                ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(action.actionLabel, style: const TextStyle(fontSize: 12)),
-                  const SizedBox(width: 4),
-                  const Icon(LucideIcons.arrowRight, size: 12),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -510,22 +608,21 @@ class DashboardUpcomingSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
               child: Text(
                 'Today & Upcoming',
-                style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.2,
-                    ),
+                style: AcadexTypography.heading3(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ).copyWith(fontSize: 14.5, fontWeight: FontWeight.w700),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -533,45 +630,58 @@ class DashboardUpcomingSection extends StatelessWidget {
             const SizedBox(width: 8),
             InkWell(
               onTap: () => context.push('/calendar'),
-              child: Text(
-                'View Calendar',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AcadexColors.primary,
+              borderRadius: BorderRadius.circular(4),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Text(
+                  'View Calendar',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: AcadexColors.primary,
+                  ),
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         if (upcoming.isEmpty)
-          AcadexCard(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(LucideIcons.calendar, size: 28, color: Colors.grey[400]),
-                  const SizedBox(height: 8),
-                  Text(
-                    'No classes or events scheduled right now.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[500],
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            decoration: BoxDecoration(
+              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+              borderRadius: AcadexRadius.borderRadiusMd,
+              border: Border.all(
+                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  LucideIcons.calendar,
+                  size: 15,
+                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'No classes scheduled today',
+                    style: AcadexTypography.caption(
+                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           )
         else
-          ...upcoming.map((item) => _buildUpcomingTile(context, item)),
+          ...upcoming.map((item) => _buildUpcomingTile(context, item, isDark)),
       ],
     );
   }
 
-  Widget _buildUpcomingTile(BuildContext context, DashboardUpcomingItemModel item) {
-    final theme = Theme.of(context);
-
+  Widget _buildUpcomingTile(BuildContext context, DashboardUpcomingItemModel item, bool isDark) {
     IconData icon;
     Color iconColor;
     switch (item.type) {
@@ -597,67 +707,78 @@ class DashboardUpcomingSection extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: AcadexCard(
-        padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.only(bottom: 6),
+      child: AcadexPressable(
         onTap: item.route != null ? () => context.push(item.route!) : null,
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+        pressedScale: 0.985,
+        child: AcadexCard(
+          isFlat: true,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.12),
+                  borderRadius: AcadexRadius.borderRadiusSm,
+                ),
+                child: Icon(icon, size: 16, color: iconColor),
               ),
-              child: Icon(icon, size: 18, color: iconColor),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: AcadexTypography.bodySmall(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          _formatScheduleTime(item.startTime),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: AcadexColors.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (item.location != null && item.location!.isNotEmpty) ...[
-                        const SizedBox(width: 6),
-                        Text('•', style: TextStyle(color: Colors.grey[400])),
-                        const SizedBox(width: 6),
+                    Row(
+                      children: [
                         Flexible(
                           child: Text(
-                            item.location!,
-                            style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                            _formatScheduleTime(item.startTime),
+                            style: const TextStyle(
+                              color: AcadexColors.primary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (item.location != null && item.location!.isNotEmpty) ...[
+                          const SizedBox(width: 5),
+                          Text('•', style: TextStyle(color: Colors.grey[400], fontSize: 10)),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              item.location!,
+                              style: AcadexTypography.caption(
+                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              ).copyWith(fontSize: 11),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            if (item.route != null)
-              Icon(LucideIcons.chevronRight, size: 16, color: Colors.grey[400]),
-          ],
+              if (item.route != null)
+                Icon(
+                  LucideIcons.chevronRight,
+                  size: 14,
+                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -677,35 +798,36 @@ class DashboardUpcomingSection extends StatelessWidget {
   }
 }
 
-// ── 6. QUICK ACTIONS GRID ───────────────────────────────────────────────────
+// ── 6. QUICK ACTIONS GRID (TACTILE & COMPACT) ───────────────────────────────
 
 class DashboardQuickActionsGrid extends StatelessWidget {
   final List<DashboardQuickActionModel> quickActions;
+  final String? title;
 
   const DashboardQuickActionsGrid({
     super.key,
     required this.quickActions,
+    this.title,
   });
 
   @override
   Widget build(BuildContext context) {
     if (quickActions.isEmpty) return const SizedBox.shrink();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         Text(
-          'Quick Shortcuts',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.2,
-              ),
+          title ?? 'Quick Operations',
+          style: AcadexTypography.heading3(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ).copyWith(fontSize: 14.5, fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         LayoutBuilder(
           builder: (context, constraints) {
-            // Adaptive column count: 2 for 360-480px, 4 for desktop
             final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
             return GridView.builder(
               shrinkWrap: true,
@@ -713,13 +835,13 @@ class DashboardQuickActionsGrid extends StatelessWidget {
               itemCount: quickActions.length,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 2.3,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                childAspectRatio: 2.5,
               ),
               itemBuilder: (context, index) {
                 final action = quickActions[index];
-                return _buildQuickActionTile(context, action);
+                return _buildQuickActionTile(context, action, isDark);
               },
             );
           },
@@ -728,58 +850,59 @@ class DashboardQuickActionsGrid extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickActionTile(BuildContext context, DashboardQuickActionModel action) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+  Widget _buildQuickActionTile(BuildContext context, DashboardQuickActionModel action, bool isDark) {
+    final icon = _resolveIcon(action.icon);
 
-    IconData icon = _resolveIcon(action.icon);
-
-    return InkWell(
+    return AcadexPressable(
       onTap: () => context.push(action.route),
-      borderRadius: BorderRadius.circular(12),
+      pressedScale: 0.965,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E222D) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+          borderRadius: AcadexRadius.borderRadiusMd,
           border: Border.all(
             color: action.isPrimary
-                ? AcadexColors.primary.withValues(alpha: 0.5)
-                : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.2)),
-            width: action.isPrimary ? 1.5 : 1.0,
+                ? AcadexColors.primary.withValues(alpha: 0.4)
+                : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+            width: action.isPrimary ? 1.2 : 0.8,
           ),
-          boxShadow: isDark
-              ? null
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+          boxShadow: [
+            BoxShadow(
+              color: isDark ? Colors.black.withValues(alpha: 0.15) : const Color(0x0607111F),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
+              width: 28,
+              height: 28,
               decoration: BoxDecoration(
                 color: action.isPrimary
-                    ? AcadexColors.primary.withValues(alpha: 0.15)
-                    : (isDark ? Colors.white.withValues(alpha: 0.06) : Colors.grey.withValues(alpha: 0.1)),
-                borderRadius: BorderRadius.circular(8),
+                    ? AcadexColors.primary.withValues(alpha: 0.12)
+                    : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+                borderRadius: AcadexRadius.borderRadiusSm,
               ),
               child: Icon(
                 icon,
-                size: 16,
-                color: action.isPrimary ? AcadexColors.primary : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                size: 15,
+                color: action.isPrimary
+                    ? AcadexColors.primary
+                    : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 action.label,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: action.isPrimary ? FontWeight.bold : FontWeight.w500,
+                style: AcadexTypography.bodySmall(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ).copyWith(
+                  fontWeight: action.isPrimary ? FontWeight.w700 : FontWeight.w500,
+                  fontSize: 12,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -787,7 +910,7 @@ class DashboardQuickActionsGrid extends StatelessWidget {
             ),
             if (action.badgeCount != null && action.badgeCount! > 0)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                 decoration: BoxDecoration(
                   color: AcadexColors.error,
                   borderRadius: BorderRadius.circular(10),
@@ -795,7 +918,7 @@ class DashboardQuickActionsGrid extends StatelessWidget {
                 child: Text(
                   '${action.badgeCount}',
                   style: const TextStyle(
-                    fontSize: 10,
+                    fontSize: 9.5,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -861,41 +984,55 @@ class DashboardRecentActivitySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         Text(
           'Recent Activity',
-          style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.2,
-              ),
+          style: AcadexTypography.heading3(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ).copyWith(fontSize: 14.5, fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         if (recent.isEmpty)
-          AcadexCard(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-            child: Center(
-              child: Text(
-                "You're all caught up.",
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[500],
-                ),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            decoration: BoxDecoration(
+              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+              borderRadius: AcadexRadius.borderRadiusMd,
+              border: Border.all(
+                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
               ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  LucideIcons.activity,
+                  size: 15,
+                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    "You're all caught up. No recent updates right now.",
+                    style: AcadexTypography.caption(
+                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    ),
+                  ),
+                ),
+              ],
             ),
           )
         else
-          ...recent.map((item) => _buildRecentTile(context, item)),
+          ...recent.map((item) => _buildRecentTile(context, item, isDark)),
       ],
     );
   }
 
-  Widget _buildRecentTile(BuildContext context, DashboardRecentActivityModel item) {
-    final theme = Theme.of(context);
-
+  Widget _buildRecentTile(BuildContext context, DashboardRecentActivityModel item, bool isDark) {
     IconData icon;
     Color iconColor;
     switch (item.type) {
@@ -925,48 +1062,56 @@ class DashboardRecentActivitySection extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: AcadexCard(
-        padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.only(bottom: 6),
+      child: AcadexPressable(
         onTap: item.route != null ? () => context.push(item.route!) : null,
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+        pressedScale: 0.985,
+        child: AcadexCard(
+          isFlat: true,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.12),
+                  borderRadius: AcadexRadius.borderRadiusSm,
+                ),
+                child: Icon(icon, size: 14, color: iconColor),
               ),
-              child: Icon(icon, size: 16, color: iconColor),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (item.description != null)
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      item.description!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                      item.title,
+                      style: AcadexTypography.bodySmall(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ).copyWith(fontWeight: FontWeight.w600, fontSize: 12.5),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                ],
+                    if (item.description != null)
+                      Text(
+                        item.description!,
+                        style: AcadexTypography.caption(
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        ).copyWith(fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
               ),
-            ),
-            if (item.route != null)
-              Icon(LucideIcons.chevronRight, size: 14, color: Colors.grey[400]),
-          ],
+              if (item.route != null)
+                Icon(
+                  LucideIcons.chevronRight,
+                  size: 13,
+                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                ),
+            ],
+          ),
         ),
       ),
     );

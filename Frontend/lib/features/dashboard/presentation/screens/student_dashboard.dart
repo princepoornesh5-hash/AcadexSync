@@ -26,49 +26,47 @@ class StudentDashboard extends ConsumerWidget {
         ),
         error: (err, _) => AcadexErrorState.fromError(
           error: err,
-          title: 'Unable to load dashboard',
+          title: 'Unable to load your academic overview.',
+          retryLabel: 'Try Again',
           onRetry: () => ref.invalidate(homeDashboardProvider),
         ),
         data: (dashboard) {
-          return SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. Welcome & Greeting Area
-                DashboardGreetingHeader(greeting: dashboard.greeting),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Welcome & Greeting Area
+              DashboardGreetingHeader(greeting: dashboard.greeting),
 
-                // 2. Current Academic Context (StudentEnrollment)
-                DashboardContextCard(
-                  role: dashboard.role,
-                  contextModel: dashboard.context,
-                ),
+              // 2. Current Academic Context (StudentEnrollment)
+              DashboardContextCard(
+                role: dashboard.role,
+                contextModel: dashboard.context,
+              ),
 
-                // 3. Important Alerts
-                DashboardAlertsSection(alerts: dashboard.alerts),
+              // 3. Important Alerts
+              DashboardAlertsSection(alerts: dashboard.alerts),
 
-                // 4. Pending Actions Requiring Attention
-                DashboardPendingActionsSection(
-                  pendingActions: dashboard.pendingActions,
-                ),
+              // 4. Pending Actions Requiring Attention
+              DashboardPendingActionsSection(
+                pendingActions: dashboard.pendingActions,
+              ),
 
-                // 5. Today / Upcoming Schedule (Unified Calendar aggregation)
-                DashboardUpcomingSection(upcoming: dashboard.upcoming),
+              // 5. Today / Upcoming Schedule (Unified Calendar aggregation)
+              DashboardUpcomingSection(upcoming: dashboard.upcoming),
 
-                // 6. Quick Shortcuts Grid
-                DashboardQuickActionsGrid(
-                  quickActions: dashboard.quickActions,
-                ),
+              // 6. Quick Shortcuts Grid
+              DashboardQuickActionsGrid(
+                quickActions: dashboard.quickActions,
+              ),
 
-                // 7. Academic Summary Metrics
-                _buildStudentAcademicSummary(context, dashboard.summary),
+              // 7. Academic Summary Metrics
+              _buildStudentAcademicSummary(context, dashboard.summary),
 
-                // 8. Recent Activity Feed
-                DashboardRecentActivitySection(recent: dashboard.recent),
+              // 8. Recent Activity Feed
+              DashboardRecentActivitySection(recent: dashboard.recent),
 
-                const SizedBox(height: 32),
-              ],
-            ),
+              const SizedBox(height: 16),
+            ],
           );
         },
       ),
@@ -98,10 +96,9 @@ class StudentDashboard extends ConsumerWidget {
         const SizedBox(height: 18),
         Text(
           'Academic Snapshot',
-          style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.2,
-              ),
+          style: AcadexTypography.title(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ).copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 10),
         LayoutBuilder(
@@ -113,7 +110,7 @@ class StudentDashboard extends ConsumerWidget {
               crossAxisCount: isNarrow ? 2 : 2,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
-              childAspectRatio: isNarrow ? 1.6 : 1.8,
+              childAspectRatio: isNarrow ? 2.0 : 2.2,
               children: [
                 _buildSummaryTile(
                   context,
@@ -168,47 +165,54 @@ class StudentDashboard extends ConsumerWidget {
     required Color color,
     required bool isDark,
   }) {
-    final theme = Theme.of(context);
-
     return AcadexCard(
-      padding: const EdgeInsets.all(12),
+      isFlat: true,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              Icon(icon, size: 14, color: color),
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Center(
+                  child: Icon(icon, size: 12, color: color),
+                ),
+              ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   title,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: AcadexTypography.caption(
+                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                  ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: AcadexTypography.heading2(
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+              ).copyWith(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.3),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 2),
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 11,
-              color: isDark ? Colors.grey[500] : Colors.grey[500],
-            ),
+            style: AcadexTypography.caption(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ).copyWith(fontSize: 10),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

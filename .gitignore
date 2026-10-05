@@ -19,3 +19,8 @@ coverage/
 .DS_Store
 .idea/
 .vscode/
+
+# Runtime QA binary evidence
+docs/runtime_qa/**/*.png
+docs/runtime_qa/**/*.jpg
+docs/runtime_qa/**/*.webp

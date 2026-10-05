@@ -119,19 +119,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
 
-    return Scaffold(
-      backgroundColor: DashboardColors.background,
-      appBar: AppBar(
-        title: const Text('Edit Profile',
-            style: TextStyle(
-                color: DashboardColors.textPrimary,
-                fontWeight: FontWeight.w700,
-                fontSize: 18)),
-        backgroundColor: DashboardColors.surface,
-        iconTheme: const IconThemeData(color: DashboardColors.textPrimary),
-        elevation: 0,
-      ),
-      body: profileAsync.when(
+    return Container(
+      color: DashboardColors.background,
+      child: profileAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: DashboardColors.primary),
         ),

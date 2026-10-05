@@ -192,6 +192,7 @@ String _getRouteTitle(String route, [TerminologyHelper? terminology]) {
   if (route.startsWith('/assessments/entry')) return 'Internal Marks Entry';
   if (route.startsWith('/assessments/my-marks')) return 'My Internal Marks';
   if (route.startsWith('/assessments')) return 'Internal Assessments';
+  if (route.startsWith('/assignments')) return 'Assignments';
   if (route == '/practicals/new') return 'Schedule Practical Session';
   if (route == '/practicals/my-history') return 'My Practical History';
   if (route.startsWith('/practicals')) return 'Practical Sessions';
@@ -204,6 +205,7 @@ String _getRouteTitle(String route, [TerminologyHelper? terminology]) {
   if (route.startsWith('/notes')) return 'Academic Notes';
   if (route.startsWith('/ai-assistant')) return 'AI Assistant';
   if (route.startsWith('/users')) return 'User Management';
+  if (route == '/profile/edit') return 'Edit Profile';
   if (route.startsWith('/profile')) return 'My Profile';
   if (route.startsWith('/settings')) return 'Settings';
   if (route.startsWith('/announcements')) return 'Announcements';
@@ -269,7 +271,7 @@ class ShellWrapper extends ConsumerWidget {
 
     final scaffold = Scaffold(
       backgroundColor: isDark ? const Color(0xFF0B0F19) : const Color(0xFFF8FAFC),
-      extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: false,
       appBar: AcadexAppBar(
         title: pageTitle,
         showDrawerButton: isMobile && isAtRootDashboard,
@@ -1186,7 +1188,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => fadeTransitionPage(
               context: context,
               state: state,
-              child: const ShellWrapper(activeRoute: '/profile', child: EditProfileScreen()),
+              child: const ShellWrapper(activeRoute: '/profile/edit', child: EditProfileScreen()),
             ),
           ),
         ],

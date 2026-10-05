@@ -21,7 +21,7 @@ class HodAttendanceDashboardScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 4,
       child: AcadexPageContainer(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
         scrollable: true,
         maxWidth: AcadexLayout.contentMaxWidth,
         child: Column(

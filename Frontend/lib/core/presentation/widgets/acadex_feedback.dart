@@ -2,12 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_theme.dart';
-import '../../../features/auth/domain/models/auth_state.dart';
-import '../../../features/auth/domain/models/role_enum.dart';
-import '../../../features/auth/presentation/providers/auth_provider.dart';
 import 'acadex_button.dart';
-import 'acadex_readable_surface.dart';
-
 import '../../errors/acadex_error.dart';
 
 class AcadexEmptyState extends ConsumerWidget {
@@ -20,6 +15,7 @@ class AcadexEmptyState extends ConsumerWidget {
   final String? actionLabel;
   final IconData? actionIcon;
   final bool isFilterEmpty;
+  final bool isCompact;
 
   const AcadexEmptyState({
     super.key,
@@ -32,6 +28,7 @@ class AcadexEmptyState extends ConsumerWidget {
     this.actionLabel,
     this.actionIcon,
     this.isFilterEmpty = false,
+    this.isCompact = false,
   });
 
   /// Factory for filter or search empty state with predefined action to clear filters
@@ -42,6 +39,7 @@ class AcadexEmptyState extends ConsumerWidget {
     String? filterSummary,
     VoidCallback? onClearFilters,
     String clearLabel = 'Clear Filters',
+    bool isCompact = false,
   }) {
     return AcadexEmptyState(
       key: key,
@@ -55,6 +53,7 @@ class AcadexEmptyState extends ConsumerWidget {
       actionIcon: LucideIcons.rotateCcw,
       onActionTap: onClearFilters,
       isFilterEmpty: true,
+      isCompact: isCompact,
     );
   }
 
@@ -63,56 +62,61 @@ class AcadexEmptyState extends ConsumerWidget {
     final effectiveSubtitle = subtitle ?? description ?? '';
     final effectiveOnAction = onActionTap ?? onAction;
     final effectiveIcon = isFilterEmpty && icon == LucideIcons.inbox ? LucideIcons.filterX : icon;
-    final authState = ref.watch(authProvider);
-    final isSuperAdmin = authState is AuthAuthenticated && authState.user.role == AppRole.superAdmin;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final iconBoxSize = isCompact ? 38.0 : 52.0;
+    final iconGlyphSize = isCompact ? 18.0 : 24.0;
+    final titleStyle = isCompact
+        ? AcadexTypography.title(color: isDark ? AcadexColors.darkInk : AcadexColors.ink)
+        : AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink);
+    final subtitleStyle = isCompact
+        ? AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted)
+        : AcadexTypography.body(color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary);
 
     final content = ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 440),
+      constraints: BoxConstraints(maxWidth: isCompact ? 320 : 400),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 64,
-            height: 64,
+            width: iconBoxSize,
+            height: iconBoxSize,
             decoration: BoxDecoration(
-              color: isSuperAdmin ? const Color(0xFFE6F2FF) : AcadexColors.canvasSoft,
-              borderRadius: AcadexRadius.borderRadiusLg,
+              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.canvasSoft,
+              borderRadius: isCompact ? AcadexRadius.borderRadiusMd : AcadexRadius.borderRadiusLg,
               border: Border.all(
-                color: isSuperAdmin ? const Color(0xFFCCE6FF) : AcadexColors.hairline,
+                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
                 width: 1,
               ),
             ),
             child: Icon(
               effectiveIcon,
-              size: 28,
-              color: isSuperAdmin ? const Color(0xFF003366) : AcadexColors.inkMuted,
+              size: iconGlyphSize,
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: isCompact ? 10 : 16),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: AcadexTypography.heading3(
-              color: isSuperAdmin ? const Color(0xFF07111F) : AcadexColors.ink,
-            ),
+            style: titleStyle,
           ),
           if (effectiveSubtitle.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: isCompact ? 4 : 6),
             Text(
               effectiveSubtitle,
               textAlign: TextAlign.center,
-              style: AcadexTypography.body(
-                color: isSuperAdmin ? const Color(0xFF334155) : AcadexColors.inkSecondary,
-              ),
+              style: subtitleStyle,
             ),
           ],
           if (effectiveOnAction != null && actionLabel != null) ...[
-            const SizedBox(height: 24),
+            SizedBox(height: isCompact ? 12 : 18),
             AcadexButton(
               label: actionLabel!,
               icon: actionIcon,
+              size: isCompact ? AcadexButtonSize.sm : AcadexButtonSize.md,
               onPressed: effectiveOnAction,
             ),
           ],
@@ -120,28 +124,14 @@ class AcadexEmptyState extends ConsumerWidget {
       ),
     );
 
-    if (isSuperAdmin) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-        child: Center(
-          child: SingleChildScrollView(
-            child: AcadexReadableSurface(
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
-              child: content,
-            ),
-          ),
-        ),
-      );
-    }
-
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+      padding: EdgeInsets.symmetric(
+        vertical: isCompact ? AcadexSpacing.space12 : AcadexSpacing.space20,
+        horizontal: AcadexSpacing.space16,
+      ),
       child: Center(
-        child: SingleChildScrollView(
-          child: content,
-        ),
+        child: content,
       ),
     );
   }
@@ -219,63 +209,62 @@ class AcadexErrorState extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final isSuperAdmin = authState is AuthAuthenticated && authState.user.role == AppRole.superAdmin;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final sanitizedMessage = AcadexException.sanitizedMessage(message, fallback: message);
 
     final content = ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 440),
+      constraints: const BoxConstraints(maxWidth: 400),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 64,
-            height: 64,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: const Color(0xFFFEE2E2),
+              color: isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight,
               borderRadius: AcadexRadius.borderRadiusLg,
               border: Border.all(
-                color: const Color(0xFFFECACA),
+                color: isDark ? AcadexColors.errorDark : const Color(0xFFFECACA),
                 width: 1,
               ),
             ),
             child: Icon(
               icon,
-              size: 28,
-              color: AcadexColors.error,
+              size: 24,
+              color: isDark ? AcadexColors.errorLight : AcadexColors.error,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Text(
             title,
             textAlign: TextAlign.center,
             style: AcadexTypography.heading3(
-              color: isSuperAdmin ? const Color(0xFF07111F) : AcadexColors.ink,
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             sanitizedMessage,
             textAlign: TextAlign.center,
             style: AcadexTypography.body(
-              color: isSuperAdmin ? const Color(0xFF334155) : AcadexColors.inkSecondary,
+              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
             ),
           ),
           if (onRetry != null || onAction != null) ...[
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 10,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
               children: [
-                if (onAction != null && actionLabel != null) ...[
+                if (onAction != null && actionLabel != null)
                   AcadexButton(
                     label: actionLabel!,
                     variant: AcadexButtonVariant.secondary,
                     onPressed: onAction,
                   ),
-                  if (onRetry != null) const SizedBox(width: 12),
-                ],
                 if (onRetry != null)
                   AcadexButton(
                     label: retryLabel,
@@ -290,42 +279,29 @@ class AcadexErrorState extends ConsumerWidget {
       ),
     );
 
-    if (isSuperAdmin) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-        child: Center(
-          child: SingleChildScrollView(
-            child: AcadexReadableSurface(
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
-              child: content,
-            ),
-          ),
-        ),
-      );
-    }
-
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       child: Center(
-        child: SingleChildScrollView(
-          child: content,
-        ),
+        child: content,
       ),
     );
   }
 }
 
-class AcadexLoadingState extends ConsumerWidget {
+class AcadexLoadingState extends StatelessWidget {
   final String? message;
+  final double size;
 
-  const AcadexLoadingState({super.key, this.message});
+  const AcadexLoadingState({
+    super.key,
+    this.message,
+    this.size = 28.0,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final isSuperAdmin = authState is AuthAuthenticated && authState.user.role == AppRole.superAdmin;
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final content = Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -333,55 +309,39 @@ class AcadexLoadingState extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
-          width: 32,
-          height: 32,
+          width: size,
+          height: size,
           child: CircularProgressIndicator(
-            strokeWidth: 2.5,
+            strokeWidth: 2.2,
             valueColor: AlwaysStoppedAnimation<Color>(
-              isSuperAdmin ? const Color(0xFF003366) : AcadexColors.primary,
+              isDark ? AcadexColors.primaryMuted : AcadexColors.primary,
             ),
           ),
         ),
-        if (message != null) ...[
-          const SizedBox(height: 16),
+        if (message != null && message!.isNotEmpty) ...[
+          const SizedBox(height: 12),
           Text(
             message!,
             textAlign: TextAlign.center,
-            style: AcadexTypography.bodySmall(
-              color: isSuperAdmin ? const Color(0xFF334155) : AcadexColors.inkSecondary,
-            ).copyWith(fontWeight: isSuperAdmin ? FontWeight.w500 : FontWeight.w400),
+            style: AcadexTypography.caption(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ),
           ),
         ],
       ],
     );
 
-    if (isSuperAdmin) {
-      return Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: AcadexReadableSurface(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-              child: content,
-            ),
-          ),
-        ),
-      );
-    }
-
     return Center(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: content,
-        ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: content,
       ),
     );
   }
 }
 
-/// Canonical AcadexSkeleton widget
-class AcadexSkeleton extends StatelessWidget {
+/// Lightweight, restrained skeleton box with smooth pulse animation
+class AcadexSkeleton extends StatefulWidget {
   final double width;
   final double height;
   final BorderRadius? borderRadius;
@@ -394,16 +354,117 @@ class AcadexSkeleton extends StatelessWidget {
   });
 
   @override
+  State<AcadexSkeleton> createState() => _AcadexSkeletonState();
+}
+
+class _AcadexSkeletonState extends State<AcadexSkeleton> with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _opacityAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _opacityAnim = Tween<double>(begin: 0.45, end: 0.85).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
+    );
+    _animController.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-        borderRadius: borderRadius ?? AcadexRadius.borderRadiusSm,
-      ),
+    final baseColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+
+    return AnimatedBuilder(
+      animation: _opacityAnim,
+      builder: (context, _) {
+        return Opacity(
+          opacity: _opacityAnim.value,
+          child: Container(
+            width: widget.width,
+            height: widget.height,
+            decoration: BoxDecoration(
+              color: baseColor,
+              borderRadius: widget.borderRadius ?? AcadexRadius.borderRadiusSm,
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
+/// Convenient skeleton line for text placeholders
+class AcadexSkeletonLine extends StatelessWidget {
+  final double width;
+  final double height;
+
+  const AcadexSkeletonLine({
+    super.key,
+    this.width = double.infinity,
+    this.height = 12.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AcadexSkeleton(
+      width: width,
+      height: height,
+      borderRadius: BorderRadius.circular(AcadexRadius.xs),
+    );
+  }
+}
+
+/// Convenient skeleton card that mirrors an AcadexCard layout
+class AcadexSkeletonCard extends StatelessWidget {
+  final double height;
+  final EdgeInsetsGeometry? padding;
+
+  const AcadexSkeletonCard({
+    super.key,
+    this.height = 80.0,
+    this.padding,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      padding: padding ?? const EdgeInsets.all(AcadexSpacing.space14),
+      margin: const EdgeInsets.only(bottom: AcadexSpacing.space8),
+      decoration: BoxDecoration(
+        color: AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusLg,
+        border: Border.all(color: AcadexColors.hairline, width: 1),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const AcadexSkeleton(width: 38, height: 38, borderRadius: AcadexRadius.smBorder),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                AcadexSkeletonLine(width: 140, height: 13),
+                SizedBox(height: 8),
+                AcadexSkeletonLine(width: 220, height: 10),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

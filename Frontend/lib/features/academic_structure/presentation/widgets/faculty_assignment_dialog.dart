@@ -305,6 +305,8 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
     }).toList();
 
     final isMobile = AcadexBreakpoints.isMobile(context);
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final maxDialogHeight = (screenHeight * 0.90).clamp(380.0, isMobile ? 640.0 : 760.0);
 
     return Dialog(
       insetPadding: isMobile
@@ -314,7 +316,7 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
       backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
       child: Container(
         width: isMobile ? double.infinity : 760,
-        constraints: BoxConstraints(maxHeight: isMobile ? 620 : 720),
+        constraints: BoxConstraints(maxHeight: maxDialogHeight),
         padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

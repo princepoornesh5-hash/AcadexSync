@@ -89,37 +89,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final profileAsync = ref.watch(profileProvider);
     final uploadState = ref.watch(profileImageUploadProvider);
 
-    return Scaffold(
-      backgroundColor: DashboardColors.background,
-      appBar: AppBar(
-        title: const Text('My Profile',
-            style: TextStyle(
-                color: DashboardColors.textPrimary,
-                fontWeight: FontWeight.w700,
-                fontSize: 18)),
-        backgroundColor: DashboardColors.surface,
-        iconTheme: const IconThemeData(color: DashboardColors.textPrimary),
-        elevation: 0,
-        actions: [
-          profileAsync.when(
-            data: (profile) => Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Center(
-                child: AcadexButton(
-                  label: 'Edit',
-                  icon: LucideIcons.pencil,
-                  size: AcadexButtonSize.sm,
-                  variant: AcadexButtonVariant.secondary,
-                  onPressed: () => context.push('/profile/edit'),
-                ),
-              ),
-            ),
-            loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
-          ),
-        ],
-      ),
-      body: profileAsync.when(
+    return Container(
+      color: DashboardColors.background,
+      child: profileAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: DashboardColors.primary),
         ),
@@ -287,6 +259,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(width: AcadexSpacing.sm),
+              AcadexButton(
+                label: 'Edit',
+                icon: LucideIcons.pencil,
+                size: AcadexButtonSize.sm,
+                variant: AcadexButtonVariant.secondary,
+                onPressed: () => context.push('/profile/edit'),
               ),
             ],
           ),

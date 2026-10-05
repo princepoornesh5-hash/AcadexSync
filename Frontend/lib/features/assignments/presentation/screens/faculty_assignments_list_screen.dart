@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/presentation/utils/navigation_extensions.dart';
+import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
+import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../domain/models/assignment_models.dart';
 import '../providers/assignments_providers.dart';
 import '../../../institution_config/presentation/providers/institution_config_providers.dart';
@@ -18,81 +21,62 @@ class FacultyAssignmentsListScreen extends ConsumerWidget {
     final assignmentsAsync = ref.watch(facultyCourseAssignmentsProvider);
     final terminology = ref.watch(terminologyProvider);
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      appBar: AppBar(
-        backgroundColor: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
-        leading: IconButton(
-          icon: Icon(LucideIcons.arrowLeft, color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-          onPressed: () => context.safePop(fallbackRoute: '/dashboard'),
-        ),
-        title: Text(
-          'Assignments',
-          style: AcadexTypography.title(
-            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+    return AcadexPageContainer(
+      onRefresh: () async => ref.refresh(facultyCourseAssignmentsProvider),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AcadexPageHeader(
+            title: 'Assignments',
+            subtitle: 'Create coursework, track student submissions, and record marks.',
+            actions: [
+              AcadexButton(
+                label: '+ Create Assignment',
+                icon: LucideIcons.plus,
+                size: AcadexButtonSize.sm,
+                onPressed: () => context.push('/assignments/create'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.plus, color: AcadexColors.primary),
-            tooltip: 'Create Assignment',
-            onPressed: () => context.push('/assignments/create'),
+          const SizedBox(height: 8),
+          assignmentsAsync.when(
+            loading: () => const AcadexLoadingState(message: 'Loading assignments...'),
+            error: (err, stack) => Center(
+              child: AcadexErrorState.fromError(
+                error: err,
+                title: "Couldn't load assignments.",
+                retryLabel: 'Retry',
+                onRetry: () => ref.refresh(facultyCourseAssignmentsProvider),
+              ),
+            ),
+            data: (assignments) {
+              if (assignments.isEmpty) {
+                return Center(
+                  child: AcadexEmptyState(
+                    icon: LucideIcons.bookOpen,
+                    title: 'No assignments yet.',
+                    subtitle: 'Create coursework assignments to track student submissions and record marks.',
+                    actionLabel: 'Create Assignment',
+                    actionIcon: LucideIcons.plus,
+                    onActionTap: () => context.push('/assignments/create'),
+                    isCompact: true,
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                itemCount: assignments.length,
+                itemBuilder: (context, index) {
+                  final asgn = assignments[index];
+                  return _buildFacultyAssignmentCard(context, asgn, isDark, terminology);
+                },
+              );
+            },
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/assignments/create'),
-        backgroundColor: AcadexColors.primary,
-        icon: const Icon(LucideIcons.plus, color: Colors.white),
-        label: const Text(
-          'Create Assignment',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-      ),
-      body: assignmentsAsync.when(
-        loading: () => const AcadexLoadingState(message: 'Loading assignments...'),
-        error: (err, stack) => Center(
-          child: AcadexErrorState(
-            message: "Couldn't load assignments.",
-            retryLabel: 'Retry',
-            onRetry: () => ref.refresh(facultyCourseAssignmentsProvider),
-          ),
-        ),
-        data: (assignments) {
-          if (assignments.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: () async => ref.refresh(facultyCourseAssignmentsProvider),
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  const SizedBox(height: 120),
-                  Center(
-                    child: AcadexEmptyState(
-                      icon: LucideIcons.bookOpen,
-                      title: 'No assignments yet.',
-                      subtitle: 'Create coursework assignments to track student submissions and record marks.',
-                      actionLabel: 'Create Assignment',
-                      actionIcon: LucideIcons.plus,
-                      onActionTap: () => context.push('/assignments/create'),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () async => ref.refresh(facultyCourseAssignmentsProvider),
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              itemCount: assignments.length,
-              itemBuilder: (context, index) {
-                final asgn = assignments[index];
-                return _buildFacultyAssignmentCard(context, asgn, isDark, terminology);
-              },
-            ),
-          );
-        },
       ),
     );
   }
@@ -125,7 +109,7 @@ class FacultyAssignmentsListScreen extends ConsumerWidget {
     final completed = asgn.completedCount ?? 0;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusMd,
@@ -137,9 +121,10 @@ class FacultyAssignmentsListScreen extends ConsumerWidget {
         onTap: () => context.push('/assignments/${asgn.id}/activity'),
         borderRadius: AcadexRadius.borderRadiusMd,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,8 +144,8 @@ class FacultyAssignmentsListScreen extends ConsumerWidget {
                         const SizedBox(height: 2),
                         Text(
                           terminology.formatCompactContext(
-                            subjectName: asgn.subjectName,
-                            sectionName: asgn.sectionName,
+                            subjectName: AcadexEntityFormatters.formatSubjectLabel(asgn.subjectName),
+                            sectionName: AcadexEntityFormatters.formatSectionLabel(asgn.sectionName, compact: true),
                           ),
                           style: AcadexTypography.caption(
                             color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
@@ -169,6 +154,7 @@ class FacultyAssignmentsListScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
@@ -186,29 +172,41 @@ class FacultyAssignmentsListScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              Row(
+              const SizedBox(height: 8),
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 12,
+                runSpacing: 6,
                 children: [
-                  Icon(LucideIcons.calendar, size: 14, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Due: ${asgn.dueDate}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(LucideIcons.calendar, size: 14, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Due: ${asgn.dueDate}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 14),
-                  Icon(LucideIcons.award, size: 14, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Max: ${asgn.maximumMarks}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(LucideIcons.award, size: 14, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Max: ${asgn.maximumMarks}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        ),
+                      ),
+                    ],
                   ),
-                  const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/navigation_extensions.dart';
+import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../../core/presentation/widgets/acadex_data_table.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
@@ -411,11 +412,11 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, i) {
         final s = students[i];
-        final deptName = deptMap[s.departmentId]?.name ?? (s.departmentId.isNotEmpty ? s.departmentId : '—');
+        final deptName = AcadexEntityFormatters.formatDepartmentLabel(deptMap[s.departmentId]?.name, rawId: s.departmentId);
         final sem = semMap[s.semesterId];
-        final semName = sem != null ? 'Sem ${sem.semesterNumber}' : (s.semesterId.isNotEmpty ? s.semesterId : '—');
+        final semName = AcadexEntityFormatters.formatSemesterLabel(sem?.name, semesterNumber: sem?.semesterNumber, rawId: s.semesterId, compact: true);
         final sec = secMap[s.sectionId];
-        final secName = sec != null ? 'Sec ${sec.name}' : (s.sectionId.isNotEmpty ? s.sectionId : '—');
+        final secName = AcadexEntityFormatters.formatSectionLabel(sec?.name, rawId: s.sectionId, fallback: 'Section Not Assigned', compact: true);
         final isSelected = _selectedIds.contains(s.id);
         final statusLabel = s.accountStatus == AccountStatus.pendingActivation
             ? 'Pending Activation'
@@ -519,11 +520,11 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
       showCheckboxColumn: true,
       columns: const ["PIN Number", "Roll No", "Student Name", "Department", "Semester", "Section", "Status", "Actions"],
       rows: filteredStudents.map((s) {
-        final deptName = deptMap[s.departmentId]?.name ?? (s.departmentId.isNotEmpty ? s.departmentId : '—');
+        final deptName = AcadexEntityFormatters.formatDepartmentLabel(deptMap[s.departmentId]?.name, rawId: s.departmentId);
         final sem = semMap[s.semesterId];
-        final semName = sem != null ? 'Semester ${sem.semesterNumber}' : (s.semesterId.isNotEmpty ? s.semesterId : '—');
+        final semName = AcadexEntityFormatters.formatSemesterLabel(sem?.name, semesterNumber: sem?.semesterNumber, rawId: s.semesterId);
         final sec = secMap[s.sectionId];
-        final secName = sec != null ? 'Sec ${sec.name}' : (s.sectionId.isNotEmpty ? s.sectionId : '—');
+        final secName = AcadexEntityFormatters.formatSectionLabel(sec?.name, rawId: s.sectionId, fallback: 'Section Not Assigned', compact: true);
         final statusLabel = s.accountStatus == AccountStatus.pendingActivation
             ? 'Pending Activation'
             : s.lifecycleState.displayName;

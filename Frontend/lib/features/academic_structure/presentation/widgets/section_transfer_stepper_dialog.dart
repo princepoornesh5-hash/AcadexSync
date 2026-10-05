@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
+import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
 import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
@@ -298,6 +299,7 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
   // STEP 1: Select Students
   Widget _buildStep1SelectStudents(ThemeData theme) {
     final studentState = ref.watch(studentsProvider((sectionId: widget.sourceSectionId, departmentId: null)));
+    final secMap = ref.watch(sectionMapProvider);
     final allStudents = studentState.items;
     final filtered = allStudents.where((s) {
       if (widget.sourceSectionId != null && s.sectionId != widget.sourceSectionId) return false;
@@ -370,7 +372,7 @@ class _SectionTransferStepperDialogState extends ConsumerState<SectionTransferSt
                       dense: true,
                       activeColor: AcadexColors.secondary,
                       title: Text(student.name, style: AcadexTypography.body(color: theme.colorScheme.onSurface).copyWith(fontWeight: FontWeight.w600)),
-                      subtitle: Text("Roll: ${student.rollNumber} • Section: ${student.sectionId}", style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+                      subtitle: Text("Roll: ${student.rollNumber} • ${AcadexEntityFormatters.formatSectionLabel(secMap[student.sectionId]?.name, rawId: student.sectionId, fallback: 'Section Not Assigned')}", style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
                       onChanged: (checked) {
                         setState(() {
                           if (checked == true) {

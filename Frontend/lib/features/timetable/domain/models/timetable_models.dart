@@ -135,6 +135,15 @@ class TimetableModel {
   final String? building;
   final TimetableSessionType sessionType;
   final bool isSubstituted;
+  final String? subjectName;
+  final String? subjectCode;
+  final String? sectionName;
+  final String? facultyName;
+  final String? courseName;
+  final String? semesterName;
+  final String? cohort;
+  final String? academicStage;
+  final String? contextualDescription;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -158,6 +167,15 @@ class TimetableModel {
     this.building,
     required this.sessionType,
     this.isSubstituted = false,
+    this.subjectName,
+    this.subjectCode,
+    this.sectionName,
+    this.facultyName,
+    this.courseName,
+    this.semesterName,
+    this.cohort,
+    this.academicStage,
+    this.contextualDescription,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -182,6 +200,15 @@ class TimetableModel {
     String? building,
     TimetableSessionType? sessionType,
     bool? isSubstituted,
+    String? subjectName,
+    String? subjectCode,
+    String? sectionName,
+    String? facultyName,
+    String? courseName,
+    String? semesterName,
+    String? cohort,
+    String? academicStage,
+    String? contextualDescription,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -205,6 +232,15 @@ class TimetableModel {
       building: building ?? this.building,
       sessionType: sessionType ?? this.sessionType,
       isSubstituted: isSubstituted ?? this.isSubstituted,
+      subjectName: subjectName ?? this.subjectName,
+      subjectCode: subjectCode ?? this.subjectCode,
+      sectionName: sectionName ?? this.sectionName,
+      facultyName: facultyName ?? this.facultyName,
+      courseName: courseName ?? this.courseName,
+      semesterName: semesterName ?? this.semesterName,
+      cohort: cohort ?? this.cohort,
+      academicStage: academicStage ?? this.academicStage,
+      contextualDescription: contextualDescription ?? this.contextualDescription,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -237,6 +273,15 @@ class TimetableModel {
         orElse: () => TimetableSessionType.lecture,
       ),
       isSubstituted: json['isSubstituted'] == true,
+      subjectName: json['subjectName'] as String?,
+      subjectCode: json['subjectCode'] as String?,
+      sectionName: json['sectionName'] as String?,
+      facultyName: json['facultyName'] as String?,
+      courseName: json['courseName'] as String?,
+      semesterName: json['semesterName'] as String?,
+      cohort: json['cohort'] as String?,
+      academicStage: json['academicStage'] as String?,
+      contextualDescription: json['contextualDescription'] as String?,
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'] as String) : DateTime.now(),
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt'] as String) : DateTime.now(),
     );
@@ -263,6 +308,15 @@ class TimetableModel {
       if (building != null) 'building': building,
       'sessionType': sessionType.name,
       'isSubstituted': isSubstituted,
+      if (subjectName != null) 'subjectName': subjectName,
+      if (subjectCode != null) 'subjectCode': subjectCode,
+      if (sectionName != null) 'sectionName': sectionName,
+      if (facultyName != null) 'facultyName': facultyName,
+      if (courseName != null) 'courseName': courseName,
+      if (semesterName != null) 'semesterName': semesterName,
+      if (cohort != null) 'cohort': cohort,
+      if (academicStage != null) 'academicStage': academicStage,
+      if (contextualDescription != null) 'contextualDescription': contextualDescription,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -665,6 +719,15 @@ class TimetableGridEntryModel {
   final String? building;
   final TimetableSessionType sessionType;
   final bool isSubstituted;
+  final String? subjectName;
+  final String? subjectCode;
+  final String? sectionName;
+  final String? facultyName;
+  final String? courseName;
+  final String? semesterName;
+  final String? cohort;
+  final String? academicStage;
+  final String? contextualDescription;
 
   TimetableGridEntryModel({
     required this.id,
@@ -681,6 +744,15 @@ class TimetableGridEntryModel {
     this.building,
     required this.sessionType,
     this.isSubstituted = false,
+    this.subjectName,
+    this.subjectCode,
+    this.sectionName,
+    this.facultyName,
+    this.courseName,
+    this.semesterName,
+    this.cohort,
+    this.academicStage,
+    this.contextualDescription,
   });
 
   /// Whether this entry merges across multiple consecutive horizontal periods
@@ -732,6 +804,15 @@ class TimetableGridEntryModel {
     String? building,
     TimetableSessionType? sessionType,
     bool? isSubstituted,
+    String? subjectName,
+    String? subjectCode,
+    String? sectionName,
+    String? facultyName,
+    String? courseName,
+    String? semesterName,
+    String? cohort,
+    String? academicStage,
+    String? contextualDescription,
   }) {
     return TimetableGridEntryModel(
       id: id ?? this.id,
@@ -748,6 +829,15 @@ class TimetableGridEntryModel {
       building: building ?? this.building,
       sessionType: sessionType ?? this.sessionType,
       isSubstituted: isSubstituted ?? this.isSubstituted,
+      subjectName: subjectName ?? this.subjectName,
+      subjectCode: subjectCode ?? this.subjectCode,
+      sectionName: sectionName ?? this.sectionName,
+      facultyName: facultyName ?? this.facultyName,
+      courseName: courseName ?? this.courseName,
+      semesterName: semesterName ?? this.semesterName,
+      cohort: cohort ?? this.cohort,
+      academicStage: academicStage ?? this.academicStage,
+      contextualDescription: contextualDescription ?? this.contextualDescription,
     );
   }
 
@@ -773,6 +863,15 @@ class TimetableGridEntryModel {
         orElse: () => TimetableSessionType.lecture,
       ),
       isSubstituted: json['isSubstituted'] == true,
+      subjectName: json['subjectName'] as String?,
+      subjectCode: json['subjectCode'] as String?,
+      sectionName: json['sectionName'] as String?,
+      facultyName: json['facultyName'] as String?,
+      courseName: json['courseName'] as String?,
+      semesterName: json['semesterName'] as String?,
+      cohort: json['cohort'] as String?,
+      academicStage: json['academicStage'] as String?,
+      contextualDescription: json['contextualDescription'] as String?,
     );
   }
 
@@ -792,6 +891,15 @@ class TimetableGridEntryModel {
       if (building != null) 'building': building,
       'sessionType': sessionType.name,
       'isMergedHorizontal': isMergedHorizontal,
+      if (subjectName != null) 'subjectName': subjectName,
+      if (subjectCode != null) 'subjectCode': subjectCode,
+      if (sectionName != null) 'sectionName': sectionName,
+      if (facultyName != null) 'facultyName': facultyName,
+      if (courseName != null) 'courseName': courseName,
+      if (semesterName != null) 'semesterName': semesterName,
+      if (cohort != null) 'cohort': cohort,
+      if (academicStage != null) 'academicStage': academicStage,
+      if (contextualDescription != null) 'contextualDescription': contextualDescription,
     };
   }
 

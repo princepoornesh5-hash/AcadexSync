@@ -12,6 +12,8 @@ import '../../domain/models/timetable_models.dart';
 import '../providers/timetable_lookup_providers.dart';
 import 'acadex_timetable_calendar.dart';
 import 'daily_timeline_view.dart';
+import 'timetable_entry_detail_sheet.dart';
+import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
 
 // Helper to determine active/upcoming status
 enum TimetableEntryStatus { now, upNext, completed, none }
@@ -96,93 +98,7 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
   bool _isHovered = false;
 
   void _showDetailDialog(BuildContext context, WidgetRef ref) {
-    final subjectMap = ref.read(timetableSubjectMapProvider);
-    final facultyMap = ref.read(timetableFacultyMapProvider);
-    final sectionMap = ref.read(timetableSectionMapProvider);
-
-    final subject = subjectMap[widget.entry.subjectId];
-    final faculty = facultyMap[widget.entry.facultyId];
-    final section = sectionMap[widget.entry.sectionId];
-
-    final subjectName = subject?.name ?? widget.entry.subjectId;
-    final subjectCode = subject?.code ?? '';
-    final facultyName = faculty?.name ?? widget.entry.facultyId;
-    final facultyEmail = faculty?.email ?? '';
-    final sectionName = section?.name ?? (widget.entry.sectionId.isNotEmpty ? widget.entry.sectionId : '—');
-    final sessionColor = getSessionTypeColor(widget.entry.sessionType);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusXl),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: sessionColor.withValues(alpha: 0.12),
-                borderRadius: AcadexRadius.borderRadiusMd,
-              ),
-              child: Icon(getSessionTypeIcon(widget.entry.sessionType), size: 20, color: sessionColor),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(subjectName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  if (subjectCode.isNotEmpty)
-                    Text(subjectCode, style: TextStyle(fontSize: 12, color: sessionColor, fontWeight: FontWeight.w600)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDetailRow(ctx, LucideIcons.calendar, 'Day', widget.entry.dayOfWeek.displayName),
-            const SizedBox(height: 8),
-            _buildDetailRow(ctx, LucideIcons.clock, 'Time', '${widget.entry.startTime} – ${widget.entry.endTime}'),
-            const SizedBox(height: 8),
-            _buildDetailRow(ctx, LucideIcons.tag, 'Session Type', widget.entry.sessionType.displayName),
-            const SizedBox(height: 8),
-            _buildDetailRow(ctx, LucideIcons.user, 'Faculty', facultyName + (facultyEmail.isNotEmpty ? ' ($facultyEmail)' : '')),
-            const SizedBox(height: 8),
-            _buildDetailRow(ctx, LucideIcons.layoutGrid, 'Section', sectionName),
-            if (widget.entry.roomNumber.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              _buildDetailRow(ctx, LucideIcons.mapPin, 'Location', 'Room ${widget.entry.roomNumber}${widget.entry.building != null ? ' · ${widget.entry.building}' : ''}'),
-            ],
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).primaryColor,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(BuildContext context, IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 15, color: Theme.of(context).textTheme.bodySmall?.color ?? AcadexColors.inkMuted),
-        const SizedBox(width: 8),
-        Text('$label: ', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-        Expanded(
-          child: Text(value, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface)),
-        ),
-      ],
-    );
+    TimetableEntryDetailSheet.show(context, widget.entry);
   }
 
   @override
@@ -198,10 +114,21 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
     final faculty = facultyMap[entry.facultyId];
     final section = sectionMap[entry.sectionId];
 
-    final subjectName = subject?.name ?? entry.subjectId;
-    final subjectCode = subject?.code ?? '';
-    final facultyName = faculty?.name ?? entry.facultyId;
-    final sectionName = section?.name ?? (entry.sectionId.isNotEmpty ? entry.sectionId : null);
+    final subjectName = AcadexEntityFormatters.formatSubjectLabel(
+      entry.subjectName ?? subject?.name,
+      code: entry.subjectCode ?? subject?.code,
+      rawId: entry.subjectId,
+    );
+    final subjectCode = entry.subjectCode ?? subject?.code ?? '';
+    final facultyName = AcadexEntityFormatters.formatFacultyLabel(
+      entry.facultyName ?? faculty?.name,
+      rawId: entry.facultyId,
+    );
+    final sectionName = AcadexEntityFormatters.formatSectionLabel(
+      entry.sectionName ?? section?.name,
+      rawId: entry.sectionId,
+      prefix: false,
+    );
 
     final sessionColor = getSessionTypeColor(entry.sessionType);
     final status = getEntryStatus(entry);
@@ -440,7 +367,7 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
                           ),
 
                         // Section
-                        if (sectionName != null)
+                        if (sectionName.isNotEmpty)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
@@ -470,7 +397,7 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
                               subjectId: entry.subjectId,
                               subjectName: subjectName,
                               sectionId: entry.sectionId,
-                              sectionName: sectionName ?? entry.sectionId,
+                              sectionName: sectionName,
                               semester: entry.semesterId,
                               timeSlot: '${entry.startTime} – ${entry.endTime}',
                               startTime: entry.startTime,

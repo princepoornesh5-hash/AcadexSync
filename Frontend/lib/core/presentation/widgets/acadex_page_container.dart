@@ -6,8 +6,8 @@ import 'animated_particle_sphere.dart';
 export 'acadex_ambient_background.dart';
 export 'animated_particle_sphere.dart';
 
-/// A responsive page container that enforces consistent layout geometry
-/// across all Acadex screens.
+/// A responsive page container that enforces consistent layout geometry,
+/// safe area handling, and precise viewport bounds across all Acadex mobile & desktop screens.
 class AcadexPageContainer extends ConsumerWidget {
   final Widget child;
 
@@ -19,17 +19,23 @@ class AcadexPageContainer extends ConsumerWidget {
   /// Whether the content should be scrollable. Defaults to true.
   final bool scrollable;
 
-  /// Override the background color. Defaults to canvas/darkCanvas (or transparent for Super Admin).
+  /// Override the background color. Defaults to canvas/darkCanvas.
   final Color? backgroundColor;
 
-  /// Override horizontal padding. If null, uses responsive defaults.
+  /// Override horizontal padding. If null, uses responsive defaults (12px on 360px, 16px on 390-412px).
   final double? horizontalPadding;
 
-  /// Override vertical padding (top). If null, uses 24px.
+  /// Override vertical padding (top). If null, respects the top app bar offset.
   final double? topPadding;
 
-  /// Override vertical padding (bottom). If null, uses 32px.
+  /// Override vertical padding (bottom). If null, respects the bottom navigation offset.
   final double? bottomPadding;
+
+  /// Whether the page is displayed underneath the canonical [AcadexAppBar]. Defaults to true.
+  final bool hasAppBar;
+
+  /// Whether the page is displayed above the mobile [AcadexBottomNav]. Defaults to null (auto-detected on mobile).
+  final bool? hasBottomNav;
 
   /// Optional scroll controller for external scroll management.
   final ScrollController? scrollController;
@@ -55,6 +61,8 @@ class AcadexPageContainer extends ConsumerWidget {
     this.horizontalPadding,
     this.topPadding,
     this.bottomPadding,
+    this.hasAppBar = true,
+    this.hasBottomNav,
     this.scrollController,
     this.physics,
     this.ambientDensity = AcadexAmbientDensity.none,
@@ -69,11 +77,18 @@ class AcadexPageContainer extends ConsumerWidget {
     final bgColor = backgroundColor ?? defaultBg;
 
     final isMobile = AcadexBreakpoints.isMobile(context);
-    final hPad = horizontalPadding ?? _responsiveHorizontalPadding(context);
-    final mediaTop = MediaQuery.paddingOf(context).top;
-    final baseTop = topPadding ?? (isMobile ? AcadexSpacing.space16 : AcadexSpacing.space24);
-    final effectiveTop = baseTop + mediaTop;
-    final bPad = bottomPadding ?? (isMobile ? AcadexSpacing.space24 : AcadexSpacing.space32);
+    final hPad = horizontalPadding ?? AcadexBreakpoints.responsiveHorizontalPadding(context);
+    final mediaBottom = MediaQuery.paddingOf(context).bottom;
+
+    final effectiveHasBottomNav = hasBottomNav ?? isMobile;
+
+    final baseTop = topPadding ?? (isMobile ? AcadexSpacing.space12 : AcadexSpacing.space16);
+    final effectiveTop = baseTop;
+
+    final baseBottom = bottomPadding ??
+        (effectiveHasBottomNav
+            ? (isMobile ? AcadexSpacing.space16 : AcadexSpacing.space24)
+            : (mediaBottom + (isMobile ? AcadexSpacing.space20 : AcadexSpacing.space28)));
 
     final content = Center(
       child: ConstrainedBox(
@@ -87,12 +102,13 @@ class AcadexPageContainer extends ConsumerWidget {
       final scrollContent = SingleChildScrollView(
         controller: scrollController,
         physics: physics ?? (onRefresh != null ? const AlwaysScrollableScrollPhysics() : null),
-        padding: EdgeInsets.fromLTRB(hPad, effectiveTop, hPad, bPad),
+        padding: EdgeInsets.fromLTRB(hPad, effectiveTop, hPad, baseBottom),
         child: content,
       );
       if (onRefresh != null) {
         containerBody = RefreshIndicator(
           onRefresh: onRefresh!,
+          color: AcadexColors.primary,
           child: scrollContent,
         );
       } else {
@@ -100,13 +116,14 @@ class AcadexPageContainer extends ConsumerWidget {
       }
     } else {
       containerBody = Padding(
-        padding: EdgeInsets.fromLTRB(hPad, effectiveTop, hPad, bPad),
+        padding: EdgeInsets.fromLTRB(hPad, effectiveTop, hPad, baseBottom),
         child: content,
       );
     }
 
     Widget result;
-    if (particleSphereVariant != null) {
+    if (particleSphereVariant != null && !isMobile) {
+      // Exclude heavy particle sphere on mobile by default to preserve battery and frame rate
       result = ColoredBox(
         color: bgColor,
         child: AnimatedParticleSphereBackground(
@@ -118,7 +135,7 @@ class AcadexPageContainer extends ConsumerWidget {
           ),
         ),
       );
-    } else if (ambientDensity != AcadexAmbientDensity.none) {
+    } else if (ambientDensity != AcadexAmbientDensity.none && !isMobile) {
       result = ColoredBox(
         color: bgColor,
         child: AcadexAmbientBackground(
@@ -138,18 +155,9 @@ class AcadexPageContainer extends ConsumerWidget {
 
     return result;
   }
-
-  double _responsiveHorizontalPadding(BuildContext context) {
-    if (AcadexBreakpoints.isMobile(context)) {
-      return AcadexSpacing.space16;
-    } else if (AcadexBreakpoints.isTablet(context)) {
-      return AcadexSpacing.space20;
-    }
-    return AcadexSpacing.space24;
-  }
 }
 
-/// Standardized layout constants for the Acadex design system.
+/// Standardized layout constants for the Acadex mobile-first design system.
 class AcadexLayout {
   AcadexLayout._();
 
@@ -163,42 +171,37 @@ class AcadexLayout {
   static const double detailMaxWidth = 1000.0;
 
   /// Standard section spacing between major vertical sections.
-  static const double sectionSpacing = 28.0;
+  static const double sectionSpacing = 20.0;
 
   /// Standard gap between section header and its content.
-  static const double sectionHeaderGap = 12.0;
+  static const double sectionHeaderGap = 10.0;
 
   /// Standard spacing between grid items.
-  static const double gridSpacing = 12.0;
+  static const double gridSpacing = 10.0;
 
   /// Standard page vertical top padding.
-  static const double pageTopPadding = 24.0;
+  static const double pageTopPadding = 16.0;
 
   /// Standard page vertical bottom padding.
-  static const double pageBottomPadding = 32.0;
+  static const double pageBottomPadding = 24.0;
 
   /// Helper to get responsive horizontal gutter.
   static double horizontalGutter(BuildContext context) {
-    if (AcadexBreakpoints.isMobile(context)) {
-      return AcadexSpacing.space16;
-    } else if (AcadexBreakpoints.isTablet(context)) {
-      return AcadexSpacing.space20;
-    }
-    return AcadexSpacing.space24;
+    return AcadexBreakpoints.responsiveHorizontalPadding(context);
   }
 
   /// Helper to get responsive stat grid column count.
   static int statGridColumns(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
+    final width = MediaQuery.sizeOf(context).width;
     if (width >= 1024) return 4;
     if (width >= 600) return 3;
-    if (width >= 375) return 3;   // Modern phones (Moto Edge 60 etc.)
-    return 2;                      // Small phones <375px
+    if (width >= 375) return 2;
+    return 2;
   }
 
-  /// Standard section spacing widget (SizedBox with height 28).
+  /// Standard section spacing widget.
   static const Widget sectionSpacer = SizedBox(height: sectionSpacing);
 
-  /// Standard header-to-content gap widget (SizedBox with height 12).
+  /// Standard header-to-content gap widget.
   static const Widget headerGap = SizedBox(height: sectionHeaderGap);
 }

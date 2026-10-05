@@ -30,7 +30,11 @@ class _TestFacultyAssignmentNotifier extends FacultyAssignmentsNotifier {
 }
 
 class FakeAssignmentsRepository implements AssignmentsRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   List<AssignmentModel> facultyAssignments = [];
+
   List<AssignmentModel> studentAssignments = [];
   AssignmentModel? assignmentDetail;
   AssignmentActivityResponseModel? activityData;
@@ -411,7 +415,7 @@ void main() {
 
     // 27 & 28. Temporary mark bubble shows and mark value updates during slider interaction
     testWidgets('27 & 28. Mark value updates during slider interaction', (tester) async {
-      int? updatedMark;
+      double? updatedMark;
       final student = StudentAssignmentActivityModel(
         studentId: 'stu_01',
         studentName: 'Ravi Kumar',
@@ -449,7 +453,7 @@ void main() {
 
     // 29. Full Marks shortcut sets maximum
     testWidgets('29. Full Marks shortcut sets maximum marks immediately', (tester) async {
-      int? updatedMark;
+      double? updatedMark;
       final student = StudentAssignmentActivityModel(
         studentId: 'stu_01',
         studentName: 'Ravi Kumar',

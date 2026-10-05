@@ -12,7 +12,7 @@ class ApiClient {
       return 'https://acadex-backend-main.onrender.com/api/v1';
     }
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:5050/api/v1';
+      return 'http://localhost:5050/api/v1';
     }
     return 'http://localhost:5050/api/v1';
   }

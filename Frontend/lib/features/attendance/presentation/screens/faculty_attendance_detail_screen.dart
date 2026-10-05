@@ -221,12 +221,15 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
     final canFacultyEdit = session.isOpen && !isHodOrAdmin;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
           onPressed: () {
             if (isEditMode) {
               ref.read(isEditModeProvider.notifier).state = false;
@@ -241,13 +244,13 @@ class FacultyAttendanceDetailScreen extends ConsumerWidget {
             Text(
               isEditMode ? "Edit Attendance Session" : "Session Details",
               style: AcadexTypography.title(
-                color: Colors.white,
+                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
               ),
             ),
             Text(
               "${session.subjectName} • ${session.sectionName}",
               style: AcadexTypography.caption(
-                color: const Color(0xFFCCE6FF),
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
               ),
             ),
           ],

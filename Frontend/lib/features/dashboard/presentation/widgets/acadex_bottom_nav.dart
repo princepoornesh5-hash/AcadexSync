@@ -3,13 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/navigation/acadex_nav_item.dart';
+import '../../../../core/presentation/widgets/acadex_motion.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
 
-/// Compact, role-aware mobile bottom navigation bar conforming to Prompt 11
+/// Compact, role-aware mobile bottom navigation bar conforming to Prompt 1 & Prompt 2.
 /// Features 4 primary destinations + 1 'More' entry point with zero horizontal overflow at 360px.
+/// Uses refined Android Material 3 pill active states, AcadexPressable micro-interactions,
+/// and the unified ACADEX Blue semantic palette.
 class AcadexBottomNav extends ConsumerWidget {
   final String activeRoute;
   final ValueChanged<String> onTabSelected;
@@ -40,12 +43,11 @@ class AcadexBottomNav extends ConsumerWidget {
       }
     }
     final isMoreActive = !isAnyPrimaryActive;
-
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
         border: Border(
           top: BorderSide(
             color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
@@ -54,7 +56,7 @@ class AcadexBottomNav extends ConsumerWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.3) : const Color(0x0A07111F),
+            color: isDark ? Colors.black.withValues(alpha: 0.25) : const Color(0x0807111F),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -113,49 +115,61 @@ class _NavTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const activeColor = AcadexColors.primary;
+    final activeColor = isDark ? const Color(0xFF60A5FA) : AcadexColors.primary;
     final inactiveColor = isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted;
+    final activePillColor = isDark
+        ? AcadexColors.primary.withValues(alpha: 0.22)
+        : AcadexColors.primaryLight;
     final textScaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.15);
 
     return Expanded(
-      child: InkWell(
+      child: AcadexPressable(
         onTap: onTap,
-        splashColor: AcadexColors.primaryLight.withValues(alpha: 0.3),
-        highlightColor: Colors.transparent,
-        child: ConstrainedBox(
+        pressedScale: 0.96,
+        child: Container(
           constraints: const BoxConstraints(minHeight: 48),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: MediaQuery(
-              data: MediaQuery.of(context).copyWith(textScaler: textScaler),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Stack(
+          color: Colors.transparent,
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Active pill with icon and badge
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeInOut,
+                  height: 28,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: isActive ? activePillColor : Colors.transparent,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
                     clipBehavior: Clip.none,
                     children: [
                       Icon(
                         icon,
-                        size: 20,
+                        size: 19,
                         color: isActive ? activeColor : inactiveColor,
                       ),
                       if (badgeCount > 0)
                         Positioned(
-                          top: -3,
-                          right: -7,
+                          top: -2,
+                          right: -8,
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                             decoration: BoxDecoration(
-                              color: AcadexColors.primary,
+                              color: AcadexColors.error,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            constraints: const BoxConstraints(minWidth: 13, minHeight: 13),
+                            constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
                             child: Text(
                               badgeCount > 9 ? '9+' : '$badgeCount',
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 8.5,
+                                fontSize: 8,
                                 fontWeight: FontWeight.w700,
                               ),
                               textAlign: TextAlign.center,
@@ -164,35 +178,22 @@ class _NavTab extends StatelessWidget {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: AcadexTypography.eyebrow(
-                        color: isActive ? activeColor : inactiveColor,
-                      ).copyWith(
-                        fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                        fontSize: 10,
-                        letterSpacing: 0.1,
-                      ),
-                    ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: AcadexTypography.caption(
+                    color: isActive ? activeColor : inactiveColor,
+                  ).copyWith(
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 10.5,
+                    letterSpacing: 0.1,
                   ),
-                  const SizedBox(height: 2),
-                  // Active indicator bar
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    width: isActive ? 16 : 0,
-                    height: 2.5,
-                    decoration: BoxDecoration(
-                      color: activeColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

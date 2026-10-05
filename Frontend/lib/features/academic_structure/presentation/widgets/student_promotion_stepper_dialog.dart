@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
+import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
 import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
 
@@ -389,6 +390,7 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
     final sem = semMap[firstStudent.semesterId];
     final sec = secMap[firstStudent.sectionId];
     final yr = yrMap[firstStudent.academicYearId];
+    final crsCode = crs?.code;
 
     return SingleChildScrollView(
       child: Column(
@@ -410,15 +412,15 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
             ),
             child: Column(
               children: [
-                _buildInfoRow("Department", dept?.name ?? firstStudent.departmentId, LucideIcons.building, theme),
+                _buildInfoRow("Department", AcadexEntityFormatters.formatDepartmentLabel(dept?.name, rawId: firstStudent.departmentId), LucideIcons.building, theme),
                 const Divider(height: 20),
-                _buildInfoRow("Course", "${crs?.name ?? firstStudent.courseId} (${crs?.code ?? ''})", LucideIcons.book, theme),
+                _buildInfoRow("Course", "${AcadexEntityFormatters.formatCourseLabel(crs?.name, rawId: firstStudent.courseId)}${crsCode != null && !AcadexEntityFormatters.isRawIdentifier(crsCode) ? ' ($crsCode)' : ''}", LucideIcons.book, theme),
                 const Divider(height: 20),
-                _buildInfoRow("Current Academic Year", yr?.name ?? firstStudent.academicYearId, LucideIcons.calendar, theme),
+                _buildInfoRow("Current Academic Year", AcadexEntityFormatters.formatAcademicYearLabel(yr?.name, rawId: firstStudent.academicYearId), LucideIcons.calendar, theme),
                 const Divider(height: 20),
-                _buildInfoRow("Current Semester", sem?.name ?? firstStudent.semesterId, LucideIcons.layers, theme),
+                _buildInfoRow("Current Semester", AcadexEntityFormatters.formatSemesterLabel(sem?.name, semesterNumber: sem?.semesterNumber, rawId: firstStudent.semesterId), LucideIcons.layers, theme),
                 const Divider(height: 20),
-                _buildInfoRow("Current Section", "Section ${sec?.name ?? firstStudent.sectionId}", LucideIcons.layoutGrid, theme),
+                _buildInfoRow("Current Section", AcadexEntityFormatters.formatSectionLabel(sec?.name, rawId: firstStudent.sectionId, fallback: 'Section Not Assigned'), LucideIcons.layoutGrid, theme),
               ],
             ),
           ),
@@ -538,11 +540,11 @@ class _StudentPromotionStepperDialogState extends ConsumerState<StudentPromotion
       orElse: () => widget.initialStudents.first,
     );
 
-    final currentSem = semMap[firstStudent.semesterId]?.name ?? firstStudent.semesterId;
-    final currentSec = secMap[firstStudent.sectionId]?.name ?? firstStudent.sectionId;
-    final targetSem = semMap[_targetSemesterId]?.name ?? _targetSemesterId ?? '';
-    final targetSec = secMap[_targetSectionId]?.name ?? _targetSectionId ?? '';
-    final targetYr = yrMap[_targetAcademicYearId]?.name ?? _targetAcademicYearId ?? '';
+    final currentSem = AcadexEntityFormatters.formatSemesterLabel(semMap[firstStudent.semesterId]?.name, semesterNumber: semMap[firstStudent.semesterId]?.semesterNumber, rawId: firstStudent.semesterId);
+    final currentSec = AcadexEntityFormatters.formatSectionLabel(secMap[firstStudent.sectionId]?.name, rawId: firstStudent.sectionId, fallback: 'Section Not Assigned');
+    final targetSem = AcadexEntityFormatters.formatSemesterLabel(semMap[_targetSemesterId]?.name, semesterNumber: semMap[_targetSemesterId]?.semesterNumber, rawId: _targetSemesterId);
+    final targetSec = AcadexEntityFormatters.formatSectionLabel(secMap[_targetSectionId]?.name, rawId: _targetSectionId, fallback: 'Section Not Assigned');
+    final targetYr = AcadexEntityFormatters.formatAcademicYearLabel(yrMap[_targetAcademicYearId]?.name, rawId: _targetAcademicYearId);
 
     return SingleChildScrollView(
       child: Column(

@@ -1,0 +1,377 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-10-05T01:31:00.000Z",
+  "environment": {
+    "device": "Motorola Edge 60 Fusion",
+    "android_version": "14",
+    "resolution": "1220x2712",
+    "connection": "adb-tls-connect",
+    "api_base_url": "http://localhost:5050/api/v1"
+  },
+  "roles_tested": [
+    "SUPER_ADMIN",
+    "COLLEGE_ADMIN",
+    "HOD",
+    "FACULTY",
+    "STUDENT"
+  ],
+  "screens": [
+    {
+      "id": "SCR-001",
+      "role": "SUPER_ADMIN",
+      "name": "Super Admin Dashboard",
+      "route": "/dashboard",
+      "parent_screen": null,
+      "navigation_method": "Auth Login / Shell Route",
+      "required_permission": "ROLE_SUPER_ADMIN",
+      "api_dependency": "/api/v1/super-admin/dashboard, /api/v1/institutions",
+      "states": {
+        "loading": "AcadexLoadingShimmer",
+        "success": "Verified (Platform metrics, 3 colleges, active status)",
+        "empty": "Empty state card for 0 colleges",
+        "error": "AcadexErrorView with retry"
+      },
+      "child_screens": ["/super-admin/colleges", "/super-admin/users", "/analytics", "/settings"],
+      "interactive_controls": ["Colleges quick-card", "Users quick-card", "Drawer toggle", "Profile avatar"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-002",
+      "role": "SUPER_ADMIN",
+      "name": "Institutions Directory",
+      "route": "/super-admin/colleges",
+      "parent_screen": "Super Admin Dashboard",
+      "navigation_method": "BottomNav Tab 1 / Drawer Navigation",
+      "required_permission": "ROLE_SUPER_ADMIN",
+      "api_dependency": "GET /api/v1/institutions",
+      "states": {
+        "loading": "Shimmer list",
+        "success": "Verified (Lists API-001, SBCE, SVGP with badge statuses)",
+        "empty": "No institutions found",
+        "error": "Error retry banner"
+      },
+      "child_screens": ["/super-admin/colleges/:id", "/super-admin/colleges/create"],
+      "interactive_controls": ["College list card tap", "Search bar", "Filter chip", "Create FAB"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-003",
+      "role": "SUPER_ADMIN",
+      "name": "Institution Detail",
+      "route": "/super-admin/colleges/:id",
+      "parent_screen": "Institutions Directory",
+      "navigation_method": "List card tap (pushNamed)",
+      "required_permission": "ROLE_SUPER_ADMIN",
+      "api_dependency": "GET /api/v1/institutions/:id",
+      "states": {
+        "loading": "Centered spinner",
+        "success": "Verified (Displays SBCE detail, departments list, admin counts)",
+        "empty": "No departments registered",
+        "error": "Card error fallback"
+      },
+      "child_screens": [],
+      "interactive_controls": ["Back navigation arrow", "Manage button", "Edit institution", "View departments"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-004",
+      "role": "SUPER_ADMIN",
+      "name": "User Management Directory",
+      "route": "/super-admin/users",
+      "parent_screen": "Super Admin Dashboard",
+      "navigation_method": "BottomNav Tab 2 / Drawer Navigation",
+      "required_permission": "ROLE_SUPER_ADMIN",
+      "api_dependency": "GET /api/v1/users",
+      "states": {
+        "loading": "Shimmer rows",
+        "success": "Verified (Renders 20 real users from MongoDB with role chips)",
+        "empty": "No users found matching query",
+        "error": "Error toast with retry"
+      },
+      "child_screens": ["/super-admin/users/:id"],
+      "interactive_controls": ["User card tap", "Role dropdown filter", "Search input", "Pagination buttons"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-005",
+      "role": "SUPER_ADMIN",
+      "name": "Analytics & Reports",
+      "route": "/analytics",
+      "parent_screen": "Super Admin Dashboard",
+      "navigation_method": "BottomNav Tab 3 / Drawer Navigation",
+      "required_permission": "ROLE_SUPER_ADMIN, ROLE_COLLEGE_ADMIN",
+      "api_dependency": "GET /api/v1/analytics/overview",
+      "states": {
+        "loading": "Chart shimmer skeleton",
+        "success": "Verified (Unclipped header, overview metrics, time range pills)",
+        "empty": "No data for selected period",
+        "error": "Network retry card"
+      },
+      "child_screens": [],
+      "interactive_controls": ["Time period selector (7D, 30D, 90D)", "Export button", "Metric cards"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-006",
+      "role": "ALL",
+      "name": "User Profile Screen",
+      "route": "/profile",
+      "parent_screen": "Dashboard / Drawer",
+      "navigation_method": "Drawer Profile Tap / Avatar Tap",
+      "required_permission": "AUTHENTICATED",
+      "api_dependency": "GET /api/v1/auth/me",
+      "states": {
+        "loading": "Avatar shimmer",
+        "success": "Verified (Single unified AppBar, user metadata cards, role badge)",
+        "empty": "N/A",
+        "error": "Auth error redirect"
+      },
+      "child_screens": ["/profile/edit"],
+      "interactive_controls": ["Edit Profile button", "Security toggle", "Theme switcher", "Logout button"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-007",
+      "role": "ALL",
+      "name": "Edit Profile Screen",
+      "route": "/profile/edit",
+      "parent_screen": "User Profile Screen",
+      "navigation_method": "Action button tap (context.push('/profile/edit'))",
+      "required_permission": "AUTHENTICATED",
+      "api_dependency": "PUT /api/v1/users/:id",
+      "states": {
+        "loading": "Saving overlay spinner",
+        "success": "Verified (Unclipped single AppBar, text input fields for Name/Phone)",
+        "empty": "N/A",
+        "error": "Validation inline error labels"
+      },
+      "child_screens": [],
+      "interactive_controls": ["Back arrow", "Name text field", "Phone text field", "Avatar upload button", "Save button"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-008",
+      "role": "STUDENT",
+      "name": "Student Dashboard",
+      "route": "/dashboard",
+      "parent_screen": null,
+      "navigation_method": "Auth Login / Shell Route",
+      "required_permission": "ROLE_STUDENT",
+      "api_dependency": "GET /api/v1/attendance/my-summary, GET /api/v1/timetable/today",
+      "states": {
+        "loading": "Dashboard shimmer cards",
+        "success": "Verified (Attendance rate card, upcoming classes timeline, notices)",
+        "empty": "No classes scheduled today",
+        "error": "Retry prompt"
+      },
+      "child_screens": ["/attendance", "/timetable", "/notes", "/assignments"],
+      "interactive_controls": ["Attendance card click", "Timetable quick view", "Assignment list tap", "Drawer icon"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-009",
+      "role": "STUDENT",
+      "name": "Notes & Study Materials",
+      "route": "/notes",
+      "parent_screen": "Student Dashboard",
+      "navigation_method": "BottomNav Tab 3 / Drawer Navigation",
+      "required_permission": "ROLE_STUDENT, ROLE_FACULTY",
+      "api_dependency": "GET /api/v1/resources/notes",
+      "states": {
+        "loading": "List shimmer",
+        "success": "Verified (Unclipped search input field, category chips, notes cards)",
+        "empty": "No study materials found",
+        "error": "Retry connection banner"
+      },
+      "child_screens": [],
+      "interactive_controls": ["Search field typing", "Clear search 'x'", "Subject category chip", "Download button"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-010",
+      "role": "STUDENT",
+      "name": "Student Timetable View",
+      "route": "/timetable",
+      "parent_screen": "Student Dashboard",
+      "navigation_method": "BottomNav Tab 1 / Drawer Navigation",
+      "required_permission": "ROLE_STUDENT",
+      "api_dependency": "GET /api/v1/timetable/my-section",
+      "states": {
+        "loading": "Timeline shimmer",
+        "success": "Verified (Day selector strip, period schedule cards, room & faculty badges)",
+        "empty": "No timetable published for this section",
+        "error": "Error card"
+      },
+      "child_screens": [],
+      "interactive_controls": ["Day of week selector", "Period card expansion", "View week toggle"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-011",
+      "role": "STUDENT",
+      "name": "Student Attendance Portal",
+      "route": "/attendance",
+      "parent_screen": "Student Dashboard",
+      "navigation_method": "BottomNav Tab 2 / Drawer Navigation",
+      "required_permission": "ROLE_STUDENT",
+      "api_dependency": "GET /api/v1/attendance/student-portal",
+      "states": {
+        "loading": "Circular gauge shimmer",
+        "success": "Verified (Subject breakdown cards, attendance shortage notices, date logs)",
+        "empty": "No attendance records recorded yet",
+        "error": "API error retry button"
+      },
+      "child_screens": [],
+      "interactive_controls": ["Subject card expansion", "Filter by semester", "Detailed log modal"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-012",
+      "role": "STUDENT",
+      "name": "Student Assignments Portal",
+      "route": "/assignments",
+      "parent_screen": "Student Dashboard",
+      "navigation_method": "Drawer Navigation / Quick Action",
+      "required_permission": "ROLE_STUDENT",
+      "api_dependency": "GET /api/v1/assignments/student",
+      "states": {
+        "loading": "Card skeleton",
+        "success": "Verified (Pending assignments list, due dates, submission status)",
+        "empty": "No assignments assigned",
+        "error": "Error banner"
+      },
+      "child_screens": ["/assignments/:id"],
+      "interactive_controls": ["Assignment card tap", "Filter tabs (Pending/Submitted)", "Upload button"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-013",
+      "role": "FACULTY",
+      "name": "Faculty Dashboard",
+      "route": "/dashboard",
+      "parent_screen": null,
+      "navigation_method": "Auth Login / Shell Route",
+      "required_permission": "ROLE_FACULTY",
+      "api_dependency": "GET /api/v1/faculty/dashboard, GET /api/v1/timetable/faculty",
+      "states": {
+        "loading": "Shimmer cards",
+        "success": "Verified (Today's classes, pending attendance actions, quick attendance button)",
+        "empty": "No assigned classes today",
+        "error": "Error refresh"
+      },
+      "child_screens": ["/attendance/mark", "/attendance/history", "/assignments", "/notes"],
+      "interactive_controls": ["Mark Attendance button", "Class card tap", "Drawer toggle", "Workload card"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-014",
+      "role": "FACULTY",
+      "name": "Mark Attendance Screen",
+      "route": "/attendance/mark",
+      "parent_screen": "Faculty Dashboard",
+      "navigation_method": "Class Card Action tap",
+      "required_permission": "ROLE_FACULTY",
+      "api_dependency": "GET /api/v1/attendance/session/:id, POST /api/v1/attendance/sessions",
+      "states": {
+        "loading": "Roster shimmer",
+        "success": "Verified (Interactive student list, status toggle chips, submit button)",
+        "empty": "No enrolled students in this section",
+        "error": "Validation error alert"
+      },
+      "child_screens": [],
+      "interactive_controls": ["Present/Absent/Late status chips", "Mark All Present button", "Submit session button"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-015",
+      "role": "HOD",
+      "name": "HOD Department Dashboard",
+      "route": "/dashboard",
+      "parent_screen": null,
+      "navigation_method": "Auth Login / Shell Route",
+      "required_permission": "ROLE_HOD",
+      "api_dependency": "GET /api/v1/hod/dashboard",
+      "states": {
+        "loading": "KPI shimmers",
+        "success": "Verified (Faculty workload metrics, timetable authoring shortcut, attendance alarms)",
+        "empty": "No department data",
+        "error": "Connection error"
+      },
+      "child_screens": ["/academic-structure/faculty-assignments", "/timetable", "/attendance/hod"],
+      "interactive_controls": ["Faculty assignment action", "Timetable authoring tile", "Drawer menu"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-016",
+      "role": "HOD",
+      "name": "Faculty Assignment Management",
+      "route": "/academic-structure/faculty-assignments",
+      "parent_screen": "HOD Dashboard",
+      "navigation_method": "Drawer / Dashboard card",
+      "required_permission": "ROLE_HOD, ROLE_COLLEGE_ADMIN",
+      "api_dependency": "GET /api/v1/academics/faculty-assignments",
+      "states": {
+        "loading": "Table shimmer",
+        "success": "Verified (Subject allocations, assigned teachers, section badges)",
+        "empty": "No assignments created",
+        "error": "Retry prompt"
+      },
+      "child_screens": [],
+      "interactive_controls": ["Assign Subject button", "Deactivate assignment icon", "Department filter"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    },
+    {
+      "id": "SCR-017",
+      "role": "COLLEGE_ADMIN",
+      "name": "College Admin Dashboard",
+      "route": "/dashboard",
+      "parent_screen": null,
+      "navigation_method": "Auth Login / Shell Route",
+      "required_permission": "ROLE_COLLEGE_ADMIN",
+      "api_dependency": "GET /api/v1/college-admin/dashboard",
+      "states": {
+        "loading": "Metrics shimmer",
+        "success": "Verified (Institution stats, department count, faculty total, student count)",
+        "empty": "No institution metrics",
+        "error": "Reload button"
+      },
+      "child_screens": ["/academic-structure", "/faculty", "/students", "/analytics"],
+      "interactive_controls": ["Department card", "Faculty tile", "Reports tab", "Drawer trigger"],
+      "visual_correctness": "PASS",
+      "functional_correctness": "PASS",
+      "runtime_verified": true
+    }
+  ]
+}

@@ -14,6 +14,10 @@ import 'package:campus_management/core/presentation/widgets/app_empty_state.dart
 import 'package:campus_management/core/presentation/widgets/app_error_state.dart';
 import 'package:campus_management/core/presentation/widgets/app_search_field.dart';
 import 'package:campus_management/core/presentation/widgets/app_stat_card.dart';
+import 'package:campus_management/core/presentation/widgets/acadex_feedback.dart';
+import 'package:campus_management/core/presentation/widgets/acadex_motion.dart';
+import 'package:campus_management/core/presentation/design_system/acadex_typography.dart';
+
 
 void main() {
   group('ACADEX Design System Widgets', () {
@@ -235,5 +239,107 @@ void main() {
       expect(controller.text, '');
       expect(query, '');
     });
+
+    testWidgets('AcadexSkeletonCard renders without error', (tester) async {
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+          body: AcadexSkeletonCard(height: 100),
+        ),
+      ));
+
+      expect(find.byType(AcadexSkeletonCard), findsOneWidget);
+    });
+
+    testWidgets('AcadexEmptyState compact mode renders in tight container without overflow', (tester) async {
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 320,
+            height: 160,
+            child: AcadexEmptyState(
+              title: 'No classes today',
+              subtitle: 'Check back tomorrow morning',
+              isCompact: true,
+            ),
+          ),
+        ),
+      ));
+
+      expect(find.text('No classes today'), findsOneWidget);
+      expect(find.text('Check back tomorrow morning'), findsOneWidget);
+    });
+
+    testWidgets('AcadexCard with isFlat renders without elevation shadow', (tester) async {
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+          body: AcadexCard(
+            isFlat: true,
+            child: Text('Flat Card Content'),
+          ),
+        ),
+      ));
+
+      expect(find.text('Flat Card Content'), findsOneWidget);
+    });
+
+    testWidgets('AcadexPressable responds to tap gesture', (tester) async {
+      bool tapped = false;
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: AcadexPressable(
+            onTap: () => tapped = true,
+            child: const Text('Press Me'),
+          ),
+        ),
+      ));
+
+      expect(find.text('Press Me'), findsOneWidget);
+      await tester.tap(find.text('Press Me'));
+      await tester.pumpAndSettle();
+      expect(tapped, isTrue);
+    });
+
+    testWidgets('AcadexTypography supports both property access and callable invocation', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              // Property access
+              Text('Prop Caption', style: AcadexTypography.caption),
+              // Property copyWith
+              Text('Prop Caption CopyWith', style: AcadexTypography.caption.copyWith(fontWeight: FontWeight.w600)),
+              // Callable invocation without args
+              Text('Call Caption Empty', style: AcadexTypography.caption()),
+              // Callable invocation with named color arg
+              Text('Call Caption Color', style: AcadexTypography.caption(color: Colors.red)),
+              // Callable invocation chained with copyWith
+              Text('Call Caption Chained', style: AcadexTypography.caption(color: Colors.blue).copyWith(fontSize: 14)),
+              // Body property and copyWith
+              Text('Body Prop', style: AcadexTypography.body),
+              Text('Body CopyWith', style: AcadexTypography.body.copyWith(fontWeight: FontWeight.w500)),
+              // Headings
+              Text('Heading1', style: AcadexTypography.heading1),
+              Text('Heading1 CopyWith', style: AcadexTypography.heading1.copyWith(letterSpacing: 0)),
+              Text('Heading2', style: AcadexTypography.heading2(color: Colors.green)),
+              Text('Title', style: AcadexTypography.title),
+            ],
+          ),
+        ),
+      ));
+
+      expect(find.text('Prop Caption'), findsOneWidget);
+      expect(find.text('Prop Caption CopyWith'), findsOneWidget);
+      expect(find.text('Call Caption Empty'), findsOneWidget);
+      expect(find.text('Call Caption Color'), findsOneWidget);
+      expect(find.text('Call Caption Chained'), findsOneWidget);
+      expect(find.text('Body Prop'), findsOneWidget);
+      expect(find.text('Body CopyWith'), findsOneWidget);
+      expect(find.text('Heading1'), findsOneWidget);
+      expect(find.text('Heading1 CopyWith'), findsOneWidget);
+      expect(find.text('Heading2'), findsOneWidget);
+      expect(find.text('Title'), findsOneWidget);
+    });
   });
 }
+
+

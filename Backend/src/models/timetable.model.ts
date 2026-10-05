@@ -48,6 +48,9 @@ export interface ITimetableGridEntry {
   cohort?: string;
   academicStage?: string;
   contextualDescription?: string;
+  facultyName?: string;
+  facultyEmail?: string;
+  facultyDesignation?: string;
 }
 
 export interface ITimetable extends Document {

@@ -238,7 +238,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Manage Timetable'), findsOneWidget);
-      expect(find.text('Add Schedule'), findsOneWidget);
+      expect(find.text('Create Timetable'), findsOneWidget);
       expect(find.text('Search by subject, faculty, room or section...'), findsOneWidget);
       expect(find.text('All Days'), findsOneWidget);
     });

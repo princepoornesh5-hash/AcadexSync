@@ -173,6 +173,28 @@ final teacherSubstitutionsProvider = FutureProvider.family<List<TeacherSubstitut
   );
 });
 
+final currentClassProvider = Provider<AsyncValue<TimetableModel?>>((ref) {
+  final todayAsync = ref.watch(todayScheduleProvider);
+  return todayAsync.whenData((todayClasses) {
+    if (todayClasses.isEmpty) return null;
+    final now = DateTime.now();
+    final currentMinutes = now.hour * 60 + now.minute;
+
+    for (final entry in todayClasses) {
+      try {
+        final startParts = entry.startTime.split(':');
+        final endParts = entry.endTime.split(':');
+        final startMinutes = int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
+        final endMinutes = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
+        if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
+          return entry;
+        }
+      } catch (_) {}
+    }
+    return null;
+  });
+});
+
 final nextClassProvider = Provider<AsyncValue<TimetableModel?>>((ref) {
   final todayAsync = ref.watch(todayScheduleProvider);
   return todayAsync.whenData((todayClasses) {
@@ -182,9 +204,9 @@ final nextClassProvider = Provider<AsyncValue<TimetableModel?>>((ref) {
 
     for (final entry in todayClasses) {
       try {
-        final endParts = entry.endTime.split(':');
-        final endMinutes = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
-        if (endMinutes > currentMinutes) {
+        final startParts = entry.startTime.split(':');
+        final startMinutes = int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
+        if (startMinutes > currentMinutes) {
           return entry;
         }
       } catch (_) {}

@@ -4,10 +4,12 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../domain/models/attendance_status.dart';
+import '../../domain/models/assigned_class.dart';
 import '../providers/attendance_providers.dart';
 import '../widgets/attendance_summary_card.dart';
 import '../widgets/student_attendance_card.dart';
 import '../widgets/save_attendance_button.dart';
+import '../widgets/acadex_attendance_guard_card.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
@@ -25,11 +27,53 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
   String _statusFilter = 'all'; // 'all', 'present', 'late', 'excused', 'absent', 'unmarked'
   final TextEditingController _searchController = TextEditingController();
   bool _isSaving = false;
+  bool _isDirty = false;
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<bool?> _showDiscardConfirmationDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          "Unsaved Attendance Changes",
+          style: AcadexTypography.heading3(),
+        ),
+        content: Text(
+          "You have unsaved attendance changes. If you leave now, your changes will not be saved.",
+          style: AcadexTypography.body(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text("Keep Editing"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AcadexColors.error,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text("Discard Changes", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleBackPress() async {
+    if (_isDirty) {
+      final shouldDiscard = await _showDiscardConfirmationDialog();
+      if (shouldDiscard == true && mounted) {
+        setState(() => _isDirty = false);
+        context.safePop(fallbackRoute: '/attendance');
+      }
+    } else {
+      context.safePop(fallbackRoute: '/attendance');
+    }
   }
 
   Future<void> _handleSave() async {
@@ -115,6 +159,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
             Text("• Present: ${notifier.summary[AttendanceStatus.present] ?? 0}", style: AcadexTypography.bodySmall(color: AcadexColors.success)),
             Text("• Absent: ${notifier.summary[AttendanceStatus.absent] ?? 0}", style: AcadexTypography.bodySmall(color: AcadexColors.error)),
             Text("• Late: ${notifier.summary[AttendanceStatus.late] ?? 0}", style: AcadexTypography.bodySmall(color: AcadexColors.warning)),
+            Text("• Excused: ${notifier.summary[AttendanceStatus.excused] ?? 0}", style: AcadexTypography.bodySmall(color: const Color(0xFF6366F1))),
           ],
         ),
         actions: [
@@ -137,7 +182,10 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
     try {
       final success = await ref.read(saveSessionProvider(activeClass.id).future);
       if (mounted) {
-        setState(() => _isSaving = false);
+        setState(() {
+          _isSaving = false;
+          if (success) _isDirty = false;
+        });
         if (success) {
           AcadexSnackBar.showSuccess(
             context,
@@ -236,6 +284,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
                 filteredRecords,
                 isDark,
                 activeClass.isAttendanceMarked,
+                activeClass,
               );
             }
 
@@ -246,6 +295,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
               filteredRecords,
               isDark,
               activeClass.isAttendanceMarked,
+              activeClass,
             );
           },
         );
@@ -253,105 +303,52 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
     );
 
     if (hasEnclosingScaffold) {
-      return Scaffold(
-        backgroundColor: Colors.white,
-        body: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-              decoration: BoxDecoration(
-                color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                borderRadius: AcadexRadius.borderRadiusLg,
-                border: Border.all(
-                  color: isDark ? AcadexColors.darkHairline : const Color(0xFFDBEAFE),
-                  width: 1.2,
-                ),
-                boxShadow: isDark ? AcadexShadows.darkSm : AcadexShadows.lightSm,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: AcadexColors.primaryLight,
-                      borderRadius: AcadexRadius.borderRadiusMd,
-                    ),
-                    child: const Icon(LucideIcons.clipboardCheck, color: AcadexColors.primary, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          activeClass.subjectName,
-                          style: AcadexTypography.heading3(
-                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          "${activeClass.sectionName} • ${records.length} Students • ${activeClass.timeSlot}${activeClass.roomNumber != null && activeClass.roomNumber!.isNotEmpty ? ' • Room ${activeClass.roomNumber}' : ''}",
-                          style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      LucideIcons.refreshCw,
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                      size: 18,
-                    ),
-                    tooltip: "Refresh Roster",
-                    onPressed: () {
-                      ref.invalidate(activeStudentListProvider);
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Expanded(child: bodyContent),
-          ],
+      return PopScope(
+        canPop: !_isDirty,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          final discard = await _showDiscardConfirmationDialog();
+          if (discard == true && mounted) {
+            setState(() => _isDirty = false);
+            Navigator.of(context).pop();
+          }
+        },
+        child: Scaffold(
+          backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+          body: Column(
+            children: [
+              Expanded(child: bodyContent),
+            ],
+          ),
         ),
       );
     }
 
-    return Scaffold(
-      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(
-            LucideIcons.arrowLeft,
+    return PopScope(
+      canPop: !_isDirty,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final discard = await _showDiscardConfirmationDialog();
+        if (discard == true && mounted) {
+          setState(() => _isDirty = false);
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+        appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(
+              LucideIcons.arrowLeft,
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
+            onPressed: _handleBackPress,
+          ),
+        title: Text(
+          "Mark Attendance",
+          style: AcadexTypography.title(
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
-          onPressed: () => context.safePop(fallbackRoute: '/attendance'),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              activeClass.subjectName,
-              style: AcadexTypography.title(
-                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-              ),
-            ),
-            const SizedBox(height: 1),
-            Text(
-              "${activeClass.sectionName} • ${records.length} Students • ${activeClass.timeSlot}${activeClass.roomNumber != null && activeClass.roomNumber!.isNotEmpty ? ' • Room ${activeClass.roomNumber}' : ''}",
-              style: AcadexTypography.caption(
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-              ),
-            ),
-          ],
         ),
         actions: [
           IconButton(
@@ -369,8 +366,9 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
         ],
       ),
       body: bodyContent,
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildDesktopLayout(
     BuildContext context,
@@ -379,6 +377,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
     List<dynamic> filteredRecords,
     bool isDark,
     bool isMarked,
+    AssignedClass activeClass,
   ) {
     return Center(
       child: Container(
@@ -388,58 +387,61 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-              // Left: Search & Student Roster
-              Expanded(
-                flex: 7,
+            // Left: Attendance Smart Guard, Search & Student Roster
+            Expanded(
+              flex: 7,
+              child: Column(
+                children: [
+                  AcadexAttendanceGuardCard(
+                    activeClass: activeClass,
+                    totalStudents: records.length,
+                    isMarked: isMarked,
+                    onRefreshRoster: () => ref.invalidate(activeStudentListProvider),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildSearchBar(isDark),
+                  const SizedBox(height: 10),
+                  _buildFilterChips(isDark),
+                  const SizedBox(height: 14),
+                  Expanded(
+                    child: _buildStudentList(records, filteredRecords, notifier, isDark),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 24),
+            
+            // Right: Sticky Side Panel
+            Expanded(
+              flex: 4,
+              child: SingleChildScrollView(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (isMarked) ...[
-                      _buildEditModeBanner(isDark),
-                      const SizedBox(height: 12),
-                    ],
-                    _buildSearchBar(isDark),
-                    const SizedBox(height: 10),
-                    _buildFilterChips(isDark),
+                    AttendanceSummaryCard(
+                      summary: notifier.summary,
+                      remainingCount: notifier.remainingCount,
+                      totalStudents: records.length,
+                      isVertical: true,
+                    ),
                     const SizedBox(height: 16),
-                    Expanded(
-                      child: _buildStudentList(records, filteredRecords, notifier, isDark),
+                    _buildQuickActionButtons(notifier, isDark),
+                    const SizedBox(height: 20),
+                    SaveAttendanceButton(
+                      remainingCount: notifier.remainingCount,
+                      totalStudents: records.length,
+                      isLoading: _isSaving,
+                      isFullWidth: true,
+                      onSave: _handleSave,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 24),
-              
-              // Right: Sticky Side Panel
-              Expanded(
-                flex: 4,
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      AttendanceSummaryCard(
-                        summary: notifier.summary,
-                        remainingCount: notifier.remainingCount,
-                        totalStudents: records.length,
-                        isVertical: true,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildQuickActionButtons(notifier, isDark),
-                      const SizedBox(height: 20),
-                      SaveAttendanceButton(
-                        remainingCount: notifier.remainingCount,
-                        totalStudents: records.length,
-                        isLoading: _isSaving,
-                        isFullWidth: true,
-                        onSave: _handleSave,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-      );
+      ),
+    );
   }
 
   Widget _buildMobileTabletLayout(
@@ -449,35 +451,40 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
     List<dynamic> filteredRecords,
     bool isDark,
     bool isMarked,
+    AssignedClass activeClass,
   ) {
     return Column(
       children: [
-        // Top Summary, Search & Filters
+        // Header Section (Context Guard, Summary, Filters, Actions)
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              if (isMarked) ...[
-                _buildEditModeBanner(isDark),
-                const SizedBox(height: 8),
-              ],
+              AcadexAttendanceGuardCard(
+                activeClass: activeClass,
+                totalStudents: records.length,
+                isMarked: isMarked,
+                onRefreshRoster: () => ref.invalidate(activeStudentListProvider),
+              ),
+              const SizedBox(height: 8),
               AttendanceSummaryCard(
                 summary: notifier.summary,
                 remainingCount: notifier.remainingCount,
                 totalStudents: records.length,
                 isVertical: false,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _buildSearchBar(isDark),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               _buildFilterChips(isDark),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               _buildQuickActionButtons(notifier, isDark),
             ],
           ),
         ),
-        
-        // Student List
+
+        // Student List (or empty state)
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -511,29 +518,25 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
     );
   }
 
-  Widget _buildEditModeBanner(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
-        borderRadius: AcadexRadius.borderRadiusMd,
-        border: Border.all(
-          color: AcadexColors.primary.withValues(alpha: 0.3),
+  Widget _buildEmptyStateWidget(List<dynamic> records) {
+    if (records.isEmpty) {
+      return Center(
+        child: AcadexEmptyState(
+          title: "No Enrolled Students",
+          subtitle: "No students are currently enrolled in this section.",
+          icon: LucideIcons.users,
+          actionLabel: "Back to Schedule",
+          onActionTap: _handleBackPress,
         ),
-      ),
-      child: Row(
-        children: [
-          Icon(LucideIcons.edit3, size: 16, color: AcadexColors.primary),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              "Editing previously saved attendance session. Changes will update the existing session record.",
-              style: AcadexTypography.caption(
-                color: isDark ? Colors.white : AcadexColors.primary,
-              ).copyWith(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
+      );
+    }
+    return Center(
+      child: AcadexEmptyState(
+        title: "No Matching Students",
+        subtitle: _searchQuery.isNotEmpty
+            ? "No student matches \"$_searchQuery\"."
+            : "No students with selected filter \"$_statusFilter\".",
+        icon: LucideIcons.userX,
       ),
     );
   }
@@ -633,7 +636,10 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
             label: "All Present",
             icon: LucideIcons.checkCheck,
             variant: AcadexButtonVariant.secondary,
-            onPressed: () => notifier.markAll(AttendanceStatus.present),
+            onPressed: () {
+              setState(() => _isDirty = true);
+              notifier.markAll(AttendanceStatus.present);
+            },
           ),
         ),
         const SizedBox(width: 6),
@@ -642,7 +648,10 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
             label: "All Absent",
             icon: LucideIcons.x,
             variant: AcadexButtonVariant.secondary,
-            onPressed: () => notifier.markAll(AttendanceStatus.absent),
+            onPressed: () {
+              setState(() => _isDirty = true);
+              notifier.markAll(AttendanceStatus.absent);
+            },
           ),
         ),
         const SizedBox(width: 6),
@@ -651,7 +660,10 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
             label: "Clear All",
             icon: LucideIcons.rotateCcw,
             variant: AcadexButtonVariant.ghost,
-            onPressed: () => notifier.clearAll(),
+            onPressed: () {
+              setState(() => _isDirty = true);
+              notifier.clearAll();
+            },
           ),
         ),
       ],
@@ -665,26 +677,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
     bool isDark,
   ) {
     if (filteredRecords.isEmpty) {
-      if (records.isEmpty) {
-        return Center(
-          child: AcadexEmptyState(
-            title: "No Enrolled Students",
-            subtitle: "No students are currently enrolled in this section. Enroll students before taking attendance.",
-            icon: LucideIcons.users,
-            actionLabel: "Back to Schedule",
-            onActionTap: () => context.safePop(fallbackRoute: '/attendance'),
-          ),
-        );
-      }
-      return Center(
-        child: AcadexEmptyState(
-          title: "No Matching Students",
-          subtitle: _searchQuery.isNotEmpty
-              ? "No student matches \"$_searchQuery\"."
-              : "No students with selected filter \"$_statusFilter\".",
-          icon: LucideIcons.userX,
-        ),
-      );
+      return _buildEmptyStateWidget(records);
     }
 
     return ListView.builder(
@@ -694,6 +687,7 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
         return StudentAttendanceCard(
           record: record,
           onStatusChanged: (status) {
+            setState(() => _isDirty = true);
             notifier.markStatus(record.studentId, status);
           },
         );

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +18,7 @@ import 'package:campus_management/features/academic_structure/presentation/provi
 import 'package:campus_management/features/academic_structure/data/repositories/mock_academic_repository.dart';
 import 'package:campus_management/features/timetable/presentation/providers/timetable_providers.dart';
 import 'package:campus_management/features/timetable/domain/models/timetable_models.dart';
+import 'package:campus_management/features/dashboard/domain/models/home_dashboard_models.dart';
 
 class _FakeAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
   _FakeAuthNotifier([super.initial = const AuthUnauthenticated()]);
@@ -57,6 +59,15 @@ List<dynamic> commonOverrides(UserModel user) {
     myFacultyAssignmentsProvider.overrideWith((ref) => []),
     todayScheduleProvider.overrideWith((ref) => const AsyncValue.data(<TimetableModel>[])),
     currentStudentAcademicProfileProvider.overrideWith((ref) async => null),
+    homeDashboardProvider.overrideWith((ref) => SynchronousFuture(HomeDashboardModel.fromJson({
+      'role': user.role.value,
+      'greeting': {
+        'displayName': user.name,
+        'role': user.role.value,
+        'greetingText': 'Welcome back',
+      },
+      'summary': {},
+    }))),
   ];
 }
 

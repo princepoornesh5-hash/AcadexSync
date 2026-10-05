@@ -7,6 +7,7 @@ import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_empty_state.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -54,8 +55,9 @@ class _FacultyWorkloadScreenState extends ConsumerState<FacultyWorkloadScreen> {
     final totalWeeklyPeriods = workloadList.fold<int>(0, (sum, w) => sum + w.totalWeeklyPeriods);
     final avgPeriods = totalFaculty > 0 ? (totalWeeklyPeriods / totalFaculty).toStringAsFixed(1) : '0';
 
+    final isMobile = AcadexBreakpoints.isMobile(context);
+
     return AcadexPageContainer(
-        backgroundColor: Colors.white,
         maxWidth: 1600,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,39 +78,81 @@ class _FacultyWorkloadScreenState extends ConsumerState<FacultyWorkloadScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Summary Metrics Row
-            Row(
-              children: [
-                Expanded(
-                  child: AcadexStatCard(
-                    title: "Total Faculty",
-                    value: "$totalFaculty",
-                    icon: LucideIcons.users,
-                    iconColor: AcadexColors.primary,
-                    subtitle: isHod ? "In your department" : "Across college departments",
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: AcadexStatCard(
-                    title: "Active Allocations",
-                    value: "$allocatedFaculty",
-                    icon: LucideIcons.userCheck,
-                    iconColor: AcadexColors.success,
-                    subtitle: "${totalFaculty > 0 ? ((allocatedFaculty / totalFaculty) * 100).toInt() : 0}% faculty assigned",
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: AcadexStatCard(
-                    title: "Avg Weekly Periods",
-                    value: avgPeriods,
-                    icon: LucideIcons.clock,
-                    iconColor: AcadexColors.accentPurple,
-                    subtitle: "$totalWeeklyPeriods total class hours/week",
-                  ),
-                ),
-              ],
+            // Adaptive Summary Metrics
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isNarrow = constraints.maxWidth < 680;
+                if (isNarrow) {
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AcadexStatCard(
+                              title: "Total Faculty",
+                              value: "$totalFaculty",
+                              icon: LucideIcons.users,
+                              iconColor: AcadexColors.primary,
+                              subtitle: isHod ? "In your department" : "Across college",
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: AcadexStatCard(
+                              title: "Allocated",
+                              value: "$allocatedFaculty",
+                              icon: LucideIcons.userCheck,
+                              iconColor: AcadexColors.success,
+                              subtitle: "${totalFaculty > 0 ? ((allocatedFaculty / totalFaculty) * 100).toInt() : 0}% assigned",
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      AcadexStatCard(
+                        title: "Avg Weekly Periods",
+                        value: avgPeriods,
+                        icon: LucideIcons.clock,
+                        iconColor: AcadexColors.accentPurple,
+                        subtitle: "$totalWeeklyPeriods total class hours/week",
+                      ),
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(
+                      child: AcadexStatCard(
+                        title: "Total Faculty",
+                        value: "$totalFaculty",
+                        icon: LucideIcons.users,
+                        iconColor: AcadexColors.primary,
+                        subtitle: isHod ? "In your department" : "Across college departments",
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: AcadexStatCard(
+                        title: "Active Allocations",
+                        value: "$allocatedFaculty",
+                        icon: LucideIcons.userCheck,
+                        iconColor: AcadexColors.success,
+                        subtitle: "${totalFaculty > 0 ? ((allocatedFaculty / totalFaculty) * 100).toInt() : 0}% faculty assigned",
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: AcadexStatCard(
+                        title: "Avg Weekly Periods",
+                        value: avgPeriods,
+                        icon: LucideIcons.clock,
+                        iconColor: AcadexColors.accentPurple,
+                        subtitle: "$totalWeeklyPeriods total class hours/week",
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 24),
 
@@ -169,53 +213,58 @@ class _FacultyWorkloadScreenState extends ConsumerState<FacultyWorkloadScreen> {
                           borderRadius: BorderRadius.circular(AcadexRadius.md),
                           child: Padding(
                             padding: const EdgeInsets.all(4),
-                            child: Row(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                CircleAvatar(
-                                  radius: 20,
-                                  backgroundColor: AcadexColors.primary.withValues(alpha: 0.12),
-                                  child: Text(
-                                    item.faculty.name.isNotEmpty ? item.faculty.name[0].toUpperCase() : 'F',
-                                    style: const TextStyle(color: AcadexColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item.faculty.name,
-                                        style: AcadexTypography.title(color: theme.colorScheme.onSurface),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '${item.faculty.employeeId} • $deptName • ${item.faculty.email}',
-                                        style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                                 Row(
                                   children: [
-                                    _MetricPill(
-                                      label: "Subjects",
-                                      value: "${item.uniqueSubjectsCount}",
-                                      color: AcadexColors.primary,
+                                    CircleAvatar(
+                                      radius: 20,
+                                      backgroundColor: AcadexColors.primary.withValues(alpha: 0.12),
+                                      child: Text(
+                                        item.faculty.name.isNotEmpty ? item.faculty.name[0].toUpperCase() : 'F',
+                                        style: const TextStyle(color: AcadexColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                                      ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    _MetricPill(
-                                      label: "Sections",
-                                      value: "${item.uniqueSectionsCount}",
-                                      color: AcadexColors.accentOrange,
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            item.faculty.name,
+                                            style: AcadexTypography.title(color: theme.colorScheme.onSurface),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '${item.faculty.employeeId} • $deptName',
+                                            style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    _MetricPill(
-                                      label: "Weekly Classes",
-                                      value: "${item.totalWeeklyPeriods}",
-                                      color: AcadexColors.success,
-                                    ),
-                                    const SizedBox(width: 12),
+                                    if (!isMobile) ...[
+                                      _MetricPill(
+                                        label: "Subjects",
+                                        value: "${item.uniqueSubjectsCount}",
+                                        color: AcadexColors.primary,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _MetricPill(
+                                        label: "Sections",
+                                        value: "${item.uniqueSectionsCount}",
+                                        color: AcadexColors.accentOrange,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _MetricPill(
+                                        label: "Weekly Classes",
+                                        value: "${item.totalWeeklyPeriods}",
+                                        color: AcadexColors.success,
+                                      ),
+                                      const SizedBox(width: 12),
+                                    ],
                                     Icon(
                                       isExpanded ? LucideIcons.chevronUp : LucideIcons.chevronDown,
                                       size: 20,
@@ -223,6 +272,30 @@ class _FacultyWorkloadScreenState extends ConsumerState<FacultyWorkloadScreen> {
                                     ),
                                   ],
                                 ),
+                                if (isMobile) ...[
+                                  const SizedBox(height: 10),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 6,
+                                    children: [
+                                      _MetricPill(
+                                        label: "Subjects",
+                                        value: "${item.uniqueSubjectsCount}",
+                                        color: AcadexColors.primary,
+                                      ),
+                                      _MetricPill(
+                                        label: "Sections",
+                                        value: "${item.uniqueSectionsCount}",
+                                        color: AcadexColors.accentOrange,
+                                      ),
+                                      _MetricPill(
+                                        label: "Weekly Classes",
+                                        value: "${item.totalWeeklyPeriods}",
+                                        color: AcadexColors.success,
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -284,12 +357,12 @@ class _FacultyWorkloadScreenState extends ConsumerState<FacultyWorkloadScreen> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            sub?.name ?? a.subjectId,
+                                            AcadexEntityFormatters.formatSubjectLabel(sub?.name, code: sub?.code, rawId: a.subjectId),
                                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
-                                            '${crs?.code ?? ''} • ${sem?.name ?? ''} • Section ${sec?.name ?? a.sectionId}',
+                                            '${crs?.code ?? ''} • ${sem?.name ?? ''} • ${AcadexEntityFormatters.formatSectionLabel(sec?.name, rawId: a.sectionId, fallback: 'Assigned Section')}',
                                             style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
                                           ),
                                         ],

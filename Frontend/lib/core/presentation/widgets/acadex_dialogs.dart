@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_theme.dart';
@@ -41,8 +42,12 @@ class AcadexDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final effectiveMaxWidth = math.min(maxWidth, screenWidth - 32);
+
     return Dialog(
       backgroundColor: AcadexColors.surface,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       shape: RoundedRectangleBorder(
         borderRadius: AcadexRadius.borderRadiusXl,
         side: const BorderSide(
@@ -50,9 +55,9 @@ class AcadexDialog extends StatelessWidget {
           width: 1,
         ),
       ),
-      elevation: 8,
+      elevation: 4,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
+        constraints: BoxConstraints(maxWidth: effectiveMaxWidth),
         child: Padding(
           padding: AcadexSpacing.dialogPadding,
           child: Column(
@@ -71,9 +76,11 @@ class AcadexDialog extends StatelessWidget {
                           style: AcadexTypography.heading2(
                             color: AcadexColors.ink,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         if (subtitle != null) ...[
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 3),
                           Text(
                             subtitle!,
                             style: AcadexTypography.bodySmall(
@@ -92,16 +99,16 @@ class AcadexDialog extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               Flexible(child: SingleChildScrollView(child: content)),
               if (actions != null && actions!.isNotEmpty) ...[
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 Align(
                   alignment: Alignment.centerRight,
                   child: Wrap(
                     alignment: WrapAlignment.end,
                     crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 10,
+                    spacing: 8,
                     runSpacing: 8,
                     children: actions!,
                   ),
@@ -161,7 +168,7 @@ class AcadexConfirmationDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AcadexDialog(
       title: title,
-      maxWidth: 440,
+      maxWidth: 420,
       content: Text(
         message,
         style: AcadexTypography.body(
@@ -220,6 +227,9 @@ class AcadexBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewInsetsBottom = MediaQuery.viewInsetsOf(context).bottom;
+    final paddingBottom = MediaQuery.paddingOf(context).bottom;
+
     return Container(
       decoration: const BoxDecoration(
         color: AcadexColors.surface,
@@ -232,10 +242,10 @@ class AcadexBottomSheet extends StatelessWidget {
         ),
       ),
       padding: EdgeInsets.fromLTRB(
-        AcadexSpacing.space24,
         AcadexSpacing.space16,
-        AcadexSpacing.space24,
-        MediaQuery.of(context).viewInsets.bottom + AcadexSpacing.space24,
+        AcadexSpacing.space12,
+        AcadexSpacing.space16,
+        viewInsetsBottom + paddingBottom + AcadexSpacing.space16,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -251,7 +261,7 @@ class AcadexBottomSheet extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -264,9 +274,11 @@ class AcadexBottomSheet extends StatelessWidget {
                       style: AcadexTypography.heading2(
                         color: AcadexColors.ink,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     if (subtitle != null) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Text(
                         subtitle!,
                         style: AcadexTypography.bodySmall(
@@ -285,18 +297,18 @@ class AcadexBottomSheet extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Flexible(child: SingleChildScrollView(child: content)),
           if (actions != null && actions!.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                for (int i = 0; i < actions!.length; i++) ...[
-                  actions![i],
-                  if (i < actions!.length - 1) const SizedBox(width: 10),
-                ],
-              ],
+            const SizedBox(height: 20),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.end,
+                children: actions!,
+              ),
             ),
           ],
         ],

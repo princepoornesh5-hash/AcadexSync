@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
@@ -10,14 +11,17 @@ import '../../../../core/presentation/widgets/acadex_data_table.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/widgets/acadex_motion.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
+import '../widgets/acadex_academic_context_card.dart';
 import '../widgets/faculty_assignment_dialog.dart';
 import '../utils/academic_prerequisite_guard.dart';
 import '../../../institution_config/presentation/providers/institution_config_providers.dart';
+import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
 import '../../../../core/errors/acadex_error.dart';
 
 class FacultyAssignmentsManagementScreen extends ConsumerStatefulWidget {
@@ -94,9 +98,37 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
     );
   }
 
+  int _countActiveFilters(bool isHod) {
+    int count = 0;
+    if (!isHod && _filterDepartmentId != null) count++;
+    if (_filterCourseId != null) count++;
+    if (_filterSemesterId != null) count++;
+    if (_filterSectionId != null) count++;
+    if (_filterFacultyId != null) count++;
+    if (_filterSubjectId != null) count++;
+    if (_filterAcademicYearId != null) count++;
+    if (!_filterActiveOnly) count++;
+    return count;
+  }
+
+  void _clearFilters(bool isHod, String? hodDeptId) {
+    setState(() {
+      _searchQuery = '';
+      _filterDepartmentId = isHod ? hodDeptId : null;
+      _filterCourseId = null;
+      _filterSemesterId = null;
+      _filterSectionId = null;
+      _filterFacultyId = null;
+      _filterSubjectId = null;
+      _filterAcademicYearId = null;
+      _filterActiveOnly = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final authState = ref.watch(authProvider);
     final currentUser = authState is AuthAuthenticated ? authState.user : null;
     final isHod = currentUser?.role == AppRole.hod;
@@ -108,15 +140,10 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
 
     final terminology = ref.watch(terminologyProvider);
     final progLabel = terminology.programName();
-    final progsLabel = terminology.programName(plural: true);
     final semLabel = terminology.semesterName();
-    final semsLabel = terminology.semesterName(plural: true);
     final secLabel = terminology.sectionName();
-    final secsLabel = terminology.sectionName(plural: true);
     final subLabel = terminology.subjectName();
-    final subsLabel = terminology.subjectName(plural: true);
     final deptLabel = terminology.departmentName();
-    final deptsLabel = terminology.departmentName(plural: true);
 
     final assignmentsAsync = ref.watch(facultyAssignmentsProvider);
     final deptMap = ref.watch(departmentMapProvider);
@@ -161,375 +188,268 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
       return true;
     }).toList();
 
+    final activeFilterCount = _countActiveFilters(isHod);
+
     return AcadexPageContainer(
-        backgroundColor: Colors.transparent,
-        maxWidth: 1600,
-        scrollable: true,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Page Header
-            AcadexPageHeader(
-              title: "Faculty Assignments",
-              subtitle: "Manage subject and section teaching assignments.",
-              actions: [
-                AcadexButton(
-                  label: "Assign Faculty",
-                  icon: LucideIcons.userPlus,
-                  onPressed: () => _openAssignmentDialog(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+      backgroundColor: Colors.transparent,
+      maxWidth: 1600,
+      scrollable: true,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 800;
 
-            // Search and Filter Controls
-            AcadexCard(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                children: [
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: "Search by faculty name, subject, or code...",
-                      prefixIcon: const Icon(LucideIcons.search, size: 18),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(AcadexRadius.md)),
-                    ),
-                    onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
-                  ),
-                  const SizedBox(height: 10),
-                  LayoutBuilder(
-                    builder: (context, filterConstraints) {
-                      final isNarrow = filterConstraints.maxWidth < 700;
-                      if (isNarrow) {
-                        return Column(
-                          children: [
-                            Row(
-                              children: [
-                                if (!isHod) ...[
-                                  Expanded(
-                                    child: DropdownButtonFormField<String?>(
-                                      isExpanded: true,
-                                      key: ValueKey('filter_dept_$_filterDepartmentId'),
-                                      decoration: InputDecoration(labelText: deptLabel, isDense: true),
-                                      initialValue: _filterDepartmentId,
-                                      items: [
-                                        DropdownMenuItem(value: null, child: Text("All $deptsLabel", overflow: TextOverflow.ellipsis)),
-                                        ...departments.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name, overflow: TextOverflow.ellipsis))),
-                                      ],
-                                      onChanged: (val) {
-                                        setState(() {
-                                          _filterDepartmentId = val;
-                                          _filterCourseId = null;
-                                          _filterSemesterId = null;
-                                          _filterSectionId = null;
-                                          _filterSubjectId = null;
-                                          _filterFacultyId = null;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                ],
-                                Expanded(
-                                  child: DropdownButtonFormField<String?>(
-                                    isExpanded: true,
-                                    key: ValueKey('filter_course_${_filterDepartmentId}_$_filterCourseId'),
-                                    decoration: InputDecoration(labelText: progLabel, isDense: true),
-                                    initialValue: _filterCourseId,
-                                    items: [
-                                      DropdownMenuItem(value: null, child: Text("All $progsLabel", overflow: TextOverflow.ellipsis)),
-                                      ...filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.code, overflow: TextOverflow.ellipsis))),
-                                    ],
-                                    onChanged: (val) {
-                                      setState(() {
-                                        _filterCourseId = val;
-                                        _filterSemesterId = null;
-                                        _filterSectionId = null;
-                                        _filterSubjectId = null;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: DropdownButtonFormField<String?>(
-                                    isExpanded: true,
-                                    key: ValueKey('filter_sem_${_filterCourseId}_$_filterSemesterId'),
-                                    decoration: InputDecoration(labelText: semLabel, isDense: true),
-                                    initialValue: _filterSemesterId,
-                                    items: [
-                                      DropdownMenuItem(value: null, child: Text("All $semsLabel", overflow: TextOverflow.ellipsis)),
-                                      ...filteredSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))),
-                                    ],
-                                    onChanged: (val) {
-                                      setState(() {
-                                        _filterSemesterId = val;
-                                        _filterSectionId = null;
-                                        _filterSubjectId = null;
-                                      });
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: DropdownButtonFormField<String?>(
-                                    isExpanded: true,
-                                    key: ValueKey('filter_sec_${_filterSemesterId}_$_filterSectionId'),
-                                    decoration: InputDecoration(labelText: secLabel, isDense: true),
-                                    initialValue: _filterSectionId,
-                                    items: [
-                                      DropdownMenuItem(value: null, child: Text("All $secsLabel", overflow: TextOverflow.ellipsis)),
-                                      ...filteredSections.map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name, overflow: TextOverflow.ellipsis))),
-                                    ],
-                                    onChanged: (val) => setState(() => _filterSectionId = val),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: DropdownButtonFormField<String?>(
-                                    isExpanded: true,
-                                    key: ValueKey('filter_fac_${_filterDepartmentId}_$_filterFacultyId'),
-                                    decoration: const InputDecoration(labelText: "Faculty", isDense: true),
-                                    initialValue: _filterFacultyId,
-                                    items: [
-                                      const DropdownMenuItem(value: null, child: Text("All Faculty", overflow: TextOverflow.ellipsis)),
-                                      ...filteredFaculty.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name, overflow: TextOverflow.ellipsis))),
-                                    ],
-                                    onChanged: (val) => setState(() => _filterFacultyId = val),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Row(
-                                    children: [
-                                      Checkbox(
-                                        value: _filterActiveOnly,
-                                        onChanged: (v) => setState(() => _filterActiveOnly = v ?? true),
-                                      ),
-                                      const Flexible(child: Text("Active only", overflow: TextOverflow.ellipsis)),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-                      }
-
-                      return Column(
-                        children: [
-                          Row(
-                            children: [
-                              if (!isHod) ...[
-                                Expanded(
-                                  flex: 2,
-                                  child: DropdownButtonFormField<String?>(
-                                    isExpanded: true,
-                                    key: ValueKey('filter_dept_$_filterDepartmentId'),
-                                    decoration: InputDecoration(labelText: deptLabel, hintText: "All $deptsLabel"),
-                                    initialValue: _filterDepartmentId,
-                                    items: [
-                                      DropdownMenuItem(value: null, child: Text("All $deptsLabel", overflow: TextOverflow.ellipsis)),
-                                      ...departments.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name, overflow: TextOverflow.ellipsis))),
-                                    ],
-                                    onChanged: (val) {
-                                      setState(() {
-                                        _filterDepartmentId = val;
-                                        _filterCourseId = null;
-                                        _filterSemesterId = null;
-                                        _filterSectionId = null;
-                                        _filterSubjectId = null;
-                                        _filterFacultyId = null;
-                                      });
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                              ],
-                              Expanded(
-                                flex: 2,
-                                child: DropdownButtonFormField<String?>(
-                                  isExpanded: true,
-                                  key: ValueKey('filter_course_${_filterDepartmentId}_$_filterCourseId'),
-                                  decoration: InputDecoration(labelText: progLabel, hintText: "All $progsLabel"),
-                                  initialValue: _filterCourseId,
-                                  items: [
-                                    DropdownMenuItem(value: null, child: Text("All $progsLabel", overflow: TextOverflow.ellipsis)),
-                                    ...filteredCourses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.code, overflow: TextOverflow.ellipsis))),
-                                  ],
-                                  onChanged: (val) {
-                                    setState(() {
-                                      _filterCourseId = val;
-                                      _filterSemesterId = null;
-                                      _filterSectionId = null;
-                                      _filterSubjectId = null;
-                                    });
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                flex: 2,
-                                child: DropdownButtonFormField<String?>(
-                                  isExpanded: true,
-                                  key: ValueKey('filter_sem_${_filterCourseId}_$_filterSemesterId'),
-                                  decoration: InputDecoration(labelText: semLabel, hintText: "All $semsLabel"),
-                                  initialValue: _filterSemesterId,
-                                  items: [
-                                    DropdownMenuItem(value: null, child: Text("All $semsLabel", overflow: TextOverflow.ellipsis)),
-                                    ...filteredSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))),
-                                  ],
-                                  onChanged: (val) {
-                                    setState(() {
-                                      _filterSemesterId = val;
-                                      _filterSectionId = null;
-                                      _filterSubjectId = null;
-                                    });
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                flex: 2,
-                                child: DropdownButtonFormField<String?>(
-                                  isExpanded: true,
-                                  key: ValueKey('filter_sec_${_filterSemesterId}_$_filterSectionId'),
-                                  decoration: InputDecoration(labelText: secLabel, hintText: "All $secsLabel"),
-                                  initialValue: _filterSectionId,
-                                  items: [
-                                    DropdownMenuItem(value: null, child: Text("All $secsLabel", overflow: TextOverflow.ellipsis)),
-                                    ...filteredSections.map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name, overflow: TextOverflow.ellipsis))),
-                                  ],
-                                  onChanged: (val) => setState(() => _filterSectionId = val),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: DropdownButtonFormField<String?>(
-                                  isExpanded: true,
-                                  key: ValueKey('filter_fac_${_filterDepartmentId}_$_filterFacultyId'),
-                                  decoration: const InputDecoration(labelText: "Faculty", hintText: "All Faculty"),
-                                  initialValue: _filterFacultyId,
-                                  items: [
-                                    const DropdownMenuItem(value: null, child: Text("All Faculty", overflow: TextOverflow.ellipsis)),
-                                    ...filteredFaculty.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name, overflow: TextOverflow.ellipsis))),
-                                  ],
-                                  onChanged: (val) => setState(() => _filterFacultyId = val),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                flex: 2,
-                                child: DropdownButtonFormField<String?>(
-                                  isExpanded: true,
-                                  key: ValueKey('filter_sub_${_filterSemesterId}_$_filterSubjectId'),
-                                  decoration: InputDecoration(labelText: subLabel, hintText: "All $subsLabel"),
-                                  initialValue: _filterSubjectId,
-                                  items: [
-                                    DropdownMenuItem(value: null, child: Text("All $subsLabel", overflow: TextOverflow.ellipsis)),
-                                    ...filteredSubjects.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.code} - ${s.name}', overflow: TextOverflow.ellipsis))),
-                                  ],
-                                  onChanged: (val) => setState(() => _filterSubjectId = val),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                flex: 2,
-                                child: DropdownButtonFormField<String?>(
-                                  isExpanded: true,
-                                  key: ValueKey('filter_ay_$_filterAcademicYearId'),
-                                  decoration: const InputDecoration(labelText: "Academic Year", hintText: "All Years"),
-                                  initialValue: _filterAcademicYearId,
-                                  items: [
-                                    const DropdownMenuItem(value: null, child: Text("All Academic Years", overflow: TextOverflow.ellipsis)),
-                                    ...academicYears.map((y) => DropdownMenuItem(value: y.id, child: Text(y.name, overflow: TextOverflow.ellipsis))),
-                                  ],
-                                  onChanged: (val) => setState(() => _filterAcademicYearId = val),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Row(
-                                children: [
-                                  Checkbox(
-                                    value: _filterActiveOnly,
-                                    onChanged: (v) => setState(() => _filterActiveOnly = v ?? true),
-                                  ),
-                                  const Text("Active only"),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
-                    },
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Page Header
+              AcadexPageHeader(
+                title: "Faculty Assignments",
+                subtitle: "Manage subject and section teaching allocations.",
+                actions: [
+                  AcadexButton(
+                    label: "Assign Faculty",
+                    icon: LucideIcons.userPlus,
+                    onPressed: () => _openAssignmentDialog(),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-            // Unassigned Subjects Indicator Banner
-            Builder(
-              builder: (context) {
-                final isDark = Theme.of(context).brightness == Brightness.dark;
-                final activeAssignments = (assignmentsAsync.valueOrNull ?? []).where((a) {
-                  if (!a.isActive) return false;
-                  if (_filterSemesterId != null && a.semesterId != _filterSemesterId) return false;
-                  if (_filterSectionId != null && a.sectionId != _filterSectionId) return false;
-                  return true;
-                }).toList();
-                final assignedSubjectIds = activeAssignments.map((a) => a.subjectId).toSet();
-                final unassigned = filteredSubjects.where((s) => !assignedSubjectIds.contains(s.id)).toList();
-
-                if (unassigned.isEmpty) return const SizedBox.shrink();
-
-                return Container(
-                  key: const Key('unassigned_subjects_banner'),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: AcadexColors.warning.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AcadexRadius.md),
-                    border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.3)),
+              // Academic Context Summary (Phase 3)
+              if (_filterDepartmentId != null || _filterCourseId != null) ...[
+                AcadexAcademicContextCard(
+                  title: isHod ? 'Department Teaching Scope' : 'Active Assignment Context',
+                  departmentName: deptMap[_filterDepartmentId]?.name ?? (isHod ? deptMap[hodDeptId]?.name : null),
+                  departmentCode: deptMap[_filterDepartmentId]?.code ?? (isHod ? deptMap[hodDeptId]?.code : null),
+                  programName: courseMap[_filterCourseId]?.name,
+                  semesterName: semMap[_filterSemesterId]?.name,
+                  sectionName: secMap[_filterSectionId]?.name,
+                  academicYearName: yearMap[_filterAcademicYearId]?.name,
+                  onChangeContext: () => _openFilterSheet(
+                    context: context,
+                    isDark: isDark,
+                    isHod: isHod,
+                    departments: departments,
+                    courses: filteredCourses,
+                    semesters: filteredSemesters,
+                    sections: filteredSections,
+                    subjects: filteredSubjects,
+                    facultyList: filteredFaculty,
+                    academicYears: academicYears,
+                    progLabel: progLabel,
+                    semLabel: semLabel,
+                    secLabel: secLabel,
+                    subLabel: subLabel,
+                    deptLabel: deptLabel,
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(LucideIcons.alertTriangle, size: 18, color: AcadexColors.warning),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Unassigned Subjects (${unassigned.length}): ${unassigned.map((s) => "${s.code} ${s.name}").join(", ")}',
-                          style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              // Smart Adaptive Filter Bar (Phase 8)
+              AcadexCard(
+                isFlat: true,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        // Search Field
+                        Expanded(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: "Search faculty, subject, or code...",
+                              prefixIcon: const Icon(LucideIcons.search, size: 16),
+                              suffixIcon: _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(LucideIcons.x, size: 14),
+                                      onPressed: () => setState(() => _searchQuery = ''),
+                                    )
+                                  : null,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              isDense: true,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(AcadexRadius.md),
+                                borderSide: BorderSide(
+                                  color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                                ),
+                              ),
+                            ),
+                            onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+
+                        // Filter Trigger Button
+                        AcadexPressable(
+                          onTap: () => _openFilterSheet(
+                            context: context,
+                            isDark: isDark,
+                            isHod: isHod,
+                            departments: departments,
+                            courses: filteredCourses,
+                            semesters: filteredSemesters,
+                            sections: filteredSections,
+                            subjects: filteredSubjects,
+                            facultyList: filteredFaculty,
+                            academicYears: academicYears,
+                            progLabel: progLabel,
+                            semLabel: semLabel,
+                            secLabel: secLabel,
+                            subLabel: subLabel,
+                            deptLabel: deptLabel,
+                          ),
+                          child: Container(
+                            constraints: const BoxConstraints(minHeight: 40, minWidth: 44),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: activeFilterCount > 0
+                                  ? (isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight)
+                                  : (isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft),
+                              borderRadius: BorderRadius.circular(AcadexRadius.md),
+                              border: Border.all(
+                                color: activeFilterCount > 0
+                                    ? AcadexColors.primary.withValues(alpha: 0.4)
+                                    : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  LucideIcons.slidersHorizontal,
+                                  size: 15,
+                                  color: activeFilterCount > 0 ? AcadexColors.primary : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  activeFilterCount > 0 ? 'Filters ($activeFilterCount)' : 'Filter',
+                                  style: AcadexTypography.button.copyWith(
+                                    color: activeFilterCount > 0 ? AcadexColors.primary : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Active Filters Chips (Removable)
+                    if (activeFilterCount > 0) ...[
+                      const SizedBox(height: 8),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            if (!isHod && _filterDepartmentId != null)
+                              _buildActiveFilterChip(
+                                label: deptMap[_filterDepartmentId]?.name ?? 'Dept',
+                                onRemove: () => setState(() {
+                                  _filterDepartmentId = null;
+                                  _filterCourseId = null;
+                                  _filterSemesterId = null;
+                                  _filterSectionId = null;
+                                }),
+                                isDark: isDark,
+                              ),
+                            if (_filterCourseId != null)
+                              _buildActiveFilterChip(
+                                label: courseMap[_filterCourseId]?.code ?? 'Course',
+                                onRemove: () => setState(() {
+                                  _filterCourseId = null;
+                                  _filterSemesterId = null;
+                                  _filterSectionId = null;
+                                }),
+                                isDark: isDark,
+                              ),
+                            if (_filterSemesterId != null)
+                              _buildActiveFilterChip(
+                                label: semMap[_filterSemesterId]?.name ?? 'Semester',
+                                onRemove: () => setState(() {
+                                  _filterSemesterId = null;
+                                  _filterSectionId = null;
+                                }),
+                                isDark: isDark,
+                              ),
+                            if (_filterSectionId != null)
+                              _buildActiveFilterChip(
+                                label: 'Sec ${secMap[_filterSectionId]?.name ?? ""}',
+                                onRemove: () => setState(() => _filterSectionId = null),
+                                isDark: isDark,
+                              ),
+                            if (_filterFacultyId != null)
+                              _buildActiveFilterChip(
+                                label: facultyList.firstWhere((f) => f.id == _filterFacultyId, orElse: () => Faculty(id: '', collegeId: '', departmentId: '', name: 'Faculty', employeeId: '', email: '', phone: '')).name,
+                                onRemove: () => setState(() => _filterFacultyId = null),
+                                isDark: isDark,
+                              ),
+                            if (!_filterActiveOnly)
+                              _buildActiveFilterChip(
+                                label: 'All Statuses',
+                                onRemove: () => setState(() => _filterActiveOnly = true),
+                                isDark: isDark,
+                              ),
+                            TextButton(
+                              onPressed: () => _clearFilters(isHod, hodDeptId),
+                              child: const Text('Clear All', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AcadexColors.primary)),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: () => _openAssignmentDialog(),
-                        child: const Text('Assign Now', style: TextStyle(fontWeight: FontWeight.w700, color: AcadexColors.primary)),
-                      ),
                     ],
-                  ),
-                );
-              },
-            ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
 
-            // Content Area
-            assignmentsAsync.when(
+              // Unassigned Subjects Banner
+              Consumer(
+                builder: (context, ref, _) {
+                  final allSubs = subjects;
+                  final allAssignments = assignmentsAsync.valueOrNull ?? [];
+                  final assignedSubjectIds = allAssignments.where((a) => a.isActive).map((a) => a.subjectId).toSet();
+                  final unassigned = allSubs.where((s) => !assignedSubjectIds.contains(s.id)).toList();
+
+                  if (unassigned.isEmpty) return const SizedBox.shrink();
+
+                  return Container(
+                    key: const Key('unassigned_subjects_banner'),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AcadexColors.warning.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AcadexRadius.md),
+                      border: Border.all(color: AcadexColors.warning.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(LucideIcons.alertTriangle, size: 18, color: AcadexColors.warning),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Unassigned Subjects (${unassigned.length}): ${unassigned.map((s) => "${s.code} ${s.name}").join(", ")}',
+                            style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: () => _openAssignmentDialog(),
+                          child: const Text('Assign Now', style: TextStyle(fontWeight: FontWeight.w700, color: AcadexColors.primary)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+
+              // Content Area
+              assignmentsAsync.when(
                 loading: () => const Center(child: AcadexLoadingState(message: "Loading faculty assignments...")),
                 error: (err, _) => Center(
                   child: AcadexErrorState(
@@ -576,29 +496,19 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                           : AcadexEmptyState.filterEmpty(
                               title: "No assignments match criteria",
                               subtitle: "Try adjusting search or filters to see all faculty assignments.",
-                              onClearFilters: () => setState(() {
-                                _searchQuery = '';
-                                _filterDepartmentId = isHod ? currentUser?.departmentId : null;
-                                _filterCourseId = null;
-                                _filterSemesterId = null;
-                                _filterSectionId = null;
-                                _filterFacultyId = null;
-                                _filterSubjectId = null;
-                              }),
+                              onClearFilters: () => _clearFilters(isHod, hodDeptId),
                             ),
                     );
                   }
 
-                  final isMobile = AcadexBreakpoints.isMobile(context);
-
-                  if (isMobile) {
-                    // Mobile stacked card list with subtle hover transition
+                  if (isNarrow) {
+                    // Mobile & Narrow: Compact card list with progressive disclosure tap
                     return ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       padding: const EdgeInsets.only(bottom: 24),
                       itemCount: filtered.length,
-                      separatorBuilder: (ctx, i) => const SizedBox(height: 12),
+                      separatorBuilder: (ctx, i) => const SizedBox(height: 10),
                       itemBuilder: (context, i) {
                         final a = filtered[i];
                         final sub = subMap[a.subjectId];
@@ -608,68 +518,176 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                         final yr = yearMap[a.academicYearId];
 
                         return AcadexCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      a.facultyName,
-                                      style: AcadexTypography.title(color: theme.colorScheme.onSurface),
+                          isFlat: true,
+                          padding: const EdgeInsets.all(12),
+                          child: InkWell(
+                            onTap: () => _openAssignmentDetail(context, a, sub, crs, sem, sec, yr, isDark),
+                            borderRadius: BorderRadius.circular(AcadexRadius.md),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Top row: Subject code + Section + Status
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Flexible(
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                                                borderRadius: AcadexRadius.borderRadiusSm,
+                                              ),
+                                              child: Text(
+                                                sub?.code ?? 'SUBJECT',
+                                                style: const TextStyle(
+                                                  color: AcadexColors.primary,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 11.5,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Flexible(
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+                                                borderRadius: AcadexRadius.borderRadiusSm,
+                                                border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                                              ),
+                                              child: Text(
+                                                AcadexEntityFormatters.formatSectionLabel(sec?.name, rawId: a.sectionId, fallback: 'Assigned Section', compact: true),
+                                                style: AcadexTypography.caption(
+                                                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                                ).copyWith(fontWeight: FontWeight.w600, fontSize: 11.5),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
+                                    const SizedBox(width: 8),
+                                    AcadexBadge(
+                                      label: a.isActive ? "Active" : "Inactive",
+                                      variant: a.isActive ? AcadexBadgeVariant.success : AcadexBadgeVariant.neutral,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+
+                                // Subject Title
+                                Text(
+                                  AcadexEntityFormatters.formatSubjectLabel(sub?.name, code: sub?.code, rawId: a.subjectId),
+                                  style: AcadexTypography.heading3(
+                                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                  ).copyWith(fontSize: 15, fontWeight: FontWeight.w700),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+
+                                // Faculty Row
+                                Row(
+                                  children: [
+                                    const Icon(LucideIcons.userCheck, size: 14, color: AcadexColors.primary),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        a.facultyName,
+                                        style: AcadexTypography.body(
+                                          color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                        ).copyWith(fontWeight: FontWeight.w600, fontSize: 13.5),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+
+                                // Academic Context row
+                                Text(
+                                  AcadexEntityFormatters.formatAcademicContext(
+                                    course: crs?.name,
+                                    semester: sem?.name,
+                                    year: yr?.name ?? (a.academicYearId.isNotEmpty && !AcadexEntityFormatters.isRawIdentifier(a.academicYearId) ? a.academicYearId : null),
                                   ),
-                                  AcadexBadge(
-                                    label: a.isActive ? "Active" : "Inactive",
-                                    variant: a.isActive ? AcadexBadgeVariant.success : AcadexBadgeVariant.neutral,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '${sub?.code ?? ''} — ${sub?.name ?? a.subjectId}',
-                                style: AcadexTypography.body(color: theme.colorScheme.onSurface).copyWith(fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${crs?.name ?? a.courseId} • ${sem?.name ?? a.semesterId} • Section ${sec?.name ?? a.sectionId}',
-                                style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Academic Year: ${yr?.name ?? (a.academicYearId.isNotEmpty ? a.academicYearId : 'Current')}${a.cohort != null && a.cohort!.isNotEmpty ? '  •  Cohort: ${a.cohort}' : ''}',
-                                style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  IconButton(
-                                    tooltip: "Internal Assessment Marks",
-                                    icon: const Icon(LucideIcons.award, size: 16, color: AcadexColors.primary),
-                                    onPressed: () => context.push('/assessments/entry?sectionId=${a.sectionId}&subjectId=${a.subjectId}'),
-                                  ),
-                                  IconButton(
-                                    tooltip: a.isActive ? "Deactivate" : "Activate",
-                                    icon: Icon(a.isActive ? LucideIcons.powerOff : LucideIcons.power, size: 16, color: a.isActive ? AcadexColors.warning : AcadexColors.success),
-                                    onPressed: () => _toggleAssignmentActive(a),
-                                  ),
-                                  IconButton(
-                                    tooltip: "Delete",
-                                    icon: const Icon(LucideIcons.trash2, size: 16, color: AcadexColors.error),
-                                    onPressed: () => _confirmRemove(a),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  style: AcadexTypography.caption(
+                                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                  ).copyWith(fontSize: 11.5),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 10),
+                                const Divider(height: 1),
+                                const SizedBox(height: 4),
+
+                                // Quick Actions Row
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: TextButton.icon(
+                                          style: TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                                            visualDensity: VisualDensity.compact,
+                                          ),
+                                          icon: const Icon(LucideIcons.clipboardCheck, size: 14),
+                                          label: const Text(
+                                            'Attendance',
+                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          onPressed: () => context.push('/attendance/take?classId=${a.id}&facultyAssignmentId=${a.id}'),
+                                        ),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      padding: const EdgeInsets.all(4),
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                      tooltip: "Internal Assessment Marks",
+                                      icon: const Icon(LucideIcons.award, size: 16, color: AcadexColors.primary),
+                                      onPressed: () => context.push('/assessments/entry?sectionId=${a.sectionId}&subjectId=${a.subjectId}'),
+                                    ),
+                                    IconButton(
+                                      padding: const EdgeInsets.all(4),
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                      tooltip: a.isActive ? "Deactivate" : "Activate",
+                                      icon: Icon(
+                                        a.isActive ? LucideIcons.powerOff : LucideIcons.power,
+                                        size: 16,
+                                        color: a.isActive ? AcadexColors.warning : AcadexColors.success,
+                                      ),
+                                      onPressed: () => _toggleAssignmentActive(a),
+                                    ),
+                                    IconButton(
+                                      padding: const EdgeInsets.all(4),
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                      tooltip: "Delete",
+                                      icon: const Icon(LucideIcons.trash2, size: 16, color: AcadexColors.error),
+                                      onPressed: () => _confirmRemove(a),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       },
                     );
                   }
 
-                  // Desktop Contained Data Table
+                  // Desktop & Wide Constraints: Contained Data Table
                   return AcadexDataTable(
                     columns: [
                       "Faculty",
@@ -713,19 +731,19 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                               ],
                             ),
                           ),
-                          DataCell(Text(dept?.name ?? a.departmentId)),
+                          DataCell(Text(AcadexEntityFormatters.formatDepartmentLabel(dept?.name, rawId: a.departmentId))),
                           DataCell(
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(sub?.name ?? a.subjectId, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                if (sub != null) Text(sub.code, style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+                                Text(AcadexEntityFormatters.formatSubjectLabel(sub?.name, code: sub?.code, rawId: a.subjectId), style: const TextStyle(fontWeight: FontWeight.w600)),
+                                if (sub != null && !AcadexEntityFormatters.isRawIdentifier(sub.code)) Text(sub.code, style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
                               ],
                             ),
                           ),
-                          DataCell(Text(crs?.name ?? a.courseId)),
-                          DataCell(Text(sem?.name ?? a.semesterId)),
+                          DataCell(Text(AcadexEntityFormatters.formatCourseLabel(crs?.name, code: crs?.code, rawId: a.courseId))),
+                          DataCell(Text(AcadexEntityFormatters.formatSemesterLabel(sem?.name, semesterNumber: sem?.semesterNumber, rawId: a.semesterId))),
                           DataCell(
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -734,12 +752,12 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                 borderRadius: BorderRadius.circular(AcadexRadius.xs),
                               ),
                               child: Text(
-                                "Sec ${sec?.name ?? a.sectionId}",
+                                AcadexEntityFormatters.formatSectionLabel(sec?.name, rawId: a.sectionId, fallback: 'Assigned Section', compact: true),
                                 style: const TextStyle(color: AcadexColors.primary, fontWeight: FontWeight.w600, fontSize: 12),
                               ),
                             ),
                           ),
-                          DataCell(Text(yr?.name ?? (a.academicYearId.isNotEmpty ? a.academicYearId : 'Current'))),
+                          DataCell(Text(AcadexEntityFormatters.formatAcademicYearLabel(yr?.name, rawId: a.academicYearId))),
                           DataCell(Text(a.cohort != null && a.cohort!.isNotEmpty ? a.cohort! : '—')),
                           DataCell(
                             AcadexBadge(
@@ -775,9 +793,431 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                   );
                 },
               ),
-          ],
-        ),
-      );
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildActiveFilterChip({
+    required String label,
+    required VoidCallback onRemove,
+    required bool isDark,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.primary.withValues(alpha: 0.15) : AcadexColors.primaryLight,
+        borderRadius: AcadexRadius.borderRadiusFull,
+        border: Border.all(color: AcadexColors.primary.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AcadexColors.primary),
+          ),
+          const SizedBox(width: 4),
+          InkWell(
+            onTap: onRemove,
+            child: const Icon(LucideIcons.x, size: 12, color: AcadexColors.primary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openFilterSheet({
+    required BuildContext context,
+    required bool isDark,
+    required bool isHod,
+    required List<Department> departments,
+    required List<Course> courses,
+    required List<Semester> semesters,
+    required List<Section> sections,
+    required List<Subject> subjects,
+    required List<Faculty> facultyList,
+    required List<AcademicYear> academicYears,
+    required String progLabel,
+    required String semLabel,
+    required String secLabel,
+    required String subLabel,
+    required String deptLabel,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AcadexRadius.xl)),
+      ),
+      builder: (ctx) {
+        String? tempDept = _filterDepartmentId;
+        String? tempCourse = _filterCourseId;
+        String? tempSem = _filterSemesterId;
+        String? tempSec = _filterSectionId;
+        String? tempFac = _filterFacultyId;
+        String? tempSub = _filterSubjectId;
+        bool tempActiveOnly = _filterActiveOnly;
+
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final activeCourses = tempDept == null ? courses : courses.where((c) => c.departmentId == tempDept).toList();
+            final activeSemesters = tempCourse == null ? semesters : semesters.where((s) => s.courseId == tempCourse).toList();
+            final activeSections = tempSem == null ? sections : sections.where((sec) => sec.semesterId == tempSem).toList();
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 16,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header & Handle
+                      Center(
+                        child: Container(
+                          width: 36,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Filter Assignments',
+                              style: AcadexTypography.heading3(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(LucideIcons.x, size: 20),
+                            onPressed: () => Navigator.pop(ctx),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 1),
+                      const SizedBox(height: 16),
+
+                      // Department Filter (Locked for HOD)
+                      if (!isHod) ...[
+                        DropdownButtonFormField<String?>(
+                          isExpanded: true,
+                          decoration: InputDecoration(labelText: deptLabel),
+                          initialValue: tempDept,
+                          items: [
+                            DropdownMenuItem(value: null, child: Text('All ${deptLabel}s')),
+                            ...departments.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name))),
+                          ],
+                          onChanged: (val) {
+                            setModalState(() {
+                              tempDept = val;
+                              tempCourse = null;
+                              tempSem = null;
+                              tempSec = null;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+
+                      // Course / Program Filter
+                      DropdownButtonFormField<String?>(
+                        isExpanded: true,
+                        decoration: InputDecoration(labelText: progLabel),
+                        initialValue: tempCourse,
+                        items: [
+                          DropdownMenuItem(value: null, child: Text('All ${progLabel}s')),
+                          ...activeCourses.map((c) => DropdownMenuItem(value: c.id, child: Text('${c.code} - ${c.name}'))),
+                        ],
+                        onChanged: (val) {
+                          setModalState(() {
+                            tempCourse = val;
+                            tempSem = null;
+                            tempSec = null;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Semester Filter
+                      DropdownButtonFormField<String?>(
+                        isExpanded: true,
+                        decoration: InputDecoration(labelText: semLabel),
+                        initialValue: tempSem,
+                        items: [
+                          DropdownMenuItem(value: null, child: Text('All ${semLabel}s')),
+                          ...activeSemesters.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
+                        ],
+                        onChanged: (val) {
+                          setModalState(() {
+                            tempSem = val;
+                            tempSec = null;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Section Filter
+                      DropdownButtonFormField<String?>(
+                        isExpanded: true,
+                        decoration: InputDecoration(labelText: secLabel),
+                        initialValue: tempSec,
+                        items: [
+                          DropdownMenuItem(value: null, child: Text('All ${secLabel}s')),
+                          ...activeSections.map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name))),
+                        ],
+                        onChanged: (val) => setModalState(() => tempSec = val),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Faculty Filter
+                      DropdownButtonFormField<String?>(
+                        isExpanded: true,
+                        decoration: const InputDecoration(labelText: 'Faculty Member'),
+                        initialValue: tempFac,
+                        items: [
+                          const DropdownMenuItem(value: null, child: Text('All Faculty')),
+                          ...facultyList.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name))),
+                        ],
+                        onChanged: (val) => setModalState(() => tempFac = val),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Active Only Switch
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Show active assignments only', style: TextStyle(fontSize: 14)),
+                        value: tempActiveOnly,
+                        activeColor: AcadexColors.primary,
+                        onChanged: (v) => setModalState(() => tempActiveOnly = v),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Action Buttons: Clear & Apply
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                _clearFilters(isHod, isHod ? _filterDepartmentId : null);
+                              },
+                              child: const Text('Clear All'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: AcadexButton(
+                              label: 'Apply Filters',
+                              onPressed: () {
+                                setState(() {
+                                  _filterDepartmentId = tempDept;
+                                  _filterCourseId = tempCourse;
+                                  _filterSemesterId = tempSem;
+                                  _filterSectionId = tempSec;
+                                  _filterFacultyId = tempFac;
+                                  _filterSubjectId = tempSub;
+                                  _filterActiveOnly = tempActiveOnly;
+                                });
+                                Navigator.pop(ctx);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _openAssignmentDetail(
+    BuildContext context,
+    FacultyAssignment a,
+    Subject? sub,
+    Course? crs,
+    Semester? sem,
+    Section? sec,
+    AcademicYear? yr,
+    bool isDark,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AcadexRadius.xl)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Modal Handle
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Title Row with Code Badge & Status
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                        borderRadius: AcadexRadius.borderRadiusSm,
+                      ),
+                      child: Text(
+                        sub?.code ?? 'SUBJECT',
+                        style: const TextStyle(color: AcadexColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        sub?.name ?? a.subjectId,
+                        style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                      ),
+                    ),
+                    AcadexBadge(
+                      label: a.isActive ? "Active" : "Inactive",
+                      variant: a.isActive ? AcadexBadgeVariant.success : AcadexBadgeVariant.neutral,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                const Divider(height: 1),
+                const SizedBox(height: 14),
+
+                // Faculty Info
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: AcadexColors.primary.withValues(alpha: 0.12),
+                      child: Text(
+                        a.facultyName.isNotEmpty ? a.facultyName[0].toUpperCase() : 'F',
+                        style: const TextStyle(color: AcadexColors.primary, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Allocated Faculty', style: AcadexTypography.caption()),
+                          Text(
+                            a.facultyName,
+                            style: AcadexTypography.body().copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Academic Context Chips
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildDetailChip('Program', AcadexEntityFormatters.formatCourseLabel(crs?.name, code: crs?.code, rawId: a.courseId), isDark),
+                    _buildDetailChip('Semester', AcadexEntityFormatters.formatSemesterLabel(sem?.name, semesterNumber: sem?.semesterNumber, rawId: a.semesterId), isDark),
+                    _buildDetailChip('Section', AcadexEntityFormatters.formatSectionLabel(sec?.name, rawId: a.sectionId, fallback: 'Assigned Section', prefix: false), isDark),
+                    _buildDetailChip('Academic Year', AcadexEntityFormatters.formatAcademicYearLabel(yr?.name, rawId: a.academicYearId), isDark),
+                    if (a.cohort != null && a.cohort!.isNotEmpty)
+                      _buildDetailChip('Cohort', a.cohort!, isDark),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Operations & Actions
+                Row(
+                  children: [
+                    Expanded(
+                      child: AcadexButton(
+                        label: 'Take Attendance',
+                        icon: LucideIcons.clipboardCheck,
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          context.push('/attendance/take?classId=${a.id}&facultyAssignmentId=${a.id}');
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(LucideIcons.calendar, size: 16),
+                        label: const Text('Timetable'),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          context.push('/timetable?sectionId=${a.sectionId}');
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailChip(String label, String value, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurfaceHover : AcadexColors.canvasSoft,
+        borderRadius: BorderRadius.circular(AcadexRadius.sm),
+        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 10.5, color: AcadexColors.inkMuted, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 1),
+          Text(value, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
   }
 
   Future<void> _toggleAssignmentActive(FacultyAssignment assignment) async {

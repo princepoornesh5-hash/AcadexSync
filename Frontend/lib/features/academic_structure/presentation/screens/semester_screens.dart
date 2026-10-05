@@ -13,6 +13,7 @@ import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
 import '../../../../core/errors/acadex_error.dart';
 import '../widgets/fresh_department_setup_card.dart';
 import '../widgets/setup_continuation_dialog.dart';
@@ -441,8 +442,8 @@ class _SemesterListScreenState extends ConsumerState<SemesterListScreen> {
                             ),
                           ),
                         ),
-                        DataCell(Text(coursesMap[s.courseId] ?? s.courseId)),
-                        DataCell(Text(yearsMap[s.academicYearId] ?? s.academicYearId)),
+                        DataCell(Text(AcadexEntityFormatters.formatCourseLabel(coursesMap[s.courseId], rawId: s.courseId))),
+                        DataCell(Text(AcadexEntityFormatters.formatAcademicYearLabel(yearsMap[s.academicYearId], rawId: s.academicYearId))),
                         DataCell(
                           s.isCurrent
                               ? const AcadexBadge(label: "CURRENT", variant: AcadexBadgeVariant.primary)

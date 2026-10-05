@@ -224,6 +224,22 @@ class AcadexException implements Exception {
       );
     }
 
+    // Network Timeout / Dio Timeout
+    if (raw.toLowerCase().contains('timeout') ||
+        raw.toLowerCase().contains('timed out') ||
+        raw.contains('receive timeout') ||
+        raw.contains('connection timeout') ||
+        raw.contains('send timeout') ||
+        raw.contains('took longer than')) {
+      return AcadexException(
+        category: ErrorCategory.networkTimeout,
+        technicalMessage: raw,
+        userMessage: 'Connection timed out. Please check your network connection and try again.',
+        context: context,
+        isRetryable: true,
+      );
+    }
+
     // Network / Socket
     if (raw.contains('SocketException') || raw.contains('HandshakeException') || raw.contains('Failed host lookup')) {
       return AcadexException(
@@ -295,6 +311,16 @@ class AcadexException implements Exception {
 
     // Map backend date validation messages to clear human-readable messages
     final lower = text.toLowerCase();
+
+    // Map technical timeout and DioException patterns
+    if (lower.contains('dioexception') ||
+        lower.contains('[receive timeout]') ||
+        lower.contains('[send timeout]') ||
+        lower.contains('[connection timeout]') ||
+        lower.contains('took longer than')) {
+      return 'Connection timed out. Please check your network connection and try again.';
+    }
+
     if (lower.contains('startdate must be before enddate')) {
       return 'Start Date must be before End Date.';
     }

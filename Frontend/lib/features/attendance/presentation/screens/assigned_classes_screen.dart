@@ -7,6 +7,7 @@ import '../providers/attendance_providers.dart';
 import '../widgets/assigned_class_card.dart';
 import '../../domain/models/assigned_class.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
@@ -115,8 +116,10 @@ class AssignedClassesScreen extends ConsumerWidget {
     if (confirmed == true && selectedSectionId != null && selectedSubjectId != null) {
       final sec = sections.firstWhere((s) => s.id == selectedSectionId);
       final sub = subjects.firstWhere((s) => s.id == selectedSubjectId);
+      final currentUser = ref.read(currentUserProvider);
       ref.read(activeClassProvider.notifier).state = AssignedClass(
         id: 'adhoc_${sec.id}_${sub.id}_${date.millisecondsSinceEpoch}',
+        facultyId: currentUser?.id,
         subjectId: sub.id,
         subjectName: sub.name,
         sectionId: sec.id,
@@ -142,9 +145,9 @@ class AssignedClassesScreen extends ConsumerWidget {
     final formattedDate = DateFormat('EEE, MMM d, yyyy').format(date);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
       body: AcadexPageContainer(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
         maxWidth: AcadexLayout.contentMaxWidth,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

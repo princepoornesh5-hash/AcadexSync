@@ -389,7 +389,7 @@ class DashboardQuickActionModel {
   factory DashboardQuickActionModel.fromJson(Map<String, dynamic> json) {
     return DashboardQuickActionModel(
       id: json['id'] as String? ?? '',
-      label: json['label'] as String? ?? '',
+      label: (json['label'] ?? json['title']) as String? ?? '',
       icon: json['icon'] as String? ?? 'folder',
       route: json['route'] as String? ?? '/',
       badgeCount: (json['badgeCount'] as num?)?.toInt(),
@@ -422,30 +422,37 @@ class HomeDashboardModel {
     required this.quickActions,
   });
 
+  static Map<String, dynamic>? _asMap(dynamic val) {
+    if (val is Map) {
+      return Map<String, dynamic>.from(val);
+    }
+    return null;
+  }
+
   factory HomeDashboardModel.fromJson(Map<String, dynamic> json) {
     return HomeDashboardModel(
       role: json['role'] as String? ?? 'STUDENT',
-      greeting: DashboardGreetingModel.fromJson(json['greeting'] as Map<String, dynamic>?),
-      context: DashboardContextModel.fromJson(json['context'] as Map<String, dynamic>?),
-      summary: DashboardSummaryModel.fromJson(json['summary'] as Map<String, dynamic>?),
+      greeting: DashboardGreetingModel.fromJson(_asMap(json['greeting'])),
+      context: DashboardContextModel.fromJson(_asMap(json['context'])),
+      summary: DashboardSummaryModel.fromJson(_asMap(json['summary'])),
       alerts: (json['alerts'] as List<dynamic>?)
-              ?.map((e) => DashboardAlertModel.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => DashboardAlertModel.fromJson(_asMap(e) ?? const {}))
               .toList() ??
           [],
       upcoming: (json['upcoming'] as List<dynamic>?)
-              ?.map((e) => DashboardUpcomingItemModel.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => DashboardUpcomingItemModel.fromJson(_asMap(e) ?? const {}))
               .toList() ??
           [],
       pendingActions: (json['pendingActions'] as List<dynamic>?)
-              ?.map((e) => DashboardPendingActionModel.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => DashboardPendingActionModel.fromJson(_asMap(e) ?? const {}))
               .toList() ??
           [],
       recent: (json['recent'] as List<dynamic>?)
-              ?.map((e) => DashboardRecentActivityModel.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => DashboardRecentActivityModel.fromJson(_asMap(e) ?? const {}))
               .toList() ??
           [],
       quickActions: (json['quickActions'] as List<dynamic>?)
-              ?.map((e) => DashboardQuickActionModel.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => DashboardQuickActionModel.fromJson(_asMap(e) ?? const {}))
               .toList() ??
           [],
     );

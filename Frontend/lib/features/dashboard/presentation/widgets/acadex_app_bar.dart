@@ -177,10 +177,9 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
                 children: [
                   Text(
                     widget.title,
-                    style: TextStyle(
-                      color: headerTextColor,
+                    style: AcadexTypography.heading2(color: headerTextColor).copyWith(
+                      fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      fontSize: 18,
                       letterSpacing: -0.3,
                     ),
                     maxLines: 1,
@@ -190,11 +189,7 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
                     const SizedBox(height: 1),
                     Text(
                       widget.subtitle!,
-                      style: TextStyle(
-                        color: headerMutedColor,
-                        fontWeight: FontWeight.w400,
-                        fontSize: 12,
-                      ),
+                      style: AcadexTypography.caption(color: headerMutedColor),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

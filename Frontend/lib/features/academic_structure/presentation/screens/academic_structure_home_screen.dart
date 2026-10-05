@@ -114,8 +114,7 @@ class _AcademicStructureHomeScreenState
     final roomsAsync = ref.watch(roomsProvider);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 768;
+    final isMobile = AcadexBreakpoints.isMobile(context);
 
     return AcadexPageContainer(
       onRefresh: () async {
@@ -136,7 +135,7 @@ class _AcademicStructureHomeScreenState
           AcadexPageHeader(
             title: 'Academic Structure',
             subtitle: _getSubtitleForRole(userRole),
-            actions: _buildHeaderActions(context, userRole, terminology, isSectionEnabled),
+            actions: _buildHeaderActions(context, userRole, terminology, isSectionEnabled, isMobile),
           ),
 
           // 0. Setup Guided Banner (For HOD & College Admin)
@@ -474,7 +473,9 @@ class _AcademicStructureHomeScreenState
     AppRole role,
     TerminologyHelper terminology,
     bool isSectionEnabled,
+    bool isMobile,
   ) {
+    final btnSize = isMobile ? AcadexButtonSize.sm : AcadexButtonSize.md;
     final isHod = role == AppRole.hod;
     final isHodOrBelow = isHod || role == AppRole.faculty || role == AppRole.student;
     final tabIdx = _currentTabIndex.clamp(0, _tabController.length - 1);
@@ -520,6 +521,7 @@ class _AcademicStructureHomeScreenState
             key: const Key('acad_create_dept'),
             label: '+ Create ${terminology.label(AcademicConcept.department)}',
             icon: LucideIcons.plus,
+            size: btnSize,
             onPressed: () => context.push('/academics/departments/new'),
           );
           break;
@@ -528,6 +530,7 @@ class _AcademicStructureHomeScreenState
             key: const Key('acad_create_prog'),
             label: '+ Create ${terminology.label(AcademicConcept.program)}',
             icon: LucideIcons.plus,
+            size: btnSize,
             onPressed: () => context.push('/academics/courses/new'),
           );
           break;
@@ -536,6 +539,7 @@ class _AcademicStructureHomeScreenState
             key: const Key('acad_create_sem'),
             label: '+ Create ${terminology.label(AcademicConcept.semester)}',
             icon: LucideIcons.plus,
+            size: btnSize,
             onPressed: () => context.push('/academics/semesters/new'),
           );
           break;
@@ -544,6 +548,7 @@ class _AcademicStructureHomeScreenState
             key: const Key('acad_create_sec'),
             label: '+ Create ${terminology.label(AcademicConcept.section)}',
             icon: LucideIcons.plus,
+            size: btnSize,
             onPressed: () => context.push('/academics/sections/new'),
           );
           break;
@@ -552,6 +557,7 @@ class _AcademicStructureHomeScreenState
             key: const Key('acad_create_sub'),
             label: '+ Create ${terminology.label(AcademicConcept.subject)}',
             icon: LucideIcons.plus,
+            size: btnSize,
             onPressed: () => context.push('/academics/subjects/new'),
           );
           break;
@@ -560,6 +566,7 @@ class _AcademicStructureHomeScreenState
             key: const Key('acad_add_fac'),
             label: '+ Add Faculty',
             icon: LucideIcons.userPlus,
+            size: btnSize,
             onPressed: () => context.push('/academics/faculty/new'),
           );
           break;
@@ -568,6 +575,7 @@ class _AcademicStructureHomeScreenState
             key: const Key('acad_create_room'),
             label: '+ Add ${terminology.label(AcademicConcept.room)}',
             icon: LucideIcons.plus,
+            size: btnSize,
             onPressed: () => context.push('/academics/rooms/new'),
           );
           break;
@@ -575,20 +583,24 @@ class _AcademicStructureHomeScreenState
 
       return [
         AcadexButton(
-          label: 'Academic Config',
-          icon: LucideIcons.slidersHorizontal,
-          variant: AcadexButtonVariant.secondary,
-          onPressed: () => context.push('/academics/configuration'),
-        ),
-        const SizedBox(width: 8),
-        AcadexButton(
           label: 'Department Setup',
           icon: LucideIcons.compass,
           variant: AcadexButtonVariant.secondary,
+          size: btnSize,
           onPressed: () => context.push('/academics/setup'),
         ),
         const SizedBox(width: 8),
         dynamicCreateButton,
+        if (!isMobile) ...[
+          const SizedBox(width: 8),
+          AcadexButton(
+            label: 'Academic Config',
+            icon: LucideIcons.slidersHorizontal,
+            variant: AcadexButtonVariant.secondary,
+            size: btnSize,
+            onPressed: () => context.push('/academics/configuration'),
+          ),
+        ],
       ];
     } else if (role == AppRole.hod) {
       Widget dynamicCreateButton;
@@ -598,6 +610,7 @@ class _AcademicStructureHomeScreenState
             key: const Key('hod_acad_create_prog'),
             label: '+ Create ${terminology.label(AcademicConcept.program)}',
             icon: LucideIcons.plus,
+            size: btnSize,
             onPressed: () => context.push('/academics/courses/new'),
           );
           break;
@@ -606,6 +619,7 @@ class _AcademicStructureHomeScreenState
             key: const Key('hod_acad_create_sem'),
             label: '+ Create ${terminology.label(AcademicConcept.semester)}',
             icon: LucideIcons.plus,
+            size: btnSize,
             onPressed: () => context.push('/academics/semesters/new'),
           );
           break;
@@ -614,6 +628,7 @@ class _AcademicStructureHomeScreenState
             key: const Key('hod_acad_create_sec'),
             label: '+ Create ${terminology.label(AcademicConcept.section)}',
             icon: LucideIcons.plus,
+            size: btnSize,
             onPressed: () => context.push('/academics/sections/new'),
           );
           break;
@@ -622,6 +637,7 @@ class _AcademicStructureHomeScreenState
             key: const Key('hod_acad_create_sub'),
             label: '+ Create ${terminology.label(AcademicConcept.subject)}',
             icon: LucideIcons.plus,
+            size: btnSize,
             onPressed: () => context.push('/academics/subjects/new'),
           );
           break;
@@ -630,6 +646,7 @@ class _AcademicStructureHomeScreenState
             key: const Key('hod_acad_add_fac'),
             label: '+ Add Faculty',
             icon: LucideIcons.userPlus,
+            size: btnSize,
             onPressed: () => context.push('/academics/faculty/new'),
           );
           break;
@@ -638,6 +655,7 @@ class _AcademicStructureHomeScreenState
             key: const Key('hod_acad_create_room'),
             label: '+ Add ${terminology.label(AcademicConcept.room)}',
             icon: LucideIcons.plus,
+            size: btnSize,
             onPressed: () => context.push('/academics/rooms/new'),
           );
           break;
@@ -646,6 +664,7 @@ class _AcademicStructureHomeScreenState
             key: const Key('hod_acad_create_prog_fallback'),
             label: '+ Create ${terminology.label(AcademicConcept.program)}',
             icon: LucideIcons.plus,
+            size: btnSize,
             onPressed: () => context.push('/academics/courses/new'),
           );
       }
@@ -655,6 +674,7 @@ class _AcademicStructureHomeScreenState
           label: 'Department Setup',
           icon: LucideIcons.compass,
           variant: AcadexButtonVariant.secondary,
+          size: btnSize,
           onPressed: () => context.push('/academics/setup'),
         ),
         const SizedBox(width: 8),
@@ -850,71 +870,168 @@ class _AcademicStructureHomeScreenState
     required TerminologyHelper terminology,
     required bool isSectionEnabled,
   }) {
-    final deptCount = deptsAsync.valueOrNull?.length ?? 0;
-    final courseCount = coursesAsync.valueOrNull?.length ?? 0;
-    final semCount = semestersAsync.valueOrNull?.length ?? 0;
-    final sectionCount = sectionsAsync.valueOrNull?.length ?? 0;
-    final subjectCount = subjectsAsync.valueOrNull?.length ?? 0;
+    String formatVal<T>(AsyncValue<List<T>> asyncVal) {
+      if (asyncVal.isLoading) return '…';
+      if (asyncVal.hasError) return '—';
+      return (asyncVal.valueOrNull?.length ?? 0).toString();
+    }
+
     final isHod = role == AppRole.hod;
+    final deptVal = isHod ? facultyCount.toString() : formatVal(deptsAsync);
+    final courseVal = formatVal(coursesAsync);
+    final semVal = formatVal(semestersAsync);
+    final sectionVal = formatVal(sectionsAsync);
+    final subjectVal = formatVal(subjectsAsync);
 
-    return LayoutBuilder(builder: (context, constraints) {
-      final totalCards = isSectionEnabled ? 5 : 4;
-      final crossAxisCount = isMobile
-          ? 2
-          : constraints.maxWidth > 1000
-              ? totalCards
-              : 3;
+    final stats = [
+      (
+        title: isHod ? 'Faculty' : terminology.label(AcademicConcept.department, plural: true),
+        value: deptVal,
+        icon: isHod ? LucideIcons.users : LucideIcons.building2,
+        subtitle: isHod ? 'Department Staff' : 'Active Units',
+      ),
+      (
+        title: terminology.label(AcademicConcept.program, plural: true),
+        value: courseVal,
+        icon: LucideIcons.graduationCap,
+        subtitle: 'Degree Programs',
+      ),
+      (
+        title: terminology.label(AcademicConcept.semester, plural: true),
+        value: semVal,
+        icon: LucideIcons.calendarDays,
+        subtitle: 'Academic Terms',
+      ),
+      if (isSectionEnabled)
+        (
+          title: terminology.label(AcademicConcept.section, plural: true),
+          value: sectionVal,
+          icon: LucideIcons.layoutGrid,
+          subtitle: 'Classrooms / Batches',
+        ),
+      (
+        title: terminology.label(AcademicConcept.subject, plural: true),
+        value: subjectVal,
+        icon: LucideIcons.bookOpen,
+        subtitle: 'Curriculum Items',
+      ),
+    ];
 
-      return GridView.count(
-        crossAxisCount: crossAxisCount,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: isMobile ? 1.3 : 1.25,
-        children: [
-          if (isHod)
-            AcadexStatCard(
-              title: 'Faculty',
-              value: facultyCount.toString(),
-              icon: LucideIcons.users,
-              subtitle: 'Department Staff',
-            )
-          else
-            AcadexStatCard(
-              title: terminology.label(AcademicConcept.department, plural: true),
-              value: deptCount.toString(),
-              icon: LucideIcons.building2,
-              subtitle: 'Active Units',
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Overview',
+          style: AcadexTypography.heading3(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ).copyWith(fontSize: 13.5, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 8),
+        LayoutBuilder(builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final crossAxisCount = width > 900 ? stats.length : (width > 560 ? 3 : 2);
+          final ratio = width > 900 ? 2.4 : (width > 560 ? 2.6 : 2.5);
+
+          return GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: ratio,
             ),
-          AcadexStatCard(
-            title: terminology.label(AcademicConcept.program, plural: true),
-            value: courseCount.toString(),
-            icon: LucideIcons.graduationCap,
-            subtitle: 'Degree Programs',
-          ),
-          AcadexStatCard(
-            title: terminology.label(AcademicConcept.semester, plural: true),
-            value: semCount.toString(),
-            icon: LucideIcons.calendarDays,
-            subtitle: 'Academic Terms',
-          ),
-          if (isSectionEnabled)
-            AcadexStatCard(
-              title: terminology.label(AcademicConcept.section, plural: true),
-              value: sectionCount.toString(),
-              icon: LucideIcons.layoutGrid,
-              subtitle: 'Classrooms / Batches',
-            ),
-          AcadexStatCard(
-            title: terminology.label(AcademicConcept.subject, plural: true),
-            value: subjectCount.toString(),
-            icon: LucideIcons.bookOpen,
-            subtitle: 'Curriculum Items',
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: stats.length,
+            itemBuilder: (context, i) {
+              final s = stats[i];
+              return _buildCompactOverviewTile(
+                context: context,
+                title: s.title,
+                value: s.value,
+                icon: s.icon,
+                isDark: isDark,
+              );
+            },
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildCompactOverviewTile({
+    required BuildContext context,
+    required String title,
+    required String value,
+    required IconData icon,
+    required bool isDark,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: BorderRadius.circular(AcadexRadius.md),
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black.withValues(alpha: 0.15) : const Color(0x0607111F),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
-      );
-    });
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: AcadexColors.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AcadexRadius.sm),
+            ),
+            child: Center(
+              child: Icon(icon, size: 16, color: AcadexColors.primary),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    height: 1.1,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                    height: 1.1,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildDepartmentFilterDropdown(

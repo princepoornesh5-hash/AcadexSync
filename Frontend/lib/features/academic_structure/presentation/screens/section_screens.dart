@@ -15,6 +15,7 @@ import '../../../../features/auth/domain/models/role_enum.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
 import '../../../../core/errors/acadex_error.dart';
 import '../providers/academic_providers.dart';
 import '../providers/department_setup_provider.dart';
@@ -446,8 +447,8 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
                             ],
                           ),
                         ),
-                        DataCell(Text(coursesMap[s.courseId] ?? s.courseId)),
-                        DataCell(Text(semsMap[s.semesterId] ?? s.semesterId)),
+                        DataCell(Text(AcadexEntityFormatters.formatCourseLabel(coursesMap[s.courseId], rawId: s.courseId))),
+                        DataCell(Text(AcadexEntityFormatters.formatSemesterLabel(semsMap[s.semesterId], rawId: s.semesterId))),
                         DataCell(
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
