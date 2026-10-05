@@ -616,4 +616,95 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+
+  group('PROMPT 5.1 — Section 9 HOD Dashboard Hierarchy & 2x2 Metrics Parity', () {
+    testWidgets('M. HOD Dashboard renders complete Section 9 hierarchy with 4 operations and 2x2 Department Overview', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      const defaultHodDashboard = HomeDashboardModel(
+        role: 'HOD',
+        greeting: DashboardGreetingModel(
+          displayName: 'Dr. Bosu',
+          role: 'HOD',
+          greetingText: 'Welcome',
+        ),
+        context: DashboardContextModel(
+          departmentName: 'Department of Computer Science & Engineering',
+          departmentCode: 'CSE',
+          collegeName: 'Apex Institute of Technology',
+        ),
+        summary: DashboardSummaryModel(
+          attendancePercentage: 100.0,
+          activeFacultyCount: 14,
+          activeStudentsCount: 240,
+          systemStatus: 'OPERATIONAL',
+        ),
+        alerts: [],
+        quickActions: [], // Empty defaults to Section 9 4 operations
+        pendingActions: [],
+        upcoming: [],
+        recent: [],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authProvider.overrideWith(
+              (ref) => _FakeAuthNotifier(const AuthAuthenticated(user: testHodUser, token: 'jwt')),
+            ),
+            homeDashboardProvider.overrideWith((ref) async => defaultHodDashboard),
+            facultyAssignmentsProvider.overrideWith(
+              () => _TestFacultyAssignmentsNotifier([]),
+            ),
+          ],
+          child: const MaterialApp(
+            home: HodDashboard(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // 1. DashboardGreetingHeader
+      expect(find.text('Dr. Bosu'), findsOneWidget);
+
+      // 2. AcadexHeroCard
+      expect(find.text('DEPARTMENT HEALTH & OPERATIONS'), findsOneWidget);
+      expect(find.text('DEPT: CSE'), findsOneWidget);
+      expect(find.text('Department Analytics'), findsOneWidget);
+      expect(find.text('Faculty Workload'), findsOneWidget);
+
+      // 3. Quick Operations with Continue Setup and 4 action buttons
+      expect(find.text('Quick Operations'), findsOneWidget);
+      expect(find.text('Continue Setup'), findsOneWidget);
+      expect(find.text('+ Add Course'), findsOneWidget);
+      expect(find.text('+ Add Subject'), findsOneWidget);
+      expect(find.text('+ Add Student'), findsOneWidget);
+      expect(find.text('Assign Faculty'), findsWidgets);
+
+      // 4. Department Overview with 4 distinct metrics in 2x2 grid
+      expect(find.text('Department Overview'), findsOneWidget);
+      expect(find.text('Department Faculty'), findsOneWidget);
+      expect(find.text('Department Students'), findsOneWidget);
+      expect(find.text('Department Subjects'), findsOneWidget);
+      expect(find.text('Department Attendance'), findsOneWidget);
+
+      // 5. Today's Department Timetable
+      expect(find.text("Today's Department Timetable"), findsOneWidget);
+      expect(find.text('View Timetable'), findsOneWidget);
+
+      // 6. Faculty Teaching Allocations with Manage All
+      expect(find.text('Faculty Teaching Allocations'), findsOneWidget);
+      expect(find.text('Manage All'), findsOneWidget);
+
+      // No overflows or exceptions
+      expect(tester.takeException(), isNull);
+    });
+  });
 }
+

@@ -160,7 +160,7 @@ class _AcademicStructureHomeScreenState
             terminology: terminology,
             isSectionEnabled: isSectionEnabled,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 14),
 
           // 3. Search and Department Filter Toolbar
           Row(
@@ -184,7 +184,7 @@ class _AcademicStructureHomeScreenState
               ],
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
           if (isMobile) ...[
             // 4. Mobile Category Selector
@@ -932,7 +932,7 @@ class _AcademicStructureHomeScreenState
         LayoutBuilder(builder: (context, constraints) {
           final width = constraints.maxWidth;
           final crossAxisCount = width > 900 ? stats.length : (width > 560 ? 3 : 2);
-          final ratio = width > 900 ? 2.4 : (width > 560 ? 2.6 : 2.5);
+          final ratio = width > 900 ? 2.4 : (width > 560 ? 2.5 : 2.2);
 
           return GridView.builder(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -951,6 +951,7 @@ class _AcademicStructureHomeScreenState
                 title: s.title,
                 value: s.value,
                 icon: s.icon,
+                subtitle: s.subtitle,
                 isDark: isDark,
               );
             },
@@ -965,6 +966,7 @@ class _AcademicStructureHomeScreenState
     required String title,
     required String value,
     required IconData icon,
+    String? subtitle,
     required bool isDark,
   }) {
     return Container(
@@ -1006,7 +1008,7 @@ class _AcademicStructureHomeScreenState
                   title,
                   style: TextStyle(
                     fontSize: 11,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                     color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                     height: 1.1,
                   ),
@@ -1026,6 +1028,19 @@ class _AcademicStructureHomeScreenState
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (subtitle != null && subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      height: 1.1,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
             ),
           ),

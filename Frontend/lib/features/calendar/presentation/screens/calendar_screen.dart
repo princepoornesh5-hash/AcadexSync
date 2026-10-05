@@ -343,21 +343,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         else if (selectedDayEvents.isEmpty)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
             decoration: BoxDecoration(
               color: isDark ? AcadexColors.darkSurfaceCard : const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(LucideIcons.calendarX, size: 18, color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade400),
+                Icon(LucideIcons.calendarX, size: 16, color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade400),
                 const SizedBox(width: 8),
                 Text(
                   'No events for this day.',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w500,
                     color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade600,
                   ),
@@ -400,19 +400,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           const SizedBox.shrink()
         else if (upcomingEvents.isEmpty)
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
             decoration: BoxDecoration(
               color: isDark ? AcadexColors.darkSurfaceCard : const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
             ),
             child: Row(
               children: [
-                Icon(LucideIcons.calendarCheck, size: 18, color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade400),
-                const SizedBox(width: 10),
+                Icon(LucideIcons.calendarCheck, size: 16, color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade400),
+                const SizedBox(width: 8),
                 Text(
                   'No upcoming events.',
-                  style: TextStyle(fontSize: 13, color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade600),
+                  style: TextStyle(fontSize: 12.5, color: isDark ? AcadexColors.darkInkMuted : Colors.grey.shade600),
                 ),
               ],
             ),
@@ -489,7 +489,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           : null,
       body: AcadexPageContainer(
         scrollable: true,
-        bottomPadding: !isWide ? 84.0 : null,
+        bottomPadding: !isWide ? 16.0 : null,
         onRefresh: () async {
           await ref.read(calendarEventsProvider.notifier).loadEvents(currentMonth, force: true);
         },
@@ -529,9 +529,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   leftCalendarBlock,
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
                   rightEventsBlock,
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 12),
                 ],
               ),
           ],
