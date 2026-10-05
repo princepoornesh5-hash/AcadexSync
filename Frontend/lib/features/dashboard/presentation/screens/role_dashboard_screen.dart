@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/presentation/design_system/acadex_breakpoints.dart';
-import '../../../../core/presentation/design_system/acadex_colors.dart';
-import '../../../../core/presentation/design_system/acadex_spacing.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../app/theme/app_theme.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../reports/presentation/providers/reports_providers.dart';
@@ -42,9 +40,14 @@ class RoleDashboardScreen extends ConsumerWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AcadexPageHeader(
-                title: 'ACADEX Dashboard',
-                subtitle: 'Welcome back, ${currentUser.name}',
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Text(
+                  'ACADEX Dashboard',
+                  style: AcadexTypography.heading2(
+                    color: Theme.of(context).brightness == Brightness.dark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ),
+                ),
               ),
               _buildRoleDashboard(context, ref, currentUser.role, dashboard?.metrics ?? {}),
             ],

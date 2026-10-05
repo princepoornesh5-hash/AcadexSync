@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../app/theme/app_theme.dart';
+import 'acadex_motion.dart';
 
 enum AcadexBadgeVariant {
   neutral,
@@ -152,25 +153,43 @@ class AcadexChip extends StatelessWidget {
     const unselectedFg = AcadexColors.inkSecondary;
     const unselectedBorder = AcadexColors.hairline;
 
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: onSelected,
-      avatar: avatar ?? (icon != null ? Icon(icon, size: 14, color: isSelected ? selectedFg : unselectedFg) : null),
-      backgroundColor: unselectedBg,
-      selectedColor: selectedBg,
-      checkmarkColor: selectedFg,
-      labelStyle: AcadexTypography.caption(
-        color: isSelected ? selectedFg : unselectedFg,
-      ).copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500),
-      shape: RoundedRectangleBorder(
-        borderRadius: AcadexRadius.borderRadiusFull,
-        side: BorderSide(
-          color: isSelected ? selectedBorder : unselectedBorder,
-          width: 1,
+    return AcadexPressable(
+      isInteractive: true,
+      onTap: onSelected != null ? () => onSelected!(!isSelected) : null,
+      borderRadius: AcadexRadius.borderRadiusFull,
+      child: AnimatedContainer(
+        duration: AcadexMotion.normal,
+        curve: AcadexMotion.curveStandard,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? selectedBg : unselectedBg,
+          borderRadius: AcadexRadius.borderRadiusFull,
+          border: Border.all(
+            color: isSelected ? selectedBorder : unselectedBorder,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (avatar != null) ...[
+              avatar!,
+              const SizedBox(width: 6),
+            ] else if (icon != null) ...[
+              Icon(icon, size: 14, color: isSelected ? selectedFg : unselectedFg),
+              const SizedBox(width: 6),
+            ],
+            AnimatedDefaultTextStyle(
+              duration: AcadexMotion.normal,
+              curve: AcadexMotion.curveStandard,
+              style: AcadexTypography.caption(
+                color: isSelected ? selectedFg : unselectedFg,
+              ).copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500),
+              child: Text(label),
+            ),
+          ],
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
     );
   }
 }
@@ -206,28 +225,37 @@ class AcadexFilterBar<T> extends StatelessWidget {
       child: Row(
         children: options.map((option) {
           final isSelected = option.value == selectedValue;
+          final String displayText = option.count != null ? '${option.label} (${option.count})' : option.label;
+          
           return Padding(
             padding: const EdgeInsets.only(right: AcadexSpacing.space8),
-            child: ChoiceChip(
-              label: Text(
-                option.count != null ? '${option.label} (${option.count})' : option.label,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? Colors.white : AcadexColors.inkSecondary,
+            child: AcadexPressable(
+              isInteractive: true,
+              onTap: () => onSelected(option.value),
+              borderRadius: AcadexRadius.borderRadiusSm,
+              child: AnimatedContainer(
+                duration: AcadexMotion.normal,
+                curve: AcadexMotion.curveStandard,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? AcadexColors.primary : AcadexColors.surface,
+                  borderRadius: AcadexRadius.borderRadiusSm,
+                  border: Border.all(
+                    color: isSelected ? AcadexColors.primary : AcadexColors.hairline,
+                    width: 1,
+                  ),
+                ),
+                child: AnimatedDefaultTextStyle(
+                  duration: AcadexMotion.normal,
+                  curve: AcadexMotion.curveStandard,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected ? Colors.white : AcadexColors.inkSecondary,
+                  ),
+                  child: Text(displayText),
                 ),
               ),
-              selected: isSelected,
-              selectedColor: AcadexColors.primary,
-              backgroundColor: AcadexColors.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: AcadexRadius.borderRadiusSm,
-                side: BorderSide(
-                  color: isSelected ? AcadexColors.primary : AcadexColors.hairline,
-                ),
-              ),
-              onSelected: (_) => onSelected(option.value),
-              showCheckmark: false,
             ),
           );
         }).toList(),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../app/theme/app_theme.dart';
+import 'acadex_motion.dart';
 
 class AcadexCard extends StatelessWidget {
   final Widget child;
@@ -49,12 +50,23 @@ class AcadexCard extends StatelessWidget {
     );
 
     if (onTap != null) {
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: radius,
-          child: content,
+      return AcadexPressable(
+        isInteractive: true,
+        borderRadius: radius,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: radius,
+            // Subtle overlay color for interaction
+            highlightColor: isDark 
+                ? Colors.white.withOpacity(0.05) 
+                : Colors.black.withOpacity(0.03),
+            splashColor: isDark 
+                ? Colors.white.withOpacity(0.08) 
+                : AcadexColors.primary.withOpacity(0.05),
+            child: content,
+          ),
         ),
       );
     }

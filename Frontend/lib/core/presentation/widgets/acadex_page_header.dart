@@ -137,9 +137,9 @@ class AcadexPageHeader extends StatelessWidget {
                         children: [
                           Text(
                             title,
-                            style: AcadexTypography.heading1(
+                            style: AcadexTypography.heading2(
                               color: standardTitleColor,
-                            ),
+                            ).copyWith(fontSize: 20, fontWeight: FontWeight.w700),
                           ),
                           if (subtitle != null) ...[
                             const SizedBox(height: 3),
@@ -173,8 +173,8 @@ class AcadexPageHeader extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.only(
-        top: isMobile ? AcadexSpacing.space2 : AcadexSpacing.space12,
-        bottom: isMobile ? AcadexSpacing.space12 : AcadexSpacing.space20,
+        top: isMobile ? AcadexSpacing.space2 : AcadexSpacing.space4,
+        bottom: isMobile ? AcadexSpacing.space12 : AcadexSpacing.space12,
       ),
       child: headerContent,
     );

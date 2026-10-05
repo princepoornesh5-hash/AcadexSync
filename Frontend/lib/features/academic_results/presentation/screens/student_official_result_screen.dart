@@ -9,7 +9,6 @@ import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
-import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../domain/models/academic_result_models.dart';
 import '../providers/academic_result_providers.dart';
 
@@ -53,11 +52,15 @@ class StudentOfficialResultScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AcadexPageHeader(
-              title: 'Official Academic Results',
-              subtitle: 'Institutional academic record certified and published by the administration.',
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Text(
+                'Institutional academic record certified and published by the administration.',
+                style: AcadexTypography.bodySmall(
+                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                ),
+              ),
             ),
-            const SizedBox(height: 20),
 
             resultAsync.when(
               loading: () => const AcadexLoadingState(message: 'Loading your official academic result...'),
@@ -71,7 +74,7 @@ class StudentOfficialResultScreen extends ConsumerWidget {
               data: (result) {
                 if (result == null) {
                   return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 48),
+                    padding: EdgeInsets.only(top: 8, bottom: 24),
                     child: Center(
                       child: AcadexEmptyState(
                         title: 'Result Not Officially Published Yet',

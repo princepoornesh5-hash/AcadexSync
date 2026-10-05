@@ -13,6 +13,7 @@ import '../widgets/notification_card.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_motion.dart';
 
 class NotificationCenterScreen extends ConsumerWidget {
   const NotificationCenterScreen({super.key});
@@ -77,22 +78,25 @@ class NotificationCenterScreen extends ConsumerWidget {
                   ),
                 );
               } else if (item is _GroupItem) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  child: ClipRRect(
-                    borderRadius: AcadexRadius.borderRadiusMd,
-                    child: NotificationCard(
-                      notification: item.notification,
-                      onReadToggle: () {
-                        if (item.notification.isRead) {
-                          ref.read(notificationsProvider.notifier).markAsUnread(item.notification.id);
-                        } else {
-                          ref.read(notificationsProvider.notifier).markAsRead(item.notification.id);
-                        }
-                      },
-                      onDelete: () {
-                        ref.read(notificationsProvider.notifier).deleteNotification(item.notification.id);
-                      },
+                return AcadexFadeSlide(
+                  delay: Duration(milliseconds: (index * 25).clamp(0, 400)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    child: ClipRRect(
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                      child: NotificationCard(
+                        notification: item.notification,
+                        onReadToggle: () {
+                          if (item.notification.isRead) {
+                            ref.read(notificationsProvider.notifier).markAsUnread(item.notification.id);
+                          } else {
+                            ref.read(notificationsProvider.notifier).markAsRead(item.notification.id);
+                          }
+                        },
+                        onDelete: () {
+                          ref.read(notificationsProvider.notifier).deleteNotification(item.notification.id);
+                        },
+                      ),
                     ),
                   ),
                 );

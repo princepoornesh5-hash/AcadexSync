@@ -43,26 +43,28 @@ class StudentDashboard extends ConsumerWidget {
                 contextModel: dashboard.context,
               ),
 
-              // 3. Important Alerts
-              DashboardAlertsSection(alerts: dashboard.alerts),
-
-              // 4. Pending Actions Requiring Attention
-              DashboardPendingActionsSection(
-                pendingActions: dashboard.pendingActions,
-              ),
-
-              // 5. Today / Upcoming Schedule (Unified Calendar aggregation)
-              DashboardUpcomingSection(upcoming: dashboard.upcoming),
-
-              // 6. Quick Shortcuts Grid
+              // 3. Quick Shortcuts Grid (Immediate 8px gap below hero, matching HOD standard)
+              const SizedBox(height: 8),
               DashboardQuickActionsGrid(
                 quickActions: dashboard.quickActions,
               ),
 
-              // 7. Academic Summary Metrics
+              // 4. Important Alerts & Pending Actions
+              if (dashboard.alerts.isNotEmpty)
+                DashboardAlertsSection(alerts: dashboard.alerts),
+
+              if (dashboard.pendingActions.isNotEmpty)
+                DashboardPendingActionsSection(
+                  pendingActions: dashboard.pendingActions,
+                ),
+
+              // 5. Academic Summary Metrics
               _buildStudentAcademicSummary(context, dashboard.summary),
 
-              // 8. Recent Activity Feed
+              // 6. Today / Upcoming Schedule (Unified Calendar aggregation)
+              DashboardUpcomingSection(upcoming: dashboard.upcoming),
+
+              // 7. Recent Activity Feed
               DashboardRecentActivitySection(recent: dashboard.recent),
 
               const SizedBox(height: 16),
@@ -103,14 +105,21 @@ class StudentDashboard extends ConsumerWidget {
         const SizedBox(height: 10),
         LayoutBuilder(
           builder: (context, constraints) {
-            final isNarrow = constraints.maxWidth < 380;
+            final w = constraints.maxWidth;
+            final isDesktop = w >= 768;
+            final isNarrow = w < 380;
+            final crossAxisCount = isDesktop ? 4 : 2;
+            final childAspectRatio = isDesktop
+                ? (w >= 1100 ? 2.8 : 2.4)
+                : (isNarrow ? 1.7 : 1.85);
+
             return GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: isNarrow ? 2 : 2,
+              crossAxisCount: crossAxisCount,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
-              childAspectRatio: isNarrow ? 2.0 : 2.2,
+              childAspectRatio: childAspectRatio,
               children: [
                 _buildSummaryTile(
                   context,
@@ -167,7 +176,7 @@ class StudentDashboard extends ConsumerWidget {
   }) {
     return AcadexCard(
       isFlat: true,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -175,23 +184,23 @@ class StudentDashboard extends ConsumerWidget {
           Row(
             children: [
               Container(
-                width: 22,
-                height: 22,
+                width: 24,
+                height: 24,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Center(
-                  child: Icon(icon, size: 12, color: color),
+                  child: Icon(icon, size: 13, color: color),
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
                   style: AcadexTypography.caption(
                     color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                  ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
+                  ).copyWith(fontSize: 11.5, fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -205,14 +214,14 @@ class StudentDashboard extends ConsumerWidget {
               value,
               style: AcadexTypography.heading2(
                 color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-              ).copyWith(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+              ).copyWith(fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: -0.3),
             ),
           ),
           Text(
             subtitle,
             style: AcadexTypography.caption(
               color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-            ).copyWith(fontSize: 10),
+            ).copyWith(fontSize: 10.5),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

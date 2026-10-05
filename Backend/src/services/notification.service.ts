@@ -445,6 +445,27 @@ export class NotificationService {
       input.entityId ?? input.relatedEntityId
     );
 
+    // Guard against invalid ObjectId inputs
+    if (!mongoose.Types.ObjectId.isValid(input.recipientUserId) || !mongoose.Types.ObjectId.isValid(input.collegeId)) {
+      logger.warn(`createNotification aborted: invalid recipientUserId (${input.recipientUserId}) or collegeId (${input.collegeId})`);
+      return {
+        _id: new mongoose.Types.ObjectId(),
+        id: 'invalid_id',
+        collegeId: mongoose.Types.ObjectId.isValid(input.collegeId) ? new mongoose.Types.ObjectId(input.collegeId) : new mongoose.Types.ObjectId(),
+        recipientUserId: mongoose.Types.ObjectId.isValid(input.recipientUserId) ? new mongoose.Types.ObjectId(input.recipientUserId) : new mongoose.Types.ObjectId(),
+        title: input.title,
+        body: input.body,
+        notificationType: input.notificationType,
+        category,
+        priority,
+        status: NotificationStatus.UNREAD,
+        isRead: false,
+        deepLink: safeDeepLink,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+    }
+
     // Check user in-app preference before persisting optional notifications
     const deliverInApp = await this.shouldDeliverInApp(
       input.recipientUserId,

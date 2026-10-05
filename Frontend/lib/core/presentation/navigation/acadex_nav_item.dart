@@ -157,7 +157,7 @@ class AcadexNavigationService {
       icon: LucideIcons.calendar,
       route: '/calendar',
       group: AcadexNavGroup.academics,
-      allowedRoles: AppRole.values,
+      allowedRoles: const [AppRole.collegeAdmin, AppRole.hod, AppRole.faculty, AppRole.student],
       isPrimary: false,
       matchingPrefixes: const ['/calendar'],
     ),

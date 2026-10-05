@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
+import '../../../../core/presentation/widgets/acadex_motion.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -52,15 +53,17 @@ class _RequestCenterScreenState extends ConsumerState<RequestCenterScreen>
 
     final filter = ref.watch(requestsFilterProvider);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AcadexColors.darkCanvas : Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AcadexColors.darkCanvas : Colors.white,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         title: Text(
           'Request Center',
-          style: AcadexTypography.heading2(color: AcadexColors.ink),
+          style: AcadexTypography.heading2(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
         ),
         actions: [
           Padding(
@@ -79,7 +82,7 @@ class _RequestCenterScreenState extends ConsumerState<RequestCenterScreen>
                 indicatorColor: AcadexColors.primary,
                 indicatorWeight: 3,
                 labelColor: AcadexColors.primary,
-                unselectedLabelColor: AcadexColors.inkMuted,
+                unselectedLabelColor: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                 labelStyle: AcadexTypography.bodySmall().copyWith(fontWeight: FontWeight.w700),
                 tabs: const [
                   Tab(text: 'My Requests'),
@@ -93,10 +96,10 @@ class _RequestCenterScreenState extends ConsumerState<RequestCenterScreen>
           // Filter & Search Header
           Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: isDark ? AcadexColors.darkSurface : Colors.white,
               border: Border(
-                bottom: BorderSide(color: AcadexColors.hairline, width: 1),
+                bottom: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline, width: 1),
               ),
             ),
             child: Column(
@@ -104,35 +107,36 @@ class _RequestCenterScreenState extends ConsumerState<RequestCenterScreen>
                 // Search bar
                 TextField(
                   controller: _searchController,
+                  style: TextStyle(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
                   onChanged: (val) {
                     ref.read(requestsFilterProvider.notifier).state =
                         filter.copyWith(searchQuery: val);
                   },
                   decoration: InputDecoration(
                     hintText: 'Search requests by title or reason...',
-                    hintStyle: AcadexTypography.bodySmall(color: AcadexColors.inkMuted),
-                    prefixIcon: const Icon(LucideIcons.search, size: 18, color: AcadexColors.inkMuted),
+                    hintStyle: AcadexTypography.bodySmall(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                    prefixIcon: Icon(LucideIcons.search, size: 18, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
                             icon: const Icon(LucideIcons.x, size: 16),
                             onPressed: () {
                               _searchController.clear();
                               ref.read(requestsFilterProvider.notifier).state =
-                                  filter.copyWith(searchQuery: '');
+                                   filter.copyWith(searchQuery: '');
                             },
                           )
                         : null,
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     filled: true,
-                    fillColor: AcadexColors.canvasSoft,
+                    fillColor: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AcadexColors.hairline),
+                      borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AcadexColors.hairline),
+                      borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -388,10 +392,13 @@ class _RequestsListView extends ConsumerWidget {
             itemCount: requests.length,
             itemBuilder: (context, index) {
               final req = requests[index];
-              return RequestCard(
-                request: req,
-                isIncoming: isIncoming,
-                onTap: () => context.push('/requests/${req.id}'),
+              return AcadexFadeSlide(
+                delay: Duration(milliseconds: (index * 30).clamp(0, 400)),
+                child: RequestCard(
+                  request: req,
+                  isIncoming: isIncoming,
+                  onTap: () => context.push('/requests/${req.id}'),
+                ),
               );
             },
           ),

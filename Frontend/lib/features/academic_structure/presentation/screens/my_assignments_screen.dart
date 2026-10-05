@@ -60,7 +60,6 @@ class MyAssignmentsScreen extends ConsumerWidget {
                 title: "My Teaching Assignments",
                 subtitle: "Active courses, subjects, and sections allocated for your instruction.",
               ),
-              const SizedBox(height: 12),
 
               // Operational Snapshot Bar (Phase 6)
               if (myAssignments.isNotEmpty) ...[
@@ -92,12 +91,12 @@ class MyAssignmentsScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
               ],
 
               if (myAssignments.isEmpty)
                 const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 48),
+                  padding: EdgeInsets.only(top: 8, bottom: 24),
                   child: Center(
                     child: AcadexEmptyState(
                       title: "No Active Teaching Assignments",

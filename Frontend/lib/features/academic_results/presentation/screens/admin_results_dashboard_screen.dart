@@ -8,7 +8,6 @@ import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
-import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../domain/models/academic_result_models.dart';
 import '../providers/academic_result_providers.dart';
 
@@ -53,11 +52,15 @@ class AdminResultsDashboardScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AcadexPageHeader(
-              title: 'Academic Results & Official Finalization',
-              subtitle: 'Calculate, review, finalize and publish semester results under institutional governance.',
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Text(
+                'Calculate, review, finalize and publish semester results under institutional governance.',
+                style: AcadexTypography.bodySmall(
+                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                ),
+              ),
             ),
-            const SizedBox(height: 16),
 
             // Status Filter Chips
             _StatusFilterChips(
@@ -83,7 +86,7 @@ class AdminResultsDashboardScreen extends ConsumerWidget {
 
                 if (results.isEmpty) {
                   return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 48),
+                    padding: EdgeInsets.only(top: 8, bottom: 24),
                     child: Center(
                       child: AcadexEmptyState(
                         title: 'No Academic Results Found',

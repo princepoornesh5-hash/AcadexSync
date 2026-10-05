@@ -11,6 +11,7 @@ class AcadexPressable extends StatefulWidget {
   final BorderRadius? borderRadius;
   final bool enableHaptic;
   final double pressedScale;
+  final bool isInteractive;
 
   const AcadexPressable({
     super.key,
@@ -20,6 +21,7 @@ class AcadexPressable extends StatefulWidget {
     this.borderRadius,
     this.enableHaptic = true,
     this.pressedScale = 0.985,
+    this.isInteractive = false,
   });
 
   @override
@@ -49,25 +51,26 @@ class _AcadexPressableState extends State<AcadexPressable> with SingleTickerProv
     super.dispose();
   }
 
-  void _handleTapDown(TapDownDetails details) {
-    if (widget.onTap == null) return;
+  void _handlePointerDown(PointerDownEvent event) {
+    if (widget.onTap == null && widget.onLongPress == null && !widget.isInteractive) return;
     if (widget.enableHaptic) {
       HapticFeedback.lightImpact();
     }
     _controller.forward();
   }
 
-  void _handleTapUp(TapUpDetails details) {
+  void _handlePointerUp(PointerUpEvent event) {
     _controller.reverse();
   }
 
-  void _handleTapCancel() {
+  void _handlePointerCancel(PointerCancelEvent event) {
     _controller.reverse();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (AcadexMotion.isReducedMotion(context) || widget.onTap == null) {
+    final bool interactive = widget.onTap != null || widget.onLongPress != null || widget.isInteractive;
+    if (AcadexMotion.isReducedMotion(context) || !interactive) {
       return InkWell(
         onTap: widget.onTap,
         onLongPress: widget.onLongPress,
@@ -76,20 +79,23 @@ class _AcadexPressableState extends State<AcadexPressable> with SingleTickerProv
       );
     }
 
-    return GestureDetector(
-      onTapDown: _handleTapDown,
-      onTapUp: _handleTapUp,
-      onTapCancel: _handleTapCancel,
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
+    return Listener(
+      onPointerDown: _handlePointerDown,
+      onPointerUp: _handlePointerUp,
+      onPointerCancel: _handlePointerCancel,
       behavior: HitTestBehavior.opaque,
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) => Transform.scale(
-          scale: _scaleAnimation.value,
-          child: child,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedBuilder(
+          animation: _scaleAnimation,
+          builder: (context, child) => Transform.scale(
+            scale: _scaleAnimation.value,
+            child: child,
+          ),
+          child: widget.child,
         ),
-        child: widget.child,
       ),
     );
   }
@@ -198,6 +204,43 @@ class AcadexAnimatedCollapse extends StatelessWidget {
       duration: effectiveDuration,
       firstCurve: AcadexMotion.curveStandard,
       secondCurve: AcadexMotion.curveDecelerate,
+    );
+  }
+}
+
+/// Smooth fading transition for replacing content (e.g. Loading -> Content -> Error).
+class AcadexAnimatedSwitcher extends StatelessWidget {
+  final Widget child;
+  final Duration duration;
+  final Curve curve;
+
+  const AcadexAnimatedSwitcher({
+    super.key,
+    required this.child,
+    this.duration = AcadexMotion.normal,
+    this.curve = AcadexMotion.curveStandard,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (AcadexMotion.isReducedMotion(context)) {
+      return child;
+    }
+
+    return AnimatedSwitcher(
+      duration: AcadexMotion.resolveDuration(context, duration),
+      switchInCurve: curve,
+      switchOutCurve: curve.flipped,
+      child: child,
+      layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+        return Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            ...previousChildren,
+            if (currentChild != null) currentChild,
+          ],
+        );
+      },
     );
   }
 }

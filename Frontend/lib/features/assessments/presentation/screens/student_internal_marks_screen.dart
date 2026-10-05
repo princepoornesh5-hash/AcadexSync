@@ -6,7 +6,6 @@ import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
-import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../providers/assessment_providers.dart';
 
 class StudentInternalMarksScreen extends ConsumerWidget {
@@ -47,11 +46,15 @@ class StudentInternalMarksScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AcadexPageHeader(
-              title: 'Academic Assessment Scores',
-              subtitle: 'Published internal assessment breakdown across your enrolled subjects.',
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Text(
+                'Published internal assessment breakdown across your enrolled subjects.',
+                style: AcadexTypography.bodySmall(
+                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                ),
+              ),
             ),
-            const SizedBox(height: 20),
 
             marksAsync.when(
               loading: () => const AcadexLoadingState(message: 'Loading your internal assessment marks...'),
@@ -65,7 +68,7 @@ class StudentInternalMarksScreen extends ConsumerWidget {
               data: (items) {
                 if (items.isEmpty) {
                   return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 48),
+                    padding: EdgeInsets.only(top: 8, bottom: 24),
                     child: Center(
                       child: AcadexEmptyState(
                         title: 'No Marks Published Yet',

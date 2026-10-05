@@ -16,6 +16,8 @@ import { Assignment } from '../models/assignment.model';
 import { InternalAssessment } from '../models/internalAssessment.model';
 import { PracticalSession } from '../models/practicalSession.model';
 import { StudentEnrollment } from '../models/studentEnrollment.model';
+import { Student } from '../models/student.model';
+import { Course } from '../models/course.model';
 import { requestEvents } from '../events/request.events';
 import { AuthenticatedUser } from '../types/auth.types';
 
@@ -83,6 +85,67 @@ export class RequestService {
     }
 
     let departmentId = user.departmentId || null;
+
+    // Resolve Student Academic Context & Department if not directly present on user
+    if (user.role === AppRole.STUDENT && (!departmentId || !mongoose.Types.ObjectId.isValid(departmentId))) {
+      // 1. Try resolving via input.academicContext.courseId
+      if (input.academicContext?.courseId && mongoose.Types.ObjectId.isValid(input.academicContext.courseId)) {
+        const course = await Course.findById(input.academicContext.courseId);
+        if (course && course.departmentId) {
+          departmentId = course.departmentId.toString();
+        }
+      }
+
+      // 2. Try resolving via Student profile & StudentEnrollment
+      if (!departmentId || !mongoose.Types.ObjectId.isValid(departmentId)) {
+        const student = await Student.findOne({
+          userId: user.id,
+          collegeId: new mongoose.Types.ObjectId(collegeId),
+        });
+
+        if (student) {
+          if (student.departmentId && mongoose.Types.ObjectId.isValid(student.departmentId.toString())) {
+            departmentId = student.departmentId.toString();
+          }
+
+          const enrollment = await StudentEnrollment.findOne({
+            studentId: student._id,
+            collegeId: new mongoose.Types.ObjectId(collegeId),
+            status: { $in: ['active', 'ACTIVE', 'enrolled', 'ENROLLED'] },
+          }).sort({ createdAt: -1 });
+
+          if (enrollment) {
+            if (!departmentId && enrollment.courseId && mongoose.Types.ObjectId.isValid(enrollment.courseId.toString())) {
+              const course = await Course.findById(enrollment.courseId);
+              if (course && course.departmentId) {
+                departmentId = course.departmentId.toString();
+              }
+            }
+
+            // Populate academic context defaults if absent
+            if (!input.academicContext) {
+              input.academicContext = {
+                courseId: enrollment.courseId?.toString(),
+                academicYearId: enrollment.academicYearId?.toString(),
+                semesterId: enrollment.semesterId?.toString(),
+                sectionId: enrollment.sectionId?.toString(),
+              };
+            }
+          }
+        }
+      }
+    }
+
+    // Resolve Faculty Department if not present on user
+    if (user.role === AppRole.FACULTY && (!departmentId || !mongoose.Types.ObjectId.isValid(departmentId))) {
+      const faculty = await Faculty.findOne({
+        userId: user.id,
+        collegeId: new mongoose.Types.ObjectId(collegeId),
+      });
+      if (faculty && faculty.departmentId && mongoose.Types.ObjectId.isValid(faculty.departmentId.toString())) {
+        departmentId = faculty.departmentId.toString();
+      }
+    }
 
     // Student Flow
     if (user.role === AppRole.STUDENT) {

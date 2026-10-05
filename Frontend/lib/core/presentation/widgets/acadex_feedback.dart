@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_theme.dart';
 import 'acadex_button.dart';
+import 'acadex_character_loading.dart';
 import '../../errors/acadex_error.dart';
 
 class AcadexEmptyState extends ConsumerWidget {
@@ -292,15 +293,53 @@ class AcadexErrorState extends ConsumerWidget {
 class AcadexLoadingState extends StatelessWidget {
   final String? message;
   final double size;
+  final bool useCharacter;
+  final bool isCompact;
 
   const AcadexLoadingState({
     super.key,
     this.message,
     this.size = 28.0,
+    this.useCharacter = true,
+    this.isCompact = false,
   });
+
+  const AcadexLoadingState.inline({
+    super.key,
+    this.message,
+    this.size = 20.0,
+  })  : useCharacter = false,
+        isCompact = true;
+
+  const AcadexLoadingState.spinner({
+    super.key,
+    this.message,
+    this.size = 28.0,
+  })  : useCharacter = false,
+        isCompact = false;
+
+  const AcadexLoadingState.character({
+    super.key,
+    this.message,
+    this.size = 76.0,
+    this.isCompact = false,
+  })  : useCharacter = true;
 
   @override
   Widget build(BuildContext context) {
+    if (useCharacter) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
+          child: AcadexCharacterLoading(
+            size: isCompact ? 56.0 : 76.0,
+            message: message,
+            isCompact: isCompact,
+          ),
+        ),
+      );
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final content = Column(
@@ -312,14 +351,14 @@ class AcadexLoadingState extends StatelessWidget {
           width: size,
           height: size,
           child: CircularProgressIndicator(
-            strokeWidth: 2.2,
+            strokeWidth: isCompact ? 1.8 : 2.2,
             valueColor: AlwaysStoppedAnimation<Color>(
               isDark ? AcadexColors.primaryMuted : AcadexColors.primary,
             ),
           ),
         ),
         if (message != null && message!.isNotEmpty) ...[
-          const SizedBox(height: 12),
+          SizedBox(height: isCompact ? 8 : 12),
           Text(
             message!,
             textAlign: TextAlign.center,

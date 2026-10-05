@@ -5,8 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
-import '../../../../core/presentation/widgets/acadex_page_container.dart';
-import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/widgets/acadex_motion.dart';
+import '../../../../core/presentation/widgets/acadex_sliver_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_sliver_page_header.dart';
 import '../../domain/models/assignment_models.dart';
 import '../providers/assignments_providers.dart';
 
@@ -18,52 +19,52 @@ class StudentAssignmentsScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final assignmentsAsync = ref.watch(studentAssignmentsProvider);
 
-    return AcadexPageContainer(
+    return AcadexSliverPageContainer(
       onRefresh: () async => ref.refresh(studentAssignmentsProvider),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const AcadexPageHeader(
-            title: 'Assignments',
-            subtitle: 'View active coursework, track deadlines, and submit your work.',
-          ),
-          const SizedBox(height: 8),
+      header: const AcadexSliverPageHeader(
+        title: 'Assignments',
+        subtitle: 'View active coursework, track deadlines, and submit your work.',
+      ),
+      slivers: [
+          const SliverToBoxAdapter(child: SizedBox(height: 8)),
           assignmentsAsync.when(
-            loading: () => const AcadexLoadingState(message: 'Loading assignments...'),
-            error: (err, stack) => Center(
-              child: AcadexErrorState.fromError(
-                error: err,
-                title: "Couldn't load assignments.",
-                retryLabel: 'Retry',
-                onRetry: () => ref.refresh(studentAssignmentsProvider),
+            loading: () => const SliverToBoxAdapter(child: AcadexLoadingState(message: 'Loading assignments...')),
+            error: (err, stack) => SliverToBoxAdapter(
+              child: Center(
+                child: AcadexErrorState.fromError(
+                  error: err,
+                  title: "Couldn't load assignments.",
+                  retryLabel: 'Retry',
+                  onRetry: () => ref.refresh(studentAssignmentsProvider),
+                ),
               ),
             ),
             data: (assignments) {
               if (assignments.isEmpty) {
-                return const Center(
-                  child: AcadexEmptyState(
-                    icon: LucideIcons.bookCheck,
-                    title: 'No assignments yet.',
-                    subtitle: 'No published assignments are waiting for you.',
-                    isCompact: true,
+                return const SliverToBoxAdapter(
+                  child: Center(
+                    child: AcadexEmptyState(
+                      icon: LucideIcons.bookCheck,
+                      title: 'No assignments yet.',
+                      subtitle: 'No published assignments are waiting for you.',
+                      isCompact: true,
+                    ),
                   ),
                 );
               }
 
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
-                itemCount: assignments.length,
-                itemBuilder: (context, index) {
-                  final asgn = assignments[index];
-                  return _buildStudentAssignmentCard(context, asgn, isDark);
-                },
+              return SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final asgn = assignments[index];
+                    return _buildStudentAssignmentCard(context, asgn, isDark, index);
+                  },
+                  childCount: assignments.length,
+                ),
               );
             },
           ),
         ],
-      ),
     );
   }
 
@@ -71,6 +72,7 @@ class StudentAssignmentsScreen extends ConsumerWidget {
     BuildContext context,
     AssignmentModel asgn,
     bool isDark,
+    int index,
   ) {
     final status = asgn.studentStatus ?? StudentTaskStatus.pending;
     final isCompleted = status == StudentTaskStatus.completed;
@@ -89,8 +91,10 @@ class StudentAssignmentsScreen extends ConsumerWidget {
       badgeBg = AcadexColors.primaryTint;
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+    return AcadexFadeSlide(
+      delay: Duration(milliseconds: (index * 30).clamp(0, 400)),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusMd,
@@ -207,6 +211,7 @@ class StudentAssignmentsScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

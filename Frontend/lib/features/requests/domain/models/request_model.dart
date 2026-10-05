@@ -471,11 +471,18 @@ class RequestDetailsModel {
     );
   }
 
+  static String? formatCanonicalDate(DateTime? dt) {
+    if (dt == null) return null;
+    // Canonical UTC ISO 8601 timestamp ending in Z.
+    // Preserves calendar date (year, month, day) without timezone drift.
+    return DateTime.utc(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.millisecond).toIso8601String();
+  }
+
   Map<String, dynamic> toJson() {
     return {
-      if (startDate != null) 'startDate': startDate!.toIso8601String(),
-      if (endDate != null) 'endDate': endDate!.toIso8601String(),
-      if (date != null) 'date': date!.toIso8601String(),
+      if (startDate != null) 'startDate': formatCanonicalDate(startDate),
+      if (endDate != null) 'endDate': formatCanonicalDate(endDate),
+      if (date != null) 'date': formatCanonicalDate(date),
       if (resourceName != null) 'resourceName': resourceName,
       if (requestedChange != null) 'requestedChange': requestedChange,
       if (documentType != null) 'documentType': documentType,

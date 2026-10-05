@@ -6,8 +6,9 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
-import '../../../../core/presentation/widgets/acadex_page_container.dart';
-import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/widgets/acadex_motion.dart';
+import '../../../../core/presentation/widgets/acadex_sliver_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_sliver_page_header.dart';
 import '../../domain/models/assignment_models.dart';
 import '../providers/assignments_providers.dart';
 import '../../../institution_config/presentation/providers/institution_config_providers.dart';
@@ -21,63 +22,63 @@ class FacultyAssignmentsListScreen extends ConsumerWidget {
     final assignmentsAsync = ref.watch(facultyCourseAssignmentsProvider);
     final terminology = ref.watch(terminologyProvider);
 
-    return AcadexPageContainer(
+    return AcadexSliverPageContainer(
       onRefresh: () async => ref.refresh(facultyCourseAssignmentsProvider),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AcadexPageHeader(
-            title: 'Assignments',
-            subtitle: 'Create coursework, track student submissions, and record marks.',
-            actions: [
-              AcadexButton(
-                label: '+ Create Assignment',
-                icon: LucideIcons.plus,
-                size: AcadexButtonSize.sm,
-                onPressed: () => context.push('/assignments/create'),
-              ),
-            ],
+      header: AcadexSliverPageHeader(
+        title: 'Assignments',
+        subtitle: 'Create coursework, track student submissions, and record marks.',
+        actions: [
+          AcadexButton(
+            label: '+ Create Assignment',
+            icon: LucideIcons.plus,
+            size: AcadexButtonSize.sm,
+            onPressed: () => context.push('/assignments/create'),
           ),
-          const SizedBox(height: 8),
+        ],
+      ),
+      slivers: [
+          const SliverToBoxAdapter(child: SizedBox(height: 8)),
           assignmentsAsync.when(
-            loading: () => const AcadexLoadingState(message: 'Loading assignments...'),
-            error: (err, stack) => Center(
-              child: AcadexErrorState.fromError(
-                error: err,
-                title: "Couldn't load assignments.",
-                retryLabel: 'Retry',
-                onRetry: () => ref.refresh(facultyCourseAssignmentsProvider),
+            loading: () => const SliverToBoxAdapter(child: AcadexLoadingState(message: 'Loading assignments...')),
+            error: (err, stack) => SliverToBoxAdapter(
+              child: Center(
+                child: AcadexErrorState.fromError(
+                  error: err,
+                  title: "Couldn't load assignments.",
+                  retryLabel: 'Retry',
+                  onRetry: () => ref.refresh(facultyCourseAssignmentsProvider),
+                ),
               ),
             ),
             data: (assignments) {
               if (assignments.isEmpty) {
-                return Center(
-                  child: AcadexEmptyState(
-                    icon: LucideIcons.bookOpen,
-                    title: 'No assignments yet.',
-                    subtitle: 'Create coursework assignments to track student submissions and record marks.',
-                    actionLabel: 'Create Assignment',
-                    actionIcon: LucideIcons.plus,
-                    onActionTap: () => context.push('/assignments/create'),
-                    isCompact: true,
+                return SliverToBoxAdapter(
+                  child: Center(
+                    child: AcadexEmptyState(
+                      icon: LucideIcons.bookOpen,
+                      title: 'No assignments yet.',
+                      subtitle: 'Create coursework assignments to track student submissions and record marks.',
+                      actionLabel: 'Create Assignment',
+                      actionIcon: LucideIcons.plus,
+                      onActionTap: () => context.push('/assignments/create'),
+                      isCompact: true,
+                    ),
                   ),
                 );
               }
 
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
-                itemCount: assignments.length,
-                itemBuilder: (context, index) {
-                  final asgn = assignments[index];
-                  return _buildFacultyAssignmentCard(context, asgn, isDark, terminology);
-                },
+              return SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final asgn = assignments[index];
+                    return _buildFacultyAssignmentCard(context, asgn, isDark, terminology, index);
+                  },
+                  childCount: assignments.length,
+                ),
               );
             },
           ),
         ],
-      ),
     );
   }
 
@@ -86,6 +87,7 @@ class FacultyAssignmentsListScreen extends ConsumerWidget {
     AssignmentModel asgn,
     bool isDark,
     TerminologyHelper terminology,
+    int index,
   ) {
     Color statusColor;
     Color statusBg;
@@ -108,8 +110,10 @@ class FacultyAssignmentsListScreen extends ConsumerWidget {
     final total = asgn.totalStudents ?? 0;
     final completed = asgn.completedCount ?? 0;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+    return AcadexFadeSlide(
+      delay: Duration(milliseconds: (index * 30).clamp(0, 400)),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.darkSurface : AcadexColors.surface,
         borderRadius: AcadexRadius.borderRadiusMd,
@@ -228,6 +232,7 @@ class FacultyAssignmentsListScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/errors/acadex_error.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 import '../../../auth/domain/models/auth_state.dart';
@@ -112,8 +113,18 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
 
   Future<void> _submit({bool asDraft = false}) async {
     final reason = _reasonController.text.trim();
-    if (reason.isEmpty) {
-      AcadexSnackBar.showError(context, 'Please enter a reason or description.');
+    if (reason.length < 3) {
+      AcadexSnackBar.showError(
+        context,
+        'Please enter details or a reason for your request (minimum 3 characters).',
+      );
+      return;
+    }
+
+    if ((_selectedType == RequestType.leave || _selectedType == RequestType.onDuty) &&
+        _isDateRange &&
+        _endDate.isBefore(_startDate)) {
+      AcadexSnackBar.showError(context, 'End date cannot be earlier than start date.');
       return;
     }
 
@@ -182,17 +193,25 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
           );
           context.pop();
         } else {
-          AcadexSnackBar.showError(
-            context,
-            asDraft
-                ? "Couldn't save draft. Please try again."
-                : "Couldn't submit your request. Please try again.",
-          );
+          final actionState = ref.read(requestActionProvider);
+          String errorMsg = asDraft
+              ? "Couldn't save draft. Please try again."
+              : "Couldn't submit your request. Please try again.";
+          if (actionState.hasError) {
+            final err = actionState.error;
+            if (err is AcadexException && err.userMessage.isNotEmpty) {
+              errorMsg = err.userMessage;
+            } else if (err != null) {
+              errorMsg = err.toString();
+            }
+          }
+          AcadexSnackBar.showError(context, errorMsg);
         }
       }
     } catch (e) {
       if (mounted) {
-        AcadexSnackBar.showError(context, e.toString());
+        final errorMsg = e is AcadexException ? e.userMessage : e.toString();
+        AcadexSnackBar.showError(context, errorMsg);
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -320,9 +339,18 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      _isDateRange ? 'Date Range' : 'Date',
-                      style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _isDateRange ? 'Date Range' : 'Date',
+                          style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        const Text(
+                          ' *',
+                          style: TextStyle(color: AcadexColors.error, fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
                     TextButton(
                       onPressed: () {
@@ -371,9 +399,18 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
 
               // 2. Attendance Correction: Date
               if (_selectedType == RequestType.attendanceCorrection) ...[
-                Text(
-                  'Date of Class',
-                  style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Date of Class',
+                      style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const Text(
+                      ' *',
+                      style: TextStyle(color: AcadexColors.error, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 6),
                 _DatePickerTile(
@@ -478,9 +515,18 @@ class _NewRequestScreenState extends ConsumerState<NewRequestScreen> {
               ],
 
               // Reason / Description (Required for all types)
-              Text(
-                _selectedType == RequestType.leave ? 'Reason for Leave' : 'Details & Reason',
-                style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _selectedType == RequestType.leave ? 'Reason for Leave' : 'Details & Reason',
+                    style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const Text(
+                    ' *',
+                    style: TextStyle(color: AcadexColors.error, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
               const SizedBox(height: 6),
               TextField(

@@ -180,17 +180,21 @@ class _NavTab extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeInOut,
                   style: AcadexTypography.caption(
                     color: isActive ? activeColor : inactiveColor,
                   ).copyWith(
                     fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                     fontSize: 10.5,
                     letterSpacing: 0.1,
+                  ),
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ],

@@ -5,6 +5,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_motion.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
+import '../../../../core/presentation/time_board/acadex_live_time_board.dart';
 import '../../domain/models/home_dashboard_models.dart';
 
 // ── 1. GREETING & HEADER (COMPACT & MOBILE-FIRST) ───────────────────────────
@@ -26,71 +27,85 @@ class DashboardGreetingHeader extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Avatar
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
-              border: Border.all(
-                color: AcadexColors.primary.withValues(alpha: 0.25),
-                width: 1.5,
-              ),
-            ),
-            child: ClipOval(
-              child: greeting.avatarUrl != null && greeting.avatarUrl!.isNotEmpty
-                  ? Image.network(
-                      greeting.avatarUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildInitials(),
-                    )
-                  : _buildInitials(),
-            ),
-          ),
-          const SizedBox(width: 12),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 460;
 
-          // User Name & Role & Date
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  greeting.displayName,
-                  style: AcadexTypography.heading2(
-                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                  ).copyWith(fontSize: 16.5, fontWeight: FontWeight.w700, letterSpacing: -0.2),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Avatar
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                  border: Border.all(
+                    color: AcadexColors.primary.withValues(alpha: 0.25),
+                    width: 1.5,
+                  ),
                 ),
-                const SizedBox(height: 3),
-                Row(
+                child: ClipOval(
+                  child: greeting.avatarUrl != null && greeting.avatarUrl!.isNotEmpty
+                      ? Image.network(
+                          greeting.avatarUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _buildInitials(),
+                        )
+                      : _buildInitials(),
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // User Name & Role & Date
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    AcadexBadge(
-                      label: greeting.role.replaceAll('_', ' '),
-                      variant: AcadexBadgeVariant.primary,
+                    Text(
+                      greeting.displayName,
+                      style: AcadexTypography.heading2(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ).copyWith(fontSize: 16.5, fontWeight: FontWeight.w700, letterSpacing: -0.2),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        '•  $dateStr',
-                        style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                        ).copyWith(fontSize: 11),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        AcadexBadge(
+                          label: greeting.role.replaceAll('_', ' '),
+                          variant: AcadexBadgeVariant.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '•  $dateStr',
+                            style: AcadexTypography.caption(
+                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            ).copyWith(fontSize: 11),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-        ],
+              ),
+
+              const SizedBox(width: 8),
+
+              // Live IST HH:MM Time Board + ACADEX Assistant Minute Animation
+              AcadexLiveTimeBoard(
+                userName: greeting.displayName,
+                isCompact: isNarrow,
+              ),
+            ],
+          );
+        },
       ),
     );
   }

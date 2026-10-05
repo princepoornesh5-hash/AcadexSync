@@ -13,7 +13,9 @@ import '../widgets/note_card.dart';
 import '../../domain/models/note_model.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
-import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/widgets/acadex_sliver_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_sliver_page_header.dart';
+import '../../../../core/presentation/widgets/acadex_motion.dart';
 
 class NotesDashboardScreen extends ConsumerWidget {
   const NotesDashboardScreen({super.key});
@@ -28,37 +30,25 @@ class NotesDashboardScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasEnclosingScaffold = Scaffold.maybeOf(context) != null;
 
-    final bodyContent = Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1600),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AcadexPageHeader(
-                title: isFaculty ? 'My Notes' : 'Academic Resources',
-                subtitle: 'Browse, manage, and share subject notes and reference materials.',
-                actions: [
-                  if (isFaculty)
-                    AcadexButton(
-                      label: 'Create Note',
-                      icon: LucideIcons.plus,
-                      variant: AcadexButtonVariant.primary,
-                      onPressed: () => context.go('/notes/new'),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _buildFilters(context, ref, user.role, isDark),
-              const SizedBox(height: 12),
-              Expanded(
-                child: _NotesList(role: user.role),
-              ),
-            ],
-          ),
-        ),
+    final bodyContent = AcadexSliverPageContainer(
+      header: AcadexSliverPageHeader(
+        title: isFaculty ? 'My Notes' : 'Academic Resources',
+        subtitle: 'Browse, manage, and share subject notes and reference materials.',
+        actions: [
+          if (isFaculty)
+            AcadexButton(
+              label: 'Create Note',
+              icon: LucideIcons.plus,
+              variant: AcadexButtonVariant.primary,
+              onPressed: () => context.go('/notes/new'),
+            ),
+        ],
       ),
+      slivers: [
+        SliverToBoxAdapter(child: _buildFilters(context, ref, user.role, isDark)),
+        const SliverToBoxAdapter(child: SizedBox(height: 12)),
+        _NotesList(role: user.role),
+      ],
     );
 
     if (hasEnclosingScaffold) {
@@ -235,15 +225,18 @@ class _NotesList extends ConsumerWidget {
     final subjectMap = ref.watch(notesSubjectMapProvider);
 
     return notesAsync.when(
-      loading: () => const AcadexLoadingState(),
-      error: (e, st) => AcadexErrorState(
-        title: 'Unable to Load Notes',
-        message: e.toString(),
-        onRetry: () => ref.refresh(userNotesProvider),
+      loading: () => const SliverToBoxAdapter(child: AcadexLoadingState()),
+      error: (e, st) => SliverToBoxAdapter(
+        child: AcadexErrorState(
+          title: 'Unable to Load Notes',
+          message: e.toString(),
+          onRetry: () => ref.refresh(userNotesProvider),
+        ),
       ),
       data: (notes) {
         if (notes.isEmpty) {
-          return AcadexEmptyState(
+          return SliverToBoxAdapter(
+            child: AcadexEmptyState(
             title: 'No Notes Found',
             subtitle: role == AppRole.student
                 ? 'Check back later for newly published academic resources.'
@@ -251,44 +244,49 @@ class _NotesList extends ConsumerWidget {
             icon: LucideIcons.fileSearch,
             actionLabel: role == AppRole.faculty ? 'Create Note' : null,
             onActionTap: role == AppRole.faculty ? () => context.go('/notes/new') : null,
-          );
-        }
+          ),
+        );
+      }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: notes.length,
-          itemBuilder: (context, index) {
-            final note = notes[index];
-            final subject = subjectMap[note.subjectId];
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final note = notes[index];
+              final subject = subjectMap[note.subjectId];
+              
+              Widget? trailing;
+              if (role == AppRole.faculty || role == AppRole.hod || role == AppRole.collegeAdmin || role == AppRole.superAdmin) {
+                trailing = Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(LucideIcons.edit, size: 18, color: Theme.of(context).primaryColor),
+                      tooltip: 'Edit Note',
+                      onPressed: () => context.go('/notes/edit/${note.id}', extra: note),
+                    ),
+                    IconButton(
+                      icon: const Icon(LucideIcons.trash2, size: 18, color: AcadexColors.error),
+                      tooltip: 'Delete Note',
+                      onPressed: () => _confirmDelete(context, ref, note.id),
+                    ),
+                  ],
+                );
+              }
 
-            Widget? trailing;
-            if (role == AppRole.faculty || role == AppRole.hod || role == AppRole.collegeAdmin || role == AppRole.superAdmin) {
-              trailing = Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: Icon(LucideIcons.edit, size: 18, color: Theme.of(context).primaryColor),
-                    tooltip: 'Edit Note',
-                    onPressed: () => context.go('/notes/edit/${note.id}', extra: note),
-                  ),
-                  IconButton(
-                    icon: const Icon(LucideIcons.trash2, size: 18, color: AcadexColors.error),
-                    tooltip: 'Delete Note',
-                    onPressed: () => _confirmDelete(context, ref, note.id),
-                  ),
-                ],
+              return AcadexFadeSlide(
+                delay: Duration(milliseconds: (index * 25).clamp(0, 400)),
+                child: NoteCard(
+                  note: note,
+                  subject: subject,
+                  trailing: trailing,
+                  onTap: () {
+                    context.go('/notes/${note.id}', extra: note);
+                  },
+                ),
               );
-            }
-
-            return NoteCard(
-              note: note,
-              subject: subject,
-              trailing: trailing,
-              onTap: () {
-                context.go('/notes/${note.id}', extra: note);
-              },
-            );
-          },
+            },
+            childCount: notes.length,
+          ),
         );
       },
     );

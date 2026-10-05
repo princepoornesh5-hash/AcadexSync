@@ -44,7 +44,20 @@ class AcadexException implements Exception {
     String rawBackendMessage = '';
     if (responseData is Map<String, dynamic>) {
       if (responseData['error'] is Map<String, dynamic>) {
-        rawBackendMessage = responseData['error']['message']?.toString() ?? '';
+        final errMap = responseData['error'] as Map<String, dynamic>;
+        final details = errMap['details'];
+        if (details is List && details.isNotEmpty) {
+          final msgs = details
+              .map((d) => d is Map ? (d['message'] ?? d['field'] ?? '').toString() : d.toString())
+              .where((m) => m.isNotEmpty)
+              .toList();
+          if (msgs.isNotEmpty) {
+            rawBackendMessage = msgs.join(', ');
+          }
+        }
+        if (rawBackendMessage.isEmpty) {
+          rawBackendMessage = errMap['message']?.toString() ?? '';
+        }
       } else if (responseData['message'] != null) {
         rawBackendMessage = responseData['message'].toString();
       }

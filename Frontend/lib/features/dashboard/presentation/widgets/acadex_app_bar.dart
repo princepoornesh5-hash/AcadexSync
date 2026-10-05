@@ -21,6 +21,8 @@ class AcadexAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget
   final bool showBackButton;
   final VoidCallback? onBack;
 
+  final bool showTitle;
+
   const AcadexAppBar({
     super.key,
     this.title = 'Acadex',
@@ -29,6 +31,7 @@ class AcadexAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget
     this.showDrawerButton = true,
     this.showBackButton = false,
     this.onBack,
+    this.showTitle = true,
   });
 
   @override
@@ -75,39 +78,36 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
     final headerMutedColor = isDark ? AcadexColors.darkInkMuted : const Color(0xFF64748B);
     final headerIconColor = isDark ? AcadexColors.darkInk : const Color(0xFF07111F);
 
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          height: toolbarHeight + topPadding,
-          padding: EdgeInsets.only(
-            top: topPadding,
-            left: isMobile ? 8 : 16,
-            right: isMobile ? 8 : 16,
+    final topBarContent = Container(
+      height: toolbarHeight + topPadding,
+      padding: EdgeInsets.only(
+        top: topPadding,
+        left: isMobile ? 8 : 16,
+        right: isMobile ? 8 : 16,
+      ),
+      decoration: BoxDecoration(
+        color: isDark
+            ? (isDesktop ? const Color(0xFF0F172A) : const Color(0xFF0F172A).withValues(alpha: 0.82))
+            : (isDesktop ? const Color(0xFFFFFFFF) : const Color(0xFFFFFFFF).withValues(alpha: 0.82)),
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+            width: 1,
           ),
-          decoration: BoxDecoration(
-            color: isDark
-                ? const Color(0xFF0F172A).withValues(alpha: 0.72)
-                : const Color(0xFFFFFFFF).withValues(alpha: 0.72),
-            border: Border(
-              bottom: BorderSide(
-                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0).withValues(alpha: 0.85),
-                width: 1,
-              ),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.03),
-                blurRadius: 12,
-                offset: const Offset(0, 2),
-              ),
-            ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 1),
           ),
-          child: SizedBox(
-            height: toolbarHeight,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
+        ],
+      ),
+      child: SizedBox(
+        height: toolbarHeight,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
                 // Persistent Desktop Sidebar Toggle Button near top-left
                 if (isDesktop) ...[
                   IconButton(
@@ -168,90 +168,95 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
                   const SizedBox(width: 4),
                 ],
 
-            // Contextual Page Title & Subtitle
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.title,
-                    style: AcadexTypography.heading2(color: headerTextColor).copyWith(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.3,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (widget.subtitle != null && widget.subtitle!.isNotEmpty) ...[
-                    const SizedBox(height: 1),
+            // Contextual Page Title & Subtitle (only when enabled to prevent duplicate title)
+            if (widget.showTitle)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Text(
-                      widget.subtitle!,
-                      style: AcadexTypography.caption(color: headerMutedColor),
+                      widget.title,
+                      style: AcadexTypography.heading2(color: headerTextColor).copyWith(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.3,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (widget.subtitle != null && widget.subtitle!.isNotEmpty) ...[
+                      const SizedBox(height: 1),
+                      Text(
+                        widget.subtitle!,
+                        style: AcadexTypography.caption(color: headerMutedColor),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
-                ],
-              ),
-            ),
+                ),
+              )
+            else
+              const Spacer(),
 
             // Center: Search Bar (Desktop / Tablet)
             if (!isMobile) ...[
               const SizedBox(width: 16),
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  minWidth: 180,
-                  maxWidth: isDesktop ? 340 : 220,
-                  maxHeight: 38,
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  textInputAction: TextInputAction.search,
-                  onSubmitted: _handleSearch,
-                  style: TextStyle(
-                    color: headerTextColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: 120,
+                    maxWidth: isDesktop ? 320 : 180,
+                    maxHeight: 38,
                   ),
-                  decoration: InputDecoration(
-                    hintText: 'Search...',
-                    hintStyle: TextStyle(
-                      color: headerMutedColor,
+                  child: TextField(
+                    controller: _searchController,
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: _handleSearch,
+                    style: TextStyle(
+                      color: headerTextColor,
                       fontSize: 13,
-                      fontWeight: FontWeight.w400,
+                      fontWeight: FontWeight.w500,
                     ),
-                    filled: true,
-                    fillColor: isDark
-                        ? const Color(0xFF1E293B).withValues(alpha: 0.6)
-                        : const Color(0xFFF1F5F9).withValues(alpha: 0.85),
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    prefixIcon: Icon(
-                      LucideIcons.search,
-                      size: 16,
-                      color: headerMutedColor,
-                    ),
-                    prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                        width: 1,
+                    decoration: InputDecoration(
+                      hintText: 'Search...',
+                      hintStyle: TextStyle(
+                        color: headerMutedColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
                       ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                        width: 1,
+                      filled: true,
+                      fillColor: isDark
+                          ? const Color(0xFF1E293B).withValues(alpha: 0.6)
+                          : const Color(0xFFF1F5F9).withValues(alpha: 0.85),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      prefixIcon: Icon(
+                        LucideIcons.search,
+                        size: 16,
+                        color: headerMutedColor,
                       ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                      prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AcadexColors.primary, width: 1.5),
+                      ),
                     ),
                   ),
                 ),
@@ -413,40 +418,43 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
                             isOnline: true,
                           ),
                           const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                user?.name ?? 'User',
-                                style: const TextStyle(
-                                  color: Color(0xFF07111F),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.2,
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 130),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  user?.name ?? 'User',
+                                  style: TextStyle(
+                                    color: headerTextColor,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.2,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                user?.role.displayName ?? '',
-                                style: const TextStyle(
-                                  color: Color(0xFF64748B),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w400,
-                                  height: 1.2,
+                                Text(
+                                  user?.role.displayName ?? '',
+                                  style: TextStyle(
+                                    color: headerMutedColor,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w400,
+                                    height: 1.2,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                           const SizedBox(width: 6),
-                          const Icon(
+                          Icon(
                             LucideIcons.chevronDown,
                             size: 14,
-                            color: Color(0xFF64748B),
+                            color: headerMutedColor,
                           ),
                         ],
                       ),
@@ -467,8 +475,17 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
           ],
         ),
       ),
-    ),
-  ),
-);
+    );
+
+    if (isDesktop) {
+      return topBarContent;
+    }
+
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: topBarContent,
+      ),
+    );
   }
 }

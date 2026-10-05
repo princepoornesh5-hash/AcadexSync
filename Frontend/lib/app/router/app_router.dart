@@ -20,6 +20,7 @@ import '../../features/dashboard/presentation/screens/hod_dashboard.dart';
 import '../../features/dashboard/presentation/screens/faculty_dashboard.dart';
 import '../../features/dashboard/presentation/screens/student_dashboard.dart';
 import '../../features/dashboard/presentation/screens/coming_soon_screen.dart';
+import '../../core/presentation/assistant/acadex_assistant_showcase_screen.dart';
 
 import '../../features/academic_structure/presentation/screens/college_screens.dart';
 import '../../features/academic_structure/presentation/screens/college_detail_screen.dart';
@@ -208,6 +209,9 @@ String _getRouteTitle(String route, [TerminologyHelper? terminology]) {
   if (route == '/profile/edit') return 'Edit Profile';
   if (route.startsWith('/profile')) return 'My Profile';
   if (route.startsWith('/settings')) return 'Settings';
+  if (route.startsWith('/requests')) return 'Request Center';
+  if (route.startsWith('/certificates')) return 'Certificates';
+  if (route.startsWith('/achievements')) return 'Achievements';
   if (route.startsWith('/announcements')) return 'Announcements';
   if (route.startsWith('/notifications')) return 'Notifications';
   if (route.startsWith('/calendar')) return 'Academic Calendar';
@@ -269,15 +273,22 @@ class ShellWrapper extends ConsumerWidget {
         activeRoute.contains('/mark') ||
         activeRoute.contains('/upload');
 
+    final showMobileAppBar = isMobile && isAtRootDashboard;
+    final showDesktopAppBar = !isMobile;
+    final showAppBar = showMobileAppBar || showDesktopAppBar;
+
     final scaffold = Scaffold(
       backgroundColor: isDark ? const Color(0xFF0B0F19) : const Color(0xFFF8FAFC),
       extendBodyBehindAppBar: false,
-      appBar: AcadexAppBar(
-        title: pageTitle,
-        showDrawerButton: isMobile && isAtRootDashboard,
-        showBackButton: isMobile && !isAtRootDashboard,
-        onBack: () => context.safePop(fallbackRoute: homeRoute),
-      ),
+      appBar: showAppBar
+          ? AcadexAppBar(
+              title: pageTitle,
+              showTitle: isAtRootDashboard,
+              showDrawerButton: isMobile && isAtRootDashboard,
+              showBackButton: isMobile && !isAtRootDashboard,
+              onBack: () => context.safePop(fallbackRoute: homeRoute),
+            )
+          : null,
       drawer: isMobile ? AcadexDrawer(activeRoute: activeRoute, isModal: true) : null,
       bottomNavigationBar: (isMobile && !isFullscreenForm)
           ? AcadexBottomNav(
@@ -411,6 +422,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final currentAuthState = ref.read(authProvider);
       final loc = state.matchedLocation;
+      if (loc == '/assistant-showcase') {
+        return null;
+      }
       final isGoingToAuth = loc == '/login' ||
           loc == '/forgot-password' ||
           loc == '/verify-otp' ||
@@ -513,6 +527,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         }
       }
       
+      // Super Admin operational module restrictions
+      if (role == AppRole.superAdmin) {
+        if (loc.startsWith('/calendar') ||
+            loc.startsWith('/timetable') ||
+            loc.startsWith('/assignments') ||
+            loc.startsWith('/requests') ||
+            loc.startsWith('/attendance') ||
+            loc.startsWith('/notes') ||
+            loc.startsWith('/assessments') ||
+            loc.startsWith('/practicals') ||
+            loc.startsWith('/academic-records') ||
+            loc.startsWith('/my-results') ||
+            loc.startsWith('/my-assignments')) {
+          return '/access-restricted';
+        }
+      }
+      
       if (loc.startsWith('/users')) {
         if (role == AppRole.student || role == AppRole.faculty) {
           return '/access-restricted';
@@ -578,6 +609,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/assistant-showcase',
+        builder: (context, state) => const AcadexAssistantShowcaseScreen(),
+      ),
       GoRoute(
         path: '/',
         builder: (context, state) => const SplashScreen(),

@@ -67,7 +67,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentMonth = ref.watch(currentMonthProvider);
     final selectedDate = ref.watch(selectedCalendarDateProvider);
-    final eventsAsync = ref.watch(calendarEventsProvider);
+    final eventsAsync = ref.watch(combinedCalendarEventsProvider);
     final selectedDayEvents = ref.watch(selectedDayEventsProvider);
     final upcomingEvents = ref.watch(upcomingEventsProvider);
     final activeFilter = ref.watch(calendarFilterProvider);

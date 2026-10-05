@@ -9,6 +9,8 @@ import '../widgets/student/subject_attendance_card.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_sliver_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_sliver_page_header.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 
 class StudentAttendanceOverviewScreen extends ConsumerWidget {
@@ -22,30 +24,28 @@ class StudentAttendanceOverviewScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-      body: AcadexPageContainer(
+      body: AcadexSliverPageContainer(
         maxWidth: AcadexLayout.contentMaxWidth,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AcadexPageHeader(
-                  title: "My Attendance",
-                  subtitle: "Track your semester standing, subject metrics, and absence records.",
-                  actions: [
-                    AcadexButton(
-                      label: "Attendance History",
-                      icon: LucideIcons.history,
-                      variant: AcadexButtonVariant.secondary,
-                      onPressed: () {
-                        ref.read(selectedHistorySubjectProvider.notifier).state = null;
-                        ref.read(selectedHistoryMonthProvider.notifier).state = null;
-                        context.push('/attendance/student/history');
-                      },
-                    ),
-                  ],
-                ),
-
-                // Overall Gauge Card
-                overallPercAsync.when(
+        header: AcadexSliverPageHeader(
+          title: "My Attendance",
+          subtitle: "Track your semester standing, subject metrics, and absence records.",
+          actions: [
+            AcadexButton(
+              label: "Attendance History",
+              icon: LucideIcons.history,
+              variant: AcadexButtonVariant.secondary,
+              onPressed: () {
+                ref.read(selectedHistorySubjectProvider.notifier).state = null;
+                ref.read(selectedHistoryMonthProvider.notifier).state = null;
+                context.push('/attendance/student/history');
+              },
+            ),
+          ],
+        ),
+        slivers: [
+          // Overall Gauge Card
+          SliverToBoxAdapter(
+            child: overallPercAsync.when(
                   loading: () => const Center(
                     child: Padding(
                       padding: EdgeInsets.all(32),
@@ -77,13 +77,15 @@ class StudentAttendanceOverviewScreen extends ConsumerWidget {
                     );
                   },
                 ),
-                const SizedBox(height: 32),
+            ),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
 
-                const AcadexSectionHeader(title: "Course Subjects"),
-                const SizedBox(height: 12),
+          const SliverToBoxAdapter(child: AcadexSectionHeader(title: "Course Subjects")),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-                // Subject List / Grid
-                subjectsAsync.when(
+          // Subject List / Grid
+          SliverToBoxAdapter(
+            child: subjectsAsync.when(
                   loading: () => const Center(
                     child: Padding(
                       padding: EdgeInsets.all(24),
@@ -153,10 +155,10 @@ class StudentAttendanceOverviewScreen extends ConsumerWidget {
                       },
                     );
                   },
-                ),
-              ],
             ),
           ),
+        ],
+      ),
     );
   }
 }

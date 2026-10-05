@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../features/timetable/domain/models/timetable_models.dart';
+import '../../../../features/timetable/presentation/providers/timetable_providers.dart';
 import '../../domain/models/calendar_event_model.dart';
 import '../../domain/repositories/calendar_repository.dart';
 import '../../data/repositories/api_calendar_repository.dart';
@@ -96,6 +98,80 @@ final calendarEventsProvider =
   return CalendarEventsNotifier(repo);
 });
 
+CalendarEventModel _mapTimetableToCalendarEvent(TimetableModel t, DateTime date) {
+  final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  return CalendarEventModel(
+    id: 'tt_${t.id}_$dateStr',
+    title: t.subjectName ?? 'Timetable Class',
+    description: [
+      if (t.facultyName != null) 'Faculty: ${t.facultyName}',
+      if (t.sectionName != null) 'Section: ${t.sectionName}',
+      if (t.contextualDescription != null) t.contextualDescription!,
+    ].join('\n'),
+    sourceType: CalendarSourceType.timetable,
+    sourceId: t.id,
+    eventType: CalendarEventType.timetableClass,
+    startDate: dateStr,
+    endDate: dateStr,
+    startTime: t.startTime,
+    endTime: t.endTime,
+    location: (t.roomNumber.isNotEmpty) ? '${t.roomNumber}${t.building != null ? ' (${t.building})' : ''}' : null,
+    academicContext: t.courseName,
+    subjectId: t.subjectId,
+    courseId: t.courseId,
+    departmentId: t.departmentId,
+    sectionId: t.sectionId,
+    status: CalendarEventStatus.published,
+    canEdit: false,
+    canCancel: false,
+  );
+}
+
+final combinedCalendarEventsProvider = Provider<AsyncValue<List<CalendarEventModel>>>((ref) {
+  final calendarAsync = ref.watch(calendarEventsProvider);
+  final weeklyTimetableAsync = ref.watch(weeklyTimetableProvider);
+  final currentMonth = ref.watch(currentMonthProvider);
+  
+  if (calendarAsync.isLoading) {
+    return const AsyncValue.loading();
+  }
+  if (calendarAsync.hasError) {
+    return AsyncValue.error(calendarAsync.error!, calendarAsync.stackTrace!);
+  }
+  
+  final List<CalendarEventModel> combined = [];
+  if (calendarAsync.hasValue) {
+    combined.addAll(calendarAsync.value!);
+  }
+  
+  if (weeklyTimetableAsync.hasValue) {
+    final weekly = weeklyTimetableAsync.value!;
+    final startDate = DateTime(currentMonth.year, currentMonth.month - 1, 15);
+    final endDate = DateTime(currentMonth.year, currentMonth.month + 1, 20);
+    
+    for (var date = startDate; date.compareTo(endDate) <= 0; date = date.add(const Duration(days: 1))) {
+      final dayOfWeek = TimetableDay.values[date.weekday - 1];
+      final classes = weekly[dayOfWeek];
+      if (classes != null && classes.isNotEmpty) {
+        for (final c in classes) {
+          combined.add(_mapTimetableToCalendarEvent(c, date));
+        }
+      }
+    }
+  }
+  
+  // Sort chronologically
+  combined.sort((a, b) {
+    final cmp = a.startDate.compareTo(b.startDate);
+    if (cmp != 0) return cmp;
+    final aTime = a.startTime ?? '00:00';
+    final bTime = b.startTime ?? '00:00';
+    return aTime.compareTo(bTime);
+  });
+  
+  return AsyncValue.data(combined);
+});
+
 /// Events matching the selected date
 bool _matchesFilter(CalendarEventModel e, String? filter) {
   if (filter == null || filter.isEmpty) return true;
@@ -140,7 +216,7 @@ bool _matchesFilter(CalendarEventModel e, String? filter) {
 
 /// Events matching the selected date
 final selectedDayEventsProvider = Provider<List<CalendarEventModel>>((ref) {
-  final eventsAsync = ref.watch(calendarEventsProvider);
+  final eventsAsync = ref.watch(combinedCalendarEventsProvider);
   final selectedDate = ref.watch(selectedCalendarDateProvider);
   final filter = ref.watch(calendarFilterProvider);
 
@@ -161,7 +237,7 @@ final selectedDayEventsProvider = Provider<List<CalendarEventModel>>((ref) {
 
 /// Upcoming events starting from today onwards
 final upcomingEventsProvider = Provider<List<CalendarEventModel>>((ref) {
-  final eventsAsync = ref.watch(calendarEventsProvider);
+  final eventsAsync = ref.watch(combinedCalendarEventsProvider);
   final filter = ref.watch(calendarFilterProvider);
   final now = DateTime.now();
   final todayStr =

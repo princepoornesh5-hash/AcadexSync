@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_theme.dart';
+import 'acadex_motion.dart';
 
 enum AcadexButtonVariant { primary, secondary, soft, danger, ghost }
 enum AcadexButtonSize { sm, md, lg }
@@ -137,12 +138,30 @@ class AcadexButton extends ConsumerWidget {
         borderRadius: AcadexRadius.borderRadiusMd,
         side: border,
       ),
+      // Overlay color for deep press feedback
+      overlayColor: variant == AcadexButtonVariant.primary 
+          ? Colors.black.withOpacity(0.15) 
+          : AcadexColors.primary.withOpacity(0.1),
+    ).copyWith(
+      // Smooth color transition for state changes
+      backgroundColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+        if (states.contains(WidgetState.disabled)) return bg.withValues(alpha: 0.5);
+        if (states.contains(WidgetState.pressed)) {
+          if (variant == AcadexButtonVariant.primary) return AcadexColors.primaryDark;
+          if (variant == AcadexButtonVariant.soft) return AcadexColors.primary.withOpacity(0.2);
+          if (variant == AcadexButtonVariant.danger) return AcadexColors.errorDark;
+        }
+        return bg;
+      }),
     );
 
-    return ElevatedButton(
-      onPressed: isLoading ? null : onPressed,
-      style: buttonStyle,
-      child: content,
+    return AcadexPressable(
+      isInteractive: onPressed != null && !isLoading,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: buttonStyle,
+        child: content,
+      ),
     );
   }
 }

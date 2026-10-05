@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_theme.dart';
+import 'acadex_motion.dart';
 
 class AcadexListTile extends StatelessWidget {
   final Widget? leading;
@@ -67,11 +68,14 @@ class AcadexListTile extends StatelessWidget {
         borderRadius: AcadexRadius.borderRadiusMd,
         border: defaultBorder,
       ),
-      child: Material(
-        color: Colors.transparent,
+      child: AcadexPressable(
+        isInteractive: onTap != null,
         borderRadius: AcadexRadius.borderRadiusMd,
-        child: InkWell(
-          onTap: onTap,
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: AcadexRadius.borderRadiusMd,
+          child: InkWell(
+            onTap: onTap,
           borderRadius: AcadexRadius.borderRadiusMd,
           child: Padding(
             padding: contentPadding ?? const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -120,6 +124,7 @@ class AcadexListTile extends StatelessWidget {
                   ),
                 ],
               ],
+            ),
             ),
           ),
         ),

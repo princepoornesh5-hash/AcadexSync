@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { requestEvents, RequestEventType, RequestEventPayload } from './request.events';
 import { NotificationService } from '../services/notification.service';
 import { NotificationType, NotificationPriority } from '../constants/notification.constants';
@@ -81,10 +82,10 @@ export function initRequestNotificationListener(): void {
 
       const typeLabel = formatRequestType(request.requestType);
 
-      // Determine recipient(s)
+      // Determine recipient(s) safely with ObjectId validation
       const recipientIds: string[] = [];
 
-      if (request.targetUserId) {
+      if (request.targetUserId && mongoose.Types.ObjectId.isValid(request.targetUserId.toString())) {
         recipientIds.push(request.targetUserId.toString());
       } else {
         // Find users with targetRole in scope
@@ -98,35 +99,49 @@ export function initRequestNotificationListener(): void {
 
         const authorities = await User.find(query).select('_id').lean();
         for (const auth of authorities) {
-          recipientIds.push(auth._id.toString());
+          if (auth._id && mongoose.Types.ObjectId.isValid(auth._id.toString())) {
+            recipientIds.push(auth._id.toString());
+          }
         }
       }
 
-      for (const recipientId of recipientIds) {
-        const idempotencyKey = `req_created_${request._id?.toString() || request.id}_${recipientId}`;
+      if (recipientIds.length === 0) {
+        logger.warn(
+          `[REQUEST_NOTIFICATION] No valid authority recipients found for request ${request.requestId} (targetRole: ${request.targetRole}, dept: ${request.departmentId || 'none'})`
+        );
+      }
 
-        await NotificationService.createNotification({
-          collegeId: request.collegeId.toString(),
-          departmentId: request.departmentId ? request.departmentId.toString() : undefined,
-          recipientUserId: recipientId,
-          recipientRole: request.targetRole,
-          title: `New ${typeLabel}`,
-          body: `${request.requesterName} submitted a ${typeLabel}: "${request.title}"`,
-          notificationType: NotificationType.REQUEST_RECEIVED,
-          priority: NotificationPriority.NORMAL,
-          entityType: 'REQUEST',
-          entityId: request.requestId || (request._id ? request._id.toString() : request.id),
-          relatedEntityType: 'REQUEST',
-          relatedEntityId: request.requestId || (request._id ? request._id.toString() : request.id),
-          deepLink: `/requests/${request._id ? request._id.toString() : request.id}`,
-          metadata: {
-            requestId: request.requestId,
-            internalId: request._id ? request._id.toString() : request.id,
-            requestType: request.requestType,
-            status: request.status,
-          },
-          idempotencyKey,
-        });
+      for (const recipientId of recipientIds) {
+        try {
+          const idempotencyKey = `req_created_${request._id?.toString() || request.id}_${recipientId}`;
+
+          await NotificationService.createNotification({
+            collegeId: request.collegeId.toString(),
+            departmentId: request.departmentId ? request.departmentId.toString() : undefined,
+            recipientUserId: recipientId,
+            recipientRole: request.targetRole,
+            title: `New ${typeLabel}`,
+            body: `${request.requesterName} submitted a ${typeLabel}: "${request.title}"`,
+            notificationType: NotificationType.REQUEST_RECEIVED,
+            priority: NotificationPriority.NORMAL,
+            entityType: 'REQUEST',
+            entityId: request.requestId || (request._id ? request._id.toString() : request.id),
+            relatedEntityType: 'REQUEST',
+            relatedEntityId: request.requestId || (request._id ? request._id.toString() : request.id),
+            deepLink: `/requests/${request._id ? request._id.toString() : request.id}`,
+            metadata: {
+              requestId: request.requestId,
+              internalId: request._id ? request._id.toString() : request.id,
+              requestType: request.requestType,
+              status: request.status,
+            },
+            idempotencyKey,
+          });
+        } catch (innerErr) {
+          logger.warn(
+            `[REQUEST_NOTIFICATION] Failed to dispatch creation notification to recipient ${recipientId} for request ${request.requestId}: ${(innerErr as Error).message}`
+          );
+        }
       }
 
       // Emit Realtime Domain Event (Persistence-First)
@@ -169,7 +184,14 @@ export function initRequestNotificationListener(): void {
       const { request, newStatus } = payload;
       const status = newStatus || request.status;
       const typeLabel = formatRequestType(request.requestType);
-      const recipientId = request.requesterUserId.toString();
+      const rawRecipientId = request.requesterUserId ? request.requesterUserId.toString() : '';
+      if (!rawRecipientId || !mongoose.Types.ObjectId.isValid(rawRecipientId)) {
+        logger.warn(
+          `[REQUEST_NOTIFICATION] Invalid or missing requesterUserId (${rawRecipientId}) on request ${request.requestId}. Status notification skipped.`
+        );
+        return;
+      }
+      const recipientId = rawRecipientId;
 
       let notifType = NotificationType.REQUEST_UPDATED;
       let title = `${typeLabel} ${formatStatus(status)}`;
@@ -199,29 +221,35 @@ export function initRequestNotificationListener(): void {
       const historyCount = request.history ? request.history.length : 1;
       const idempotencyKey = `req_status_${request._id?.toString() || request.id}_${status}_${historyCount}_${recipientId}`;
 
-      await NotificationService.createNotification({
-        collegeId: request.collegeId.toString(),
-        departmentId: request.departmentId ? request.departmentId.toString() : undefined,
-        recipientUserId: recipientId,
-        recipientRole: request.requesterRole,
-        title,
-        body,
-        notificationType: notifType,
-        priority: NotificationPriority.NORMAL,
-        entityType: 'REQUEST',
-        entityId: request.requestId || (request._id ? request._id.toString() : request.id),
-        relatedEntityType: 'REQUEST',
-        relatedEntityId: request.requestId || (request._id ? request._id.toString() : request.id),
-        deepLink: `/requests/${request._id ? request._id.toString() : request.id}`,
-        metadata: {
-          requestId: request.requestId,
-          internalId: request._id ? request._id.toString() : request.id,
-          requestType: request.requestType,
-          status,
-          responseMessage: request.responseMessage,
-        },
-        idempotencyKey,
-      });
+      try {
+        await NotificationService.createNotification({
+          collegeId: request.collegeId.toString(),
+          departmentId: request.departmentId ? request.departmentId.toString() : undefined,
+          recipientUserId: recipientId,
+          recipientRole: request.requesterRole,
+          title,
+          body,
+          notificationType: notifType,
+          priority: NotificationPriority.NORMAL,
+          entityType: 'REQUEST',
+          entityId: request.requestId || (request._id ? request._id.toString() : request.id),
+          relatedEntityType: 'REQUEST',
+          relatedEntityId: request.requestId || (request._id ? request._id.toString() : request.id),
+          deepLink: `/requests/${request._id ? request._id.toString() : request.id}`,
+          metadata: {
+            requestId: request.requestId,
+            internalId: request._id ? request._id.toString() : request.id,
+            requestType: request.requestType,
+            status,
+            responseMessage: request.responseMessage,
+          },
+          idempotencyKey,
+        });
+      } catch (notifErr) {
+        logger.warn(
+          `[REQUEST_NOTIFICATION] Failed to dispatch status notification for request ${request.requestId}: ${(notifErr as Error).message}`
+        );
+      }
 
       // Map granular realtime event
       let realtimeType = AcadexEventType.REQUEST_STATUS_CHANGED;

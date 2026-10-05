@@ -43,262 +43,261 @@ class AcadexDrawer extends ConsumerWidget {
     final isCollapsed = !isModal && ref.watch(sidebarCollapsedProvider);
     final drawerWidth = isModal ? math.min(290.0, screenWidth * 0.82) : (isCollapsed ? 68.0 : 240.0);
 
-    final sidebarContent = ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          width: isModal ? drawerWidth : null,
-            decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFF0F172A).withValues(alpha: 0.75)
-                  : const Color(0xFFFFFFFF).withValues(alpha: 0.75),
-              border: isModal
-                  ? null
-                  : Border(
-                      right: BorderSide(
-                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0).withValues(alpha: 0.85),
-                        width: 1,
+    final innerBody = SafeArea(
+      child: Column(
+        children: [
+          // Top Brand & User Identity Area (Compact, Mobile-First)
+          Padding(
+            padding: EdgeInsets.fromLTRB(isCollapsed ? 8 : 16, 12, isCollapsed ? 8 : 16, 8),
+            child: isCollapsed
+                ? Center(
+                    child: InkWell(
+                      onTap: () {
+                        ref.read(sidebarCollapsedProvider.notifier).state = false;
+                      },
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AcadexColors.primary,
+                          borderRadius: AcadexRadius.borderRadiusMd,
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            LucideIcons.graduationCap,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
                       ),
                     ),
-              boxShadow: isModal
-                  ? null
-                  : [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.02),
-                        blurRadius: 16,
-                        offset: const Offset(2, 0),
-                      ),
-                    ],
-            ),
-            child: SafeArea(
-              child: Column(
-                children: [
-                  // Top Brand & User Identity Area (Compact, Mobile-First)
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(isCollapsed ? 8 : 16, 12, isCollapsed ? 8 : 16, 8),
-                    child: isCollapsed
-                        ? Center(
-                            child: InkWell(
-                              onTap: () {
-                                ref.read(sidebarCollapsedProvider.notifier).state = false;
-                              },
-                              borderRadius: AcadexRadius.borderRadiusMd,
-                              child: Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: AcadexColors.primary,
-                                  borderRadius: AcadexRadius.borderRadiusMd,
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    LucideIcons.graduationCap,
-                                    color: Colors.white,
-                                    size: 18,
-                                  ),
-                                ),
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Brand Row
+                      Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: AcadexColors.primary,
+                              borderRadius: AcadexRadius.borderRadiusSm,
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                LucideIcons.graduationCap,
+                                color: Colors.white,
+                                size: 18,
                               ),
                             ),
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'ACADEX',
+                              style: AcadexTypography.heading3(
+                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              ).copyWith(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                                letterSpacing: 0.5,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isModal)
+                            IconButton(
+                              icon: Icon(
+                                LucideIcons.x,
+                                size: 18,
+                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              ),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                              onPressed: () => Navigator.of(context).pop(),
+                              tooltip: 'Close Menu',
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+
+                      // User Identity Strip
+                      InkWell(
+                        onTap: () {
+                          if (isModal && Scaffold.of(context).isDrawerOpen) {
+                            Navigator.of(context).pop();
+                          }
+                          context.push('/profile');
+                        },
+                        borderRadius: AcadexRadius.borderRadiusMd,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                            borderRadius: AcadexRadius.borderRadiusMd,
+                            border: Border.all(
+                              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
                             children: [
-                              // Brand Row
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: BoxDecoration(
-                                      color: AcadexColors.primary,
-                                      borderRadius: AcadexRadius.borderRadiusSm,
-                                    ),
-                                    child: const Center(
-                                      child: Icon(
-                                        LucideIcons.graduationCap,
-                                        color: Colors.white,
-                                        size: 18,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      'ACADEX',
-                                      style: AcadexTypography.heading3(
+                              AcadexAvatar(
+                                name: user?.name ?? 'User',
+                                size: 30,
+                                isOnline: true,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      user?.name ?? 'Guest User',
+                                      style: AcadexTypography.bodySmall(
                                         color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                      ).copyWith(
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 16,
-                                        letterSpacing: 0.5,
-                                      ),
+                                      ).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
+                                      maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                  if (isModal)
-                                    IconButton(
-                                      icon: Icon(
-                                        LucideIcons.x,
-                                        size: 18,
-                                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                                      ),
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                      onPressed: () => Navigator.of(context).pop(),
-                                      tooltip: 'Close Menu',
+                                    const SizedBox(height: 2),
+                                    AcadexBadge(
+                                      label: role.displayName,
+                                      variant: AcadexBadgeVariant.primary,
                                     ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-
-                              // User Identity Strip
-                              InkWell(
-                                onTap: () {
-                                  if (isModal && Scaffold.of(context).isDrawerOpen) {
-                                    Navigator.of(context).pop();
-                                  }
-                                  context.push('/profile');
-                                },
-                                borderRadius: AcadexRadius.borderRadiusMd,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
-                                    borderRadius: AcadexRadius.borderRadiusMd,
-                                    border: Border.all(
-                                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      AcadexAvatar(
-                                        name: user?.name ?? 'User',
-                                        size: 30,
-                                        isOnline: true,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              user?.name ?? 'Guest User',
-                                              style: AcadexTypography.bodySmall(
-                                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                                              ).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 2),
-                                            AcadexBadge(
-                                              label: role.displayName,
-                                              variant: AcadexBadgeVariant.primary,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Icon(
-                                        LucideIcons.chevronRight,
-                                        size: 14,
-                                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                                      ),
-                                    ],
-                                  ),
+                                  ],
                                 ),
+                              ),
+                              Icon(
+                                LucideIcons.chevronRight,
+                                size: 14,
+                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                               ),
                             ],
                           ),
+                        ),
+                      ),
+                    ],
                   ),
+          ),
 
-                  const SizedBox(height: 4),
-                  Divider(
-                    height: 1,
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-                  ),
+          const SizedBox(height: 4),
+          Divider(
+            height: 1,
+            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          ),
 
-                  // Grouped Navigation Items List
-                  Expanded(
-                    child: ListView(
-                      padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 6 : 10, vertical: 6),
-                      children: [
-                        for (final entry in groupedItems.entries) ...[
-                          if (!isCollapsed)
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
-                              child: Text(
-                                entry.key.title,
-                                style: AcadexTypography.caption(
-                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                                ).copyWith(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.8,
-                                ),
-                              ),
-                            )
-                          else
-                            const SizedBox(height: 8),
-                          for (final item in entry.value)
-                            _DrawerTile(
-                              label: item.label,
-                              icon: item.icon,
-                              isActive: item.matchesRoute(activeRoute),
-                              badgeCount: item.badgeCount,
-                              isCollapsed: isCollapsed,
-                              onTap: () {
-                                if (isModal && Scaffold.of(context).isDrawerOpen) {
-                                  Navigator.of(context).pop();
-                                }
-                                context.go(item.route);
-                              },
-                            ),
-                        ],
-                      ],
-                    ),
-                  ),
-
-                  Divider(
-                    height: 1,
-                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Bottom Utility Section: Single Predictable Logout
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 6 : 10),
-                    child: _DrawerTile(
-                      label: 'Logout',
-                      icon: LucideIcons.logOut,
-                      isActive: false,
+          // Grouped Navigation Items List
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 6 : 10, vertical: 6),
+              children: [
+                for (final entry in groupedItems.entries) ...[
+                  if (!isCollapsed)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
+                      child: Text(
+                        entry.key.title,
+                        style: AcadexTypography.caption(
+                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                        ).copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    )
+                  else
+                    const SizedBox(height: 8),
+                  for (final item in entry.value)
+                    _DrawerTile(
+                      label: item.label,
+                      icon: item.icon,
+                      isActive: item.matchesRoute(activeRoute),
+                      badgeCount: item.badgeCount,
                       isCollapsed: isCollapsed,
-                      iconColor: AcadexColors.error,
-                      textColor: AcadexColors.error,
-                      onTap: () async {
-                        final confirmed = await AcadexConfirmationDialog.show(
-                          context: context,
-                          title: 'Logout',
-                          message: 'Are you sure you want to sign out of Acadex?',
-                          confirmLabel: 'Sign Out',
-                          isDestructive: true,
-                        );
-                        if (confirmed == true) {
-                          if (isModal && context.mounted && Scaffold.of(context).isDrawerOpen) {
-                            Navigator.of(context).pop();
-                          }
-                          await ref.read(authProvider.notifier).logout();
+                      onTap: () {
+                        if (isModal && Scaffold.of(context).isDrawerOpen) {
+                          Navigator.of(context).pop();
                         }
+                        context.go(item.route);
                       },
                     ),
-                  ),
-                  const SizedBox(height: 12),
                 ],
-              ),
+              ],
             ),
           ),
-        ),
-      );
+
+          Divider(
+            height: 1,
+            color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+          ),
+          const SizedBox(height: 8),
+
+          // Bottom Utility Section: Single Predictable Logout
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 6 : 10),
+            child: _DrawerTile(
+              label: 'Logout',
+              icon: LucideIcons.logOut,
+              isActive: false,
+              isCollapsed: isCollapsed,
+              iconColor: AcadexColors.error,
+              textColor: AcadexColors.error,
+              onTap: () async {
+                final confirmed = await AcadexConfirmationDialog.show(
+                  context: context,
+                  title: 'Logout',
+                  message: 'Are you sure you want to sign out of Acadex?',
+                  confirmLabel: 'Sign Out',
+                  isDestructive: true,
+                );
+                if (confirmed == true) {
+                  if (isModal && context.mounted && Scaffold.of(context).isDrawerOpen) {
+                    Navigator.of(context).pop();
+                  }
+                  await ref.read(authProvider.notifier).logout();
+                }
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+
+    final Widget sidebarContent = isModal
+        ? ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                width: drawerWidth,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF0F172A).withValues(alpha: 0.88)
+                      : const Color(0xFFFFFFFF).withValues(alpha: 0.90),
+                ),
+                child: innerBody,
+              ),
+            ),
+          )
+        : Container(
+            width: isCollapsed ? 68.0 : 240.0,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFFFFF),
+              border: Border(
+                right: BorderSide(
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: innerBody,
+          );
 
     if (isModal) {
       return Drawer(
