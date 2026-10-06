@@ -14,12 +14,7 @@ import {
   CalendarOverrideScope,
 } from '../models/calendarOverride.model';
 import { CalendarOverrideService } from './calendarOverride.service';
-import {
-  TeacherSubstitution,
-  TeacherSubstitutionStatus,
-} from '../models/teacherSubstitution.model';
-import { Timetable } from '../models/timetable.model';
-import { TimetableDay, TimetableStatus } from '../constants/status';
+import { TimetableDay } from '../constants/status';
 import { PracticalSession } from '../models/practicalSession.model';
 import { InternalAssessment, AssessmentStatus } from '../models/internalAssessment.model';
 import { AcademicResult } from '../models/academicResult.model';
@@ -176,19 +171,7 @@ function getDayOfWeek(dateStr: string): TimetableDay {
   return map[day] || TimetableDay.MONDAY;
 }
 
-function getDatesInRange(startStr: string, endStr: string): string[] {
-  const dates: string[] = [];
-  const curr = new Date(startStr);
-  const end = new Date(endStr);
-  while (curr <= end) {
-    const y = curr.getFullYear();
-    const m = String(curr.getMonth() + 1).padStart(2, '0');
-    const d = String(curr.getDate()).padStart(2, '0');
-    dates.push(`${y}-${m}-${d}`);
-    curr.setDate(curr.getDate() + 1);
-  }
-  return dates;
-}
+
 
 export class AcademicCalendarService {
   /**
@@ -1098,109 +1081,9 @@ export class AcademicCalendarService {
       });
     }
 
-    // ── 4. QUERY TIMETABLE CLASSES & EXCEPTIONS (Prompt 45 Section L) ──
-    const dateList = getDatesInRange(startDate, endDate);
-    const timetableFilter: any = {
-      collegeId: new mongoose.Types.ObjectId(collegeId),
-      status: TimetableStatus.PUBLISHED,
-    };
-
-    if (requester.role === AppRole.STUDENT) {
-      timetableFilter.sectionId = { $in: Array.from(enrolledSectionIds).map((id) => new mongoose.Types.ObjectId(id)) };
-    } else if (requester.role === AppRole.FACULTY) {
-      timetableFilter['entries.facultyId'] = new mongoose.Types.ObjectId(requester.id);
-    } else if (requester.role === AppRole.HOD && hodDeptId) {
-      timetableFilter.departmentId = new mongoose.Types.ObjectId(hodDeptId);
-    }
-
-    const activeTimetables = await Timetable.find(timetableFilter).populate('entries.subjectId');
-
-    for (const tt of activeTimetables) {
-      for (const dateStr of dateList) {
-        const dayOfWeek = getDayOfWeek(dateStr);
-
-        // Check active holiday override for this day and section
-        const dayOverride = await CalendarOverrideService.resolveActiveOverride({
-          collegeId,
-          date: dateStr,
-          departmentId: tt.departmentId?.toString(),
-          sectionId: tt.sectionId?.toString(),
-        });
-
-        if (dayOverride && dayOverride.type === CalendarOverrideType.HOLIDAY) {
-          continue; // Classes do not run on holidays
-        }
-
-        const entriesForDay = tt.entries.filter((e) => e.dayOfWeek === dayOfWeek);
-
-        for (const entry of entriesForDay) {
-          // If faculty query, ensure this entry belongs to this faculty (or substitute)
-          const isOwnClass = entry.facultyId?.toString() === requester.id;
-          let substitute: any = null;
-
-          if (entry._id) {
-            substitute = await TeacherSubstitution.findOne({
-              collegeId: new mongoose.Types.ObjectId(collegeId),
-              timetableEntryId: entry._id,
-              date: dateStr,
-              status: TeacherSubstitutionStatus.ACTIVE,
-            }).populate('substituteFacultyId');
-          }
-
-          if (requester.role === AppRole.FACULTY) {
-            const isSubstitutedToMe = substitute?.substituteFacultyId?._id?.toString() === requester.id;
-            if (!isOwnClass && !isSubstitutedToMe) continue;
-          }
-
-          // Check if this specific entry is cancelled
-          const entryOverride = await CalendarOverrideService.resolveActiveOverride({
-            collegeId,
-            date: dateStr,
-            departmentId: tt.departmentId?.toString(),
-            sectionId: tt.sectionId?.toString(),
-            timetableEntryId: entry._id?.toString(),
-          });
-
-          const isCancelled = entryOverride?.type === CalendarOverrideType.CANCELLED;
-
-          const subjectObj: any = entry.subjectId;
-          let displayTitle = (typeof subjectObj === 'object' && subjectObj?.name) ? subjectObj.name : (entry.subjectName || 'Class');
-          let facultyDisplay = substitute ? `Substituted: ${substitute.substituteFacultyId?.name || 'Substitute'}` : undefined;
-
-          results.push({
-            id: `derived_timetable_${tt._id.toString()}_${entry._id?.toString() || 'entry'}_${dateStr}`,
-            title: displayTitle,
-            description: facultyDisplay ? `${facultyDisplay} • ${entry.roomNumber || ''}` : (entry.roomNumber ? `Room: ${entry.roomNumber}` : ''),
-            sourceType: CalendarSourceType.TIMETABLE,
-            sourceId: entry._id?.toString() || tt._id.toString(),
-            eventType: CalendarEventType.TIMETABLE_CLASS,
-            scope: CalendarEventScope.CLASS,
-            startDate: dateStr,
-            endDate: dateStr,
-            startTime: entry.startTime,
-            endTime: entry.endTime,
-            allDay: false,
-            departmentId: tt.departmentId?.toString() || null,
-            courseId: tt.courseId?.toString() || null,
-            academicYearId: tt.academicYearId?.toString() || null,
-            semesterId: tt.semesterId?.toString() || null,
-            sectionId: tt.sectionId?.toString() || null,
-            subjectId: entry.subjectId?.toString() || null,
-            academicContext: entry.sectionName ? `${entry.subjectName || 'Subject'} • ${entry.sectionName}` : entry.subjectName || null,
-            location: entry.roomNumber || null,
-            isRecurring: false,
-            recurrence: CalendarRecurrence.NONE,
-            status: isCancelled ? CalendarEventStatus.CANCELLED : CalendarEventStatus.PUBLISHED,
-            createdBy: tt.createdBy || requester.id,
-            creatorRole: AppRole.COLLEGE_ADMIN,
-            creatorName: 'Academic Schedule',
-            navigationTarget: `/timetable`,
-            canEdit: false,
-            canCancel: false,
-          });
-        }
-      }
-    }
+    // ── 4. TIMETABLE CANONICAL SEPARATION ─────────────────────────────────────
+    // Note: Routine timetable classes are owned strictly by Timetable, not Calendar.
+    // Timetable-derived classes are excluded here to maintain strict separation of concerns.
 
     // ── 5. QUERY PRACTICAL SESSIONS (Prompt 41) ──────────────
     const practicalFilter: any = {

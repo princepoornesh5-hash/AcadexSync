@@ -1208,7 +1208,7 @@ export class AssignmentService {
     if (roleUpper === 'STUDENT') {
       throw ApiError.forbidden('Students cannot grade assignments.');
     }
-    await TeachingAuthorizationService.assertAssignmentAccess(collegeId, user, assignment);
+    await TeachingAuthorizationService.assertAssignmentMarkingAccess(collegeId, user, assignment);
 
     for (const item of marksList) {
       const marksVal = Math.floor(item.marks);
@@ -1219,6 +1219,19 @@ export class AssignmentService {
         throw ApiError.badRequest(
           `Marks (${marksVal}) cannot exceed maximum marks (${assignment.maximumMarks}).`
         );
+      }
+
+      // Canonical StudentEnrollment validation
+      const enrollment = await StudentEnrollment.findOne({
+        collegeId: new Types.ObjectId(collegeId),
+        studentId: new Types.ObjectId(item.studentId),
+        semesterId: assignment.semesterId,
+        courseId: assignment.courseId,
+        ...(assignment.sectionId ? { sectionId: assignment.sectionId } : {}),
+        status: { $in: ['active', 'ACTIVE'] },
+      });
+      if (!enrollment) {
+        throw ApiError.forbidden('Student is not enrolled in the academic context of this assignment.');
       }
 
       const updatedSub = await AssignmentSubmission.findOneAndUpdate(
@@ -1349,7 +1362,7 @@ export class AssignmentService {
     if (roleUpper === 'STUDENT') {
       throw ApiError.forbidden('Students cannot review or grade submissions.');
     }
-    await TeachingAuthorizationService.assertAssignmentAccess(collegeId, user, assignment);
+    await TeachingAuthorizationService.assertAssignmentMarkingAccess(collegeId, user, assignment);
 
     if (data.marks < 0) {
       throw ApiError.badRequest('Marks cannot be negative.');
@@ -1367,6 +1380,19 @@ export class AssignmentService {
     });
     if (!submission) {
       throw ApiError.notFound('Submission not found.');
+    }
+
+    // Canonical StudentEnrollment validation
+    const enrollment = await StudentEnrollment.findOne({
+      collegeId: new Types.ObjectId(collegeId),
+      studentId: submission.studentId,
+      semesterId: assignment.semesterId,
+      courseId: assignment.courseId,
+      ...(assignment.sectionId ? { sectionId: assignment.sectionId } : {}),
+      status: { $in: ['active', 'ACTIVE'] },
+    });
+    if (!enrollment) {
+      throw ApiError.forbidden('Student is not enrolled in the academic context of this assignment.');
     }
 
     submission.marks = data.marks;

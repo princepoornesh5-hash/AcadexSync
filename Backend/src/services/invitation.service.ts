@@ -254,9 +254,9 @@ export class InvitationService {
         throw ApiError.forbidden('Cannot provision accounts for an inactive department');
       }
 
-      const allowedRoles = [AppRole.FACULTY, AppRole.STUDENT];
+      const allowedRoles = [AppRole.STUDENT];
       if (!allowedRoles.includes(targetRole)) {
-        throw ApiError.forbidden(`HOD cannot provision accounts with role "${targetRole}"`);
+        throw ApiError.forbidden(`HOD cannot provision accounts with role "${targetRole}". Only Student accounts can be created.`);
       }
 
       return {

@@ -182,10 +182,16 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
       );
 
       await ref.read(facultyAssignmentsProvider.notifier).createAssignment(assignment);
-      ref.invalidate(facultyAssignmentsProvider);
-      ref.invalidate(myFacultyAssignmentsProvider);
-      if (_selectedDepartmentId != null) {
-        ref.invalidate(departmentSetupProvider(_selectedDepartmentId!));
+
+      // Secondary state invalidation is non-fatal: persistence has already succeeded
+      try {
+        ref.invalidate(facultyAssignmentsProvider);
+        ref.invalidate(myFacultyAssignmentsProvider);
+        if (_selectedDepartmentId != null) {
+          ref.invalidate(departmentSetupProvider(_selectedDepartmentId!));
+        }
+      } catch (_) {
+        // Suppress non-fatal cache invalidation errors
       }
 
       if (mounted) {

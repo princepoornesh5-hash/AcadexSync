@@ -104,7 +104,7 @@ export class AttendanceService {
     let facultyDoc: InstanceType<typeof Faculty> | null = null;
     let authenticatedFacultyDoc: InstanceType<typeof Faculty> | null = null;
 
-    if (requester && requester.role === AppRole.FACULTY) {
+    if (requester && [AppRole.FACULTY, AppRole.HOD].includes(requester.role)) {
       authenticatedFacultyDoc = await this.resolveFacultyProfile(requester);
       const authFacultyIdStr = authenticatedFacultyDoc._id.toString();
 

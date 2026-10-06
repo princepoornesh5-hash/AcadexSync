@@ -238,25 +238,18 @@ class AcadexLiveTimeBoardState extends State<AcadexLiveTimeBoard>
   Widget build(BuildContext context) {
     return Semantics(
       label: 'Live clock. Current time $_currentHours:$_currentMinutes $_currentPeriod India Standard Time',
-      child: GestureDetector(
-        onTap: () {
-          if (!_isSequenceRunning) {
-            triggerMinuteChange();
-          }
-        },
-        child: AcadexScoreboardCard(
-          hours: _currentHours,
-          minutes: _currentMinutes,
-          period: _currentPeriod,
-          oldHours: _oldHours,
-          oldMinutes: _oldMinutes,
-          oldPeriod: _oldPeriod,
-          wipeProgress: _wipeProgress,
-          writeProgress: _writeProgress,
-          isWiping: _isWiping,
-          isWriting: _isWriting,
-          isCompact: widget.isCompact,
-        ),
+      child: AcadexScoreboardCard(
+        hours: _currentHours,
+        minutes: _currentMinutes,
+        period: _currentPeriod,
+        oldHours: _oldHours,
+        oldMinutes: _oldMinutes,
+        oldPeriod: _oldPeriod,
+        wipeProgress: _wipeProgress,
+        writeProgress: _writeProgress,
+        isWiping: _isWiping,
+        isWriting: _isWriting,
+        isCompact: widget.isCompact,
       ),
     );
   }

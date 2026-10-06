@@ -197,8 +197,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             children: [
               _buildFilterChip('All', null, activeFilter),
               const SizedBox(width: 6),
-              _buildFilterChip('Classes', 'CLASS', activeFilter),
-              const SizedBox(width: 6),
               _buildFilterChip('Holidays', 'HOLIDAY', activeFilter),
               const SizedBox(width: 6),
               _buildFilterChip('Exams', 'EXAM', activeFilter),

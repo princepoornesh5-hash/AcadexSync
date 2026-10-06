@@ -50,11 +50,6 @@ export class TeachingAuthorizationService {
   ): Promise<boolean> {
     if (!fa) return false;
 
-    // Direct user ID match
-    if (fa.facultyId && fa.facultyId.toString() === user.id) {
-      return true;
-    }
-
     // Resolve faculty document and verify canonical _id or userId
     const faculty = await this.resolveFacultyProfile(collegeId, user);
     if (faculty) {
@@ -268,9 +263,6 @@ export class TeachingAuthorizationService {
         await this.assertFacultyAssignmentAccess(collegeId, user, assignment.facultyAssignmentId, 'this assignment');
         return;
       }
-      if (assignment.facultyId && assignment.facultyId.toString() === user.id) {
-        return;
-      }
       const faculty = await this.resolveFacultyProfile(collegeId, user);
       if (faculty && assignment.facultyId && assignment.facultyId.toString() === faculty._id.toString()) {
         return;
@@ -278,5 +270,59 @@ export class TeachingAuthorizationService {
       throw ApiError.forbidden('You are not authorized to manage this assignment.');
     }
     throw ApiError.forbidden('You are not authorized to manage this assignment.');
+  }
+
+  /**
+   * Asserts strict teaching ownership for marking/grading activities.
+   * Business Rules:
+   * 1. Super Admin, College Admin do NOT have marking authority over faculty-owned assignments.
+   * 2. HOD does NOT have marking authority merely because they manage the department.
+   * 3. Only the owning teaching authority (FacultyAssignment -> Faculty -> User) may mark/update marks.
+   */
+  static async assertAssignmentMarkingAccess(
+    collegeId: string,
+    user: AuthUserContext,
+    assignment: any
+  ): Promise<void> {
+    const roleUpper = (user.role || '').toUpperCase();
+    if (roleUpper === 'SUPER_ADMIN' || roleUpper === 'COLLEGE_ADMIN') {
+      throw ApiError.forbidden('Administrative roles cannot mark faculty-owned assignments.');
+    }
+    if (roleUpper === 'STUDENT') {
+      throw ApiError.forbidden('Students cannot mark or grade assignments.');
+    }
+
+    // Tenant check
+    if (assignment.collegeId && assignment.collegeId.toString() !== collegeId) {
+      throw ApiError.forbidden('Cross-institution assignment marking is strictly prohibited.');
+    }
+
+    // Resolve authenticated user to canonical Faculty profile
+    const faculty = await this.resolveFacultyProfile(collegeId, user);
+    if (!faculty) {
+      throw ApiError.forbidden('Only the assigned teaching faculty may mark or grade this assignment.');
+    }
+
+    // Assignment must have a valid facultyAssignmentId
+    if (!assignment.facultyAssignmentId) {
+      if (assignment.facultyId && assignment.facultyId.toString() === faculty._id.toString()) {
+        return;
+      }
+      throw ApiError.forbidden('Assignment has no valid teaching assignment.');
+    }
+
+    const facultyAssignment = await FacultyAssignment.findOne({
+      _id: new Types.ObjectId(assignment.facultyAssignmentId),
+      collegeId: new Types.ObjectId(collegeId),
+    });
+
+    if (!facultyAssignment || !facultyAssignment.isActive || facultyAssignment.status !== 'active') {
+      throw ApiError.forbidden('The teaching assignment is inactive or not found.');
+    }
+
+    // Verify FacultyAssignment belongs to this faculty member (Faculty._id)
+    if (facultyAssignment.facultyId.toString() !== faculty._id.toString()) {
+      throw ApiError.forbidden('Only the assigned teaching faculty may mark or grade this assignment.');
+    }
   }
 }

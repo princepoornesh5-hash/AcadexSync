@@ -1073,52 +1073,68 @@ class FacultyAssignmentsNotifier extends AutoDisposeAsyncNotifier<List<FacultyAs
 
   Future<void> createAssignment(FacultyAssignment assignment) async {
     await ref.read(academicRepositoryProvider).createFacultyAssignment(assignment);
-    ref.invalidateSelf();
-    ref.invalidate(myFacultyAssignmentsProvider);
-    ref.invalidate(facultyProvider(null));
-    if (assignment.departmentId.isNotEmpty) {
-      ref.invalidate(departmentSetupProvider(assignment.departmentId));
-      ref.invalidate(facultyProvider(assignment.departmentId));
-      ref.invalidate(facultyWorkloadSummariesProvider(assignment.departmentId));
-    }
-    ref.invalidate(facultyByIdProvider(assignment.facultyId));
-    ref.invalidate(facultySummaryProvider(assignment.facultyId));
-    ref.invalidate(facultyStatsProvider);
-    ref.invalidate(hodStatsProvider);
+    Future.microtask(() {
+      try {
+        ref.invalidateSelf();
+        ref.invalidate(myFacultyAssignmentsProvider);
+        ref.invalidate(facultyProvider(null));
+        if (assignment.departmentId.isNotEmpty) {
+          ref.invalidate(departmentSetupProvider(assignment.departmentId));
+          ref.invalidate(facultyProvider(assignment.departmentId));
+          ref.invalidate(facultyWorkloadSummariesProvider(assignment.departmentId));
+        }
+        ref.invalidate(facultyByIdProvider(assignment.facultyId));
+        ref.invalidate(facultySummaryProvider(assignment.facultyId));
+        ref.invalidate(facultyStatsProvider);
+        ref.invalidate(hodStatsProvider);
+      } catch (_) {}
+    });
   }
 
   Future<void> updateAssignment(FacultyAssignment assignment) async {
     await ref.read(academicRepositoryProvider).createFacultyAssignment(assignment);
-    ref.invalidateSelf();
-    ref.invalidate(myFacultyAssignmentsProvider);
-    ref.invalidate(facultyProvider(null));
-    if (assignment.departmentId.isNotEmpty) {
-      ref.invalidate(departmentSetupProvider(assignment.departmentId));
-      ref.invalidate(facultyProvider(assignment.departmentId));
-      ref.invalidate(facultyWorkloadSummariesProvider(assignment.departmentId));
-    }
-    ref.invalidate(facultyByIdProvider(assignment.facultyId));
-    ref.invalidate(facultySummaryProvider(assignment.facultyId));
-    ref.invalidate(facultyStatsProvider);
-    ref.invalidate(hodStatsProvider);
+    Future.microtask(() {
+      try {
+        ref.invalidateSelf();
+        ref.invalidate(myFacultyAssignmentsProvider);
+        ref.invalidate(facultyProvider(null));
+        if (assignment.departmentId.isNotEmpty) {
+          ref.invalidate(departmentSetupProvider(assignment.departmentId));
+          ref.invalidate(facultyProvider(assignment.departmentId));
+          ref.invalidate(facultyWorkloadSummariesProvider(assignment.departmentId));
+        }
+        ref.invalidate(facultyByIdProvider(assignment.facultyId));
+        ref.invalidate(facultySummaryProvider(assignment.facultyId));
+        ref.invalidate(facultyStatsProvider);
+        ref.invalidate(hodStatsProvider);
+      } catch (_) {}
+    });
   }
 
   Future<void> removeAssignment(String assignmentId) async {
     await ref.read(academicRepositoryProvider).removeFacultyAssignment(assignmentId);
-    ref.invalidateSelf();
-    ref.invalidate(myFacultyAssignmentsProvider);
-    ref.invalidate(facultyProvider(null));
-    ref.invalidate(facultyStatsProvider);
-    ref.invalidate(hodStatsProvider);
+    Future.microtask(() {
+      try {
+        ref.invalidateSelf();
+        ref.invalidate(myFacultyAssignmentsProvider);
+        ref.invalidate(facultyProvider(null));
+        ref.invalidate(facultyStatsProvider);
+        ref.invalidate(hodStatsProvider);
+      } catch (_) {}
+    });
   }
 
   Future<void> deactivateAssignment(String assignmentId) async {
     await ref.read(academicRepositoryProvider).updateFacultyAssignment(assignmentId, isActive: false);
-    ref.invalidateSelf();
-    ref.invalidate(myFacultyAssignmentsProvider);
-    ref.invalidate(facultyProvider(null));
-    ref.invalidate(facultyStatsProvider);
-    ref.invalidate(hodStatsProvider);
+    Future.microtask(() {
+      try {
+        ref.invalidateSelf();
+        ref.invalidate(myFacultyAssignmentsProvider);
+        ref.invalidate(facultyProvider(null));
+        ref.invalidate(facultyStatsProvider);
+        ref.invalidate(hodStatsProvider);
+      } catch (_) {}
+    });
   }
 }
 
@@ -1237,24 +1253,23 @@ final myFacultyAssignmentsProvider = Provider.autoDispose<List<FacultyAssignment
   final currentUserId = authState.user.id;
   final currentUserEmail = authState.user.email.trim().toLowerCase();
 
-  // Find the faculty record matching this authenticated user
+  // Find canonical faculty profile matching this authenticated user (User -> Faculty -> Faculty._id)
   final facultyList = ref.watch(facultyProvider(null)).items;
   Faculty? myFaculty;
   for (final f in facultyList) {
-    if (f.userId == currentUserId || f.id == currentUserId || (currentUserEmail.isNotEmpty && f.email.trim().toLowerCase() == currentUserEmail)) {
+    if (f.userId == currentUserId || (currentUserEmail.isNotEmpty && f.email.trim().toLowerCase() == currentUserEmail)) {
       myFaculty = f;
       break;
     }
   }
 
+  // If authenticated user does not have a linked faculty profile, they own zero teaching assignments
+  if (myFaculty == null) return [];
+
   return assignments.where((a) {
     if (!a.isActive) return false;
-    if (a.facultyId == currentUserId) return true;
-    if (myFaculty != null) {
-      if (a.facultyId == myFaculty.id) return true;
-      if (myFaculty.userId != null && a.facultyId == myFaculty.userId) return true;
-    }
-    return false;
+    // Canonical comparison: FacultyAssignment.facultyId refers strictly to Faculty._id
+    return a.facultyId == myFaculty!.id;
   }).toList();
 });
 

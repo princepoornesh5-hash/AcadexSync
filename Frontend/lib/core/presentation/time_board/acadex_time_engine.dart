@@ -87,7 +87,7 @@ class AcadexTimeEngine with WidgetsBindingObserver {
     _boundaryTimer?.cancel();
     if (_isDisposed) return;
 
-    final delay = durationUntilNextMinute(_currentIst);
+    final delay = durationUntilNextMinute(nowIst());
     _boundaryTimer = Timer(delay, _onMinuteBoundaryReached);
   }
 

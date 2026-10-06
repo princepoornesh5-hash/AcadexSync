@@ -148,7 +148,7 @@ class HodDashboard extends ConsumerWidget {
             (
               label: '+ Add Student',
               icon: LucideIcons.userPlus,
-              route: '/users/new',
+              route: '/academics/students/new',
               isPrimary: false,
             ),
             (

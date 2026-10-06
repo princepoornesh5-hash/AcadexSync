@@ -6,6 +6,7 @@ import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_form_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
+import '../../../../core/presentation/widgets/acadex_chip.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/domain/models/user_model.dart';
@@ -184,11 +185,28 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
     final collegesAsync = isSuperAdmin ? ref.watch(collegesProvider) : null;
 
     // Allowed roles
+    final currentUserRole = currentUser?.role;
+    final isHod = currentUserRole == AppRole.hod;
+    final isCollegeAdmin = currentUserRole == AppRole.collegeAdmin;
+
     final allowedRoles = <AppRole>[];
     if (isSuperAdmin) {
       allowedRoles.addAll([AppRole.superAdmin, AppRole.collegeAdmin, AppRole.hod, AppRole.faculty, AppRole.student]);
+    } else if (isCollegeAdmin) {
+      allowedRoles.addAll([AppRole.hod, AppRole.faculty, AppRole.student]);
+    } else if (isHod) {
+      allowedRoles.add(AppRole.student);
     } else {
-      allowedRoles.addAll([AppRole.collegeAdmin, AppRole.hod, AppRole.faculty, AppRole.student]);
+      allowedRoles.addAll([AppRole.faculty, AppRole.student]);
+    }
+
+    if (isHod && !isEditMode) {
+      if (_selectedRole != AppRole.student) {
+        _selectedRole = AppRole.student;
+      }
+      if (currentUser?.departmentId != null && currentUser!.departmentId!.isNotEmpty) {
+        _selectedDepartmentId ??= currentUser.departmentId;
+      }
     }
 
     if (!allowedRoles.contains(_selectedRole)) {
@@ -261,23 +279,45 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                         children: [
                           AcadexFormField(
                             label: 'System Role *',
-                            child: DropdownButtonFormField<AppRole>(
-                              dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                              value: _selectedRole,
-                              decoration: const InputDecoration(
-                                hintText: 'Select System Role',
-                                prefixIcon: Icon(LucideIcons.shieldCheck, size: 18),
-                              ),
-                              items: allowedRoles.map((r) => DropdownMenuItem(
-                                value: r,
-                                child: Text(r.displayName),
-                              )).toList(),
-                              onChanged: isEditMode ? null : (val) {
-                                if (val != null) {
-                                  setState(() => _selectedRole = val);
-                                }
-                              },
-                            ),
+                            child: allowedRoles.length == 1
+                                ? Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                                      borderRadius: AcadexRadius.borderRadiusMd,
+                                      border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(LucideIcons.graduationCap, size: 18, color: AcadexColors.primary),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            allowedRoles.first.displayName,
+                                            style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                                          ),
+                                        ),
+                                        const AcadexBadge(label: 'FIXED ROLE', variant: AcadexBadgeVariant.neutral),
+                                      ],
+                                    ),
+                                  )
+                                : DropdownButtonFormField<AppRole>(
+                                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                    value: _selectedRole,
+                                    decoration: const InputDecoration(
+                                      hintText: 'Select System Role',
+                                      prefixIcon: Icon(LucideIcons.shieldCheck, size: 18),
+                                    ),
+                                    items: allowedRoles.map((r) => DropdownMenuItem(
+                                      value: r,
+                                      child: Text(r.displayName),
+                                    )).toList(),
+                                    onChanged: isEditMode ? null : (val) {
+                                      if (val != null) {
+                                        setState(() => _selectedRole = val);
+                                      }
+                                    },
+                                  ),
                           ),
                         ],
                       ),

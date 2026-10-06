@@ -24,7 +24,8 @@ import { Notification } from '../models/notification.model';
 import { AcademicCalendarService } from './academicCalendar.service';
 import { AuthenticatedUser } from '../types/auth.types';
 import { AppRole } from '../constants/roles';
-import { CollegeStatus } from '../constants/status';
+import { CollegeStatus, TimetableStatus, TimetableDay } from '../constants/status';
+import { Timetable } from '../models/timetable.model';
 import { ApiError } from '../utils/apiError';
 import { logger } from '../utils/logger';
 import {
@@ -189,7 +190,7 @@ export class DashboardService {
         .limit(3)
         .lean(),
       this.getRecentAnnouncements(collegeId, AppRole.STUDENT, 3),
-      this.getUpcomingCalendarEvents(requester, customDate, 4),
+      this.getStudentUpcomingSchedule(collegeId, activeEnrollment, requester, customDate, 4),
     ]);
 
     const summary: StudentDashboardSummary = {
@@ -1146,6 +1147,85 @@ export class DashboardService {
       });
     } catch (err) {
       logger.warn(`Failed to aggregate calendar upcoming events for dashboard: ${err}`);
+      return [];
+    }
+  }
+
+  private static async getStudentUpcomingSchedule(
+    collegeId: string,
+    activeEnrollment: any,
+    requester: AuthenticatedUser,
+    customDate?: string,
+    limit: number = 4
+  ): Promise<DashboardUpcomingItem[]> {
+    try {
+      const genuineEvents = await this.getUpcomingCalendarEvents(requester, customDate, limit);
+
+      const timetableItems: DashboardUpcomingItem[] = [];
+      if (activeEnrollment) {
+        const sectionId = activeEnrollment.sectionId?._id || activeEnrollment.sectionId;
+        const semesterId = activeEnrollment.semesterId?._id || activeEnrollment.semesterId;
+
+        const ttQuery: any = {
+          collegeId: new mongoose.Types.ObjectId(collegeId),
+          status: TimetableStatus.PUBLISHED,
+        };
+        if (sectionId) {
+          ttQuery.sectionId = new mongoose.Types.ObjectId(sectionId.toString());
+        } else if (semesterId) {
+          ttQuery.semesterId = new mongoose.Types.ObjectId(semesterId.toString());
+        }
+
+        const tt = await Timetable.findOne(ttQuery).populate('entries.subjectId').lean();
+        if (tt && tt.entries && tt.entries.length > 0) {
+          const now = customDate ? new Date(customDate) : new Date();
+          for (let dayOffset = 0; dayOffset <= 2; dayOffset++) {
+            const dateObj = new Date(now);
+            dateObj.setDate(dateObj.getDate() + dayOffset);
+            const dateStr = dateObj.toISOString().split('T')[0];
+            const [y, m, d] = dateStr.split('-').map(Number);
+            const utcDate = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+            const dayNum = utcDate.getUTCDay();
+            const dayMap: Record<number, TimetableDay> = {
+              0: TimetableDay.SUNDAY,
+              1: TimetableDay.MONDAY,
+              2: TimetableDay.TUESDAY,
+              3: TimetableDay.WEDNESDAY,
+              4: TimetableDay.THURSDAY,
+              5: TimetableDay.FRIDAY,
+              6: TimetableDay.SATURDAY,
+            };
+            const targetDay = dayMap[dayNum];
+
+            const entries = tt.entries.filter((e: any) => e.dayOfWeek === targetDay);
+            for (const entry of entries) {
+              const subj: any = entry.subjectId;
+              const title = (typeof subj === 'object' && subj?.name) ? subj.name : (entry.subjectName || 'Class');
+              const subtitleParts: string[] = [];
+              if (entry.facultyName) subtitleParts.push(entry.facultyName);
+              if (entry.roomNumber) subtitleParts.push(`Room ${entry.roomNumber}`);
+              else if (entry.building) subtitleParts.push(entry.building);
+
+              timetableItems.push({
+                id: `tt_${tt._id}_${entry._id || entry.startTime}_${dateStr}`,
+                type: 'CLASS',
+                title,
+                subtitle: subtitleParts.length > 0 ? subtitleParts.join(' • ') : undefined,
+                startTime: `${dateStr}T${entry.startTime || '09:00'}:00Z`,
+                endTime: `${dateStr}T${entry.endTime || '10:00'}:00Z`,
+                location: entry.roomNumber ? `Room ${entry.roomNumber}` : undefined,
+                route: '/timetable',
+              });
+            }
+          }
+        }
+      }
+
+      const combined = [...timetableItems, ...genuineEvents];
+      combined.sort((a, b) => a.startTime.localeCompare(b.startTime));
+      return combined.slice(0, limit);
+    } catch (err) {
+      logger.warn(`Failed to aggregate student upcoming schedule: ${err}`);
       return [];
     }
   }
