@@ -357,11 +357,11 @@ class AcadexException implements Exception {
     if (lower.contains('course') && (lower.contains('already exist') || lower.contains('duplicate'))) {
       return 'A course with this code already exists.';
     }
-    if (lower.contains('academic year') && (lower.contains('already exist') || lower.contains('duplicate'))) {
-      return 'That academic year already exists.';
-    }
     if (lower.contains('semester') && !lower.contains('subject') && !lower.contains('section') && (lower.contains('already exist') || lower.contains('duplicate') || lower.contains('e11000'))) {
       return 'That semester already exists for this academic year.';
+    }
+    if (lower.contains('academic year') && !lower.contains('semester') && (lower.contains('already exist') || lower.contains('duplicate'))) {
+      return 'That academic year already exists.';
     }
     if (lower.contains('timetable') && (lower.contains('conflict') || lower.contains('overlap') || lower.contains('already exist'))) {
       return 'A timetable schedule conflict exists for this time slot.';

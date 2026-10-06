@@ -6,9 +6,30 @@ import 'package:campus_management/core/errors/acadex_error.dart';
 import 'package:campus_management/core/presentation/time_board/acadex_live_time_board.dart';
 import 'package:campus_management/core/presentation/time_board/acadex_time_engine.dart';
 import 'package:campus_management/features/users/presentation/screens/user_form_screen.dart';
+import 'package:campus_management/features/auth/domain/models/auth_state.dart';
 import 'package:campus_management/features/auth/domain/models/role_enum.dart';
 import 'package:campus_management/features/auth/presentation/providers/auth_provider.dart';
 import 'package:campus_management/features/auth/domain/models/user_model.dart';
+import 'package:campus_management/features/academic_structure/domain/models/academic_models.dart';
+import 'package:campus_management/features/academic_structure/presentation/providers/academic_providers.dart';
+
+class _FakeAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
+  _FakeAuthNotifier(super.state);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakeDepartmentNotifier extends AutoDisposeAsyncNotifier<List<Department>> implements DepartmentNotifier {
+  final List<Department> items;
+  _FakeDepartmentNotifier(this.items);
+
+  @override
+  Future<List<Department>> build() async => items;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 void main() {
   group('Core Functional Repair - Frontend Error Mapping Tests', () {
@@ -26,7 +47,7 @@ void main() {
       );
 
       final acadexException = AcadexException.fromDio(dioError);
-      expect(acadexException.userMessage.toLowerCase(), contains('subject'));
+      expect(acadexException.userMessage, equals('A subject with this code already exists for this semester.'));
       expect(acadexException.userMessage, isNot(contains('That semester already exists')));
     });
 
@@ -44,7 +65,7 @@ void main() {
       );
 
       final acadexException = AcadexException.fromDio(dioError);
-      expect(acadexException.userMessage, contains('semester already exists'));
+      expect(acadexException.userMessage, equals('That semester already exists for this academic year.'));
     });
   });
 
@@ -80,13 +101,24 @@ void main() {
     test('AcadexTimeEngine uses nowIst() without cumulative drift', () {
       final now = AcadexTimeEngine.nowIst();
       expect(now, isNotNull);
-      // IST is UTC+5:30
-      final offset = now.timeZoneOffset;
-      expect(offset.inMinutes, equals(330));
+      final utc = DateTime.now().toUtc();
+      final diffMinutes = now.difference(utc).inMinutes;
+      // IST is UTC+5:30 -> difference is 330 minutes
+      expect(diffMinutes >= 329 && diffMinutes <= 331, isTrue);
     });
   });
 
   group('Core Functional Repair - HOD Role Boundaries in User Form', () {
+    final testDept = Department(
+      id: 'dept_cse',
+      collegeId: 'college_alpha',
+      name: 'Computer Science',
+      code: 'CSE',
+      hodId: 'hod_123',
+      description: 'CSE Dept',
+      isActive: true,
+    );
+
     testWidgets('HOD can only provision Student and role selector is locked', (WidgetTester tester) async {
       const hodUser = UserModel(
         id: 'hod_123',
@@ -100,7 +132,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentUserProvider.overrideWith((ref) => hodUser),
+            authProvider.overrideWith((ref) => _FakeAuthNotifier(const AuthAuthenticated(user: hodUser, token: 'jwt'))),
+            departmentsProvider.overrideWith(() => _FakeDepartmentNotifier([testDept])),
           ],
           child: const MaterialApp(
             home: Scaffold(
@@ -114,7 +147,8 @@ void main() {
       // For HOD, allowedRoles is [AppRole.student] only.
       // The dropdown should NOT be present; instead a fixed badge with "Student" should be displayed.
       expect(find.text('Student'), findsWidgets);
-      expect(find.text('Role (Locked)'), findsOneWidget);
+      expect(find.text('FIXED ROLE'), findsOneWidget);
+      expect(find.byType(DropdownButtonFormField<AppRole>), findsNothing);
       expect(find.text('Faculty'), findsNothing);
       expect(find.text('College Admin'), findsNothing);
       expect(find.text('Super Admin'), findsNothing);
@@ -132,7 +166,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentUserProvider.overrideWith((ref) => adminUser),
+            authProvider.overrideWith((ref) => _FakeAuthNotifier(const AuthAuthenticated(user: adminUser, token: 'jwt'))),
+            departmentsProvider.overrideWith(() => _FakeDepartmentNotifier([testDept])),
           ],
           child: const MaterialApp(
             home: Scaffold(
@@ -144,7 +179,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // For College Admin, role dropdown is available with multiple roles
-      expect(find.text('Role *'), findsOneWidget);
+      expect(find.text('System Role *'), findsOneWidget);
       expect(find.byType(DropdownButtonFormField<AppRole>), findsOneWidget);
     });
   });
