@@ -6,6 +6,12 @@ import { verifyJwtToken } from '../utils/token';
 import { TokenType, AccountStatus } from '../constants/status';
 import { User } from '../models/user.model';
 import { AuthSession } from '../models/authSession.model';
+import { WorkspaceMembership } from '../models/workspaceMembership.model';
+import { WorkspaceRoleAssignment } from '../models/workspaceRoleAssignment.model';
+import { isValidSessionId } from '../utils/session.util';
+import { AppRole, ROLE_HIERARCHY } from '../constants/roles';
+import { MembershipStatus, RoleAssignmentStatus } from '../constants/status';
+
 import { RoomManager, ConnectionIdentity } from './roomManager';
 import { ScopeResolver } from './scopeResolver';
 import { ClientInboundMessage, ServerOutboundMessage } from './contracts/eventEnvelope';
@@ -185,6 +191,107 @@ export class RealtimeServer {
         break;
       }
 
+      case 'switch_workspace': {
+        if (!this.roomManager.isAuthenticated(ws)) {
+          this.sendErrorMessage(ws, 'UNAUTHORIZED', 'Authentication required', msg.requestId);
+          return;
+        }
+        const identity = this.roomManager.getIdentity(ws)!;
+        const targetCollegeId = (msg as any).targetCollegeId || (msg as any).workspaceId;
+
+        // Super Admin returning to platform context
+        if (
+          identity.role === AppRole.SUPER_ADMIN &&
+          (!targetCollegeId || targetCollegeId === 'platform' || targetCollegeId === 'global')
+        ) {
+          const updatedIdentity: ConnectionIdentity = {
+            ...identity,
+            collegeId: 'global',
+            role: AppRole.SUPER_ADMIN,
+            departmentId: undefined,
+            sectionId: undefined,
+          };
+          const newRooms = this.roomManager.rebindWorkspace(ws, updatedIdentity);
+          this.sendSuccessResponse(
+            ws,
+            'workspace_switched',
+            { collegeId: 'global', role: AppRole.SUPER_ADMIN, rooms: newRooms },
+            msg.requestId
+          );
+          break;
+        }
+
+        if (!targetCollegeId || !mongoose.Types.ObjectId.isValid(targetCollegeId)) {
+          this.sendErrorMessage(
+            ws,
+            'MISSING_WORKSPACE',
+            'Valid targetCollegeId is required',
+            msg.requestId
+          );
+          return;
+        }
+
+        let authorized = false;
+        let newRole = identity.role;
+        let newDeptId = identity.departmentId;
+
+        if (identity.role === AppRole.SUPER_ADMIN) {
+          authorized = true;
+        } else {
+          const mem = await WorkspaceMembership.findOne({
+            userId: identity.userId,
+            collegeId: targetCollegeId,
+            status: MembershipStatus.ACTIVE,
+          });
+          if (mem) {
+            const roleAssignments = await WorkspaceRoleAssignment.find({
+              membershipId: mem._id,
+              status: RoleAssignmentStatus.ACTIVE,
+            });
+            if (roleAssignments.length > 0) {
+              authorized = true;
+              const activeRoles = roleAssignments.map((ra) => ra.role);
+              let primaryRole = activeRoles[0];
+              let maxWeight = ROLE_HIERARCHY[primaryRole] ?? 0;
+              for (const r of activeRoles) {
+                const w = ROLE_HIERARCHY[r] ?? 0;
+                if (w > maxWeight) {
+                  maxWeight = w;
+                  primaryRole = r;
+                }
+              }
+              newRole = primaryRole;
+              newDeptId = roleAssignments[0].departmentId?.toString();
+            }
+          }
+        }
+
+        if (!authorized) {
+          this.sendErrorMessage(
+            ws,
+            'FORBIDDEN_WORKSPACE',
+            'No active membership in requested workspace',
+            msg.requestId
+          );
+          return;
+        }
+
+        const updatedIdentity: ConnectionIdentity = {
+          ...identity,
+          collegeId: targetCollegeId,
+          role: newRole,
+          departmentId: newDeptId,
+        };
+        const newRooms = this.roomManager.rebindWorkspace(ws, updatedIdentity);
+        this.sendSuccessResponse(
+          ws,
+          'workspace_switched',
+          { collegeId: targetCollegeId, role: newRole, rooms: newRooms },
+          msg.requestId
+        );
+        break;
+      }
+
       default:
         this.sendErrorMessage(ws, 'UNKNOWN_ACTION', `Action "${(msg as any).action}" not recognized`, msg.requestId);
     }
@@ -202,9 +309,40 @@ export class RealtimeServer {
       const payload = verifyJwtToken(token, TokenType.ACCESS);
 
       // Verify session revocation if sessionId is present
-      if (payload.sessionId && mongoose.Types.ObjectId.isValid(payload.sessionId)) {
-        const session = await AuthSession.findById(payload.sessionId);
-        if (session && (session.revokedAt != null || session.isExpired())) {
+      if (payload.sessionId) {
+        if (!isValidSessionId(payload.sessionId)) {
+          this.sendErrorMessage(
+            ws,
+            'INVALID_SESSION',
+            'Invalid session identifier format.',
+            requestId
+          );
+          ws.close(4401, 'Invalid session format');
+          return false;
+        }
+
+        let session;
+        try {
+          session = await AuthSession.findOne({ sessionId: payload.sessionId });
+        } catch (_err) {
+          this.sendErrorMessage(
+            ws,
+            'SESSION_ERROR',
+            'Session validation failed.',
+            requestId
+          );
+          ws.close(4401, 'Session validation failed');
+          return false;
+        }
+
+        if (
+          !session ||
+          session.userId.toString() !== payload.userId.toString() ||
+          session.isRevoked() ||
+          session.revokedAt != null ||
+          session.isExpired() ||
+          (session.expiresAt && new Date() > session.expiresAt)
+        ) {
           this.sendErrorMessage(
             ws,
             'SESSION_REVOKED',
@@ -215,6 +353,7 @@ export class RealtimeServer {
           return false;
         }
       }
+
 
       // Verify user in database and enforce ACTIVE status
       let userDoc: any = null;
@@ -239,17 +378,67 @@ export class RealtimeServer {
         ws.authTimeoutTimer = undefined;
       }
 
+      let activeCollegeId = 'global';
+      let activeRole = userDoc.role;
+      let activeDeptId = userDoc.departmentId ? userDoc.departmentId.toString() : undefined;
+
+      if (userDoc.role === AppRole.SUPER_ADMIN) {
+        activeCollegeId = payload.collegeId || 'global';
+      } else {
+        const targetCollegeId = payload.collegeId || (userDoc.collegeId ? userDoc.collegeId.toString() : null);
+        if (targetCollegeId && mongoose.Types.ObjectId.isValid(targetCollegeId)) {
+          const mem = await WorkspaceMembership.findOne({
+            userId: userDoc._id,
+            collegeId: targetCollegeId,
+            status: MembershipStatus.ACTIVE,
+          });
+
+          if (mem) {
+            const roleAssignments = await WorkspaceRoleAssignment.find({
+              membershipId: mem._id,
+              status: RoleAssignmentStatus.ACTIVE,
+            });
+
+            if (roleAssignments.length > 0) {
+              activeCollegeId = targetCollegeId;
+              const activeRoles = roleAssignments.map((ra) => ra.role);
+              let primaryRole = activeRoles[0];
+              let maxWeight = ROLE_HIERARCHY[primaryRole] ?? 0;
+              for (const r of activeRoles) {
+                const w = ROLE_HIERARCHY[r] ?? 0;
+                if (w > maxWeight) {
+                  maxWeight = w;
+                  primaryRole = r;
+                }
+              }
+              activeRole = primaryRole;
+              activeDeptId = roleAssignments[0].departmentId?.toString() || activeDeptId;
+            } else {
+              activeCollegeId = 'unassigned';
+              activeDeptId = undefined;
+            }
+          } else {
+            activeCollegeId = 'unassigned';
+            activeDeptId = undefined;
+          }
+        } else {
+          activeCollegeId = 'unassigned';
+          activeDeptId = undefined;
+        }
+      }
+
       const identity: ConnectionIdentity = {
         userId: userDoc.id,
-        role: userDoc.role,
-        collegeId: userDoc.collegeId ? userDoc.collegeId.toString() : 'global',
-        departmentId: userDoc.departmentId ? userDoc.departmentId.toString() : undefined,
+        role: activeRole,
+        collegeId: activeCollegeId,
+        departmentId: activeDeptId,
         sectionId: userDoc.sectionId ? userDoc.sectionId.toString() : undefined,
         courseId: userDoc.courseId ? userDoc.courseId.toString() : undefined,
         semesterId: userDoc.semesterId ? userDoc.semesterId.toString() : undefined,
         email: userDoc.email || undefined,
         name: userDoc.name,
         connectedAt: new Date(),
+        sessionId: payload.sessionId,
       };
 
       const baseRooms = this.roomManager.registerAuthenticatedSocket(ws, identity);

@@ -54,6 +54,12 @@ class AuditInfoCard extends StatelessWidget {
           _buildRow("Created By", session.createdBy ?? "System", session.createdAt, isDark),
           Divider(height: 18, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
           _buildRow("Last Modified", session.lastModifiedBy ?? "System", session.lastModifiedAt, isDark),
+          if (session.isSubstitution) ...[
+            Divider(height: 18, color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+            _buildRow("Coverage Type", "Approved Substitution", null, isDark),
+            if (session.substitutionReason != null && session.substitutionReason!.isNotEmpty)
+              _buildRow("Substitution Reason", session.substitutionReason!, null, isDark),
+          ],
         ],
       ),
     );

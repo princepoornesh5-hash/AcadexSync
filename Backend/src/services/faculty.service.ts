@@ -191,14 +191,19 @@ export class FacultyService {
       throw ApiError.badRequest(`Invalid Faculty ID format: "${id}"`);
     }
 
-    // Try finding by User._id or Faculty._id
+    const collegeFilter: any = {};
+    if (requester.role !== AppRole.SUPER_ADMIN && requester.collegeId) {
+      collegeFilter.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+    }
+
+    // Try finding by User._id or Faculty._id with college scoping
     let user = await User.findOne({ _id: id, role: AppRole.FACULTY });
     let faculty: IFaculty | null = null;
 
     if (user) {
-      faculty = await Faculty.findOne({ userId: user._id });
+      faculty = await Faculty.findOne({ userId: user._id, ...collegeFilter });
     } else {
-      faculty = await Faculty.findById(id);
+      faculty = await Faculty.findOne({ _id: id, ...collegeFilter });
       if (faculty && faculty.userId) {
         user = await User.findById(faculty.userId);
       }
@@ -227,6 +232,13 @@ export class FacultyService {
         throw ApiError.notFound('Faculty record not found or is no longer available');
       }
     }
+
+    if (requester.role !== AppRole.SUPER_ADMIN) {
+      if (faculty && requester.collegeId && faculty.collegeId.toString() !== requester.collegeId.toString()) {
+        throw ApiError.forbidden('Cross-college tenant access is strictly prohibited');
+      }
+    }
+
 
     const resolvedUser: IUser = user;
 

@@ -13,6 +13,7 @@ export interface ConnectionIdentity {
   email?: string;
   name?: string;
   connectedAt: Date;
+  sessionId?: string;
 }
 
 export class RoomManager {
@@ -64,7 +65,7 @@ export class RoomManager {
     rooms.push(`user:${identity.userId}`);
 
     // 2. College Tenant Room
-    if (identity.collegeId && identity.collegeId !== 'global') {
+    if (identity.collegeId && identity.collegeId !== 'global' && identity.collegeId !== 'unassigned') {
       rooms.push(`college:${identity.collegeId}`);
 
       // 3. College Role Room
@@ -174,6 +175,37 @@ export class RoomManager {
   }
 
   /**
+   * Rebinds an authenticated socket to a new active workspace context without disconnecting.
+   * Cleans up old institutional rooms and joins new workspace rooms while preserving personal room.
+   */
+  public rebindWorkspace(ws: WebSocket, updatedIdentity: ConnectionIdentity): string[] {
+    const currentRooms = this.getRoomsForSocket(ws);
+    for (const room of currentRooms) {
+      if (
+        room.startsWith('college:') ||
+        room.startsWith('role:') ||
+        room.startsWith('department:') ||
+        room.startsWith('section:')
+      ) {
+        this.leaveRoom(ws, room);
+      }
+    }
+
+    this.socketIdentities.set(ws, updatedIdentity);
+
+    const newBaseRooms = this.deriveBaseRooms(updatedIdentity);
+    for (const room of newBaseRooms) {
+      this.joinRoom(ws, room);
+    }
+
+    Logger.info(
+      `[Realtime] Rebound live socket for user ${updatedIdentity.userId} to workspace ${updatedIdentity.collegeId} (Role: ${updatedIdentity.role}). Active rooms: ${newBaseRooms.length}`
+    );
+
+    return newBaseRooms;
+  }
+
+  /**
    * Broadcasts a versioned event to one or more target rooms with tenant isolation.
    */
   public broadcastToRoom(room: string, event: RealtimeEventEnvelope): number {
@@ -243,6 +275,228 @@ export class RoomManager {
    */
   public broadcastToUser(userId: string, event: RealtimeEventEnvelope): number {
     return this.broadcastToRoom(`user:${userId}`, event);
+  }
+
+  /**
+   * Immediately revokes all institutional room access for a user in a specified workspace.
+   * Cleans up all college, role, department, and section rooms while preserving the personal user room.
+   */
+  public revokeWorkspaceForUser(
+    userId: string,
+    collegeId: string,
+    reason = 'Membership revoked or suspended'
+  ): { removedRooms: string[]; affectedSockets: number } {
+    const removedRooms: string[] = [];
+    let affectedSockets = 0;
+
+    for (const [ws, identity] of this.socketIdentities.entries()) {
+      if (identity.userId === userId && identity.collegeId === collegeId) {
+        affectedSockets++;
+        const currentRooms = this.getRoomsForSocket(ws);
+        for (const room of currentRooms) {
+          if (
+            room.startsWith(`college:${collegeId}`) ||
+            room.startsWith(`role:${collegeId}:`) ||
+            room.startsWith(`department:${collegeId}:`) ||
+            room.startsWith(`section:${collegeId}:`)
+          ) {
+            this.leaveRoom(ws, room);
+            if (!removedRooms.includes(room)) {
+              removedRooms.push(room);
+            }
+          }
+        }
+
+        identity.collegeId = 'unassigned';
+        identity.departmentId = undefined;
+        identity.sectionId = undefined;
+
+        if (ws.readyState === WebSocket.OPEN) {
+          const message: ServerOutboundMessage = {
+            type: 'workspace_revoked',
+            success: false,
+            error: {
+              code: 'WORKSPACE_REVOKED',
+              message: `Institutional access to workspace ${collegeId} has been revoked: ${reason}`,
+            },
+            data: { collegeId, reason },
+          };
+          try {
+            ws.send(JSON.stringify(message));
+          } catch (err) {
+            Logger.error(`[Realtime] Failed to send workspace_revoked to user ${userId}`, err);
+          }
+        }
+      }
+    }
+
+    Logger.info(
+      `[Realtime Security] Revoked workspace ${collegeId} for user ${userId}. Affected sockets: ${affectedSockets}, rooms removed: ${removedRooms.length}`
+    );
+
+    return { removedRooms, affectedSockets };
+  }
+
+  /**
+   * Revalidates effective roles and department scopes for a user in a college,
+   * removing unauthorized rooms and updating connection identity.
+   */
+  public async revalidateUserAuthorization(userId: string, collegeId: string): Promise<void> {
+    const { WorkspaceMembership } = await import('../models/workspaceMembership.model');
+    const { WorkspaceRoleAssignment } = await import('../models/workspaceRoleAssignment.model');
+    const { MembershipStatus, RoleAssignmentStatus } = await import('../constants/status');
+    const { ROLE_HIERARCHY, AppRole } = await import('../constants/roles');
+
+    for (const [ws, identity] of this.socketIdentities.entries()) {
+      if (identity.userId === userId) {
+        if (identity.role === AppRole.SUPER_ADMIN) {
+          continue;
+        }
+
+        if (identity.collegeId !== collegeId && identity.collegeId !== 'unassigned') {
+          continue;
+        }
+
+        const mem = await WorkspaceMembership.findOne({
+          userId,
+          collegeId,
+          status: MembershipStatus.ACTIVE,
+        });
+
+        if (!mem) {
+          if (identity.collegeId === collegeId) {
+            this.revokeWorkspaceForUser(userId, collegeId, 'Membership is no longer active');
+          }
+          continue;
+        }
+
+        const roleAssignments = await WorkspaceRoleAssignment.find({
+          membershipId: mem._id,
+          status: RoleAssignmentStatus.ACTIVE,
+        });
+
+        if (roleAssignments.length === 0) {
+          this.revokeWorkspaceForUser(userId, collegeId, 'No active roles remaining');
+          continue;
+        }
+
+        const activeRoles = roleAssignments.map((ra) => ra.role);
+        const authorizedDeptIds = roleAssignments
+          .map((ra) => ra.departmentId?.toString())
+          .filter(Boolean) as string[];
+
+        let primaryRole = activeRoles[0];
+        let maxWeight = ROLE_HIERARCHY[primaryRole] ?? 0;
+        for (const r of activeRoles) {
+          const w = ROLE_HIERARCHY[r] ?? 0;
+          if (w > maxWeight) {
+            maxWeight = w;
+            primaryRole = r;
+          }
+        }
+
+        identity.collegeId = collegeId;
+        identity.role = primaryRole;
+        identity.departmentId = authorizedDeptIds[0] || undefined;
+
+        // Prune rooms that are no longer authorized
+        const currentRooms = this.getRoomsForSocket(ws);
+        for (const room of currentRooms) {
+          if (room.startsWith(`role:${collegeId}:`)) {
+            const roomRole = room.split(':')[2];
+            if (!activeRoles.includes(roomRole as any)) {
+              this.leaveRoom(ws, room);
+            }
+          } else if (room.startsWith(`department:${collegeId}:`)) {
+            const roomDeptId = room.split(':')[2];
+            if (!authorizedDeptIds.includes(roomDeptId)) {
+              this.leaveRoom(ws, room);
+            }
+          }
+        }
+
+        // Join authorized rooms
+        const desiredRooms = this.deriveBaseRooms(identity);
+        for (const room of desiredRooms) {
+          this.joinRoom(ws, room);
+        }
+
+        if (ws.readyState === WebSocket.OPEN) {
+          const message: ServerOutboundMessage = {
+            type: 'roles_updated',
+            success: true,
+            data: {
+              collegeId,
+              role: primaryRole,
+              activeRoles,
+              departmentId: identity.departmentId,
+              rooms: this.getRoomsForSocket(ws),
+            },
+          };
+          try {
+            ws.send(JSON.stringify(message));
+          } catch (_) {}
+        }
+      }
+    }
+  }
+
+  /**
+   * Revokes a specific authenticated session and closes its associated socket.
+   */
+  public revokeSession(sessionId: string): number {
+    let closedCount = 0;
+    for (const [ws, identity] of this.socketIdentities.entries()) {
+      if (identity.sessionId === sessionId) {
+        closedCount++;
+        Logger.info(`[Realtime Security] Closing socket for revoked sessionId: ${sessionId}`);
+        if (ws.readyState === WebSocket.OPEN) {
+          const message: ServerOutboundMessage = {
+            type: 'error',
+            success: false,
+            error: {
+              code: 'SESSION_REVOKED',
+              message: 'Authentication session has been revoked',
+            },
+          };
+          try {
+            ws.send(JSON.stringify(message));
+          } catch (_) {}
+          ws.close(4401, 'Session revoked');
+        }
+        this.removeSocket(ws);
+      }
+    }
+    return closedCount;
+  }
+
+  /**
+   * Revokes all active sockets for a specific user.
+   */
+  public revokeAllUserSockets(userId: string, reason = 'All sessions revoked'): number {
+    let closedCount = 0;
+    for (const [ws, identity] of this.socketIdentities.entries()) {
+      if (identity.userId === userId) {
+        closedCount++;
+        Logger.info(`[Realtime Security] Closing socket for user ${userId} (${reason})`);
+        if (ws.readyState === WebSocket.OPEN) {
+          const message: ServerOutboundMessage = {
+            type: 'error',
+            success: false,
+            error: {
+              code: 'SESSION_REVOKED',
+              message: reason,
+            },
+          };
+          try {
+            ws.send(JSON.stringify(message));
+          } catch (_) {}
+          ws.close(4401, reason);
+        }
+        this.removeSocket(ws);
+      }
+    }
+    return closedCount;
   }
 
   /**

@@ -84,23 +84,32 @@ export class AuthController {
 
     const user = await AuthService.getMe(userId);
 
+    const activeCollegeId = req.user?.collegeId || user.collegeId?.toString() || null;
+    const activeRole = req.user?.role || user.role;
+    const activeDeptId = (req.user?.authorizedDepartmentIds && req.user.authorizedDepartmentIds.length > 0
+      ? req.user.authorizedDepartmentIds[0]
+      : null) || user.departmentId?.toString() || null;
+
     return ApiResponse.success(res, {
       id: user.id,
       instituteId: user.instituteId,
       name: user.name,
       email: user.email || null,
       phone: user.phone || null,
-      role: user.role,
+      role: activeRole,
       accountStatus: user.accountStatus,
       activationStatus: user.activationStatus,
-      collegeId: user.collegeId?.toString() || null,
-      departmentId: user.departmentId?.toString() || null,
+      collegeId: activeCollegeId,
+      departmentId: activeDeptId,
       courseId: user.courseId?.toString() || null,
       sectionId: user.sectionId?.toString() || null,
       semesterId: user.semesterId?.toString() || null,
       profilePictureUrl: user.profilePictureUrl || null,
       lastLoginAt: user.lastLoginAt || null,
       createdAt: user.createdAt,
+      workspaceMembershipId: req.user?.workspaceMembershipId || null,
+      activeRoles: req.user?.activeRoles || [activeRole],
+      activeWorkspace: req.workspace || null,
     });
   });
 

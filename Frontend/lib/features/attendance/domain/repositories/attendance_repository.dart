@@ -87,4 +87,43 @@ abstract class AttendanceRepository {
   Future<SectionAttendanceAnalytics> getSectionAttendanceAnalytics(String sectionId, {AttendanceDateRange? dateRange});
   Future<FacultyAttendanceAnalytics> getFacultyAttendanceAnalytics(String facultyId, {AttendanceDateRange? dateRange});
   Future<AttendanceDateRangeSummary> getAttendanceDateRangeSummary({AttendanceDateRange? dateRange, String? departmentId, String? sectionId});
+
+  // Historical Attendance Workflows (Prompt 2)
+  Future<Map<String, dynamic>> getHistoricalRoster({
+    required String academicYearId,
+    required String semesterId,
+    String? sectionId,
+    String? subjectId,
+  });
+
+  Future<AttendanceSession> createDetailedHistoricalSession({
+    required String academicYearId,
+    required String semesterId,
+    String? sectionId,
+    required String subjectId,
+    String? facultyAssignmentId,
+    required DateTime date,
+    required String timeSlot,
+    required List<Map<String, dynamic>> records,
+    String? remarks,
+  });
+
+  Future<List<dynamic>> createHistoricalSummaries({
+    required String academicYearId,
+    required String semesterId,
+    String? sectionId,
+    required String subjectId,
+    required String periodLabel,
+    DateTime? periodStart,
+    DateTime? periodEnd,
+    required List<Map<String, dynamic>> entries,
+  });
+
+  Future<AttendanceRecord> correctHistoricalStudentAttendance({
+    String? recordId,
+    String? sessionId,
+    String? studentEnrollmentId,
+    required AttendanceStatus newStatus,
+    required String reason,
+  });
 }

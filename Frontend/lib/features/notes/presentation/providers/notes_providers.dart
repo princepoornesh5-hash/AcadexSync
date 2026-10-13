@@ -155,6 +155,7 @@ class NoteManagementNotifier extends AsyncNotifier<void> {
     String? courseId,
     String? departmentId,
     String? sectionId,
+    String? facultyAssignmentId,
     void Function(int sent, int total)? onProgress,
   }) async {
     state = const AsyncLoading();
@@ -173,6 +174,7 @@ class NoteManagementNotifier extends AsyncNotifier<void> {
           courseId: courseId,
           departmentId: departmentId,
           sectionId: sectionId,
+          facultyAssignmentId: facultyAssignmentId,
           onProgress: onProgress,
         );
       } else {

@@ -22,6 +22,7 @@ import {
 import { normalizeIdentifier } from '../utils/identifier';
 import { ApiError } from '../utils/apiError';
 import { env } from '../config/env';
+import { AuditService } from './audit.service';
 
 export interface ClientMetadata {
   userAgent?: string;
@@ -247,6 +248,25 @@ export class AuthService {
       { ...query, revokedAt: null },
       { $set: { revokedAt: new Date() } }
     );
+
+    // Audit session revocation (never log tokens or credentials)
+    await AuditService.log({
+      actorUserId: userId || 'unknown',
+      action: 'SESSION_REVOKED',
+      entityType: 'AuthSession',
+      entityId: sessionId || userId || 'session',
+      newValue: { sessionId },
+    }).catch(() => {});
+
+    // Realtime connection teardown
+    try {
+      const { RoomManager } = await import('../realtime/roomManager');
+      if (sessionId) {
+        RoomManager.getInstance().revokeSession(sessionId);
+      } else if (userId) {
+        RoomManager.getInstance().revokeAllUserSockets(userId, 'Session revoked');
+      }
+    } catch (_) {}
   }
 
   /**
@@ -258,7 +278,22 @@ export class AuthService {
       { userId, revokedAt: null },
       { $set: { revokedAt: new Date() } }
     );
+
+    await AuditService.log({
+      actorUserId: userId,
+      action: 'ALL_SESSIONS_REVOKED',
+      entityType: 'AuthSession',
+      entityId: userId,
+      newValue: { userId },
+    }).catch(() => {});
+
+    // Teardown all realtime connections for user
+    try {
+      const { RoomManager } = await import('../realtime/roomManager');
+      RoomManager.getInstance().revokeAllUserSockets(userId, 'All sessions revoked');
+    } catch (_) {}
   }
+
 
   /**
    * Password Recovery Flow - Step 1: Request OTP

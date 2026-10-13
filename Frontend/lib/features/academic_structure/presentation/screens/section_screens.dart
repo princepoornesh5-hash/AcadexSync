@@ -42,7 +42,10 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
   String? _selectedAcademicYearId;
   String? _selectedSemesterId;
 
-  void _navigateCreateSection(BuildContext context, List<Course> courses, List<Semester> semesters, TerminologyHelper terminology) {
+  Future<void> _navigateCreateSection(BuildContext context, TerminologyHelper terminology) async {
+    final courses = await ref.read(coursesProvider.future).catchError((_) => <Course>[]);
+    final semesters = await ref.read(semestersProvider.future).catchError((_) => <Semester>[]);
+    if (!mounted) return;
     final check = AcademicPrerequisiteGuard.checkSectionPrerequisites(
       courses: courses,
       semesters: semesters,
@@ -97,7 +100,7 @@ class _SectionListScreenState extends ConsumerState<SectionListScreen> {
           AcadexSearchFilterBar(
             searchHint: "Search ${secTitle.toLowerCase()}, ${progPlural.toLowerCase()}, or ${semTitle.toLowerCase()}...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
-            onActionTap: () => _navigateCreateSection(context, coursesList, semsList, terminology),
+            onActionTap: () => _navigateCreateSection(context, terminology),
             actionLabel: "Create $secSingular",
           ),
           const SizedBox(height: 10),

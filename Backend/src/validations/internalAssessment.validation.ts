@@ -18,49 +18,110 @@ export const assessmentComponentSchema = z.object({
 });
 
 export const studentMarkEntrySchema = z.object({
-  studentId: objectIdSchema,
+  studentEnrollmentId: objectIdSchema.optional(),
+  studentId: objectIdSchema.optional(),
   studentName: z.string().optional(),
   rollNumber: z.string().optional(),
   admissionNumber: z.string().optional(),
   componentMarks: z.record(z.union([z.number().min(0), z.null()])).optional().default({}),
+  marks: z.number().min(0).nullable().optional(),
   obtainedMarks: z.number().min(0).optional(),
   totalMarks: z.number().min(0).optional(),
   status: z.nativeEnum(StudentMarkStatus).optional().default(StudentMarkStatus.NOT_ENTERED),
   remarks: z.string().max(500).optional(),
+}).refine((data) => data.studentEnrollmentId || data.studentId, {
+  message: 'Either studentEnrollmentId or studentId must be provided',
 });
 
 export const getContextSchema = z.object({
   query: z.object({
-    sectionId: objectIdSchema,
-    subjectId: objectIdSchema,
+    assessmentId: objectIdSchema.optional(),
+    facultyAssignmentId: objectIdSchema.optional(),
+    sectionId: objectIdSchema.optional(),
+    subjectId: objectIdSchema.optional(),
     academicYearId: objectIdSchema.optional(),
   }),
 });
 
 export const createAssessmentSchema = z.object({
   body: z.object({
-    departmentId: objectIdSchema,
-    courseId: objectIdSchema,
-    academicYearId: objectIdSchema,
-    semesterId: objectIdSchema,
+    departmentId: objectIdSchema.optional(),
+    courseId: objectIdSchema.optional(),
+    academicYearId: objectIdSchema.optional(),
+    semesterId: objectIdSchema.optional(),
     sectionId: objectIdSchema.optional().nullable(),
-    subjectId: objectIdSchema,
+    subjectId: objectIdSchema.optional(),
     facultyAssignmentId: objectIdSchema.optional().nullable(),
     title: z.string().min(2, 'Title must be at least 2 characters').max(150),
+    description: z.string().max(1000).optional(),
     assessmentType: z.nativeEnum(AssessmentType).optional().default(AssessmentType.INTERNAL_EXAM),
     maximumMarks: z.number().positive('Maximum marks must be greater than 0'),
+    passMarks: z.number().min(0).optional(),
+    weightage: z.number().min(0).max(100).optional(),
     assessmentDate: z.string().or(z.date()).optional(),
     components: z.array(assessmentComponentSchema).optional(),
+    sourceType: z.enum(['LIVE', 'IMPORTED', 'HISTORICAL_MANUAL']).optional(),
+    isHistorical: z.boolean().optional(),
+  }).refine((data) => data.facultyAssignmentId || (data.subjectId && data.sectionId && data.departmentId && data.courseId && data.academicYearId && data.semesterId), {
+    message: 'Either facultyAssignmentId or full academic context (department, course, academicYear, semester, section, subject) must be provided',
+  }),
+});
+
+export const updateAssessmentSchema = z.object({
+  body: z.object({
+    title: z.string().min(2).max(150).optional(),
+    description: z.string().max(1000).optional(),
+    assessmentType: z.nativeEnum(AssessmentType).optional(),
+    maximumMarks: z.number().positive().optional(),
+    passMarks: z.number().min(0).optional(),
+    weightage: z.number().min(0).max(100).optional(),
+    assessmentDate: z.string().or(z.date()).optional(),
+    components: z.array(assessmentComponentSchema).optional(),
+    status: z.nativeEnum(AssessmentStatus).optional(),
+  }),
+});
+
+export const scheduleAssessmentSchema = z.object({
+  body: z.object({
+    assessmentId: objectIdSchema.optional(),
+    date: z.string().min(8, 'Exam date is required'),
+    startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Invalid startTime (HH:MM)'),
+    endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Invalid endTime (HH:MM)'),
+    roomId: objectIdSchema.optional().nullable(),
+    invigilatorFacultyId: objectIdSchema.optional().nullable(),
+    instructions: z.string().max(1000).optional(),
+  }).refine(
+    (data) => {
+      const [sh, sm] = data.startTime.split(':').map(Number);
+      const [eh, em] = data.endTime.split(':').map(Number);
+      return eh * 60 + em > sh * 60 + sm;
+    },
+    { message: 'endTime must be strictly later than startTime' }
+  ),
+});
+
+export const listAssessmentsSchema = z.object({
+  query: z.object({
+    facultyAssignmentId: objectIdSchema.optional(),
+    sectionId: objectIdSchema.optional(),
+    subjectId: objectIdSchema.optional(),
+    semesterId: objectIdSchema.optional(),
+    academicYearId: objectIdSchema.optional(),
+    status: z.nativeEnum(AssessmentStatus).optional(),
+    assessmentType: z.nativeEnum(AssessmentType).optional(),
   }),
 });
 
 export const saveDraftMarksSchema = z.object({
   body: z.object({
-    sectionId: objectIdSchema,
-    subjectId: objectIdSchema,
+    assessmentId: objectIdSchema.optional(),
+    sectionId: objectIdSchema.optional(),
+    subjectId: objectIdSchema.optional(),
     academicYearId: objectIdSchema.optional(),
     title: z.string().optional(),
     entries: z.array(studentMarkEntrySchema).min(1, 'At least one student mark entry is required'),
+  }).refine((data) => data.assessmentId || (data.sectionId && data.subjectId), {
+    message: 'Either assessmentId or both sectionId and subjectId must be provided',
   }),
 });
 

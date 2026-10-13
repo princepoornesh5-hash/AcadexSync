@@ -226,6 +226,7 @@ class ApiNotesRepository implements NotesRepository {
     String? courseId,
     String? departmentId,
     String? sectionId,
+    String? facultyAssignmentId,
   }) async {
     final payload = {
       'subjectId': subjectId,
@@ -239,6 +240,7 @@ class ApiNotesRepository implements NotesRepository {
       if (courseId != null && courseId.isNotEmpty) 'courseId': courseId,
       if (departmentId != null && departmentId.isNotEmpty) 'departmentId': departmentId,
       if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
+      if (facultyAssignmentId != null && facultyAssignmentId.isNotEmpty) 'facultyAssignmentId': facultyAssignmentId,
     };
 
     final response = await _apiClient.dio.post(
@@ -292,6 +294,7 @@ class ApiNotesRepository implements NotesRepository {
     String? courseId,
     String? departmentId,
     String? sectionId,
+    String? facultyAssignmentId,
     void Function(int sent, int total)? onProgress,
   }) async {
     final mimeType = NoteMimeHelper.resolveMimeType(fileName);
@@ -317,6 +320,7 @@ class ApiNotesRepository implements NotesRepository {
       courseId: courseId,
       departmentId: departmentId,
       sectionId: sectionId,
+      facultyAssignmentId: facultyAssignmentId,
     );
 
     // Step 2: Direct multipart upload to ImageKit

@@ -32,7 +32,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 9, vsync: this);
   }
 
   @override
@@ -306,6 +306,9 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                 ),
                 const SizedBox(height: 20),
 
+                if (profile.facultyPriorityContext != null)
+                  _buildFacultyPriorityContextCard(profile.facultyPriorityContext!, isDark, theme),
+
                 // Tab Bar
                 TabBar(
                   controller: _tabController,
@@ -315,31 +318,51 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                   labelColor: AcadexColors.primary,
                   unselectedLabelColor: AcadexColors.inkMuted,
                   tabs: const [
-                    Tab(icon: Icon(LucideIcons.graduationCap, size: 16), text: "Academic Enrollment"),
-                    Tab(icon: Icon(LucideIcons.history, size: 16), text: "Timeline & History"),
-                    Tab(icon: Icon(LucideIcons.user, size: 16), text: "Personal Details"),
-                    Tab(icon: Icon(LucideIcons.bookOpen, size: 16), text: "Assigned Faculty & Subjects"),
+                    Tab(icon: Icon(LucideIcons.layoutDashboard, size: 16), text: "Overview"),
+                    Tab(icon: Icon(LucideIcons.clipboardCheck, size: 16), text: "Attendance"),
+                    Tab(icon: Icon(LucideIcons.award, size: 16), text: "Assessments"),
+                    Tab(icon: Icon(LucideIcons.fileText, size: 16), text: "Assignments"),
+                    Tab(icon: Icon(LucideIcons.bookOpen, size: 16), text: "Subjects"),
+                    Tab(icon: Icon(LucideIcons.stickyNote, size: 16), text: "Notes"),
+                    Tab(icon: Icon(LucideIcons.inbox, size: 16), text: "Requests"),
+                    Tab(icon: Icon(LucideIcons.graduationCap, size: 16), text: "Academic Records"),
+                    Tab(icon: Icon(LucideIcons.history, size: 16), text: "Activity & History"),
                   ],
                 ),
                 const SizedBox(height: 20),
 
                 // Tab Views
                 SizedBox(
-                  height: 600,
+                  height: 650,
                   child: TabBarView(
                     controller: _tabController,
                     children: [
-                      // Tab 1: Academic Enrollment Overview
+                      // Tab 1: Overview
                       _buildAcademicOverviewTab(context, profile, isDark, theme),
 
-                      // Tab 2: Timeline & History
-                      _buildTimelineTab(student, isDark, theme),
+                      // Tab 2: Attendance
+                      _buildAttendanceTab(context, profile, isDark, theme),
 
-                      // Tab 3: Personal Details
-                      _buildPersonalDetailsTab(student, isDark, theme),
+                      // Tab 3: Assessments & Performance
+                      _buildAssessmentsTab(context, profile, isDark, theme),
 
-                      // Tab 4: Assigned Faculty & Enrolled Subjects
-                      _buildFacultyAndSubjectsTab(profile, isDark, theme),
+                      // Tab 4: Assignments
+                      _buildAssignmentsTab(context, profile, isDark, theme),
+
+                      // Tab 5: Subjects
+                      _buildSubjectsTab(profile, isDark, theme),
+
+                      // Tab 6: Notes
+                      _buildNotesTab(profile, isDark, theme),
+
+                      // Tab 7: Requests
+                      _buildRequestsTab(profile, isDark, theme),
+
+                      // Tab 8: Academic Records & Results
+                      _buildAcademicRecordsTab(profile, isDark, theme),
+
+                      // Tab 9: Timeline & History
+                      _buildTimelineTab(student, profile, isDark, theme),
                     ],
                   ),
                 ),
@@ -476,8 +499,500 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
     );
   }
 
-  Widget _buildTimelineTab(Student student, bool isDark, ThemeData theme) {
-    if (student.history.isEmpty) {
+  Widget _buildAttendanceTab(BuildContext context, StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+    final metrics = profile.attendanceMetrics;
+    final hasDetailed = profile.hasDetailedAttendance;
+    final hasPctOnly = profile.hasPercentageOnlyAttendance;
+    final pctMetrics = profile.historicalPercentageMetrics;
+
+    if (!hasDetailed && !hasPctOnly) {
+      return const Center(
+        child: AcadexEmptyState(
+          title: "No Attendance Records",
+          subtitle: "No attendance sessions or historical summaries recorded for this student.",
+          icon: LucideIcons.clipboardCheck,
+        ),
+      );
+    }
+
+    final int totalHeld = metrics != null && metrics['totalHeld'] != null ? (metrics['totalHeld'] as num).toInt() : 0;
+    final int totalPresent = metrics != null && metrics['totalPresent'] != null ? (metrics['totalPresent'] as num).toInt() : 0;
+    final int liveHeld = metrics != null && metrics['liveHeld'] != null ? (metrics['liveHeld'] as num).toInt() : 0;
+    final int livePresent = metrics != null && metrics['livePresent'] != null ? (metrics['livePresent'] as num).toInt() : 0;
+    final int histDetailedHeld = metrics != null && metrics['historicalDetailedHeld'] != null ? (metrics['historicalDetailedHeld'] as num).toInt() : 0;
+    final int histDetailedPresent = metrics != null && metrics['historicalDetailedPresent'] != null ? (metrics['historicalDetailedPresent'] as num).toInt() : 0;
+    final double pct = metrics != null && metrics['percentage'] != null ? (metrics['percentage'] as num).toDouble() : 0.0;
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hasDetailed) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: AcadexStatCard(
+                    title: "Calculated Attendance",
+                    value: "$pct%",
+                    subtitle: "$totalPresent / $totalHeld sessions attended",
+                    icon: LucideIcons.clipboardCheck,
+                    iconColor: pct >= 75 ? AcadexColors.success : AcadexColors.warning,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AcadexStatCard(
+                    title: "Live Attendance",
+                    value: liveHeld > 0 ? "$livePresent / $liveHeld" : "None",
+                    subtitle: "Recorded in Acadex",
+                    icon: LucideIcons.radio,
+                    iconColor: AcadexColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AcadexStatCard(
+                    title: "Imported Detailed",
+                    value: histDetailedHeld > 0 ? "$histDetailedPresent / $histDetailedHeld" : "None",
+                    subtitle: "Ingested historical sessions",
+                    icon: LucideIcons.fileSpreadsheet,
+                    iconColor: AcadexColors.accentTeal,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (hasPctOnly) ...[
+            AcadexCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(LucideIcons.history, size: 18, color: AcadexColors.inkMuted),
+                      const SizedBox(width: 8),
+                      Text("Historical Percentage Records (Non-denominator)", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "These records represent historical percentage metrics that lack total session denominators. Per academic data integrity policy, they are kept distinct from calculated session totals.",
+                    style: AcadexTypography.caption(color: AcadexColors.inkMuted),
+                  ),
+                  const SizedBox(height: 12),
+                  ...pctMetrics.map((pm) {
+                    final label = pm['periodLabel'] ?? 'Historical Term';
+                    final percentage = pm['percentage'] ?? 0;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text("$label", style: AcadexTypography.body(color: theme.colorScheme.onSurface)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AcadexColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                            ),
+                            child: Text("$percentage% (Imported Metric)", style: const TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.primary, fontSize: 13)),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAssessmentsTab(BuildContext context, StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+    if (profile.assessments.isEmpty) {
+      return const Center(
+        child: AcadexEmptyState(
+          title: "No Assessments Available",
+          subtitle: "No published assessment marks or evaluation history found for this student.",
+          icon: LucideIcons.award,
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: AcadexStatCard(
+                  title: "Total Assessments",
+                  value: "${profile.assessments.length}",
+                  subtitle: "Syllabus assessments evaluated",
+                  icon: LucideIcons.award,
+                  iconColor: AcadexColors.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AcadexStatCard(
+                  title: "Pass / Standing",
+                  value: "${profile.assessments.where((a) => a['isPassed'] == true).length} Passed",
+                  subtitle: "${profile.assessments.where((a) => a['status'] == 'ABSENT').length} Absent",
+                  icon: LucideIcons.checkCircle2,
+                  iconColor: AcadexColors.success,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          AcadexCard(
+            child: ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: profile.assessments.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, i) {
+                final a = profile.assessments[i];
+                final title = a['title'] ?? 'Assessment';
+                final subjectName = a['subjectName'] ?? 'Subject';
+                final status = a['status'] ?? 'NOT_ENTERED';
+                final rawScore = a['rawScore'];
+                final maxMarks = a['maximumMarks'] ?? 0;
+                final isPassed = a['isPassed'];
+                final isImported = a['sourceType'] == 'IMPORTED';
+                final isHistoricalManual = a['sourceType'] == 'HISTORICAL_MANUAL';
+                final importBatch = a['importBatchId'];
+
+                Widget marksDisplay;
+                if (status == 'ABSENT') {
+                  marksDisplay = const AcadexBadge(label: "ABSENT", variant: AcadexBadgeVariant.danger);
+                } else if (status == 'EXEMPTED') {
+                  marksDisplay = const AcadexBadge(label: "EXEMPTED", variant: AcadexBadgeVariant.neutral);
+                } else if (status == 'NOT_ENTERED') {
+                  marksDisplay = const AcadexBadge(label: "PENDING", variant: AcadexBadgeVariant.warning);
+                } else {
+                  marksDisplay = Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "$rawScore / $maxMarks",
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                      if (isPassed != null) ...[
+                        const SizedBox(width: 8),
+                        AcadexBadge(
+                          label: isPassed == true ? "PASS" : "FAIL",
+                          variant: isPassed == true ? AcadexBadgeVariant.success : AcadexBadgeVariant.danger,
+                        ),
+                      ],
+                    ],
+                  );
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                if (isImported) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AcadexColors.inkMuted.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                    ),
+                                    child: Text(
+                                      importBatch != null ? "Imported ($importBatch)" : "Imported",
+                                      style: const TextStyle(fontSize: 10, color: AcadexColors.inkMuted, fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ] else if (isHistoricalManual) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AcadexColors.warning.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                                    ),
+                                    child: const Text(
+                                      "Historical Manual",
+                                      style: TextStyle(fontSize: 10, color: AcadexColors.warning, fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              "$subjectName • ${a['assessmentType'] ?? 'Internal'}",
+                              style: AcadexTypography.caption(color: AcadexColors.inkMuted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      marksDisplay,
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAssignmentsTab(BuildContext context, StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+    if (profile.assignments.isEmpty) {
+      return const Center(
+        child: AcadexEmptyState(
+          title: "No Coursework Assignments",
+          subtitle: "No published assignments found for this class section.",
+          icon: LucideIcons.fileText,
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: AcadexCard(
+        child: ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: profile.assignments.length,
+          separatorBuilder: (_, __) => const Divider(height: 1),
+          itemBuilder: (context, i) {
+            final asg = profile.assignments[i];
+            final title = asg['title'] ?? 'Assignment';
+            final dueDate = asg['dueDate'] ?? '—';
+            final maxMarks = asg['maximumMarks'] ?? 0;
+            final isSubmitted = asg['isSubmitted'] == true;
+            final marks = asg['marks'];
+
+            return ListTile(
+              leading: Icon(
+                isSubmitted ? LucideIcons.fileCheck : LucideIcons.fileClock,
+                color: isSubmitted ? AcadexColors.success : AcadexColors.warning,
+              ),
+              title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text("Due: $dueDate • Max Marks: $maxMarks"),
+              trailing: marks != null
+                  ? Text("Score: $marks / $maxMarks", style: const TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.primary))
+                  : AcadexBadge(
+                      label: isSubmitted ? "SUBMITTED" : "PENDING",
+                      variant: isSubmitted ? AcadexBadgeVariant.success : AcadexBadgeVariant.warning,
+                    ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubjectsTab(StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+    final subjects = profile.subjectsWithFaculty.isNotEmpty
+        ? profile.subjectsWithFaculty
+        : profile.enrolledSubjects.map((s) => {'name': s.name, 'code': s.code, 'credits': s.credits, 'facultyName': null}).toList();
+
+    if (subjects.isEmpty) {
+      return const Center(
+        child: AcadexEmptyState(
+          title: "No Enrolled Subjects",
+          subtitle: "No syllabus subjects mapped for current academic term.",
+          icon: LucideIcons.bookOpen,
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: AcadexCard(
+        child: ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: subjects.length,
+          separatorBuilder: (_, __) => const Divider(height: 1),
+          itemBuilder: (context, i) {
+            final sub = subjects[i];
+            final name = sub['name'] ?? 'Subject';
+            final code = sub['code'] ?? '';
+            final credits = sub['credits'] ?? 0;
+            final faculty = sub['facultyName'];
+
+            return ListTile(
+              leading: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AcadexColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                ),
+                child: Text("$code", style: const TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.primary)),
+              ),
+              title: Text("$name", style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text(faculty != null ? "$credits Credits • Instructor: $faculty" : "$credits Credits"),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotesTab(StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+    if (profile.notesCount == 0) {
+      return const Center(
+        child: AcadexEmptyState(
+          title: "No Notes Available",
+          subtitle: "No course notes or lecture slides uploaded for enrolled subjects.",
+          icon: LucideIcons.stickyNote,
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: AcadexCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(LucideIcons.stickyNote, color: AcadexColors.primary),
+                const SizedBox(width: 8),
+                Text("Subject Notes & Materials", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "There are ${profile.notesCount} shared notes available for this student's enrolled courses.",
+              style: AcadexTypography.body(color: theme.colorScheme.onSurface),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () => context.push('/notes'),
+              icon: const Icon(LucideIcons.externalLink, size: 16),
+              label: const Text("Open Notes Library"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRequestsTab(StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+    if (profile.contactRequests.isEmpty) {
+      return const Center(
+        child: AcadexEmptyState(
+          title: "No Contact Requests",
+          subtitle: "No student profile or contact update requests on file.",
+          icon: LucideIcons.inbox,
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: AcadexCard(
+        child: ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: profile.contactRequests.length,
+          separatorBuilder: (_, __) => const Divider(height: 1),
+          itemBuilder: (context, i) {
+            final req = profile.contactRequests[i];
+            final status = req['status'] ?? 'PENDING';
+            final phone = req['requestedPhone'] ?? '—';
+            final reason = req['reason'] ?? 'Contact update';
+
+            AcadexBadgeVariant variant = AcadexBadgeVariant.warning;
+            if (status == 'APPROVED') variant = AcadexBadgeVariant.success;
+            if (status == 'REJECTED') variant = AcadexBadgeVariant.danger;
+
+            return ListTile(
+              leading: const Icon(LucideIcons.phoneCall, color: AcadexColors.primary),
+              title: Text("Requested Phone: $phone", style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text(reason),
+              trailing: AcadexBadge(label: status, variant: variant),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAcademicRecordsTab(StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+    final hasRecords = profile.academicRecords.isNotEmpty || profile.officialResults.isNotEmpty;
+
+    if (!hasRecords) {
+      return const Center(
+        child: AcadexEmptyState(
+          title: "No Certified Academic Records",
+          subtitle: "No semester records or official certified results published yet.",
+          icon: LucideIcons.graduationCap,
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (profile.officialResults.isNotEmpty) ...[
+            AcadexCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Official Published Results", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+                  const SizedBox(height: 12),
+                  ...profile.officialResults.map((r) {
+                    final sem = r['semester'] ?? 'Semester';
+                    final sgpa = r['sgpa'] ?? '—';
+                    final resultStatus = r['resultStatus'] ?? 'PUBLISHED';
+                    return ListTile(
+                      title: Text("$sem", style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text("SGPA: $sgpa"),
+                      trailing: AcadexBadge(label: "$resultStatus", variant: AcadexBadgeVariant.success),
+                    );
+                  }),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (profile.academicRecords.isNotEmpty) ...[
+            AcadexCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Academic Records Registry", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+                  const SizedBox(height: 12),
+                  ...profile.academicRecords.map((ar) {
+                    return ListTile(
+                      leading: const Icon(LucideIcons.award, color: AcadexColors.primary),
+                      title: Text("${ar['recordType'] ?? 'Term Record'}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text("${ar['details'] ?? 'Academic Registry Entry'}"),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimelineTab(Student student, StudentAcademicProfile profile, bool isDark, ThemeData theme) {
+    final hasHistory = student.history.isNotEmpty || profile.enrollmentHistory.isNotEmpty;
+
+    if (!hasHistory) {
       return const Center(
         child: AcadexEmptyState(
           title: "No Academic History",
@@ -487,169 +1002,98 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
       );
     }
 
-    return ListView.separated(
-      itemCount: student.history.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, i) {
-        final item = student.history[i];
-
-        return AcadexCard(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AcadexColors.primary.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(LucideIcons.milestone, size: 20, color: AcadexColors.primary),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          item.status,
-                          style: AcadexTypography.title(color: theme.colorScheme.onSurface).copyWith(fontSize: 15),
-                        ),
-                        if (item.termEndDate != null || item.termStartDate != null)
-                          Text(
-                            item.termEndDate != null
-                                ? "${item.termEndDate!.day}/${item.termEndDate!.month}/${item.termEndDate!.year}"
-                                : "${item.termStartDate!.day}/${item.termStartDate!.month}/${item.termStartDate!.year}",
-                            style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      AcadexEntityFormatters.formatAcademicContext(
-                        semester: AcadexEntityFormatters.formatSemesterLabel(item.semesterName, rawId: item.semesterId),
-                        section: AcadexEntityFormatters.formatSectionLabel(item.sectionName, rawId: item.sectionId, fallback: 'Section Not Assigned'),
-                      ),
-                      style: AcadexTypography.body(color: theme.colorScheme.onSurface),
-                    ),
-                    if (item.remarks != null && item.remarks!.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        item.remarks!,
-                        style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildPersonalDetailsTab(Student student, bool isDark, ThemeData theme) {
-    return SingleChildScrollView(
-      child: AcadexCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Personal & Guardian Information", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
-            const SizedBox(height: 12),
-            _buildDetailRow("Full Name", student.name),
-            _buildDetailRow("Roll Number", student.rollNumber),
-            _buildDetailRow("Email Address", student.email),
-            _buildDetailRow("Phone Number", student.phone.isNotEmpty ? student.phone : "—"),
-            _buildDetailRow("Parent / Guardian", student.parentName ?? "—"),
-            _buildDetailRow("Parent Phone", student.parentPhone ?? "—"),
-            _buildDetailRow("Blood Group", student.bloodGroup ?? "—"),
-            _buildDetailRow("Address", student.address ?? "—"),
-            _buildDetailRow("Date of Birth", student.dateOfBirth != null ? "${student.dateOfBirth!.day}/${student.dateOfBirth!.month}/${student.dateOfBirth!.year}" : "—"),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFacultyAndSubjectsTab(StudentAcademicProfile profile, bool isDark, ThemeData theme) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AcadexCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Assigned Faculty (${profile.assignedFaculty.length})", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
-                const SizedBox(height: 12),
-                profile.assignedFaculty.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text("No faculty currently assigned to this class."),
-                      )
-                    : ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: profile.assignedFaculty.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemBuilder: (context, i) {
-                          final f = profile.assignedFaculty[i];
-                          return ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: AcadexColors.primary.withValues(alpha: 0.12),
-                              child: Text(f.name.isNotEmpty ? f.name[0].toUpperCase() : 'F'),
-                            ),
-                            title: Text(f.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text("${f.employeeId} • ${f.email}"),
-                          );
-                        },
+          if (profile.enrollmentHistory.isNotEmpty) ...[
+            AcadexCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Enrollment History", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
+                  const SizedBox(height: 12),
+                  ...profile.enrollmentHistory.map((eh) {
+                    final sem = eh['semesterId'] != null ? "Semester ${eh['semesterId']['number'] ?? ''}" : "Term";
+                    final yr = eh['academicYearId'] != null ? "${eh['academicYearId']['name'] ?? ''}" : "";
+                    final status = eh['status'] ?? 'active';
+                    return ListTile(
+                      leading: const Icon(LucideIcons.milestone, color: AcadexColors.primary),
+                      title: Text("$sem • $yr", style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text("Section: ${eh['sectionId']?['name'] ?? '—'}"),
+                      trailing: AcadexBadge(
+                        label: status.toUpperCase(),
+                        variant: status == 'active' ? AcadexBadgeVariant.success : AcadexBadgeVariant.neutral,
                       ),
-              ],
+                    );
+                  }),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          AcadexCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Enrolled Subjects (${profile.enrolledSubjects.length})", style: AcadexTypography.title(color: theme.colorScheme.onSurface)),
-                const SizedBox(height: 12),
-                profile.enrolledSubjects.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text("No active subjects in current semester syllabus."),
-                      )
-                    : ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: profile.enrolledSubjects.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemBuilder: (context, i) {
-                          final sub = profile.enrolledSubjects[i];
-                          return ListTile(
-                            leading: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AcadexColors.primary.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(AcadexRadius.xs),
+            const SizedBox(height: 16),
+          ],
+          if (student.history.isNotEmpty)
+            AcadexCard(
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: student.history.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, i) {
+                  final item = student.history[i];
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AcadexColors.primary.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(LucideIcons.milestone, size: 20, color: AcadexColors.primary),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  item.status,
+                                  style: AcadexTypography.title(color: theme.colorScheme.onSurface).copyWith(fontSize: 15),
+                                ),
+                                if (item.termEndDate != null || item.termStartDate != null)
+                                  Text(
+                                    item.termEndDate != null
+                                        ? "${item.termEndDate!.day}/${item.termEndDate!.month}/${item.termEndDate!.year}"
+                                        : "${item.termStartDate!.day}/${item.termStartDate!.month}/${item.termStartDate!.year}",
+                                    style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              AcadexEntityFormatters.formatAcademicContext(
+                                semester: AcadexEntityFormatters.formatSemesterLabel(item.semesterName, rawId: item.semesterId),
+                                section: AcadexEntityFormatters.formatSectionLabel(item.sectionName, rawId: item.sectionId, fallback: 'Section Not Assigned'),
                               ),
-                              child: Text(sub.code, style: const TextStyle(fontWeight: FontWeight.bold, color: AcadexColors.primary)),
+                              style: AcadexTypography.body(color: theme.colorScheme.onSurface),
                             ),
-                            title: Text(sub.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text("${sub.credits} Credits • ${sub.type}"),
-                          );
-                        },
+                          ],
+                        ),
                       ),
-              ],
+                    ],
+                  );
+                },
+              ),
             ),
-          ),
         ],
       ),
     );
   }
+
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
@@ -661,6 +1105,176 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
           Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
       ),
+    );
+  }
+
+  Widget _buildFacultyPriorityContextCard(FacultyPriorityContext ctx, bool isDark, ThemeData theme) {
+    final borderColor = isDark
+        ? const Color(0xFF3B82F6).withValues(alpha: 0.45)
+        : const Color(0xFF2563EB).withValues(alpha: 0.35);
+    final bgColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFF0F7FF);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(AcadexRadius.md),
+        border: Border.all(color: borderColor, width: 1.2),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF2563EB).withValues(alpha: 0.25) : const Color(0xFFDBEAFE),
+                  borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      LucideIcons.sparkles,
+                      size: 13,
+                      color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      "YOUR TEACHING CONTEXT",
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: (ctx.attendancePercentage >= 75
+                          ? AcadexColors.success
+                          : AcadexColors.warning)
+                      .withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(AcadexRadius.xs),
+                ),
+                child: Text(
+                  ctx.attendancePercentage >= 75 ? "Good Attendance" : "Attention Needed",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: ctx.attendancePercentage >= 75
+                        ? AcadexColors.success
+                        : AcadexColors.warning,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "${ctx.subjectName} • ${ctx.subjectCode}",
+                      style: AcadexTypography.title(color: theme.colorScheme.onSurface).copyWith(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      "Section ${ctx.sectionName}",
+                      style: AcadexTypography.body(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 24,
+            runSpacing: 10,
+            children: [
+              _buildPriorityMetric(
+                label: "Attendance",
+                value: "${ctx.attendedSessions} / ${ctx.totalSessions}",
+                percentage: "${ctx.attendancePercentage.toStringAsFixed(0)}%",
+                icon: LucideIcons.clipboardCheck,
+                color: ctx.attendancePercentage >= 75 ? AcadexColors.success : AcadexColors.warning,
+              ),
+              _buildPriorityMetric(
+                label: "Assignments",
+                value: "${ctx.submittedAssignments} / ${ctx.totalAssignments}",
+                percentage: ctx.totalAssignments > 0
+                    ? "${((ctx.submittedAssignments / ctx.totalAssignments) * 100).toStringAsFixed(0)}%"
+                    : "N/A",
+                icon: LucideIcons.fileCheck,
+                color: AcadexColors.primary,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPriorityMetric({
+    required String label,
+    required String value,
+    required String percentage,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(AcadexRadius.xs),
+          ),
+          child: Icon(icon, size: 16, color: color),
+        ),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(fontSize: 11, color: AcadexColors.inkMuted, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  "•  $percentage",
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: color),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

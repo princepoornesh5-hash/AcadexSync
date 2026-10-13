@@ -2,6 +2,8 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IAuditLog extends Document {
   collegeId?: string;
+  departmentId?: string;
+  workspaceMembershipId?: string;
   actorUserId: string;
   actorEmail?: string;
   actorRole?: string;
@@ -21,6 +23,8 @@ export interface IAuditLog extends Document {
 const AuditLogSchema = new Schema<IAuditLog>(
   {
     collegeId: { type: String, default: null, index: true },
+    departmentId: { type: String, default: null, index: true },
+    workspaceMembershipId: { type: String, default: null, index: true },
     actorUserId: { type: String, required: true, index: true },
     actorEmail: { type: String, default: null },
     actorRole: { type: String, default: null },

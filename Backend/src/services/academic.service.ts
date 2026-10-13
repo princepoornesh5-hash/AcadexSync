@@ -2317,17 +2317,23 @@ export class AcademicService {
         }
       }
     } else if (requester.role === AppRole.FACULTY) {
-      let facultyProfile = await Faculty.findOne({ userId: requester.id });
+      const collegeFilter: any = {};
+      if (requester.collegeId && mongoose.Types.ObjectId.isValid(requester.collegeId)) {
+        collegeFilter.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+      }
+      let facultyProfile = await Faculty.findOne({ userId: requester.id, ...collegeFilter });
       if (!facultyProfile && mongoose.Types.ObjectId.isValid(requester.id)) {
         facultyProfile = await Faculty.findOne({
           $or: [{ userId: new mongoose.Types.ObjectId(requester.id) }, { _id: new mongoose.Types.ObjectId(requester.id) }],
+          ...collegeFilter,
         });
       }
       if (!facultyProfile && requester.email) {
-        facultyProfile = await Faculty.findOne({ email: requester.email.toLowerCase() });
+        facultyProfile = await Faculty.findOne({ email: requester.email.toLowerCase(), ...collegeFilter });
       }
       if (!facultyProfile) return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
       mongoQuery.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+
       mongoQuery.facultyId = {
         $in: [
           facultyProfile._id,
@@ -2413,11 +2419,16 @@ export class AcademicService {
       throw ApiError.forbidden('Cross-department access is strictly prohibited');
     }
     if (requester.role === AppRole.FACULTY) {
-      const faculty = await Faculty.findOne({ userId: requester.id });
+      const facultyFilter: any = { userId: requester.id };
+      if (requester.collegeId && mongoose.Types.ObjectId.isValid(requester.collegeId)) {
+        facultyFilter.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+      }
+      const faculty = await Faculty.findOne(facultyFilter);
       if (!faculty || assignment.facultyId.toString() !== faculty.id) {
         throw ApiError.forbidden('Faculty can only access their own assignments');
       }
     }
+
 
     return assignment;
   }

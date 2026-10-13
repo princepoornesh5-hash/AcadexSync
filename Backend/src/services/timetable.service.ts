@@ -457,17 +457,32 @@ export class TimetableService {
         if (!entry.subjectId || !entry.facultyId) {
           throw ApiError.badRequest('Either facultyAssignmentId or both subjectId and facultyId must be provided');
         }
+
+        let candidateFacultyId = new mongoose.Types.ObjectId(entry.facultyId.toString());
+        const facProfile = await Faculty.findOne({
+          collegeId: new mongoose.Types.ObjectId(collegeId),
+          $or: [{ _id: candidateFacultyId }, { userId: candidateFacultyId }],
+        });
+        if (facProfile) {
+          candidateFacultyId = facProfile._id;
+          entry.facultyId = facProfile._id;
+        }
+
         const assignmentQuery: Record<string, unknown> = {
           collegeId: new mongoose.Types.ObjectId(collegeId),
           subjectId: new mongoose.Types.ObjectId(entry.subjectId.toString()),
-          facultyId: new mongoose.Types.ObjectId(entry.facultyId.toString()),
+          facultyId: candidateFacultyId,
           courseId: new mongoose.Types.ObjectId(courseId.toString()),
           semesterId: new mongoose.Types.ObjectId(semesterId.toString()),
           isActive: true,
           status: 'active',
         };
         if (section) {
-          assignmentQuery.sectionId = section._id;
+          assignmentQuery.$or = [
+            { sectionId: section._id },
+            { sectionId: null },
+            { sectionId: { $exists: false } },
+          ];
         }
         if (academicYearId && mongoose.Types.ObjectId.isValid(academicYearId)) {
           assignmentQuery.academicYearId = new mongoose.Types.ObjectId(academicYearId);
@@ -784,8 +799,13 @@ export class TimetableService {
         mongoQuery.departmentId = new mongoose.Types.ObjectId(requester.departmentId);
       }
       if (requester.role === AppRole.FACULTY) {
-        const myFaculty = await Faculty.findOne({ userId: requester.id });
+        const facFilter: any = { userId: requester.id };
+        if (requester.collegeId && mongoose.Types.ObjectId.isValid(requester.collegeId)) {
+          facFilter.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+        }
+        const myFaculty = await Faculty.findOne(facFilter);
         if (!myFaculty) throw ApiError.notFound('Faculty profile not found for authenticated user');
+
         facultyScopedId = myFaculty._id as mongoose.Types.ObjectId;
 
         if (query.facultyId && query.facultyId !== myFaculty._id.toString() && query.facultyId !== requester.id) {
@@ -1244,8 +1264,13 @@ export class TimetableService {
       }
     }
     if (requester && requester.role === AppRole.STUDENT) {
-      const studentProfile = await Student.findOne({ userId: requester.id });
+      const stuFilter: any = { userId: requester.id };
+      if (requester.collegeId && mongoose.Types.ObjectId.isValid(requester.collegeId)) {
+        stuFilter.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+      }
+      const studentProfile = await Student.findOne(stuFilter);
       if (!studentProfile) throw ApiError.notFound('Student profile not found');
+
       if (studentProfile.sectionId?.toString() !== sectionId) {
         throw ApiError.forbidden('Students can only view the timetable for their enrolled section');
       }
@@ -1517,16 +1542,22 @@ export class TimetableService {
     }
 
     if (requester && requester.role === AppRole.FACULTY) {
-      let myFaculty = await Faculty.findOne({ userId: requester.id });
+      const collegeFilter: any = {};
+      if (requester.collegeId && mongoose.Types.ObjectId.isValid(requester.collegeId)) {
+        collegeFilter.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+      }
+      let myFaculty = await Faculty.findOne({ userId: requester.id, ...collegeFilter });
       if (!myFaculty && mongoose.Types.ObjectId.isValid(requester.id)) {
         myFaculty = await Faculty.findOne({
           $or: [{ userId: new mongoose.Types.ObjectId(requester.id) }, { _id: new mongoose.Types.ObjectId(requester.id) }],
+          ...collegeFilter,
         });
       }
       if (!myFaculty && requester.email) {
-        myFaculty = await Faculty.findOne({ email: requester.email.toLowerCase() });
+        myFaculty = await Faculty.findOne({ email: requester.email.toLowerCase(), ...collegeFilter });
       }
       if (!myFaculty) throw ApiError.notFound('Faculty profile not found for authenticated user');
+
 
       if (facultyId !== 'me' && facultyId !== myFaculty._id.toString() && facultyId !== requester.id) {
         throw ApiError.forbidden('Faculty members can only access their own timetable schedule');
@@ -1655,6 +1686,11 @@ export class TimetableService {
         entryObj.collegeId = subTimetable.collegeId;
         entryObj.facultyId = actualFacultyId;
         (entryObj as any).isSubstituted = true;
+        (entryObj as any).originalFacultyId = sub.originalFacultyId;
+        const origFaculty = await Faculty.findById(sub.originalFacultyId).select('name employeeId');
+        (entryObj as any).originalFacultyName = origFaculty?.name || 'Assigned Faculty';
+        (entryObj as any).substitutionReason = sub.reason;
+        (entryObj as any).substitutionId = sub._id;
         entries.push(entryObj as ITimetableGridEntry);
       }
     }
@@ -1672,8 +1708,13 @@ export class TimetableService {
       throw ApiError.forbidden('Only students can access this endpoint');
     }
 
-    const studentProfile = await Student.findOne({ userId: requester.id });
+    const stuFilter: any = { userId: requester.id };
+    if (requester.collegeId && mongoose.Types.ObjectId.isValid(requester.collegeId)) {
+      stuFilter.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+    }
+    const studentProfile = await Student.findOne(stuFilter);
     if (!studentProfile) throw ApiError.notFound('Student profile not found');
+
 
     // Find current active enrollment
     const activeEnrollment = await StudentEnrollment.findOne({

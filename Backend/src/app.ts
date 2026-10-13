@@ -132,8 +132,8 @@ export function createApp(): Express {
   app.options('*', cors(corsOptions));
 
   // 3. Request Body Parsing
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  app.use(express.json({ limit: '25mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
   // 4. Request Logging
   if (env.NODE_ENV !== 'test') {

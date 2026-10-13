@@ -25,6 +25,12 @@ router.get('/analytics', AttendanceController.getAnalytics);
 // Attendance Corrections
 router.patch('/records/:id/correct', requireHodOrAbove, AttendanceController.correctRecord);
 
+// Historical Attendance Workflows (Prompt 2)
+router.get('/historical/roster', requireFacultyOrAbove, AttendanceController.getHistoricalRoster);
+router.post('/historical/sessions', requireFacultyOrAbove, AttendanceController.createDetailedHistoricalSession);
+router.post('/historical/summaries', requireFacultyOrAbove, AttendanceController.createHistoricalSummaries);
+router.post('/historical/records/student', requireFacultyOrAbove, AttendanceController.correctHistoricalStudentAttendance);
+
 // Attendance Sessions CRUD & Lifecycle
 router.post('/sessions', requireFacultyOrAbove, AttendanceController.createSession);
 router.get('/sessions', AttendanceController.list);

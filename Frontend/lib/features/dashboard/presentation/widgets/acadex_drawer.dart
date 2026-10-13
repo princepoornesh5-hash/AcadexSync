@@ -10,6 +10,8 @@ import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/providers/workspace_providers.dart';
+import '../../../auth/presentation/widgets/workspace_selector_dialog.dart';
 import '../../../../core/presentation/widgets/acadex_avatar.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../../core/presentation/widgets/acadex_dialogs.dart';
@@ -38,6 +40,7 @@ class AcadexDrawer extends ConsumerWidget {
     }
 
     final role = user?.role ?? AppRole.student;
+    final activeWorkspace = ref.watch(activeWorkspaceProvider);
     final groupedItems = AcadexNavigationService.getGroupedNavItems(role);
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isCollapsed = !isModal && ref.watch(sidebarCollapsedProvider);
@@ -175,6 +178,66 @@ class AcadexDrawer extends ConsumerWidget {
                               Icon(
                                 LucideIcons.chevronRight,
                                 size: 14,
+                                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Workspace Switcher Strip
+                      InkWell(
+                        onTap: () {
+                          if (isModal && Scaffold.of(context).isDrawerOpen) {
+                            Navigator.of(context).pop();
+                          }
+                          showWorkspaceSelectorDialog(context);
+                        },
+                        borderRadius: AcadexRadius.borderRadiusMd,
+                        child: Container(
+                          margin: const EdgeInsets.only(top: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                            borderRadius: AcadexRadius.borderRadiusMd,
+                            border: Border.all(
+                              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(LucideIcons.building2, size: 14, color: AcadexColors.primary),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      activeWorkspace?.collegeName ?? 'Select Workspace',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (activeWorkspace != null && activeWorkspace.collegeCode.isNotEmpty)
+                                      Text(
+                                        'Code: ${activeWorkspace.collegeCode}',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                LucideIcons.arrowLeftRight,
+                                size: 13,
                                 color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                               ),
                             ],

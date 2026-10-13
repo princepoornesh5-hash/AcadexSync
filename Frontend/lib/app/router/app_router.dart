@@ -72,6 +72,7 @@ import '../../features/attendance/presentation/screens/student_attendance_dashbo
 import '../../features/attendance/presentation/screens/student_subject_attendance_screen.dart';
 import '../../features/attendance/presentation/screens/student_attendance_calendar_screen.dart';
 import '../../features/attendance/presentation/screens/student_session_detail_screen.dart';
+import '../../features/attendance/presentation/screens/historical_attendance_screen.dart';
 import '../../features/attendance/domain/models/attendance_alert.dart';
 import '../../features/attendance/presentation/providers/attendance_alert_providers.dart';
 
@@ -568,7 +569,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (loc.startsWith('/attendance/mark') ||
           loc.startsWith('/attendance/admin') ||
           loc.startsWith('/attendance/sessions/admin') ||
-          loc.startsWith('/attendance/faculty')) {
+          loc.startsWith('/attendance/faculty') ||
+          loc.startsWith('/attendance/historical')) {
         if (role == AppRole.student) {
           return '/attendance';
         }
@@ -1029,6 +1031,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(path: '/attendance/mark', builder: (context, state) => const MarkAttendanceScreen()),
+      GoRoute(path: '/attendance/historical', builder: (context, state) => const HistoricalAttendanceScreen()),
       GoRoute(path: '/attendance/student/history', builder: (context, state) => const StudentAttendanceHistoryScreen()),
       GoRoute(path: '/attendance/faculty/history', builder: (context, state) => const FacultyAttendanceHistoryScreen()),
       GoRoute(path: '/attendance/faculty/detail', builder: (context, state) => const FacultyAttendanceDetailScreen()),
@@ -1481,13 +1484,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/assessments/entry',
         builder: (context, state) {
+          final assessmentId = state.uri.queryParameters['assessmentId'];
           final sectionId = state.uri.queryParameters['sectionId'] ?? '';
           final subjectId = state.uri.queryParameters['subjectId'] ?? '';
           final academicYearId = state.uri.queryParameters['academicYearId'];
+          final facultyAssignmentId = state.uri.queryParameters['facultyAssignmentId'];
           return InternalMarksScreen(
+            assessmentId: assessmentId,
             sectionId: sectionId,
             subjectId: subjectId,
             academicYearId: academicYearId,
+            facultyAssignmentId: facultyAssignmentId,
           );
         },
       ),

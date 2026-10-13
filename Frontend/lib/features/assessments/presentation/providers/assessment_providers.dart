@@ -7,8 +7,8 @@ final assessmentRepositoryProvider = Provider<ApiAssessmentRepository>((ref) {
 });
 
 typedef AssessmentContextParams = ({
-  String sectionId,
-  String subjectId,
+  String? sectionId,
+  String? subjectId,
   String? academicYearId,
 });
 
@@ -19,6 +19,40 @@ final assessmentContextProvider = FutureProvider.family<AssessmentContextModel, 
       sectionId: params.sectionId,
       subjectId: params.subjectId,
       academicYearId: params.academicYearId,
+    );
+  },
+);
+
+final assessmentsListProvider = FutureProvider.family<List<InternalAssessmentModel>, Map<String, String?>>(
+  (ref, filters) async {
+    final repo = ref.watch(assessmentRepositoryProvider);
+    return repo.listAssessments(
+      facultyAssignmentId: filters['facultyAssignmentId'],
+      sectionId: filters['sectionId'],
+      subjectId: filters['subjectId'],
+      semesterId: filters['semesterId'],
+      academicYearId: filters['academicYearId'],
+      status: filters['status'],
+      assessmentType: filters['assessmentType'],
+    );
+  },
+);
+
+final assessmentDetailProvider = FutureProvider.family<Map<String, dynamic>, String>(
+  (ref, assessmentId) async {
+    final repo = ref.watch(assessmentRepositoryProvider);
+    return repo.getAssessmentById(assessmentId);
+  },
+);
+
+final examTimetableProvider = FutureProvider.family<List<AssessmentScheduleModel>, Map<String, String?>>(
+  (ref, params) async {
+    final repo = ref.watch(assessmentRepositoryProvider);
+    return repo.getExamTimetable(
+      sectionId: params['sectionId'],
+      semesterId: params['semesterId'],
+      dateFrom: params['dateFrom'],
+      dateTo: params['dateTo'],
     );
   },
 );
@@ -44,5 +78,12 @@ final subjectAssessmentSummaryProvider = FutureProvider.family<SubjectAssessment
       semesterId: params.semesterId,
       studentId: params.studentId,
     );
+  },
+);
+
+final assessmentRosterProvider = FutureProvider.family<MarksRosterResponseModel, String>(
+  (ref, assessmentId) async {
+    final repo = ref.watch(assessmentRepositoryProvider);
+    return repo.getMarksRoster(assessmentId);
   },
 );

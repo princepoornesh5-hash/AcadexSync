@@ -397,7 +397,14 @@ export class DashboardService {
         ? InternalAssessment.countDocuments({
             collegeId,
             facultyId,
-            status: { $in: [AssessmentStatus.DRAFT, AssessmentStatus.OPEN] },
+            status: {
+              $in: [
+                AssessmentStatus.DRAFT,
+                AssessmentStatus.OPEN,
+                AssessmentStatus.SCHEDULED,
+                AssessmentStatus.MARKS_ENTRY,
+              ],
+            },
           })
         : 0,
       facultyId
@@ -608,7 +615,7 @@ export class DashboardService {
       InternalAssessment.countDocuments({
         collegeId,
         departmentId,
-        status: { $in: [AssessmentStatus.CLOSED, AssessmentStatus.REVIEWED] },
+        status: { $in: [AssessmentStatus.CLOSED, AssessmentStatus.REVIEWED, AssessmentStatus.SUBMITTED] },
       }),
       AttendanceSession.countDocuments({
         collegeId,

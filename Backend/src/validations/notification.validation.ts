@@ -46,4 +46,6 @@ export const notificationQuerySchema = z.object({
     .string()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 20)),
+  scope: z.string().optional(),
+  collegeId: z.string().optional(),
 });

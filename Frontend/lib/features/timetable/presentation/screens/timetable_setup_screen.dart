@@ -15,6 +15,7 @@ import '../../domain/models/timetable_models.dart';
 import '../providers/timetable_providers.dart';
 import '../providers/timetable_lookup_providers.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
+import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../institution_config/presentation/providers/institution_config_providers.dart';
 import '../widgets/timetable_spreadsheet_grid.dart';
 import 'timetable_designer_screen.dart';
@@ -406,6 +407,24 @@ class _TimetableSetupScreenState extends ConsumerState<TimetableSetupScreen> {
     final subjectsAsync = ref.watch(subjectsProvider);
     final assignmentsAsync = ref.watch(facultyAssignmentsProvider);
     final roomsAsync = ref.watch(roomsProvider);
+
+    final isPrereqLoading = deptsAsync.isLoading ||
+        coursesAsync.isLoading ||
+        academicYearsAsync.isLoading ||
+        semestersAsync.isLoading ||
+        sectionsAsync.isLoading ||
+        subjectsAsync.isLoading ||
+        assignmentsAsync.isLoading ||
+        roomsAsync.isLoading;
+
+    if (isPrereqLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: AcadexLoadingState(message: 'Validating academic prerequisites...'),
+        ),
+      );
+    }
 
     final isHod = user.role == AppRole.hod;
     if (isHod && _selectedDepartmentId == null && user.departmentId != null && user.departmentId!.isNotEmpty) {

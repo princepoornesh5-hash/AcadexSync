@@ -18,6 +18,11 @@ class AssignedClass {
   final String? academicStage;
   final DateTime date;
   final bool isAttendanceMarked;
+  final bool isSubstitution;
+  final String? originalFacultyName;
+  final String? originalFacultyId;
+  final String? substitutionReason;
+  final String? substitutionId;
 
   AssignedClass({
     required this.id,
@@ -39,6 +44,11 @@ class AssignedClass {
     this.academicStage,
     required this.date,
     this.isAttendanceMarked = false,
+    this.isSubstitution = false,
+    this.originalFacultyName,
+    this.originalFacultyId,
+    this.substitutionReason,
+    this.substitutionId,
   });
 
   /// The effective timetable entry ID representing this class
@@ -78,6 +88,11 @@ class AssignedClass {
     String? academicStage,
     DateTime? date,
     bool? isAttendanceMarked,
+    bool? isSubstitution,
+    String? originalFacultyName,
+    String? originalFacultyId,
+    String? substitutionReason,
+    String? substitutionId,
   }) {
     return AssignedClass(
       id: id ?? this.id,
@@ -99,6 +114,11 @@ class AssignedClass {
       academicStage: academicStage ?? this.academicStage,
       date: date ?? this.date,
       isAttendanceMarked: isAttendanceMarked ?? this.isAttendanceMarked,
+      isSubstitution: isSubstitution ?? this.isSubstitution,
+      originalFacultyName: originalFacultyName ?? this.originalFacultyName,
+      originalFacultyId: originalFacultyId ?? this.originalFacultyId,
+      substitutionReason: substitutionReason ?? this.substitutionReason,
+      substitutionId: substitutionId ?? this.substitutionId,
     );
   }
 
@@ -123,6 +143,11 @@ class AssignedClass {
       academicStage: json['academicStage'] as String?,
       date: json['date'] != null ? DateTime.parse(json['date'] as String) : DateTime.now(),
       isAttendanceMarked: json['isAttendanceMarked'] as bool? ?? false,
+      isSubstitution: json['isSubstitution'] as bool? ?? json['isSubstituted'] as bool? ?? false,
+      originalFacultyName: json['originalFacultyName'] as String?,
+      originalFacultyId: json['originalFacultyId'] as String?,
+      substitutionReason: json['substitutionReason'] as String?,
+      substitutionId: json['substitutionId'] as String?,
     );
   }
 
@@ -147,6 +172,11 @@ class AssignedClass {
       if (academicStage != null) 'academicStage': academicStage,
       'date': date.toIso8601String(),
       'isAttendanceMarked': isAttendanceMarked,
+      'isSubstitution': isSubstitution,
+      if (originalFacultyName != null) 'originalFacultyName': originalFacultyName,
+      if (originalFacultyId != null) 'originalFacultyId': originalFacultyId,
+      if (substitutionReason != null) 'substitutionReason': substitutionReason,
+      if (substitutionId != null) 'substitutionId': substitutionId,
     };
   }
 }

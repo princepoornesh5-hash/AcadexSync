@@ -173,7 +173,7 @@ class AcademicPrerequisiteGuard {
     final effectiveAy = currentAcademicYear ?? (activeCollegeYears.isNotEmpty ? activeCollegeYears.first : null);
     final hasAcademicYear = effectiveAy != null;
 
-    final deptSemesters = semesters.where((s) => s.departmentId == departmentId && (s.isCurrent || s.status == 'active')).toList();
+    final deptSemesters = semesters.where((s) => s.departmentId == departmentId && s.status != 'archived' && (s.isActive || s.isCurrent || s.status == 'active' || s.status == 'upcoming')).toList();
     final deptSections = sections.where((s) => s.departmentId == departmentId && s.isActive).toList();
     final deptSubjects = subjects.where((s) => s.departmentId == departmentId && s.isActive).toList();
     final deptAssignments = facultyAssignments.where((a) => a.departmentId == departmentId && a.isActive).toList();

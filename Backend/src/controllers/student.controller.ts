@@ -68,6 +68,19 @@ export class StudentController {
   });
 
   /**
+   * GET /api/v1/academics/students/:id/360
+   * Authoritative Student 360 Aggregation
+   */
+  static getStudent360 = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw ApiError.unauthorized('User not authenticated');
+    }
+
+    const result = await StudentService.getStudent360(req.params.id, req.user);
+    return ApiResponse.success(res, result, 'Student 360 profile retrieved successfully');
+  });
+
+  /**
    * PUT /api/v1/academics/students/:id
    * Update Student Profile
    */

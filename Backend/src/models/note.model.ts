@@ -27,6 +27,7 @@ export interface INote extends Document {
   sectionId?: mongoose.Types.ObjectId;
   subjectId: mongoose.Types.ObjectId;
   facultyId?: mongoose.Types.ObjectId;
+  facultyAssignmentId?: mongoose.Types.ObjectId;
   authorUserId: mongoose.Types.ObjectId;
   title: string;
   description: string;
@@ -76,6 +77,7 @@ const NoteSchema = new Schema<INote>(
     sectionId: { type: Schema.Types.ObjectId, ref: 'Section', default: null, index: true },
     subjectId: { type: Schema.Types.ObjectId, ref: 'Subject', required: true, index: true },
     facultyId: { type: Schema.Types.ObjectId, ref: 'Faculty', default: null, index: true },
+    facultyAssignmentId: { type: Schema.Types.ObjectId, ref: 'FacultyAssignment', default: null, index: true },
     authorUserId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     title: { type: String, required: true, trim: true },
     description: { type: String, default: '', trim: true },
@@ -138,6 +140,7 @@ const NoteSchema = new Schema<INote>(
         if (ret.sectionId) ret.sectionId = ret.sectionId.toString();
         ret.subjectId = ret.subjectId?.toString();
         if (ret.facultyId) ret.facultyId = ret.facultyId.toString();
+        if (ret.facultyAssignmentId) ret.facultyAssignmentId = ret.facultyAssignmentId.toString();
         ret.authorUserId = ret.authorUserId?.toString();
         delete ret.__v;
         return ret;
@@ -148,6 +151,7 @@ const NoteSchema = new Schema<INote>(
 
 NoteSchema.index({ collegeId: 1, subjectId: 1, lifecycleState: 1 });
 NoteSchema.index({ collegeId: 1, semesterId: 1, subjectId: 1 });
+NoteSchema.index({ collegeId: 1, facultyAssignmentId: 1 });
 NoteSchema.index({ collegeId: 1, authorUserId: 1 });
 NoteSchema.index({ collegeId: 1, status: 1 });
 

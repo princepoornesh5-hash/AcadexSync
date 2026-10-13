@@ -6,6 +6,23 @@ export enum AccountStatus {
   SUSPENDED = 'suspended',
 }
 
+export enum MembershipStatus {
+  ACTIVE = 'active',
+  PENDING = 'pending',
+  SUSPENDED = 'suspended',
+  REVOKED = 'revoked',
+  DEACTIVATED = 'deactivated',
+  INACTIVE = 'inactive',
+}
+
+export enum RoleAssignmentStatus {
+  ACTIVE = 'active',
+  PENDING = 'pending',
+  SUSPENDED = 'suspended',
+  REVOKED = 'revoked',
+  INACTIVE = 'inactive',
+}
+
 export enum CollegeStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',

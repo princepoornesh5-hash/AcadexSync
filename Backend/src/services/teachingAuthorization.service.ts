@@ -50,6 +50,11 @@ export class TeachingAuthorizationService {
   ): Promise<boolean> {
     if (!fa) return false;
 
+    // Direct canonical ID match if facultyId references user.id
+    if (fa.facultyId && user.id && fa.facultyId.toString() === user.id.toString()) {
+      return true;
+    }
+
     // Resolve faculty document and verify canonical _id or userId
     const faculty = await this.resolveFacultyProfile(collegeId, user);
     if (faculty) {
@@ -297,32 +302,151 @@ export class TeachingAuthorizationService {
       throw ApiError.forbidden('Cross-institution assignment marking is strictly prohibited.');
     }
 
+    // Assignment must have a valid facultyAssignmentId
+    if (assignment.facultyAssignmentId) {
+      const facultyAssignment = await FacultyAssignment.findOne({
+        _id: new Types.ObjectId(assignment.facultyAssignmentId),
+        collegeId: new Types.ObjectId(collegeId),
+      });
+
+      if (!facultyAssignment || !facultyAssignment.isActive || facultyAssignment.status !== 'active') {
+        throw ApiError.forbidden('The teaching assignment is inactive or not found.');
+      }
+
+      const isOwner = await this.isFacultyOwner(collegeId, user, facultyAssignment);
+      if (!isOwner) {
+        throw ApiError.forbidden('Only the assigned teaching faculty may mark or grade this assignment.');
+      }
+      return;
+    }
+
+    // Direct facultyId check on assignment
+    if (assignment.facultyId && user.id && assignment.facultyId.toString() === user.id.toString()) {
+      return;
+    }
+
+    const faculty = await this.resolveFacultyProfile(collegeId, user);
+    if (
+      faculty &&
+      assignment.facultyId &&
+      (assignment.facultyId.toString() === faculty._id.toString() ||
+        (faculty.userId && assignment.facultyId.toString() === faculty.userId.toString()))
+    ) {
+      return;
+    }
+
+    throw ApiError.forbidden('Only the assigned teaching faculty may mark or grade this assignment.');
+  }
+
+  /**
+   * Asserts that the authenticated user is authorized to create an assessment for a given FacultyAssignment.
+   * - SUPER_ADMIN & COLLEGE_ADMIN: permitted across institution.
+   * - HOD: permitted within their department.
+   * - FACULTY: permitted ONLY if they own the FacultyAssignment.
+   */
+  static async assertAssessmentCreationAccess(
+    collegeId: string,
+    user: AuthUserContext,
+    facultyAssignmentId: string | Types.ObjectId
+  ): Promise<IFacultyAssignment> {
+    return this.assertFacultyAssignmentAccess(
+      collegeId,
+      user,
+      facultyAssignmentId,
+      'assessments for this teaching assignment'
+    );
+  }
+
+  /**
+   * Asserts management access for an Assessment (viewing, scheduling, changing metadata, review, publishing).
+   * Note: This does NOT grant marking authority. Marking is strictly governed by assertAssessmentMarkingAccess.
+   */
+  static async assertAssessmentManagementAccess(
+    collegeId: string,
+    user: AuthUserContext,
+    assessment: any,
+    activityLabel: string = 'this assessment'
+  ): Promise<void> {
+    const roleUpper = (user.role || '').toUpperCase();
+    if (roleUpper === 'SUPER_ADMIN' || roleUpper === 'COLLEGE_ADMIN') {
+      return;
+    }
+    if (roleUpper === 'HOD') {
+      if (user.departmentId && assessment.departmentId && assessment.departmentId.toString() !== user.departmentId.toString()) {
+        throw ApiError.forbidden(`You are not authorized to manage ${activityLabel} outside your department.`);
+      }
+      return;
+    }
+    if (roleUpper === 'FACULTY') {
+      if (assessment.facultyAssignmentId) {
+        await this.assertFacultyAssignmentAccess(collegeId, user, assessment.facultyAssignmentId, activityLabel);
+        return;
+      }
+      const faculty = await this.resolveFacultyProfile(collegeId, user);
+      if (faculty && assessment.facultyId && assessment.facultyId.toString() === faculty._id.toString()) {
+        return;
+      }
+      throw ApiError.forbidden(`You are not authorized to manage ${activityLabel}.`);
+    }
+    throw ApiError.forbidden(`You are not authorized to manage ${activityLabel}.`);
+  }
+
+  /**
+   * Asserts strict teaching ownership for assessment marking/grading operations.
+   * Business Rules:
+   * 1. Super Admin and College Admin do NOT have marking authority over faculty-owned assessments.
+   * 2. HOD does NOT have marking authority merely because they manage the department/section.
+   * 3. Only the assigned teaching faculty (FacultyAssignment -> Faculty -> User) may enter or modify marks.
+   */
+  static async assertAssessmentMarkingAccess(
+    collegeId: string,
+    user: AuthUserContext,
+    assessment: any
+  ): Promise<IFacultyAssignment | null> {
+    const roleUpper = (user.role || '').toUpperCase();
+    if (roleUpper === 'SUPER_ADMIN' || roleUpper === 'COLLEGE_ADMIN') {
+      throw ApiError.forbidden('Administrative roles (Super Admin, College Admin) cannot enter or modify marks for faculty-owned assessments.');
+    }
+    if (roleUpper === 'HOD') {
+      throw ApiError.forbidden('HOD cannot enter or modify marks for faculty-owned assessments. Faculty assignment ownership is strictly required.');
+    }
+    if (roleUpper === 'STUDENT') {
+      throw ApiError.forbidden('Students cannot enter or modify assessment marks.');
+    }
+
+    // Tenant check
+    if (assessment.collegeId && assessment.collegeId.toString() !== collegeId) {
+      throw ApiError.forbidden('Cross-institution assessment marking is strictly prohibited.');
+    }
+
     // Resolve authenticated user to canonical Faculty profile
     const faculty = await this.resolveFacultyProfile(collegeId, user);
     if (!faculty) {
-      throw ApiError.forbidden('Only the assigned teaching faculty may mark or grade this assignment.');
+      throw ApiError.forbidden('Only the assigned teaching faculty may enter or modify marks for this assessment.');
     }
 
-    // Assignment must have a valid facultyAssignmentId
-    if (!assignment.facultyAssignmentId) {
-      if (assignment.facultyId && assignment.facultyId.toString() === faculty._id.toString()) {
-        return;
+    // Check FacultyAssignment ownership
+    if (assessment.facultyAssignmentId) {
+      const facultyAssignment = await FacultyAssignment.findOne({
+        _id: new Types.ObjectId(assessment.facultyAssignmentId),
+        collegeId: new Types.ObjectId(collegeId),
+      });
+
+      if (!facultyAssignment || !facultyAssignment.isActive || (facultyAssignment.status && facultyAssignment.status !== 'active')) {
+        throw ApiError.forbidden('The teaching assignment is inactive or not found.');
       }
-      throw ApiError.forbidden('Assignment has no valid teaching assignment.');
+
+      if (facultyAssignment.facultyId.toString() !== faculty._id.toString()) {
+        throw ApiError.forbidden('Only the assigned teaching faculty may enter or modify marks for this assessment.');
+      }
+      return facultyAssignment;
     }
 
-    const facultyAssignment = await FacultyAssignment.findOne({
-      _id: new Types.ObjectId(assignment.facultyAssignmentId),
-      collegeId: new Types.ObjectId(collegeId),
-    });
-
-    if (!facultyAssignment || !facultyAssignment.isActive || facultyAssignment.status !== 'active') {
-      throw ApiError.forbidden('The teaching assignment is inactive or not found.');
+    // Legacy fallback if assessment has facultyId directly
+    if (assessment.facultyId && assessment.facultyId.toString() === faculty._id.toString()) {
+      return null;
     }
 
-    // Verify FacultyAssignment belongs to this faculty member (Faculty._id)
-    if (facultyAssignment.facultyId.toString() !== faculty._id.toString()) {
-      throw ApiError.forbidden('Only the assigned teaching faculty may mark or grade this assignment.');
-    }
+    throw ApiError.forbidden('Only the assigned teaching faculty may enter or modify marks for this assessment.');
   }
 }

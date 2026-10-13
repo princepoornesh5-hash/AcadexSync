@@ -28,6 +28,7 @@ import {
   NotificationPriority,
 } from '../constants/notification.constants';
 import { institutionConfigService } from './institutionConfig.service';
+import { AttendanceAggregationService } from './attendance/attendanceAggregation.service';
 import { CalendarOverrideService } from './calendarOverride.service';
 import { CalendarOverrideType } from '../models/calendarOverride.model';
 import { TeacherSubstitutionService } from './teacherSubstitution.service';
@@ -62,23 +63,39 @@ export class AttendanceService {
 
   static async resolveFacultyProfile(requester: AuthenticatedUser): Promise<InstanceType<typeof Faculty>> {
     let facultyDoc: InstanceType<typeof Faculty> | null = null;
+    const collegeId = requester.collegeId;
+    if (!collegeId) {
+      throw ApiError.forbidden('User does not belong to any registered college tenant');
+    }
+    const collegeObjectId = new mongoose.Types.ObjectId(collegeId);
+
     if (mongoose.Types.ObjectId.isValid(requester.id)) {
-      facultyDoc = await Faculty.findOne({ userId: requester.id });
+      facultyDoc = await Faculty.findOne({
+        userId: new mongoose.Types.ObjectId(requester.id),
+        collegeId: collegeObjectId,
+      });
       if (!facultyDoc) {
-        facultyDoc = await Faculty.findById(requester.id);
+        facultyDoc = await Faculty.findOne({
+          _id: new mongoose.Types.ObjectId(requester.id),
+          collegeId: collegeObjectId,
+        });
       }
     }
+    if (!facultyDoc && requester.email) {
+      facultyDoc = await Faculty.findOne({
+        email: requester.email.toLowerCase(),
+        collegeId: collegeObjectId,
+      });
+    }
     if (!facultyDoc) {
-      throw ApiError.forbidden('Authenticated user does not have a linked faculty profile');
+      throw ApiError.forbidden('Authenticated user does not have a linked faculty profile in this college');
     }
     if (!facultyDoc.isActive || facultyDoc.status === 'inactive') {
       throw ApiError.forbidden('Faculty profile is inactive');
     }
-    if (requester.collegeId && facultyDoc.collegeId.toString() !== requester.collegeId) {
-      throw ApiError.forbidden('Cross-college access is strictly prohibited');
-    }
     return facultyDoc;
   }
+
 
   static async createOrSubmitSession(
     collegeId: string,
@@ -204,6 +221,31 @@ export class AttendanceService {
           );
         }
 
+        // Authoritative server-time rules (Asia/Kolkata)
+        const nowServer = (data as any).serverTimeOverride
+          ? new Date((data as any).serverTimeOverride)
+          : new Date();
+        const todayCalendarStr = formatDateToCalendarString(nowServer, collegeTimezone);
+
+        if (calendarDateStr > todayCalendarStr) {
+          throw ApiError.badRequest('Attendance cannot be marked for future dates');
+        }
+
+        if (calendarDateStr === todayCalendarStr && entry.startTime) {
+          const timeParts = new Intl.DateTimeFormat('en-GB', {
+            timeZone: collegeTimezone,
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          }).format(nowServer);
+
+          if (timeParts < entry.startTime) {
+            throw ApiError.badRequest(
+              `Attendance opens at ${entry.startTime}. Current server time is ${timeParts}.`
+            );
+          }
+        }
+
         // Calendar Override check (HOLIDAY or CANCELLED)
         const activeOverride = await CalendarOverrideService.resolveActiveOverride({
           collegeId: timetable.collegeId,
@@ -303,12 +345,29 @@ export class AttendanceService {
         if (data.sectionId && timetable.sectionId && timetable.sectionId.toString() !== data.sectionId.toString()) {
           throw ApiError.badRequest('Section mismatch with timetable entry');
         }
-        if (data.facultyId && operationalFacultyId.toString() !== data.facultyId.toString()) {
+        if (data.facultyId && operationalFacultyId.toString() !== data.facultyId.toString() && entry.facultyId.toString() !== data.facultyId.toString()) {
           throw ApiError.badRequest('Faculty mismatch with timetable entry');
         }
 
         // Authoritative overrides from the stored timetable entry
-        data.facultyId = operationalFacultyId;
+        if (activeSubstitution) {
+          data.isSubstitution = true;
+          data.substituteFacultyId = authenticatedFacultyDoc ? authenticatedFacultyDoc._id : operationalFacultyId;
+          data.substitutionId = activeSubstitution._id;
+          data.originalFacultyId = entry.facultyId;
+          data.originalFacultyAssignmentId = entry.facultyAssignmentId || data.facultyAssignmentId || null;
+          data.substitutionReason = activeSubstitution.reason;
+          data.facultyId = operationalFacultyId; // Marking faculty for the session
+        } else {
+          data.isSubstitution = false;
+          data.substituteFacultyId = null;
+          data.substitutionId = null;
+          data.originalFacultyId = entry.facultyId;
+          data.originalFacultyAssignmentId = entry.facultyAssignmentId || data.facultyAssignmentId || null;
+          data.substitutionReason = null;
+          data.facultyId = entry.facultyId;
+        }
+
         data.subjectId = entry.subjectId;
         if (timetable.sectionId) {
           data.sectionId = timetable.sectionId;
@@ -336,6 +395,32 @@ export class AttendanceService {
         throw ApiError.forbidden('Faculty assignment does not match this subject and section');
       }
       data.facultyAssignmentId = activeAssignment._id as mongoose.Types.ObjectId;
+
+      // Authoritative server-time rules (Asia/Kolkata)
+      const nowServer = (data as any).serverTimeOverride
+        ? new Date((data as any).serverTimeOverride)
+        : new Date();
+      const todayCalendarStr = formatDateToCalendarString(nowServer, collegeTimezone);
+
+      if (calendarDateStr > todayCalendarStr) {
+        throw ApiError.badRequest('Attendance cannot be marked for future dates');
+      }
+
+      if (calendarDateStr === todayCalendarStr && data.timeSlot) {
+        const startTime = data.timeSlot.split('-')[0].trim();
+        const timeParts = new Intl.DateTimeFormat('en-GB', {
+          timeZone: collegeTimezone,
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        }).format(nowServer);
+
+        if (startTime && timeParts < startTime) {
+          throw ApiError.badRequest(
+            `Attendance opens at ${startTime}. Current server time is ${timeParts}.`
+          );
+        }
+      }
 
       // Calendar Override check (HOLIDAY or CANCELLED)
       const activeOverride = await CalendarOverrideService.resolveActiveOverride({
@@ -475,6 +560,12 @@ export class AttendanceService {
       createdBy: actorUserId,
       isSubmitted: data.isSubmitted ?? true,
       isLocked: data.isLocked ?? false,
+      isSubstitution: data.isSubstitution ?? false,
+      substituteFacultyId: data.substituteFacultyId ?? null,
+      substitutionId: data.substitutionId ?? null,
+      originalFacultyId: data.originalFacultyId ?? null,
+      originalFacultyAssignmentId: data.originalFacultyAssignmentId ?? null,
+      substitutionReason: data.substitutionReason ?? null,
     });
 
     if (populatedRecords.length > 0) {
@@ -1193,6 +1284,13 @@ export class AttendanceService {
     lateCount: number;
     excusedCount: number;
     percentage: number;
+    liveHeld?: number;
+    livePresent?: number;
+    historicalDetailedHeld?: number;
+    historicalDetailedPresent?: number;
+    historicalPercentageMetrics?: Array<{ periodLabel: string; percentage: number; type: string }>;
+    hasDetailedData?: boolean;
+    hasPercentageOnlyData?: boolean;
   }> {
     let studentObjId: mongoose.Types.ObjectId | null = null;
     if (mongoose.Types.ObjectId.isValid(studentId)) {
@@ -1218,30 +1316,46 @@ export class AttendanceService {
       return { totalClasses: 0, presentCount: 0, absentCount: 0, lateCount: 0, excusedCount: 0, percentage: 0 };
     }
 
-    const records = await AttendanceRecord.find({
-      collegeId: new mongoose.Types.ObjectId(collegeId),
+    const enrollmentDoc = await StudentEnrollment.findOne({
       studentId: studentObjId,
-      isCancelled: { $ne: true },
-    });
+      status: 'active',
+    }).sort({ createdAt: -1 });
 
-    const totalClasses = records.length;
-    if (totalClasses === 0) {
-      return { totalClasses: 0, presentCount: 0, absentCount: 0, lateCount: 0, excusedCount: 0, percentage: 0 };
-    }
+    const agg = await AttendanceAggregationService.aggregateForStudent(
+      collegeId,
+      studentObjId,
+      { studentEnrollmentId: enrollmentDoc?._id }
+    );
 
-    const presentCount = records.filter((r) => r.status === AttendanceStatus.PRESENT).length;
-    const lateCount = records.filter((r) => r.status === AttendanceStatus.LATE).length;
-    const absentCount = records.filter((r) => r.status === AttendanceStatus.ABSENT).length;
-    const excusedCount = records.filter((r) => r.status === AttendanceStatus.EXCUSED).length;
-    const percentage = Math.round(((presentCount + lateCount) / totalClasses) * 10000) / 100;
+    const [lateCount, excusedCount] = await Promise.all([
+      AttendanceRecord.countDocuments({
+        collegeId: new mongoose.Types.ObjectId(collegeId),
+        studentId: studentObjId,
+        status: AttendanceStatus.LATE,
+        isCancelled: { $ne: true },
+      }),
+      AttendanceRecord.countDocuments({
+        collegeId: new mongoose.Types.ObjectId(collegeId),
+        studentId: studentObjId,
+        status: AttendanceStatus.EXCUSED,
+        isCancelled: { $ne: true },
+      }),
+    ]);
 
     return {
-      totalClasses,
-      presentCount,
-      absentCount,
+      totalClasses: agg.detailedMetrics.totalHeld,
+      presentCount: agg.detailedMetrics.totalPresent,
+      absentCount: agg.detailedMetrics.totalAbsent,
       lateCount,
       excusedCount,
-      percentage,
+      percentage: agg.detailedMetrics.percentage,
+      liveHeld: agg.detailedMetrics.liveHeld,
+      livePresent: agg.detailedMetrics.livePresent,
+      historicalDetailedHeld: agg.detailedMetrics.historicalDetailedHeld,
+      historicalDetailedPresent: agg.detailedMetrics.historicalDetailedPresent,
+      historicalPercentageMetrics: agg.historicalPercentageMetrics,
+      hasDetailedData: agg.hasDetailedData,
+      hasPercentageOnlyData: agg.hasPercentageOnlyData,
     };
   }
 
@@ -1332,13 +1446,26 @@ export class AttendanceService {
       throw ApiError.forbidden('Only faculty can access their sessions via this endpoint');
     }
 
-    const faculty = await Faculty.findOne({ userId: requester.id });
+    const facultyQuery: any = { userId: requester.id };
+    if (requester.collegeId) {
+      facultyQuery.collegeId = requester.collegeId;
+    }
+    const faculty = await Faculty.findOne(facultyQuery);
     if (!faculty) throw ApiError.notFound('Faculty profile not found');
 
+
     return AttendanceSession.find({
-      facultyId: faculty._id,
       collegeId: faculty.collegeId,
-    }).sort({ date: -1 });
+      $or: [
+        { facultyId: faculty._id },
+        { substituteFacultyId: faculty._id },
+        { originalFacultyId: faculty._id },
+      ],
+    })
+      .populate('facultyId', 'name employeeId')
+      .populate('substituteFacultyId', 'name employeeId')
+      .populate('originalFacultyId', 'name employeeId')
+      .sort({ date: -1 });
   }
 
   // =========================================================================

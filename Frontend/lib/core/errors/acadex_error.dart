@@ -342,10 +342,10 @@ class AcadexException implements Exception {
     }
 
     // Map backend duplicate/conflict messages to clear human-readable domain explanations (Prompt 15)
-    if (lower.contains('subject') && (lower.contains('already exist') || lower.contains('duplicate'))) {
+    if ((lower.contains('subject') || lower.contains('subjects')) && (lower.contains('already exist') || lower.contains('duplicate') || lower.contains('code_1'))) {
       return 'A subject with this code already exists for this semester.';
     }
-    if (lower.contains('section') && (lower.contains('already exist') || lower.contains('duplicate'))) {
+    if ((lower.contains('section') || lower.contains('sections')) && (lower.contains('already exist') || lower.contains('duplicate'))) {
       return 'A section with this name already exists for this semester.';
     }
     if ((lower.contains('student') || lower.contains('enroll')) && (lower.contains('already enroll') || lower.contains('already exist') || lower.contains('duplicate') || lower.contains('enrollment'))) {
@@ -354,10 +354,10 @@ class AcadexException implements Exception {
     if ((lower.contains('faculty') || lower.contains('assignment')) && (lower.contains('already assign') || lower.contains('already exist') || lower.contains('duplicate') || lower.contains('facultyassignment'))) {
       return 'This faculty assignment already exists.';
     }
-    if (lower.contains('course') && (lower.contains('already exist') || lower.contains('duplicate'))) {
+    if (lower.contains('course') && !lower.contains('subject') && !lower.contains('subjects') && (lower.contains('already exist') || lower.contains('duplicate'))) {
       return 'A course with this code already exists.';
     }
-    if (lower.contains('semester') && !lower.contains('subject') && !lower.contains('section') && (lower.contains('already exist') || lower.contains('duplicate') || lower.contains('e11000'))) {
+    if (lower.contains('semester') && !lower.contains('subject') && !lower.contains('subjects') && !lower.contains('section') && !lower.contains('code_1') && (lower.contains('already exist') || lower.contains('duplicate') || (lower.contains('e11000') && lower.contains('semesters')))) {
       return 'That semester already exists for this academic year.';
     }
     if (lower.contains('academic year') && !lower.contains('semester') && (lower.contains('already exist') || lower.contains('duplicate'))) {

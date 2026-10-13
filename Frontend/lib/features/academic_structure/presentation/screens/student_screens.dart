@@ -5,14 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/navigation_extensions.dart';
-import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../../core/presentation/widgets/acadex_data_table.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_form_card.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
-import '../../../../core/presentation/widgets/acadex_search_bar.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/domain/models/user_model.dart';
@@ -41,22 +39,40 @@ class StudentListScreen extends ConsumerStatefulWidget {
 
 class _StudentListScreenState extends ConsumerState<StudentListScreen> {
   final Set<String> _selectedIds = {};
+  String? _departmentId;
+  String? _courseId;
+  String? _academicYearId;
+  String? _semesterId;
+  String? _sectionId;
   String _searchQuery = '';
-  String? _statusFilter; // null = all, 'active', 'pending_activation', etc.
-  String? _departmentFilter;
+  String? _statusFilter;
 
   @override
   void initState() {
     super.initState();
     final authState = ref.read(authProvider);
     if (authState is AuthAuthenticated && authState.user.role == AppRole.hod) {
-      _departmentFilter = authState.user.departmentId;
+      _departmentId = authState.user.departmentId;
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncFilters();
+    });
+  }
+
+  void _syncFilters() {
+    ref.read(studentListFilterProvider.notifier).state = StudentFilterCriteria(
+      departmentId: _departmentId,
+      courseId: _courseId,
+      academicYearId: _academicYearId,
+      semesterId: _semesterId,
+      sectionId: _sectionId,
+      search: _searchQuery.trim().isNotEmpty ? _searchQuery.trim() : null,
+    );
   }
 
   void _showBulkPromotionDialog() async {
     if (_selectedIds.isEmpty) return;
-    final allStudents = ref.read(studentsProvider((sectionId: null, departmentId: _departmentFilter))).items;
+    final allStudents = ref.read(filteredStudentsProvider).valueOrNull ?? [];
     final selectedStudents = allStudents.where((s) => _selectedIds.contains(s.id)).toList();
     final result = await StudentPromotionStepperDialog.show(
       context,
@@ -64,19 +80,7 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
     );
     if (result == true) {
       setState(() => _selectedIds.clear());
-      ref.invalidate(studentsProvider);
-    }
-  }
-
-  void _showSinglePromotionDialog(Student s) async {
-    final result = await StudentPromotionStepperDialog.show(
-      context,
-      students: [s],
-      initialSectionId: s.sectionId,
-      initialSemesterId: s.semesterId,
-      initialDepartmentId: s.departmentId,
-    );
-    if (result == true) {
+      ref.invalidate(filteredStudentsProvider);
       ref.invalidate(studentsProvider);
     }
   }
@@ -85,12 +89,13 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
     final result = await ProgressiveEnrollmentDialog.show(
       context,
       initialStudent: s,
-      initialDepartmentId: s?.departmentId ?? _departmentFilter,
-      initialCourseId: s?.courseId,
-      initialSemesterId: s?.semesterId,
-      initialSectionId: s?.sectionId,
+      initialDepartmentId: s?.departmentId ?? _departmentId,
+      initialCourseId: s?.courseId ?? _courseId,
+      initialSemesterId: s?.semesterId ?? _semesterId,
+      initialSectionId: s?.sectionId ?? _sectionId,
     );
     if (result == true) {
+      ref.invalidate(filteredStudentsProvider);
       ref.invalidate(studentsProvider);
     }
   }
@@ -103,6 +108,7 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
     );
     if (result == true) {
       setState(() => _selectedIds.clear());
+      ref.invalidate(filteredStudentsProvider);
       ref.invalidate(studentsProvider);
     }
   }
@@ -115,6 +121,7 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
     );
     if (result == true) {
       setState(() => _selectedIds.clear());
+      ref.invalidate(filteredStudentsProvider);
       ref.invalidate(studentsProvider);
     }
   }
@@ -151,90 +158,52 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final isMobile = AcadexBreakpoints.isMobile(context);
 
-    final studentsState = ref.watch(studentsProvider((sectionId: null, departmentId: _departmentFilter)));
-    final deptMap = ref.watch(departmentMapProvider);
-    final semMap = ref.watch(semesterMapProvider);
-    final secMap = ref.watch(sectionMapProvider);
+    final authState = ref.watch(authProvider);
+    final currentUser = authState is AuthAuthenticated ? authState.user : null;
+    final isHod = currentUser?.role == AppRole.hod;
+    final isStaff = currentUser?.role == AppRole.superAdmin ||
+        currentUser?.role == AppRole.collegeAdmin ||
+        currentUser?.role == AppRole.hod;
 
-    final filteredStudents = studentsState.items.where((s) {
-      if (_statusFilter != null) {
-        if (_statusFilter == 'pending_activation') {
-          if (s.accountStatus != AccountStatus.pendingActivation) return false;
-        } else if (_statusFilter == 'active') {
-          if (s.accountStatus != AccountStatus.active || s.lifecycleState != StudentLifecycleState.active) {
-            return false;
-          }
-        } else if (_statusFilter == 'on_leave') {
-          if (s.lifecycleState != StudentLifecycleState.onLeave) return false;
-        } else if (_statusFilter == 'alumni') {
-          if (s.lifecycleState != StudentLifecycleState.alumni && s.lifecycleState != StudentLifecycleState.graduated) {
-            return false;
-          }
-        }
-      }
-      if (_searchQuery.isNotEmpty) {
-        final q = _searchQuery.toLowerCase();
-        final matchName = s.name.toLowerCase().contains(q);
-        final matchRoll = s.rollNumber.toLowerCase().contains(q);
-        final matchInst = s.instituteId?.toLowerCase().contains(q) ?? false;
-        final matchEmail = s.email.toLowerCase().contains(q);
-        final dept = deptMap[s.departmentId]?.name.toLowerCase() ?? '';
-        final matchDept = dept.contains(q);
-        if (!matchName && !matchRoll && !matchInst && !matchEmail && !matchDept) return false;
-      }
+    final depts = ref.watch(departmentsProvider).valueOrNull ?? [];
+    final allCourses = ref.watch(coursesProvider).valueOrNull ?? [];
+    final allYears = ref.watch(academicYearsProvider).valueOrNull ?? [];
+    final allSemesters = ref.watch(semestersProvider).valueOrNull ?? [];
+    final allSections = ref.watch(sectionsProvider).valueOrNull ?? [];
+
+    final availableCourses = _departmentId != null
+        ? allCourses.where((c) => c.departmentId == _departmentId && c.isActive).toList()
+        : allCourses.where((c) => c.isActive).toList();
+
+    final availableSemesters = allSemesters.where((s) {
+      if (!s.isActive) return false;
+      if (_courseId != null && s.courseId != _courseId) return false;
+      if (_academicYearId != null && s.academicYearId != _academicYearId) return false;
       return true;
     }).toList();
+
+    final availableSections = _semesterId != null
+        ? allSections.where((sec) => sec.semesterId == _semesterId && sec.isActive).toList()
+        : allSections.where((sec) => sec.isActive).toList();
+
+    final studentsAsync = ref.watch(filteredStudentsProvider);
 
     return AcadexPageContainer(
       scrollable: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header
           if (isMobile) ...[
             Row(
               children: [
                 Expanded(
                   child: AcadexPageHeader(
                     title: "Students",
-                    subtitle: "Manage student enrollments & admissions.",
+                    subtitle: "Direct directory & academic roster.",
                   ),
                 ),
-                if (_selectedIds.isNotEmpty) ...[
-                  PopupMenuButton<String>(
-                    icon: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AcadexColors.primary.withValues(alpha: 0.1),
-                        borderRadius: AcadexRadius.borderRadiusSm,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            "${_selectedIds.length}",
-                            style: const TextStyle(
-                              color: AcadexColors.primary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(LucideIcons.chevronDown, size: 14, color: AcadexColors.primary),
-                        ],
-                      ),
-                    ),
-                    onSelected: (val) {
-                      if (val == 'promote') _showBulkPromotionDialog();
-                      if (val == 'transfer') _showBulkTransferDialog();
-                      if (val == 'graduate') _showBulkGraduationDialog();
-                    },
-                    itemBuilder: (ctx) => [
-                      const PopupMenuItem(value: 'promote', child: Text("Promote Students")),
-                      const PopupMenuItem(value: 'transfer', child: Text("Transfer Section")),
-                      const PopupMenuItem(value: 'graduate', child: Text("Graduate Cohort")),
-                    ],
-                  ),
-                ] else ...[
+                if (isStaff) ...[
                   IconButton(
                     icon: const Icon(LucideIcons.userCheck, size: 20),
                     tooltip: "Enroll Student",
@@ -254,182 +223,407 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
               children: [
                 const Expanded(
                   child: AcadexPageHeader(
-                    title: "Student Management",
-                    subtitle: "Manage admissions, enrollments, promotions, and student profiles.",
+                    title: "Students Directory",
+                    subtitle: "Filter and locate students across active academic hierarchy contexts.",
                   ),
                 ),
-                Row(
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: () => _showEnrollStudentDialog(),
-                      icon: const Icon(LucideIcons.userCheck, size: 16),
-                      label: const Text("Enroll Student"),
-                    ),
-                    const SizedBox(width: 12),
-                    OutlinedButton.icon(
-                      onPressed: _showImportDialog,
-                      icon: const Icon(LucideIcons.uploadCloud, size: 16),
-                      label: const Text("Import CSV"),
-                    ),
-                    const SizedBox(width: 12),
-                    if (_selectedIds.isNotEmpty) ...[
-                      DropdownButton<String>(
-                        dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                        hint: Text(
-                          "${_selectedIds.length} Selected",
-                          style: const TextStyle(color: AcadexColors.primary, fontWeight: FontWeight.bold),
-                        ),
-                        underline: const SizedBox(),
-                        icon: const Icon(LucideIcons.chevronDown, color: AcadexColors.primary),
-                        items: [
-                          DropdownMenuItem(value: 'promote', child: Text("Promote Students", style: AcadexTypography.body(color: theme.colorScheme.onSurface))),
-                          DropdownMenuItem(value: 'transfer', child: Text("Transfer Section", style: AcadexTypography.body(color: theme.colorScheme.onSurface))),
-                          DropdownMenuItem(value: 'graduate', child: Text("Graduate Cohort", style: AcadexTypography.body(color: theme.colorScheme.onSurface))),
-                        ],
-                        onChanged: (val) {
-                          if (val == 'promote') _showBulkPromotionDialog();
-                          if (val == 'transfer') _showBulkTransferDialog();
-                          if (val == 'graduate') _showBulkGraduationDialog();
-                        },
+                if (isStaff) ...[
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => _showEnrollStudentDialog(),
+                        icon: const Icon(LucideIcons.userCheck, size: 16),
+                        label: const Text("Enroll Student"),
                       ),
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed: _showImportDialog,
+                        icon: const Icon(LucideIcons.uploadCloud, size: 16),
+                        label: const Text("Import CSV"),
+                      ),
+                      if (_selectedIds.isNotEmpty) ...[
+                        const SizedBox(width: 12),
+                        DropdownButton<String>(
+                          dropdownColor: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                          hint: Text(
+                            "${_selectedIds.length} Selected",
+                            style: const TextStyle(color: AcadexColors.primary, fontWeight: FontWeight.bold),
+                          ),
+                          underline: const SizedBox(),
+                          icon: const Icon(LucideIcons.chevronDown, color: AcadexColors.primary),
+                          items: [
+                            DropdownMenuItem(value: 'promote', child: Text("Promote Students", style: AcadexTypography.body(color: theme.colorScheme.onSurface))),
+                            DropdownMenuItem(value: 'transfer', child: Text("Transfer Section", style: AcadexTypography.body(color: theme.colorScheme.onSurface))),
+                            DropdownMenuItem(value: 'graduate', child: Text("Graduate Cohort", style: AcadexTypography.body(color: theme.colorScheme.onSurface))),
+                          ],
+                          onChanged: (val) {
+                            if (val == 'promote') _showBulkPromotionDialog();
+                            if (val == 'transfer') _showBulkTransferDialog();
+                            if (val == 'graduate') _showBulkGraduationDialog();
+                          },
+                        ),
+                      ],
                     ],
-                  ],
-                ),
+                  ),
+                ],
               ],
             ),
           ],
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
 
-          // Filter Chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildFilterChip('All Students', null),
-                const SizedBox(width: 8),
-                _buildFilterChip('Active', 'active'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Pending Activation', 'pending_activation'),
-                const SizedBox(width: 8),
-                _buildFilterChip('On Leave', 'on_leave'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Alumni / Graduated', 'alumni'),
-              ],
-            ),
+          // Hierarchical Filter Controls (Department -> Course -> Year -> Semester -> Section)
+          _buildHierarchicalFilterBar(
+            isDark: isDark,
+            isHod: isHod,
+            depts: depts,
+            courses: availableCourses,
+            years: allYears,
+            sems: availableSemesters,
+            secs: availableSections,
           ),
-          const SizedBox(height: 12),
 
-          AcadexSearchFilterBar(
-            searchHint: "Search students by name, roll no, PIN number, or department...",
-            onSearchChanged: (v) => setState(() => _searchQuery = v),
-            onActionTap: () => context.push('/academics/students/new'),
-            actionLabel: "Add Student",
+          // Search Bar & Status Chips
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: "Search students by name or roll number...",
+                    prefixIcon: const Icon(LucideIcons.search, size: 18),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                      borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                    ),
+                  ),
+                  onChanged: (v) {
+                    setState(() => _searchQuery = v);
+                    _syncFilters();
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Status Filter
+              PopupMenuButton<String?>(
+                tooltip: "Filter by Status",
+                initialValue: _statusFilter,
+                onSelected: (val) => setState(() => _statusFilter = val),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                    border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.filter, size: 16, color: _statusFilter != null ? AcadexColors.primary : AcadexColors.inkMuted),
+                      const SizedBox(width: 6),
+                      Text(
+                        _statusFilter == null
+                            ? "All Status"
+                            : _statusFilter == 'active'
+                                ? "Active"
+                                : _statusFilter == 'pending_activation'
+                                    ? "Pending"
+                                    : _statusFilter == 'on_leave'
+                                        ? "On Leave"
+                                        : "Alumni",
+                        style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+                itemBuilder: (ctx) => [
+                  const PopupMenuItem(value: null, child: Text("All Status")),
+                  const PopupMenuItem(value: 'active', child: Text("Active")),
+                  const PopupMenuItem(value: 'pending_activation', child: Text("Pending Activation")),
+                  const PopupMenuItem(value: 'on_leave', child: Text("On Leave")),
+                  const PopupMenuItem(value: 'alumni', child: Text("Alumni / Graduated")),
+                ],
+              ),
+              if (isStaff) ...[
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AcadexColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  ),
+                  onPressed: () => context.push('/academics/students/new'),
+                  icon: const Icon(LucideIcons.plus, size: 16),
+                  label: const Text("Add Student"),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: 14),
+
+          // Clean Row-Based Student List
           Expanded(
-            child: studentsState.isLoading && studentsState.items.isEmpty
-                ? const Center(child: AcadexLoadingState(message: "Loading students..."))
-                : studentsState.error != null
-                    ? AcadexErrorState.fromError(
-                        error: studentsState.error,
-                        title: "Unable to load students",
-                        onRetry: () => ref.read(studentsProvider((sectionId: null, departmentId: _departmentFilter)).notifier).loadInitial(),
-                      )
-                    : filteredStudents.isEmpty
-                        ? (studentsState.items.isNotEmpty
-                            ? AcadexEmptyState.filterEmpty(
-                                title: "No students match criteria",
-                                subtitle: "Try clearing search or filters to see all students.",
-                                onClearFilters: () {
-                                  final authState = ref.read(authProvider);
-                                  final isHod = authState is AuthAuthenticated && authState.user.role == AppRole.hod;
-                                  setState(() {
-                                    _searchQuery = '';
-                                    _statusFilter = null;
-                                    _departmentFilter = isHod ? authState.user.departmentId : null;
-                                  });
-                                },
-                              )
-                            : AcadexEmptyState(
-                                title: "No students have been added yet.",
-                                subtitle: "Add students to manage admissions and academic enrollments.",
-                                icon: LucideIcons.users,
-                                actionLabel: "Add Student",
-                                onActionTap: () => context.push('/academics/students/new'),
-                              ))
-                        : isMobile
-                            ? _buildMobileList(filteredStudents, deptMap, semMap, secMap, isDark)
-                            : _buildDesktopTable(filteredStudents, deptMap, semMap, secMap, theme),
-          ),
-          if (studentsState.isFetchingMore)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Center(child: CircularProgressIndicator(color: AcadexColors.primary)),
+            child: studentsAsync.when(
+              loading: () => const Center(child: AcadexLoadingState(message: "Loading student roster...")),
+              error: (err, _) => AcadexErrorState.fromError(
+                error: err,
+                title: "Unable to load students",
+                onRetry: () => ref.invalidate(filteredStudentsProvider),
+              ),
+              data: (students) {
+                final filtered = students.where((s) {
+                  if (_statusFilter != null) {
+                    if (_statusFilter == 'pending_activation') {
+                      if (s.accountStatus != AccountStatus.pendingActivation) return false;
+                    } else if (_statusFilter == 'active') {
+                      if (s.accountStatus != AccountStatus.active || s.lifecycleState != StudentLifecycleState.active) {
+                        return false;
+                      }
+                    } else if (_statusFilter == 'on_leave') {
+                      if (s.lifecycleState != StudentLifecycleState.onLeave) return false;
+                    } else if (_statusFilter == 'alumni') {
+                      if (s.lifecycleState != StudentLifecycleState.alumni && s.lifecycleState != StudentLifecycleState.graduated) {
+                        return false;
+                      }
+                    }
+                  }
+                  return true;
+                }).toList();
+
+                if (filtered.isEmpty) {
+                  return AcadexEmptyState(
+                    title: "No students found",
+                    subtitle: _searchQuery.isNotEmpty || _courseId != null || _semesterId != null || _sectionId != null
+                        ? "Try clearing filters or search to view students in this context."
+                        : "No students are enrolled in this scope.",
+                    icon: LucideIcons.users,
+                    actionLabel: isStaff ? "Enroll Student" : null,
+                    onActionTap: isStaff ? () => context.push('/academics/students/new') : null,
+                  );
+                }
+
+                return isMobile
+                    ? _buildMobileList(filtered, isDark)
+                    : _buildDesktopTable(filtered, theme);
+              },
             ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterChip(String label, String? value) {
-    final isSelected = _statusFilter == value;
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (_) => setState(() => _statusFilter = value),
-      selectedColor: AcadexColors.primary.withValues(alpha: 0.15),
-      checkmarkColor: AcadexColors.primary,
-      labelStyle: TextStyle(
-        color: isSelected ? AcadexColors.primary : null,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-        fontSize: 13,
+  Widget _buildHierarchicalFilterBar({
+    required bool isDark,
+    required bool isHod,
+    required List<Department> depts,
+    required List<Course> courses,
+    required List<AcademicYear> years,
+    required List<Semester> sems,
+    required List<Section> secs,
+  }) {
+    final hasActiveFilter = (!isHod && _departmentId != null) ||
+        _courseId != null ||
+        _academicYearId != null ||
+        _semesterId != null ||
+        _sectionId != null;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+        borderRadius: AcadexRadius.borderRadiusMd,
+        border: Border.all(
+          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 750;
+          final itemWidth = isNarrow ? (constraints.maxWidth - 24) / 2 : 175.0;
+
+          return Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              // Department Dropdown
+              if (!isHod)
+                SizedBox(
+                  width: itemWidth,
+                  child: DropdownButtonFormField<String?>(
+                    initialValue: _departmentId,
+                    isDense: true,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: "Department",
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    ),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text("All Departments")),
+                      ...depts.where((d) => d.isActive).map((d) => DropdownMenuItem(value: d.id, child: Text(d.name, overflow: TextOverflow.ellipsis))),
+                    ],
+                    onChanged: (val) {
+                      setState(() {
+                        _departmentId = val;
+                        _courseId = null;
+                        _semesterId = null;
+                        _sectionId = null;
+                      });
+                      _syncFilters();
+                    },
+                  ),
+                ),
+
+              // Course Dropdown
+              SizedBox(
+                width: itemWidth,
+                child: DropdownButtonFormField<String?>(
+                  initialValue: _courseId,
+                  isDense: true,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: "Course",
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  ),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text("All Courses")),
+                    ...courses.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name, overflow: TextOverflow.ellipsis))),
+                  ],
+                  onChanged: (val) {
+                    setState(() {
+                      _courseId = val;
+                      _semesterId = null;
+                      _sectionId = null;
+                    });
+                    _syncFilters();
+                  },
+                ),
+              ),
+
+              // Academic Year Dropdown
+              SizedBox(
+                width: itemWidth,
+                child: DropdownButtonFormField<String?>(
+                  initialValue: _academicYearId,
+                  isDense: true,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: "Academic Year",
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  ),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text("All Years")),
+                    ...years.where((y) => y.isActive).map((y) => DropdownMenuItem(value: y.id, child: Text(y.name, overflow: TextOverflow.ellipsis))),
+                  ],
+                  onChanged: (val) {
+                    setState(() {
+                      _academicYearId = val;
+                      _semesterId = null;
+                      _sectionId = null;
+                    });
+                    _syncFilters();
+                  },
+                ),
+              ),
+
+              // Semester Dropdown
+              SizedBox(
+                width: itemWidth,
+                child: DropdownButtonFormField<String?>(
+                  initialValue: _semesterId,
+                  isDense: true,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: "Semester",
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  ),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text("All Semesters")),
+                    ...sems.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))),
+                  ],
+                  onChanged: (val) {
+                    setState(() {
+                      _semesterId = val;
+                      _sectionId = null;
+                    });
+                    _syncFilters();
+                  },
+                ),
+              ),
+
+              // Section Dropdown
+              SizedBox(
+                width: itemWidth,
+                child: DropdownButtonFormField<String?>(
+                  initialValue: _sectionId,
+                  isDense: true,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: "Section",
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  ),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text("All Sections")),
+                    ...secs.map((sec) => DropdownMenuItem(value: sec.id, child: Text(sec.name, overflow: TextOverflow.ellipsis))),
+                  ],
+                  onChanged: (val) {
+                    setState(() {
+                      _sectionId = val;
+                    });
+                    _syncFilters();
+                  },
+                ),
+              ),
+
+              // Clear Button
+              if (hasActiveFilter)
+                IconButton(
+                  tooltip: "Reset All Filters",
+                  icon: const Icon(LucideIcons.xCircle, size: 20, color: AcadexColors.inkMuted),
+                  onPressed: () {
+                    setState(() {
+                      if (!isHod) _departmentId = null;
+                      _courseId = null;
+                      _academicYearId = null;
+                      _semesterId = null;
+                      _sectionId = null;
+                    });
+                    _syncFilters();
+                  },
+                ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildMobileList(
-    List<Student> students,
-    Map<String, Department> deptMap,
-    Map<String, Semester> semMap,
-    Map<String, Section> secMap,
-    bool isDark,
-  ) {
-    if (students.isEmpty) {
-      return AcadexEmptyState(
-        title: "No students have been added yet.",
-        subtitle: _searchQuery.isNotEmpty
-            ? "No students match '$_searchQuery'."
-            : "Add students to manage admissions and academic enrollments.",
-        icon: LucideIcons.users,
-        actionLabel: "Add Student",
-        onActionTap: () => context.push('/academics/students/new'),
-      );
-    }
-
+  Widget _buildMobileList(List<Student> students, bool isDark) {
     return ListView.separated(
       padding: const EdgeInsets.only(bottom: 24),
       itemCount: students.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
         final s = students[i];
-        final deptName = AcadexEntityFormatters.formatDepartmentLabel(deptMap[s.departmentId]?.name, rawId: s.departmentId);
-        final sem = semMap[s.semesterId];
-        final semName = AcadexEntityFormatters.formatSemesterLabel(sem?.name, semesterNumber: sem?.semesterNumber, rawId: s.semesterId, compact: true);
-        final sec = secMap[s.sectionId];
-        final secName = AcadexEntityFormatters.formatSectionLabel(sec?.name, rawId: s.sectionId, fallback: 'Section Not Assigned', compact: true);
         final isSelected = _selectedIds.contains(s.id);
         final statusLabel = s.accountStatus == AccountStatus.pendingActivation
-            ? 'Pending Activation'
+            ? 'Pending'
             : s.lifecycleState.displayName;
 
         return InkWell(
           onTap: () => context.push('/academics/students/${s.id}'),
-          borderRadius: AcadexRadius.borderRadiusLg,
+          borderRadius: AcadexRadius.borderRadiusMd,
           child: Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-              borderRadius: AcadexRadius.borderRadiusLg,
+              borderRadius: AcadexRadius.borderRadiusMd,
               border: Border.all(
                 color: isSelected
                     ? AcadexColors.primary
@@ -437,70 +631,50 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                 width: isSelected ? 1.5 : 1,
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: AcadexColors.primary.withValues(alpha: 0.12),
+                  child: Text(
+                    s.name.isNotEmpty ? s.name[0].toUpperCase() : 'S',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AcadexColors.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
                         s.name,
                         style: AcadexTypography.body(
                           color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                        ).copyWith(fontWeight: FontWeight.w700),
+                        ).copyWith(fontWeight: FontWeight.w600),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    AcadexBadge(
-                      label: statusLabel,
-                      variant: _getBadgeVariant(s),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "PIN: ${s.instituteId ?? s.rollNumber} • $deptName",
-                  style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      const SizedBox(height: 2),
+                      Text(
+                        s.rollNumber.isNotEmpty ? s.rollNumber : (s.instituteId ?? '—'),
+                        style: AcadexTypography.caption(
+                          color: AcadexColors.primary,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 6),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "$semName • $secName",
-                      style: AcadexTypography.caption(
-                        color: AcadexColors.primary,
-                      ).copyWith(fontWeight: FontWeight.w600),
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          tooltip: "Enroll",
-                          icon: const Icon(LucideIcons.userCheck, size: 18, color: AcadexColors.primary),
-                          onPressed: () => _showEnrollStudentDialog(s),
-                        ),
-                        IconButton(
-                          tooltip: "Promote",
-                          icon: const Icon(LucideIcons.arrowUpRight, size: 18, color: AcadexColors.success),
-                          onPressed: () => _showSinglePromotionDialog(s),
-                        ),
-                        IconButton(
-                          tooltip: "Edit",
-                          icon: Icon(
-                            LucideIcons.edit,
-                            size: 18,
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                          ),
-                          onPressed: () => context.push('/academics/students/edit/${s.id}'),
-                        ),
-                      ],
-                    ),
-                  ],
+                const SizedBox(width: 8),
+                AcadexBadge(
+                  label: statusLabel,
+                  variant: _getBadgeVariant(s),
                 ),
+                const SizedBox(width: 8),
+                const Icon(LucideIcons.chevronRight, size: 16, color: AcadexColors.inkMuted),
               ],
             ),
           ),
@@ -509,24 +683,13 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
     );
   }
 
-  Widget _buildDesktopTable(
-    List<Student> filteredStudents,
-    Map<String, Department> deptMap,
-    Map<String, Semester> semMap,
-    Map<String, Section> secMap,
-    ThemeData theme,
-  ) {
+  Widget _buildDesktopTable(List<Student> students, ThemeData theme) {
     return AcadexDataTable(
       showCheckboxColumn: true,
-      columns: const ["PIN Number", "Roll No", "Student Name", "Department", "Semester", "Section", "Status", "Actions"],
-      rows: filteredStudents.map((s) {
-        final deptName = AcadexEntityFormatters.formatDepartmentLabel(deptMap[s.departmentId]?.name, rawId: s.departmentId);
-        final sem = semMap[s.semesterId];
-        final semName = AcadexEntityFormatters.formatSemesterLabel(sem?.name, semesterNumber: sem?.semesterNumber, rawId: s.semesterId);
-        final sec = secMap[s.sectionId];
-        final secName = AcadexEntityFormatters.formatSectionLabel(sec?.name, rawId: s.sectionId, fallback: 'Section Not Assigned', compact: true);
+      columns: const ["Student", "Roll No.", "Status", "Actions"],
+      rows: students.map((s) {
         final statusLabel = s.accountStatus == AccountStatus.pendingActivation
-            ? 'Pending Activation'
+            ? 'Pending'
             : s.lifecycleState.displayName;
 
         return DataRow(
@@ -542,29 +705,44 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
           },
           cells: [
             DataCell(
-              Text(
-                s.instituteId ?? '—',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            DataCell(
               InkWell(
                 onTap: () => context.push('/academics/students/${s.id}'),
-                child: Text(
-                  s.rollNumber.isNotEmpty ? s.rollNumber : '—',
-                  style: AcadexTypography.body(color: AcadexColors.primary).copyWith(fontWeight: FontWeight.bold),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircleAvatar(
+                      radius: 14,
+                      backgroundColor: AcadexColors.primary.withValues(alpha: 0.12),
+                      child: Text(
+                        s.name.isNotEmpty ? s.name[0].toUpperCase() : 'S',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AcadexColors.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      s.name,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ],
                 ),
               ),
             ),
             DataCell(
               InkWell(
                 onTap: () => context.push('/academics/students/${s.id}'),
-                child: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                child: Text(
+                  s.rollNumber.isNotEmpty ? s.rollNumber : (s.instituteId ?? '—'),
+                  style: AcadexTypography.body(color: AcadexColors.primary).copyWith(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
+                  ),
+                ),
               ),
             ),
-            DataCell(Text(deptName)),
-            DataCell(Text(semName)),
-            DataCell(Text(secName)),
             DataCell(
               AcadexBadge(
                 label: statusLabel,
@@ -572,41 +750,19 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
               ),
             ),
             DataCell(
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    tooltip: "View Profile",
-                    icon: const Icon(LucideIcons.user, size: 18, color: AcadexColors.primary),
-                    onPressed: () => context.push('/academics/students/${s.id}'),
-                  ),
-                  IconButton(
-                    tooltip: "Enroll Student",
-                    icon: const Icon(LucideIcons.userCheck, size: 18, color: AcadexColors.primary),
-                    onPressed: () => _showEnrollStudentDialog(s),
-                  ),
-                  IconButton(
-                    tooltip: "Promote Student",
-                    icon: const Icon(LucideIcons.arrowUpRight, size: 18, color: AcadexColors.success),
-                    onPressed: () => _showSinglePromotionDialog(s),
-                  ),
-                  IconButton(
-                    tooltip: "Edit Student",
-                    icon: Icon(LucideIcons.edit, size: 18, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-                    onPressed: () => context.push('/academics/students/edit/${s.id}'),
-                  ),
-                ],
+              IconButton(
+                tooltip: "View Profile",
+                icon: const Icon(LucideIcons.chevronRight, size: 18, color: AcadexColors.primary),
+                onPressed: () => context.push('/academics/students/${s.id}'),
               ),
             ),
           ],
         );
       }).toList(),
       emptyState: AcadexEmptyState(
-        title: "No students have been added yet.",
-        subtitle: "Add students to manage admissions and academic enrollments.",
+        title: "No students found",
+        subtitle: "No students are enrolled in this scope.",
         icon: LucideIcons.users,
-        actionLabel: "Add Student",
-        onActionTap: () => context.push('/academics/students/new'),
       ),
     );
   }

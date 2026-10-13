@@ -67,9 +67,10 @@ const FacultySchema = new Schema<IFaculty>(
 );
 
 FacultySchema.index(
-  { userId: 1 },
+  { collegeId: 1, userId: 1 },
   { unique: true, partialFilterExpression: { userId: { $type: 'objectId' } } }
 );
+FacultySchema.index({ userId: 1 });
 FacultySchema.index(
   { collegeId: 1, employeeId: 1 },
   { unique: true, partialFilterExpression: { employeeId: { $type: 'string' } } }

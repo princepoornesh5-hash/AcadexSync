@@ -19,5 +19,6 @@ router.get('/department/sections', asyncHandler(DepartmentAnalyticsController.ge
 router.get('/department/subjects', asyncHandler(DepartmentAnalyticsController.getSubjects));
 router.get('/department/students', asyncHandler(DepartmentAnalyticsController.getStudents));
 router.get('/department/trends', asyncHandler(DepartmentAnalyticsController.getTrends));
+router.get('/department/assessments', asyncHandler(DepartmentAnalyticsController.getAssessments));
 
 export const analyticsRouter = router;

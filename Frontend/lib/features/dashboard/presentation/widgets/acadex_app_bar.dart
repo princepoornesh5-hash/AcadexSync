@@ -9,6 +9,8 @@ import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
+import '../../../auth/presentation/providers/workspace_providers.dart';
+import '../../../auth/presentation/widgets/workspace_selector_dialog.dart';
 import '../../../notifications/presentation/widgets/notification_badge.dart';
 import '../../../../core/presentation/widgets/acadex_avatar.dart';
 import 'acadex_drawer.dart';
@@ -71,6 +73,7 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = AcadexBreakpoints.isMobile(context);
     final isDesktop = AcadexBreakpoints.isDesktop(context);
+    final activeWorkspace = ref.watch(activeWorkspaceProvider);
     final topPadding = MediaQuery.paddingOf(context).top;
 
     const toolbarHeight = 56.0;
@@ -265,6 +268,48 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
             ],
 
             // Trailing Actions: Streamlined Mobile vs Rich Desktop/Tablet
+            if (activeWorkspace != null) ...[
+              InkWell(
+                onTap: () => showWorkspaceSelectorDialog(context),
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(LucideIcons.building2, size: 12, color: AcadexColors.primary),
+                      const SizedBox(width: 4),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: isMobile ? 70 : 120),
+                        child: Text(
+                          activeWorkspace.collegeCode.isNotEmpty
+                              ? activeWorkspace.collegeCode
+                              : activeWorkspace.collegeName,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: headerTextColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Icon(LucideIcons.chevronDown, size: 11, color: headerMutedColor),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
             if (isMobile) ...[
               if (widget.extraActions != null && widget.extraActions!.isNotEmpty) ...[
                 ...widget.extraActions!,
@@ -304,6 +349,9 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
                     break;
                   case 'change_password':
                     context.push('/change-password');
+                    break;
+                  case 'switch_workspace':
+                    showWorkspaceSelectorDialog(context);
                     break;
                   case 'logout':
                     await ref.read(authProvider.notifier).logout();
@@ -376,6 +424,17 @@ class _AcadexAppBarState extends ConsumerState<AcadexAppBar> {
                       Icon(LucideIcons.settings, size: 16, color: AcadexColors.inkSecondary),
                       SizedBox(width: 12),
                       Text('Settings', style: TextStyle(color: Color(0xFF07111F), fontSize: 13)),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                PopupMenuItem<String>(
+                  value: 'switch_workspace',
+                  child: Row(
+                    children: const [
+                      Icon(LucideIcons.building2, size: 16, color: AcadexColors.primary),
+                      SizedBox(width: 12),
+                      Text('Switch Workspace', style: TextStyle(color: Color(0xFF07111F), fontSize: 13, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),

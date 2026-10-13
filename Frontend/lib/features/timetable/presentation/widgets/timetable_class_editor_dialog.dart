@@ -85,11 +85,10 @@ class _TimetableClassEditorDialogState extends ConsumerState<TimetableClassEdito
 
     // Section-scoped or semester-scoped active faculty assignments
     final sectionAssignments = container != null
-        ? (container.sectionId.isNotEmpty && container.sectionId != 'none'
-            ? ref.watch(facultyAssignmentsBySectionProvider(container.sectionId))
-            : (container.semesterId.isNotEmpty
-                ? ref.watch(facultyAssignmentsBySemesterProvider(container.semesterId))
-                : ref.watch(facultyAssignmentsBySectionProvider(container.sectionId))))
+        ? ref.watch(facultyAssignmentsForTimetableProvider((
+            sectionId: container.sectionId,
+            semesterId: container.semesterId,
+          )))
         : <FacultyAssignment>[];
 
     // Auto-resolve faculty assignment ID if not explicitly set

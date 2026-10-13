@@ -28,6 +28,15 @@ class AttendanceSession {
   final String? roomNumber;
   final String? building;
 
+  final bool isSubstitution;
+  final String? substituteFacultyId;
+  final String? substituteFacultyName;
+  final String? substitutionId;
+  final String? originalFacultyId;
+  final String? originalFacultyName;
+  final String? originalFacultyAssignmentId;
+  final String? substitutionReason;
+
   AttendanceSession({
     required this.id,
     required this.collegeId,
@@ -48,6 +57,14 @@ class AttendanceSession {
     this.building,
     this.isSubmitted = false,
     this.isLocked = false,
+    this.isSubstitution = false,
+    this.substituteFacultyId,
+    this.substituteFacultyName,
+    this.substitutionId,
+    this.originalFacultyId,
+    this.originalFacultyName,
+    this.originalFacultyAssignmentId,
+    this.substitutionReason,
     this.createdAt,
     this.createdBy,
     this.lastModifiedAt,
@@ -92,6 +109,14 @@ class AttendanceSession {
     String? building,
     bool? isSubmitted,
     bool? isLocked,
+    bool? isSubstitution,
+    String? substituteFacultyId,
+    String? substituteFacultyName,
+    String? substitutionId,
+    String? originalFacultyId,
+    String? originalFacultyName,
+    String? originalFacultyAssignmentId,
+    String? substitutionReason,
     DateTime? createdAt,
     String? createdBy,
     DateTime? lastModifiedAt,
@@ -118,6 +143,14 @@ class AttendanceSession {
       building: building ?? this.building,
       isSubmitted: isSubmitted ?? this.isSubmitted,
       isLocked: isLocked ?? this.isLocked,
+      isSubstitution: isSubstitution ?? this.isSubstitution,
+      substituteFacultyId: substituteFacultyId ?? this.substituteFacultyId,
+      substituteFacultyName: substituteFacultyName ?? this.substituteFacultyName,
+      substitutionId: substitutionId ?? this.substitutionId,
+      originalFacultyId: originalFacultyId ?? this.originalFacultyId,
+      originalFacultyName: originalFacultyName ?? this.originalFacultyName,
+      originalFacultyAssignmentId: originalFacultyAssignmentId ?? this.originalFacultyAssignmentId,
+      substitutionReason: substitutionReason ?? this.substitutionReason,
       createdAt: createdAt ?? this.createdAt,
       createdBy: createdBy ?? this.createdBy,
       lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
@@ -152,6 +185,14 @@ class AttendanceSession {
       building: json['building'] as String?,
       isSubmitted: json['isSubmitted'] as bool? ?? false,
       isLocked: locked,
+      isSubstitution: json['isSubstitution'] as bool? ?? false,
+      substituteFacultyId: (json['substituteFacultyId'] ?? json['substituteFaculty']?['_id'])?.toString(),
+      substituteFacultyName: (json['substituteFacultyName'] ?? json['substituteFaculty']?['name'])?.toString(),
+      substitutionId: (json['substitutionId'] ?? json['substitution']?['_id'])?.toString(),
+      originalFacultyId: (json['originalFacultyId'] ?? json['originalFaculty']?['_id'])?.toString(),
+      originalFacultyName: (json['originalFacultyName'] ?? json['originalFaculty']?['name'])?.toString(),
+      originalFacultyAssignmentId: (json['originalFacultyAssignmentId'] ?? json['originalFacultyAssignment']?['_id'])?.toString(),
+      substitutionReason: json['substitutionReason'] as String?,
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
       createdBy: json['createdBy'] as String?,
       lastModifiedAt: json['lastModifiedAt'] != null ? DateTime.tryParse(json['lastModifiedAt'].toString()) : null,
@@ -181,6 +222,14 @@ class AttendanceSession {
       if (building != null) 'building': building,
       'isSubmitted': isSubmitted,
       'isLocked': isLocked,
+      'isSubstitution': isSubstitution,
+      if (substituteFacultyId != null) 'substituteFacultyId': substituteFacultyId,
+      if (substituteFacultyName != null) 'substituteFacultyName': substituteFacultyName,
+      if (substitutionId != null) 'substitutionId': substitutionId,
+      if (originalFacultyId != null) 'originalFacultyId': originalFacultyId,
+      if (originalFacultyName != null) 'originalFacultyName': originalFacultyName,
+      if (originalFacultyAssignmentId != null) 'originalFacultyAssignmentId': originalFacultyAssignmentId,
+      if (substitutionReason != null) 'substitutionReason': substitutionReason,
       'createdAt': createdAt?.toIso8601String(),
       'createdBy': createdBy,
       'lastModifiedAt': lastModifiedAt?.toIso8601String(),

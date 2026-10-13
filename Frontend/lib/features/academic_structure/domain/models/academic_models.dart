@@ -1584,6 +1584,50 @@ class Student {
   }
 }
 
+class FacultyPriorityContext {
+  final String facultyAssignmentId;
+  final String subjectId;
+  final String subjectName;
+  final String subjectCode;
+  final String? sectionId;
+  final String sectionName;
+  final int totalSessions;
+  final int attendedSessions;
+  final double attendancePercentage;
+  final int totalAssignments;
+  final int submittedAssignments;
+
+  const FacultyPriorityContext({
+    required this.facultyAssignmentId,
+    required this.subjectId,
+    required this.subjectName,
+    required this.subjectCode,
+    this.sectionId,
+    required this.sectionName,
+    required this.totalSessions,
+    required this.attendedSessions,
+    required this.attendancePercentage,
+    required this.totalAssignments,
+    required this.submittedAssignments,
+  });
+
+  factory FacultyPriorityContext.fromJson(Map<String, dynamic> json) {
+    return FacultyPriorityContext(
+      facultyAssignmentId: (json['facultyAssignmentId'] ?? '').toString(),
+      subjectId: (json['subjectId'] ?? '').toString(),
+      subjectName: (json['subjectName'] ?? '').toString(),
+      subjectCode: (json['subjectCode'] ?? '').toString(),
+      sectionId: json['sectionId']?.toString(),
+      sectionName: (json['sectionName'] ?? 'Assigned Section').toString(),
+      totalSessions: (json['totalSessions'] as num?)?.toInt() ?? 0,
+      attendedSessions: (json['attendedSessions'] as num?)?.toInt() ?? 0,
+      attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble() ?? 0.0,
+      totalAssignments: (json['totalAssignments'] as num?)?.toInt() ?? 0,
+      submittedAssignments: (json['submittedAssignments'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 class StudentAcademicProfile {
   final Student student;
   final Department? department;
@@ -1597,6 +1641,21 @@ class StudentAcademicProfile {
   final Map<String, double> subjectAttendanceMap;
   final int notesCount;
   final int certificatesCount;
+  final FacultyPriorityContext? facultyPriorityContext;
+
+  // Student 360 Authoritative Dimensions
+  final Map<String, dynamic>? attendanceMetrics;
+  final List<Map<String, dynamic>> historicalPercentageMetrics;
+  final bool hasDetailedAttendance;
+  final bool hasPercentageOnlyAttendance;
+  final List<Map<String, dynamic>> assessments;
+  final List<Map<String, dynamic>> assignments;
+  final List<Map<String, dynamic>> subjectsWithFaculty;
+  final List<Map<String, dynamic>> contactRequests;
+  final List<Map<String, dynamic>> academicRecords;
+  final List<Map<String, dynamic>> officialResults;
+  final List<Map<String, dynamic>> timelineEvents;
+  final List<Map<String, dynamic>> enrollmentHistory;
 
   StudentAcademicProfile({
     required this.student,
@@ -1611,7 +1670,166 @@ class StudentAcademicProfile {
     this.subjectAttendanceMap = const {},
     this.notesCount = 0,
     this.certificatesCount = 0,
+    this.facultyPriorityContext,
+    this.attendanceMetrics,
+    this.historicalPercentageMetrics = const [],
+    this.hasDetailedAttendance = false,
+    this.hasPercentageOnlyAttendance = false,
+    this.assessments = const [],
+    this.assignments = const [],
+    this.subjectsWithFaculty = const [],
+    this.contactRequests = const [],
+    this.academicRecords = const [],
+    this.officialResults = const [],
+    this.timelineEvents = const [],
+    this.enrollmentHistory = const [],
   });
+
+  factory StudentAcademicProfile.fromJson(Map<String, dynamic> raw) {
+    final data = (raw['data'] is Map<String, dynamic>) ? raw['data'] as Map<String, dynamic> : raw;
+    final studentMap = data['student'] as Map<String, dynamic>? ?? data;
+    final student = Student.fromJson(studentMap);
+
+    final academicContext = data['academicContext'] as Map<String, dynamic>? ?? {};
+    final deptMap = academicContext['department'] as Map<String, dynamic>?;
+    final crsMap = academicContext['course'] as Map<String, dynamic>?;
+    final semMap = academicContext['semester'] as Map<String, dynamic>?;
+    final secMap = academicContext['section'] as Map<String, dynamic>?;
+    final yrMap = academicContext['academicYear'] as Map<String, dynamic>?;
+
+    final department = deptMap != null ? Department.fromJson(deptMap) : null;
+    final course = crsMap != null ? Course.fromJson(crsMap) : null;
+    final semester = semMap != null ? Semester.fromJson(semMap) : null;
+    final section = secMap != null ? Section.fromJson(secMap) : null;
+    final academicYear = yrMap != null ? AcademicYear.fromJson(yrMap) : null;
+
+    FacultyPriorityContext? facultyContext;
+    if (data.containsKey('facultyContext') && data['facultyContext'] != null) {
+      facultyContext = FacultyPriorityContext.fromJson(data['facultyContext'] as Map<String, dynamic>);
+    }
+
+    // Attendance
+    final attendanceData = data['attendance'] as Map<String, dynamic>?;
+    final attendanceMetricsMap = data['attendanceMetrics'] as Map<String, dynamic>? ??
+        (attendanceData?['detailedMetrics'] as Map<String, dynamic>?);
+
+    final double overallAttendance = attendanceMetricsMap != null && attendanceMetricsMap['attendancePercentage'] != null
+        ? (attendanceMetricsMap['attendancePercentage'] as num).toDouble()
+        : (attendanceMetricsMap != null && attendanceMetricsMap['percentage'] != null
+            ? (attendanceMetricsMap['percentage'] as num).toDouble()
+            : (facultyContext?.attendancePercentage ?? (data['overallAttendancePercentage'] as num?)?.toDouble() ?? 0.0));
+
+    final bool hasDetailedAttendance = attendanceMetricsMap?['hasDetailedAttendance'] == true ||
+        attendanceData?['hasDetailedData'] == true;
+    final bool hasPercentageOnlyAttendance = attendanceMetricsMap?['hasPercentageOnlyAttendance'] == true ||
+        attendanceData?['hasPercentageOnlyData'] == true;
+
+    final List<Map<String, dynamic>> historicalPercentageMetrics = ((data['historicalPercentageMetrics'] ?? attendanceData?['historicalPercentageMetrics']) as List?)
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .toList() ??
+        [];
+
+    // Assessments
+    final assessmentsData = data['assessments'];
+    final List<Map<String, dynamic>> assessments = (assessmentsData is List
+            ? assessmentsData
+            : (assessmentsData is Map ? assessmentsData['items'] as List? : null))
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .toList() ??
+        [];
+
+    // Assignments
+    final assignmentsData = data['assignments'];
+    final List<Map<String, dynamic>> assignments = (assignmentsData is List
+            ? assignmentsData
+            : (assignmentsData is Map ? assignmentsData['items'] as List? : null))
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .toList() ??
+        [];
+
+    // Subjects
+    final subjectsData = data['subjectsWithFaculty'] ?? data['subjects'];
+    final List<Map<String, dynamic>> subjectsWithFaculty = (subjectsData is List
+            ? subjectsData
+            : (subjectsData is Map ? subjectsData['items'] as List? : null))
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .toList() ??
+        [];
+
+    final List<Subject> enrolledSubjects = subjectsWithFaculty.map((s) {
+      return Subject(
+        id: s['id']?.toString() ?? '',
+        collegeId: student.collegeId,
+        departmentId: student.departmentId,
+        courseId: student.courseId,
+        semesterId: student.semesterId,
+        name: s['name']?.toString() ?? '',
+        code: s['code']?.toString() ?? '',
+        credits: (s['credits'] as num?)?.toInt() ?? 0,
+      );
+    }).toList();
+
+    // Notes
+    final notesData = data['notes'];
+    final int notesCount = (data['notesCount'] as num?)?.toInt() ??
+        (notesData is Map ? (notesData['count'] as num?)?.toInt() ?? 0 : 0);
+
+    // Requests
+    final requestsData = data['requests'];
+    final List<Map<String, dynamic>> contactRequests = ((data['contactRequests'] ??
+            (requestsData is Map ? requestsData['contactRequests'] : null)) as List?)
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .toList() ??
+        [];
+
+    // Academic Records & Results
+    final List<Map<String, dynamic>> academicRecords = (data['academicRecords'] as List?)
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .toList() ??
+        [];
+    final List<Map<String, dynamic>> officialResults = ((data['officialResults'] ?? data['results']) as List?)
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .toList() ??
+        [];
+
+    // Timeline & History
+    final List<Map<String, dynamic>> timelineEvents = ((data['timelineEvents'] ?? data['timeline']) as List?)
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .toList() ??
+        [];
+    final enrollmentsData = data['enrollmentHistory'] ?? data['enrollments'];
+    final List<Map<String, dynamic>> enrollmentHistory = (enrollmentsData is List
+            ? enrollmentsData
+            : (enrollmentsData is Map ? enrollmentsData['history'] as List? : null))
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .toList() ??
+        [];
+
+    return StudentAcademicProfile(
+      student: student,
+      department: department,
+      course: course,
+      semester: semester,
+      section: section,
+      academicYear: academicYear,
+      enrolledSubjects: enrolledSubjects,
+      overallAttendancePercentage: overallAttendance,
+      notesCount: notesCount,
+      facultyPriorityContext: facultyContext,
+      attendanceMetrics: attendanceMetricsMap,
+      historicalPercentageMetrics: historicalPercentageMetrics,
+      hasDetailedAttendance: hasDetailedAttendance,
+      hasPercentageOnlyAttendance: hasPercentageOnlyAttendance,
+      assessments: assessments,
+      assignments: assignments,
+      subjectsWithFaculty: subjectsWithFaculty,
+      contactRequests: contactRequests,
+      academicRecords: academicRecords,
+      officialResults: officialResults,
+      timelineEvents: timelineEvents,
+      enrollmentHistory: enrollmentHistory,
+    );
+  }
 }
 
 class FacultyAssignment {

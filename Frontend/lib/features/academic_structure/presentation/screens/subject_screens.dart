@@ -42,7 +42,10 @@ class _SubjectListScreenState extends ConsumerState<SubjectListScreen> {
   String? _selectedAcademicYearId;
   String? _selectedSemesterId;
 
-  void _navigateCreateSubject(BuildContext context, List<Course> courses, List<Semester> semesters, TerminologyHelper terminology) {
+  Future<void> _navigateCreateSubject(BuildContext context, TerminologyHelper terminology) async {
+    final courses = await ref.read(coursesProvider.future).catchError((_) => <Course>[]);
+    final semesters = await ref.read(semestersProvider.future).catchError((_) => <Semester>[]);
+    if (!mounted) return;
     final check = AcademicPrerequisiteGuard.checkSubjectPrerequisites(
       courses: courses,
       semesters: semesters,
@@ -99,7 +102,7 @@ class _SubjectListScreenState extends ConsumerState<SubjectListScreen> {
           AcadexSearchFilterBar(
             searchHint: "Search ${subsLabel.toLowerCase()} by code or name...",
             onSearchChanged: (v) => setState(() => _searchQuery = v),
-            onActionTap: () => _navigateCreateSubject(context, coursesList, semsList, terminology),
+            onActionTap: () => _navigateCreateSubject(context, terminology),
             actionLabel: "+ Create $subLabel",
           ),
           const SizedBox(height: 10),

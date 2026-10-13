@@ -36,8 +36,16 @@ export interface IAttendanceSession extends Document {
   status: AttendanceSessionStatus;
   isSubmitted: boolean;
   isLocked: boolean;
+  isSubstitution?: boolean;
+  substituteFacultyId?: mongoose.Types.ObjectId | null;
+  substitutionId?: mongoose.Types.ObjectId | null;
+  originalFacultyId?: mongoose.Types.ObjectId | null;
+  originalFacultyAssignmentId?: mongoose.Types.ObjectId | null;
+  substitutionReason?: string | null;
   createdBy?: string;
   lastModifiedBy?: string;
+  sourceType?: 'LIVE' | 'IMPORTED' | 'HISTORICAL_MANUAL';
+  importBatchId?: string;
   version: number;
   createdAt: Date;
   updatedAt: Date;
@@ -94,8 +102,16 @@ const AttendanceSessionSchema = new Schema<IAttendanceSession>(
     },
     isSubmitted: { type: Boolean, default: false },
     isLocked: { type: Boolean, default: false },
+    isSubstitution: { type: Boolean, default: false, index: true },
+    substituteFacultyId: { type: Schema.Types.ObjectId, ref: 'Faculty', default: null, index: true },
+    substitutionId: { type: Schema.Types.ObjectId, ref: 'TeacherSubstitution', default: null, index: true },
+    originalFacultyId: { type: Schema.Types.ObjectId, ref: 'Faculty', default: null, index: true },
+    originalFacultyAssignmentId: { type: Schema.Types.ObjectId, ref: 'FacultyAssignment', default: null, index: true },
+    substitutionReason: { type: String, default: null },
     createdBy: { type: String, default: null },
     lastModifiedBy: { type: String, default: null },
+    sourceType: { type: String, enum: ['LIVE', 'IMPORTED', 'HISTORICAL_MANUAL'], default: 'LIVE' },
+    importBatchId: { type: String, default: null, index: true },
     version: { type: Number, default: 1 },
   },
   {
@@ -114,6 +130,10 @@ const AttendanceSessionSchema = new Schema<IAttendanceSession>(
         if (ret.sectionId) ret.sectionId = ret.sectionId.toString();
         if (ret.timetableId) ret.timetableId = ret.timetableId.toString();
         if (ret.facultyAssignmentId) ret.facultyAssignmentId = ret.facultyAssignmentId.toString();
+        if (ret.substituteFacultyId) ret.substituteFacultyId = ret.substituteFacultyId.toString();
+        if (ret.substitutionId) ret.substitutionId = ret.substitutionId.toString();
+        if (ret.originalFacultyId) ret.originalFacultyId = ret.originalFacultyId.toString();
+        if (ret.originalFacultyAssignmentId) ret.originalFacultyAssignmentId = ret.originalFacultyAssignmentId.toString();
         delete ret.__v;
         return ret;
       },

@@ -43,7 +43,8 @@ const FacultyAssignmentSchema = new Schema<IFacultyAssignment>(
     assignedBy: { type: String, default: null },
     status: {
       type: String,
-      enum: ['active', 'inactive', 'ended', 'archived'],
+      enum: ['active', 'inactive', 'ended', 'archived', 'ACTIVE', 'INACTIVE', 'ENDED', 'ARCHIVED'],
+      set: (v: string) => (v ? v.toLowerCase() : v),
       default: 'active',
       index: true,
     },

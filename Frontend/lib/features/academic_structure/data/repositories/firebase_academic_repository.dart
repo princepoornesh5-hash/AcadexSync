@@ -306,10 +306,21 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<List<Student>> getStudents({String? sectionId, String? departmentId}) async {
+  Future<List<Student>> getStudents({
+    String? sectionId,
+    String? departmentId,
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? search,
+    String? status,
+  }) async {
     final filters = _getScopeFilters();
     if (sectionId != null) filters['sectionId'] = sectionId;
     if (departmentId != null) filters['departmentId'] = departmentId;
+    if (courseId != null) filters['courseId'] = courseId;
+    if (academicYearId != null) filters['academicYearId'] = academicYearId;
+    if (semesterId != null) filters['semesterId'] = semesterId;
     final docs = await _firestoreService.queryCollection('students', filters);
     return docs.map((d) => Student.fromJson(d)).where((c) => c.isActive).toList();
   }

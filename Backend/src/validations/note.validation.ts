@@ -6,6 +6,7 @@ import { env } from '../config/env';
 const maxNoteSizeBytes = env.NOTES_MAX_FILE_SIZE_MB * 1024 * 1024;
 
 export const requestUploadUrlSchema = z.object({
+  facultyAssignmentId: z.string().optional(),
   departmentId: z.string().optional(),
   courseId: z.string().optional(),
   academicYearId: z.string().optional(),

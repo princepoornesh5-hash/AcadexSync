@@ -179,6 +179,10 @@ final saveSessionProvider = FutureProvider.family<bool, String>((ref, activeClas
     facultyAssignmentId: activeClass.facultyAssignmentId,
     roomNumber: activeClass.roomNumber,
     building: activeClass.building,
+    isSubstitution: activeClass.isSubstitution,
+    originalFacultyId: activeClass.originalFacultyId,
+    substitutionId: activeClass.substitutionId,
+    substitutionReason: activeClass.substitutionReason,
   );
   
   final success = await repo.saveSession(session);

@@ -8,7 +8,24 @@ import { College } from '../models/college.model';
 import { Department } from '../models/department.model';
 import { Invitation } from '../models/invitation.model';
 import { AuditLog } from '../models/auditLog.model';
+import { Subject } from '../models/subject.model';
+import { Section } from '../models/section.model';
+import { AttendanceSession } from '../models/attendanceSession.model';
+import { AttendanceRecord } from '../models/attendanceRecord.model';
+import { Assignment } from '../models/assignment.model';
+import { AssignmentSubmission } from '../models/assignmentSubmission.model';
 import { StudentContactRequest, IStudentContactRequest, ContactRequestStatus } from '../models/studentContactRequest.model';
+import { Course } from '../models/course.model';
+import { Semester } from '../models/semester.model';
+import { AcademicYear } from '../models/academicYear.model';
+import { AcademicRecord } from '../models/academicRecord.model';
+import { AcademicResult } from '../models/academicResult.model';
+import { Note } from '../models/note.model';
+import { NoteStatus } from '../constants/status';
+import { AssignmentStatus } from '../constants/assignment.constants';
+import { ResultLifecycleStatus } from '../constants/academicResult.constants';
+import { AttendanceAggregationService } from './attendance/attendanceAggregation.service';
+import { InternalAssessmentService } from './internalAssessment.service';
 import { AppRole } from '../constants/roles';
 import { AccountStatus, CollegeStatus, DepartmentStatus, StudentLifecycleState } from '../constants/status';
 import { ApiError } from '../utils/apiError';
@@ -55,6 +72,10 @@ export interface ListStudentQuery {
   search?: string;
   collegeId?: string;
   departmentId?: string;
+  courseId?: string;
+  academicYearId?: string;
+  semesterId?: string;
+  sectionId?: string;
   status?: AccountStatus;
   sortBy?: 'name' | 'instituteId' | 'rollNumber' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
@@ -267,6 +288,7 @@ export class StudentService {
         throw ApiError.forbidden('Cross-department access is strictly prohibited for staff');
       }
       // Faculty student visibility is limited to authorized teaching contexts
+      let facultyPriorityContext: any = null;
       if (student) {
         const facultyDoc = await Faculty.findOne({
           $or: [{ userId: requester.id }, { _id: requester.id }],
@@ -286,17 +308,86 @@ export class StudentService {
             status: 'active',
           });
 
-          const hasTeaching = activeEnrollment && (
+          const hasTeaching = (activeEnrollment && (
             (activeEnrollment.sectionId && assignedSectionIds.includes(activeEnrollment.sectionId.toString())) ||
             (!activeEnrollment.sectionId && assignedSemesterIds.includes(activeEnrollment.semesterId.toString()))
+          )) || (
+            (student.sectionId && assignedSectionIds.includes(student.sectionId.toString())) ||
+            (!student.sectionId && student.semesterId && assignedSemesterIds.includes(student.semesterId.toString()))
           );
 
           if (!hasTeaching) {
             throw ApiError.forbidden('Faculty student visibility is limited to authorized teaching contexts');
           }
+
+          // Compute Priority Teaching Context for this Faculty
+          const matchingAssignment = assignments.find((a) => {
+            const secMatch = a.sectionId && (
+              (activeEnrollment?.sectionId && a.sectionId.toString() === activeEnrollment.sectionId.toString()) ||
+              (student.sectionId && a.sectionId.toString() === student.sectionId.toString())
+            );
+            const semMatch = a.semesterId && (
+              (activeEnrollment?.semesterId && a.semesterId.toString() === activeEnrollment.semesterId.toString()) ||
+              (student.semesterId && a.semesterId.toString() === student.semesterId.toString())
+            );
+            return secMatch || semMatch;
+          }) || assignments[0];
+
+          if (matchingAssignment) {
+            const subjectDoc = await Subject.findById(matchingAssignment.subjectId);
+            const sectionDoc = matchingAssignment.sectionId ? await Section.findById(matchingAssignment.sectionId) : null;
+
+            // Attendance in this teaching context
+            const sessions = await AttendanceSession.find({
+              collegeId: requester.collegeId,
+              subjectId: matchingAssignment.subjectId,
+              $or: [
+                { sectionId: matchingAssignment.sectionId },
+                { semesterId: matchingAssignment.semesterId },
+              ],
+            }).select('_id');
+            const sessionIds = sessions.map((s) => s._id);
+
+            const records = await AttendanceRecord.find({
+              sessionId: { $in: sessionIds },
+              studentId: student._id,
+            });
+            const totalConducted = records.length;
+            const attendedCount = records.filter((r) => ['present', 'late'].includes((r.status || '').toLowerCase())).length;
+            const attPct = totalConducted > 0 ? Math.round((attendedCount / totalConducted) * 1000) / 10 : 0;
+
+            // Assignments in this teaching context
+            const assignmentsList = await Assignment.find({
+              collegeId: requester.collegeId,
+              subjectId: matchingAssignment.subjectId,
+              $or: [
+                { sectionId: matchingAssignment.sectionId },
+                { semesterId: matchingAssignment.semesterId },
+              ],
+            }).select('_id');
+            const assignmentIds = assignmentsList.map((a) => a._id);
+            const submissions = await AssignmentSubmission.find({
+              assignmentId: { $in: assignmentIds },
+              studentId: student._id,
+            });
+
+            facultyPriorityContext = {
+              facultyAssignmentId: matchingAssignment._id.toString(),
+              subjectId: matchingAssignment.subjectId.toString(),
+              subjectName: subjectDoc?.name || 'Assigned Subject',
+              subjectCode: subjectDoc?.code || '',
+              sectionId: matchingAssignment.sectionId?.toString() || null,
+              sectionName: sectionDoc?.name || 'Section A',
+              totalSessions: totalConducted,
+              attendedSessions: attendedCount,
+              attendancePercentage: attPct,
+              totalAssignments: assignmentsList.length,
+              submittedAssignments: submissions.length,
+            };
+          }
         }
       }
-      return { user, student };
+      return { user, student, facultyContext: facultyPriorityContext } as any;
     }
 
     if (requester.role === AppRole.STUDENT) {
@@ -378,7 +469,13 @@ export class StudentService {
       }).select('studentId');
 
       const enrolledStudentIds = enrollments.map((e) => e.studentId);
-      const studentProfiles = await Student.find({ _id: { $in: enrolledStudentIds } }).select('userId');
+      const studentProfiles = await Student.find({
+        $or: [
+          { _id: { $in: enrolledStudentIds } },
+          { sectionId: { $in: assignedSectionIds } },
+          { semesterId: { $in: assignedSemesterIds }, sectionId: null },
+        ],
+      }).select('userId');
       const enrolledUserIds = studentProfiles.map((s) => s.userId).filter(Boolean);
 
       mongoQuery._id = { $in: enrolledUserIds };
@@ -400,13 +497,67 @@ export class StudentService {
       mongoQuery.accountStatus = query.status;
     }
 
+    // Hierarchical Academic Filtering (Course, Academic Year, Semester, Section)
+    if (query.courseId || query.academicYearId || query.semesterId || query.sectionId) {
+      const matchCriteria: any = {};
+      if (query.courseId && mongoose.Types.ObjectId.isValid(query.courseId)) {
+        matchCriteria.courseId = new mongoose.Types.ObjectId(query.courseId);
+      }
+      if (query.academicYearId && mongoose.Types.ObjectId.isValid(query.academicYearId)) {
+        matchCriteria.academicYearId = new mongoose.Types.ObjectId(query.academicYearId);
+      }
+      if (query.semesterId && mongoose.Types.ObjectId.isValid(query.semesterId)) {
+        matchCriteria.semesterId = new mongoose.Types.ObjectId(query.semesterId);
+      }
+      if (query.sectionId && mongoose.Types.ObjectId.isValid(query.sectionId)) {
+        matchCriteria.sectionId = new mongoose.Types.ObjectId(query.sectionId);
+      }
+
+      const matchEnrollments = await StudentEnrollment.find({
+        ...matchCriteria,
+        collegeId: mongoQuery.collegeId || requester.collegeId,
+        status: 'active',
+      }).select('studentId');
+      const enrolledStudentIds = matchEnrollments.map((e) => e.studentId);
+
+      const matchStudents = await Student.find({
+        collegeId: mongoQuery.collegeId || requester.collegeId,
+        $or: [
+          { _id: { $in: enrolledStudentIds } },
+          matchCriteria,
+        ],
+      }).select('userId');
+      const matchedUserIds = matchStudents.map((s) => s.userId).filter(Boolean);
+
+      if (mongoQuery._id && (mongoQuery._id as any).$in) {
+        const existingIds = (mongoQuery._id as any).$in.map((id: any) => id.toString());
+        const intersection = matchedUserIds.filter((id) => existingIds.includes(id.toString()));
+        mongoQuery._id = { $in: intersection };
+      } else {
+        mongoQuery._id = { $in: matchedUserIds };
+      }
+    }
+
     if (query.search && query.search.trim() !== '') {
       const searchRegex = new RegExp(query.search.trim(), 'i');
-      mongoQuery.$or = [
+      const rollMatchStudents = await Student.find({
+        collegeId: mongoQuery.collegeId || requester.collegeId,
+        $or: [
+          { rollNumber: searchRegex },
+          { admissionNumber: searchRegex },
+        ],
+      }).select('userId');
+      const rollMatchUserIds = rollMatchStudents.map((s) => s.userId).filter(Boolean);
+
+      const orConditions: any[] = [
         { name: searchRegex },
         { instituteId: searchRegex },
         { email: searchRegex },
       ];
+      if (rollMatchUserIds.length > 0) {
+        orConditions.push({ _id: { $in: rollMatchUserIds } });
+      }
+      mongoQuery.$or = orConditions;
     }
 
     const page = Math.max(1, query.page || 1);
@@ -967,5 +1118,272 @@ export class StudentService {
       user: u,
       student: profileMap.get(u._id.toString()) || null,
     }));
+  }
+
+  /**
+   * Authoritative Student 360 Aggregation Service:
+   * Consolidates student identity, active & historical enrollment, precision-aware attendance,
+   * canonical assessment marks, assignments, enrolled subjects, academic records & results,
+   * notes, requests, and activity milestones into a single coherent, tenant-isolated payload.
+   */
+  static async getStudent360(
+    id: string,
+    requester: AuthenticatedUser
+  ): Promise<Record<string, unknown>> {
+    // 1. Authorize & Resolve Student (enforces tenant isolation & role scope)
+    const { user, student, facultyContext } = (await this.getStudentById(id, requester)) as any;
+    if (!student) {
+      throw ApiError.notFound(`Student profile not linked for ID "${id}"`);
+    }
+
+    const collegeIdStr = user.collegeId ? user.collegeId.toString() : requester.collegeId;
+
+    // 2. Resolve Active and Historical Enrollments
+    const [activeEnrollment, historicalEnrollments] = await Promise.all([
+      StudentEnrollment.findOne({
+        studentId: student._id,
+        status: 'active',
+      })
+        .populate('courseId')
+        .populate('semesterId')
+        .populate('sectionId')
+        .populate('academicYearId')
+        .populate('departmentId')
+        .lean(),
+      StudentEnrollment.find({
+        studentId: student._id,
+      })
+        .sort({ createdAt: -1 })
+        .populate('courseId', 'name code')
+        .populate('semesterId', 'number')
+        .populate('academicYearId', 'name')
+        .populate('sectionId', 'name')
+        .lean(),
+    ]);
+
+    // 3. Resolve Academic Hierarchy
+    const departmentId = (activeEnrollment as any)?.departmentId?._id || student.departmentId;
+    const courseId = (activeEnrollment as any)?.courseId?._id || student.courseId;
+    const semesterId = (activeEnrollment as any)?.semesterId?._id || student.semesterId;
+    const sectionId = (activeEnrollment as any)?.sectionId?._id || student.sectionId;
+    const academicYearId = (activeEnrollment as any)?.academicYearId?._id || student.academicYearId;
+
+    const [department, course, semester, section, academicYear] = await Promise.all([
+      departmentId ? Department.findById(departmentId).lean() : null,
+      courseId ? Course.findById(courseId).lean() : null,
+      semesterId ? Semester.findById(semesterId).lean() : null,
+      sectionId ? Section.findById(sectionId).lean() : null,
+      academicYearId ? AcademicYear.findById(academicYearId).lean() : null,
+    ]);
+
+    // 4. Enrolled Subjects & Assigned Faculty
+    let enrolledSubjects: any[] = [];
+    if (semesterId) {
+      enrolledSubjects = await Subject.find({
+        collegeId: user.collegeId,
+        semesterId,
+        isActive: true,
+      })
+        .sort({ code: 1 })
+        .lean();
+    }
+
+    const assignedFacultyList = await FacultyAssignment.find({
+      collegeId: user.collegeId,
+      $or: [
+        ...(sectionId ? [{ sectionId }] : []),
+        ...(semesterId ? [{ semesterId }] : []),
+      ],
+      isActive: true,
+    })
+      .populate('facultyId', 'name email designation employeeId')
+      .populate('subjectId', 'name code')
+      .lean();
+
+    // 5. Precision-Aware Attendance
+    const overallAttendance = await AttendanceAggregationService.aggregateForStudent(
+      collegeIdStr,
+      student._id,
+      { studentEnrollmentId: activeEnrollment?._id }
+    );
+
+    // Subject-level Attendance Breakdown
+    const subjectAttendanceBreakdown: any[] = [];
+    for (const sub of enrolledSubjects) {
+      const subAgg = await AttendanceAggregationService.aggregateForStudent(
+        collegeIdStr,
+        student._id,
+        { subjectId: sub._id, studentEnrollmentId: activeEnrollment?._id }
+      );
+      subjectAttendanceBreakdown.push({
+        subjectId: sub._id.toString(),
+        subjectName: sub.name,
+        subjectCode: sub.code,
+        credits: sub.credits,
+        held: subAgg.detailedMetrics.totalHeld,
+        present: subAgg.detailedMetrics.totalPresent,
+        absent: subAgg.detailedMetrics.totalAbsent,
+        percentage: subAgg.detailedMetrics.percentage,
+        historicalPercentageMetrics: subAgg.historicalPercentageMetrics,
+        hasDetailedData: subAgg.hasDetailedData,
+        hasPercentageOnlyData: subAgg.hasPercentageOnlyData,
+      });
+    }
+
+    // 6. Assessments & Canonical Performance
+    let assessmentHistory: any = { items: [], totalCount: 0 };
+    try {
+      assessmentHistory = await InternalAssessmentService.getStudentAssessmentHistory(
+        collegeIdStr,
+        requester as any,
+        student._id.toString(),
+        { semesterId: semesterId ? semesterId.toString() : undefined }
+      );
+    } catch (_) {
+      assessmentHistory = { items: [], totalCount: 0 };
+    }
+
+    // 7. Assignments and Submissions
+    let assignments: any[] = [];
+    if (sectionId || semesterId) {
+      const assignDocs = await Assignment.find({
+        collegeId: new mongoose.Types.ObjectId(collegeIdStr),
+        $or: [
+          ...(sectionId ? [{ sectionId }] : []),
+          ...(semesterId ? [{ semesterId }] : []),
+        ],
+        status: { $in: [AssignmentStatus.PUBLISHED, AssignmentStatus.CLOSED] },
+      })
+        .populate('subjectId', 'name code')
+        .sort({ dueDate: -1 })
+        .limit(20)
+        .lean();
+
+      const assignIds = assignDocs.map((a) => a._id);
+      const submissions = await AssignmentSubmission.find({
+        assignmentId: { $in: assignIds },
+        studentId: student._id,
+      }).lean();
+      const subMap = new Map(submissions.map((s) => [s.assignmentId.toString(), s]));
+
+      assignments = assignDocs.map((a) => {
+        const submission = subMap.get(a._id.toString());
+        return {
+          id: a._id.toString(),
+          title: a.title,
+          description: a.description,
+          dueDate: a.dueDate,
+          maximumMarks: a.maximumMarks,
+          subject: a.subjectId,
+          isSubmitted: !!submission,
+          submittedAt: submission?.submittedAt || null,
+          status: submission?.status || 'PENDING',
+          marks: submission?.marks ?? null,
+        };
+      });
+    }
+
+    // 8. Academic Records & Official Results
+    const isStudent = requester.role === AppRole.STUDENT;
+    const resultQuery: any = {
+      collegeId: user.collegeId,
+      studentId: student._id,
+    };
+    if (isStudent) {
+      resultQuery.status = ResultLifecycleStatus.PUBLISHED;
+    }
+
+    const [academicResults, academicRecords] = await Promise.all([
+      AcademicResult.find(resultQuery).sort({ createdAt: -1 }).lean(),
+      AcademicRecord.find({
+        collegeId: user.collegeId,
+        studentId: student._id,
+      })
+        .populate('semesterId', 'number')
+        .populate('academicYearId', 'name')
+        .sort({ createdAt: -1 })
+        .lean(),
+    ]);
+
+    // 9. Notes & Study Resources
+    const subjectIds = enrolledSubjects.map((s) => s._id);
+    const notesCount = await Note.countDocuments({
+      collegeId: user.collegeId,
+      subjectId: { $in: subjectIds },
+      status: NoteStatus.PUBLISHED,
+    });
+
+    // 10. Student Requests (where authorized)
+    let contactRequests: any[] = [];
+    if ([AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD, AppRole.STUDENT].includes(requester.role)) {
+      contactRequests = await StudentContactRequest.find({
+        studentId: student._id,
+      })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean();
+    }
+
+    return {
+      student: {
+        id: student._id.toString(),
+        userId: user._id.toString(),
+        name: student.name,
+        rollNumber: student.rollNumber,
+        admissionNumber: student.admissionNumber,
+        email: student.email,
+        phone: student.phone,
+        status: student.status,
+        isActive: student.isActive,
+        lifecycleState: student.lifecycleState,
+        dateOfBirth: student.dateOfBirth,
+        admissionDate: student.admissionDate,
+        parentName: student.parentName,
+        parentPhone: student.parentPhone,
+        bloodGroup: student.bloodGroup,
+        address: student.address,
+      },
+      academicContext: {
+        department,
+        course,
+        semester,
+        section,
+        academicYear,
+        activeEnrollment,
+        historicalEnrollments,
+      },
+      facultyPriorityContext: facultyContext || null,
+      attendance: {
+        detailedMetrics: overallAttendance.detailedMetrics,
+        historicalPercentageMetrics: overallAttendance.historicalPercentageMetrics,
+        hasDetailedData: overallAttendance.hasDetailedData,
+        hasPercentageOnlyData: overallAttendance.hasPercentageOnlyData,
+        subjectsBreakdown: subjectAttendanceBreakdown,
+      },
+      assessments: {
+        items: assessmentHistory.items,
+        totalCount: assessmentHistory.totalCount,
+      },
+      assignments: {
+        items: assignments,
+        totalCount: assignments.length,
+      },
+      subjects: {
+        items: enrolledSubjects,
+        totalCount: enrolledSubjects.length,
+        assignedFaculty: assignedFacultyList,
+      },
+      notes: {
+        count: notesCount,
+      },
+      requests: {
+        items: contactRequests,
+        totalCount: contactRequests.length,
+      },
+      academicRecords: {
+        records: academicRecords,
+        results: academicResults,
+      },
+    };
   }
 }

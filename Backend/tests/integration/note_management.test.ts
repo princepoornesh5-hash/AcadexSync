@@ -9,6 +9,7 @@ import { Semester } from '../../src/models/semester.model';
 import { Section } from '../../src/models/section.model';
 import { Subject } from '../../src/models/subject.model';
 import { Faculty } from '../../src/models/faculty.model';
+import { FacultyAssignment } from '../../src/models/facultyAssignment.model';
 import { Student } from '../../src/models/student.model';
 import { AuditLog } from '../../src/models/auditLog.model';
 import { AppRole } from '../../src/constants/roles';
@@ -289,7 +290,7 @@ describe('ACADEX Phase 9L.2 — Notes & ImageKit Storage Management Tests', () =
       status: AccountStatus.ACTIVE,
     });
 
-    await Faculty.create({
+    const facultyA1Profile = await Faculty.create({
       userId: facultyA1._id,
       collegeId: collegeA._id,
       departmentId: deptA1CSE._id,
@@ -311,7 +312,7 @@ describe('ACADEX Phase 9L.2 — Notes & ImageKit Storage Management Tests', () =
       status: AccountStatus.ACTIVE,
     });
 
-    await Faculty.create({
+    const facultyA2EEProfile = await Faculty.create({
       userId: facultyA2EE._id,
       collegeId: collegeA._id,
       departmentId: deptA2EE._id,
@@ -319,6 +320,31 @@ describe('ACADEX Phase 9L.2 — Notes & ImageKit Storage Management Tests', () =
       email: facultyA2EE.email,
       instituteId: facultyA2EE.instituteId,
       designation: 'Associate Professor',
+      isActive: true,
+    });
+
+    await FacultyAssignment.create({
+      collegeId: collegeA._id,
+      departmentId: deptA1CSE._id,
+      courseId: courseA._id,
+      academicYearId: academicYearA._id,
+      semesterId: semesterA5._id,
+      sectionId: sectionA._id,
+      subjectId: subjectOS._id,
+      facultyId: facultyA1Profile._id,
+      facultyName: facultyA1.name,
+      isActive: true,
+    });
+
+    await FacultyAssignment.create({
+      collegeId: collegeA._id,
+      departmentId: deptA2EE._id,
+      courseId: courseEE._id,
+      academicYearId: academicYearA._id,
+      semesterId: semesterEE._id,
+      subjectId: subjectEE._id,
+      facultyId: facultyA2EEProfile._id,
+      facultyName: facultyA2EE.name,
       isActive: true,
     });
 

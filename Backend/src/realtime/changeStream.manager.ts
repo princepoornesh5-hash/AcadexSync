@@ -3,6 +3,7 @@ import { realtimeEventBus } from './realtimeEventBus';
 import { AcadexEventType } from './contracts/eventRegistry';
 import { RealtimeAction } from './contracts/eventEnvelope';
 import { Logger } from '../utils/logger';
+import { RoomManager } from './roomManager';
 
 export class ChangeStreamManager {
   private static instance: ChangeStreamManager;
@@ -272,6 +273,41 @@ export class ChangeStreamManager {
           sectionId: doc.sectionId?.toString(),
         },
       });
+    });
+
+    // 6. Workspace Memberships Collection (Realtime Access Revocation)
+    this.watchCollection('workspacememberships', (change) => {
+      const doc = change.fullDocument || (change as any).documentKey;
+      if (!doc) return;
+
+      const userId = doc.userId?.toString();
+      const collegeId = doc.collegeId?.toString();
+      const status = doc.status;
+
+      if (userId && collegeId) {
+        if (status && status !== 'ACTIVE') {
+          RoomManager.getInstance().revokeWorkspaceForUser(
+            userId,
+            collegeId,
+            `Membership status changed to ${status}`
+          );
+        } else if (status === 'ACTIVE') {
+          RoomManager.getInstance().revalidateUserAuthorization(userId, collegeId).catch(() => {});
+        }
+      }
+    });
+
+    // 7. Workspace Role Assignments Collection (Realtime Scope Revalidation)
+    this.watchCollection('workspaceroleassignments', (change) => {
+      const doc = change.fullDocument || (change as any).documentKey;
+      if (!doc) return;
+
+      const userId = doc.userId?.toString();
+      const collegeId = doc.collegeId?.toString();
+
+      if (userId && collegeId) {
+        RoomManager.getInstance().revalidateUserAuthorization(userId, collegeId).catch(() => {});
+      }
     });
   }
 

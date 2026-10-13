@@ -16,6 +16,7 @@ import {
   Timetable,
   Note,
   AuditLog,
+  InternalAssessment,
 } from '../models';
 import { AppRole } from '../constants/roles';
 import { AuthenticatedUser } from '../types/auth.types';
@@ -39,6 +40,7 @@ import {
 } from '../types/report.types';
 import { DateRangeQueryInput } from '../validations/report.validation';
 import { AttendanceStatus, AttendanceSessionStatus, TimetableStatus, NoteStatus, AccountStatus } from '../constants/status';
+import { AttendanceAggregationService } from './attendance/attendanceAggregation.service';
 
 export class ReportService {
   /**
@@ -251,6 +253,7 @@ export class ReportService {
       sessionsCount,
       attendanceStats,
       departmentsList,
+      assessmentsCount,
     ] = await Promise.all([
       Department.countDocuments({ collegeId: colObjId, isActive: true }),
       Course.countDocuments({ collegeId: colObjId, isActive: true }),
@@ -273,6 +276,7 @@ export class ReportService {
         },
       ]),
       Department.find({ collegeId: colObjId, isActive: true }).select('name code'),
+      InternalAssessment.countDocuments({ collegeId: colObjId }),
     ]);
 
     const attSummary = attendanceStats[0] || { totalRecords: 0, present: 0, late: 0 };
@@ -334,6 +338,7 @@ export class ReportService {
         hodsCount,
         notesCount,
         sessionsCount,
+        assessmentsCount,
         collegeAttendancePercentage,
       },
       quickStats: {
@@ -364,6 +369,7 @@ export class ReportService {
       notesCount,
       sessionsCount,
       attendanceStats,
+      assessmentsCount,
     ] = await Promise.all([
       Course.countDocuments({ departmentId: deptObjId, isActive: true }),
       Section.countDocuments({ departmentId: deptObjId, isActive: true }),
@@ -383,6 +389,7 @@ export class ReportService {
           },
         },
       ]),
+      InternalAssessment.countDocuments({ departmentId: deptObjId }),
     ]);
 
     const attSummary = attendanceStats[0] || { totalRecords: 0, present: 0, late: 0 };
@@ -437,6 +444,7 @@ export class ReportService {
         facultyCount,
         notesCount,
         sessionsCount,
+        assessmentsCount,
         departmentAttendancePercentage,
       },
       quickStats: {
@@ -452,16 +460,22 @@ export class ReportService {
     requester: AuthenticatedUser,
     dateMatch: Record<string, unknown>
   ): Promise<RoleDashboardReport> {
-    let faculty = await Faculty.findOne({ userId: requester.id });
+    const collegeFilter: any = {};
+    if (requester.collegeId && mongoose.Types.ObjectId.isValid(requester.collegeId)) {
+      collegeFilter.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+    }
+    let faculty = await Faculty.findOne({ userId: requester.id, ...collegeFilter });
     if (!faculty && mongoose.Types.ObjectId.isValid(requester.id)) {
       faculty = await Faculty.findOne({
         $or: [{ userId: new mongoose.Types.ObjectId(requester.id) }, { _id: new mongoose.Types.ObjectId(requester.id) }],
+        ...collegeFilter,
       });
     }
     if (!faculty && requester.email) {
-      faculty = await Faculty.findOne({ email: requester.email.toLowerCase() });
+      faculty = await Faculty.findOne({ email: requester.email.toLowerCase(), ...collegeFilter });
     }
     if (!faculty) throw ApiError.notFound('Faculty profile not found');
+
 
     const [
       conductedSessions,
@@ -524,8 +538,13 @@ export class ReportService {
     requester: AuthenticatedUser,
     dateMatch: Record<string, unknown>
   ): Promise<RoleDashboardReport> {
-    const student = await Student.findOne({ userId: requester.id });
+    const studentFilter: any = { userId: requester.id };
+    if (requester.collegeId && mongoose.Types.ObjectId.isValid(requester.collegeId)) {
+      studentFilter.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+    }
+    const student = await Student.findOne(studentFilter);
     if (!student) throw ApiError.notFound('Student profile not found');
+
 
     const activeEnrollment = await StudentEnrollment.findOne({
       studentId: student._id,
@@ -584,16 +603,22 @@ export class ReportService {
   ): Promise<StudentAttendanceReport> {
     // 1. Identify target student
     let studentDoc: any;
+    const collegeFilter: any = {};
+    if (requester.role !== AppRole.SUPER_ADMIN && requester.collegeId && mongoose.Types.ObjectId.isValid(requester.collegeId)) {
+      collegeFilter.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+    }
     if (targetStudentId === 'me') {
-      studentDoc = await Student.findOne({ userId: requester.id });
+      studentDoc = await Student.findOne({ userId: requester.id, ...collegeFilter });
     } else if (mongoose.Types.ObjectId.isValid(targetStudentId)) {
       studentDoc = await Student.findOne({
         $or: [
           { _id: new mongoose.Types.ObjectId(targetStudentId) },
           { userId: new mongoose.Types.ObjectId(targetStudentId) },
         ],
+        ...collegeFilter,
       });
     }
+
 
     if (!studentDoc) {
       throw ApiError.notFound('Student profile not found');
@@ -631,10 +656,19 @@ export class ReportService {
     }
 
     // 4. Compute Metrics
-    const [summary, subjectsBreakdown] = await Promise.all([
+    const [summary, subjectsBreakdown, agg] = await Promise.all([
       this.computeStudentAttendanceSummary(studentDoc._id, dateMatch),
       this.computeStudentSubjectsBreakdown(studentDoc._id, dateMatch),
+      AttendanceAggregationService.aggregateForStudent(studentDoc.collegeId, studentDoc._id),
     ]);
+
+    // If no specific date filter is active, integrate level 2 historical period counts safely
+    if (!fromDate && !toDate && agg.hasDetailedData) {
+      summary.totalClasses = agg.detailedMetrics.totalHeld;
+      summary.present = agg.detailedMetrics.totalPresent;
+      summary.absent = agg.detailedMetrics.totalAbsent;
+      summary.percentage = agg.detailedMetrics.percentage;
+    }
 
     await this.logReportAudit(requester, 'ATTENDANCE_STUDENT', studentDoc.id, {
       studentId: studentDoc.id,
@@ -655,6 +689,9 @@ export class ReportService {
       },
       summary,
       subjectsBreakdown,
+      historicalPercentageMetrics: agg.historicalPercentageMetrics,
+      hasDetailedData: agg.hasDetailedData,
+      hasPercentageOnlyData: agg.hasPercentageOnlyData,
       lowAttendanceAlert: summary.percentage < ATTENDANCE_THRESHOLDS.LOW_PERCENTAGE_ALERT,
       dateRange: {
         from: fromDate?.toISOString(),
@@ -1201,17 +1238,23 @@ export class ReportService {
     query: DateRangeQueryInput
   ): Promise<FacultyActivityReport> {
     let facultyDoc: any;
+    const collegeFilter: any = {};
+    if (requester.role !== AppRole.SUPER_ADMIN && requester.collegeId && mongoose.Types.ObjectId.isValid(requester.collegeId)) {
+      collegeFilter.collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+    }
 
     if (targetFacultyId === 'me') {
-      facultyDoc = await Faculty.findOne({ userId: requester.id });
+      facultyDoc = await Faculty.findOne({ userId: requester.id, ...collegeFilter });
     } else if (mongoose.Types.ObjectId.isValid(targetFacultyId)) {
       facultyDoc = await Faculty.findOne({
         $or: [
           { _id: new mongoose.Types.ObjectId(targetFacultyId) },
           { userId: new mongoose.Types.ObjectId(targetFacultyId) },
         ],
+        ...collegeFilter,
       });
     }
+
 
     if (!facultyDoc) {
       throw ApiError.notFound('Faculty profile not found');

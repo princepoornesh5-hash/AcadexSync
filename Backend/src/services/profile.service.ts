@@ -167,9 +167,14 @@ export class ProfileService {
 
     // 1. STUDENT Composed Profile: User -> Student -> current StudentEnrollment
     if (user.role === AppRole.STUDENT) {
-      const student = await Student.findOne({
+      const studentFilter: any = {
         $or: [{ userId: user._id }, { instituteId: user.instituteId }],
-      });
+      };
+      if (user.collegeId) {
+        studentFilter.collegeId = user.collegeId;
+      }
+      const student = await Student.findOne(studentFilter);
+
 
       if (student) {
         // Authoritative current academic context MUST come from active StudentEnrollment
@@ -227,9 +232,14 @@ export class ProfileService {
 
     // 2. FACULTY Composed Profile: User -> Faculty -> active FacultyAssignment
     if (user.role === AppRole.FACULTY || user.role === AppRole.HOD) {
-      const faculty = await Faculty.findOne({
+      const facultyFilter: any = {
         $or: [{ userId: user._id }, { instituteId: user.instituteId }],
-      });
+      };
+      if (user.collegeId) {
+        facultyFilter.collegeId = user.collegeId;
+      }
+      const faculty = await Faculty.findOne(facultyFilter);
+
 
       if (faculty) {
         // Active teaching assignments come strictly from FacultyAssignment (status active and isActive true)
@@ -747,7 +757,10 @@ export class ProfileService {
     if (requester.role === AppRole.FACULTY) {
       if (targetUser.role === AppRole.STUDENT) {
         // Verify student is enrolled in a section/semester taught by this faculty
-        const faculty = await Faculty.findOne({ userId: requester.id });
+        const faculty = await Faculty.findOne({
+          userId: requester.id,
+          ...(requester.collegeId ? { collegeId: requester.collegeId } : {}),
+        });
         if (!faculty) {
           throw ApiError.forbidden('Faculty profile not linked to user account');
         }
@@ -761,8 +774,12 @@ export class ProfileService {
         const assignedSectionIds = assignments.map((a) => a.sectionId?.toString()).filter(Boolean);
         const assignedSemesterIds = assignments.map((a) => a.semesterId?.toString()).filter(Boolean);
 
-        const student = await Student.findOne({ userId: targetUser._id });
+        const student = await Student.findOne({
+          userId: targetUser._id,
+          ...(requester.collegeId ? { collegeId: requester.collegeId } : {}),
+        });
         if (!student) {
+
           throw ApiError.forbidden('Student profile not found');
         }
 

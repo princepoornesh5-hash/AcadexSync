@@ -4,8 +4,10 @@ import { User, IUser } from '../models/user.model';
 import { College } from '../models/college.model';
 import { Department } from '../models/department.model';
 import { AuditLog } from '../models/auditLog.model';
+import { WorkspaceMembership } from '../models/workspaceMembership.model';
+import { WorkspaceRoleAssignment } from '../models/workspaceRoleAssignment.model';
 import { AppRole } from '../constants/roles';
-import { AccountStatus, CollegeStatus, DepartmentStatus, InvitationStatus } from '../constants/status';
+import { AccountStatus, CollegeStatus, DepartmentStatus, InvitationStatus, MembershipStatus, RoleAssignmentStatus } from '../constants/status';
 import { PasswordService } from './password.service';
 import {
   generateActivationCode,
@@ -327,61 +329,139 @@ export class InvitationService {
       data.departmentId
     );
 
-    // Verify instituteId uniqueness
-    const existingInstituteId = await User.findOne({ instituteId: normalizedInstituteId });
-    if (existingInstituteId) {
+    // Check if canonical User identity already exists
+    let existingUser: InstanceType<typeof User> | null = null;
+    let normalizedEmail: string | undefined = undefined;
+    let normalizedPhone: string | undefined = undefined;
+
+    if (data.email && data.email.trim() !== '') {
+      normalizedEmail = normalizeEmail(data.email);
+    }
+    if (data.phone && data.phone.trim() !== '') {
+      normalizedPhone = normalizePhone(data.phone);
+    }
+
+    const userByInstituteId = await User.findOne({ instituteId: normalizedInstituteId });
+    const userByEmail = normalizedEmail ? await User.findOne({ email: normalizedEmail }) : null;
+    const userByPhone = normalizedPhone ? await User.findOne({ phone: normalizedPhone }) : null;
+
+    // Detect conflicting or ambiguous identity matches across identifiers
+    const matchedUsers = [userByInstituteId, userByEmail, userByPhone].filter(Boolean) as InstanceType<typeof User>[];
+    const uniqueMatchedUserIds = new Set(matchedUsers.map((u) => u._id.toString()));
+
+    if (uniqueMatchedUserIds.size > 1) {
       throw ApiError.conflict(
-        `User with instituteId "${normalizedInstituteId}" already exists`
+        'Ambiguous or conflicting identity match across provided instituteId, email, or phone. Identity verification required.'
       );
     }
 
-    // Verify email uniqueness if provided
-    let normalizedEmail: string | undefined = undefined;
-    if (data.email && data.email.trim() !== '') {
-      normalizedEmail = normalizeEmail(data.email);
-      const existingEmail = await User.findOne({ email: normalizedEmail });
-      if (existingEmail) {
-        throw ApiError.conflict(`User with email "${normalizedEmail}" already exists`);
-      }
+    if (uniqueMatchedUserIds.size === 1) {
+      existingUser = matchedUsers[0];
     }
 
-    // Verify phone uniqueness if provided
-    let normalizedPhone: string | undefined = undefined;
-    if (data.phone && data.phone.trim() !== '') {
-      normalizedPhone = normalizePhone(data.phone);
-      const existingPhone = await User.findOne({ phone: normalizedPhone });
-      if (existingPhone) {
-        throw ApiError.conflict(`User with phone "${normalizedPhone}" already exists`);
+    let user: InstanceType<typeof User>;
+
+    if (existingUser) {
+      user = existingUser;
+
+      // Check if user already holds active membership and role in this college
+      const existingMembership = await WorkspaceMembership.findOne({
+        userId: user._id,
+        collegeId,
+      });
+
+      if (existingMembership && existingMembership.status === MembershipStatus.ACTIVE) {
+        const existingRole = await WorkspaceRoleAssignment.findOne({
+          membershipId: existingMembership._id,
+          role: data.role,
+          departmentId: departmentId || null,
+          status: RoleAssignmentStatus.ACTIVE,
+        });
+
+        if (existingRole) {
+          // Existing person already holds this exact active membership and role: return deterministic safe result
+          const college = await College.findById(collegeId);
+          const existingInv = await Invitation.findOne({
+            userId: user._id,
+            collegeId,
+            role: data.role,
+          }).sort({ createdAt: -1 });
+
+          return {
+            invitation: existingInv || ({} as any),
+            activationCode: 'ALREADY_ACTIVE',
+            user,
+            collegeCode: college?.code,
+            collegeName: college?.name,
+          };
+        }
       }
+    } else {
+      // 1. Create canonical User in PENDING_ACTIVATION state (new identity)
+      user = await User.create({
+        instituteId: normalizedInstituteId,
+        name: data.name.trim(),
+        email: normalizedEmail,
+        phone: normalizedPhone,
+        role: data.role,
+        collegeId,
+        departmentId: departmentId || undefined,
+        courseId: data.courseId ? new mongoose.Types.ObjectId(data.courseId) : undefined,
+        sectionId: data.sectionId ? new mongoose.Types.ObjectId(data.sectionId) : undefined,
+        semesterId: data.semesterId ? new mongoose.Types.ObjectId(data.semesterId) : undefined,
+        accountStatus: AccountStatus.PENDING_ACTIVATION,
+        activationStatus: 'pending',
+        passwordHash: null,
+      });
     }
 
-    // 1. Create User in PENDING_ACTIVATION state
-    const user = await User.create({
-      instituteId: normalizedInstituteId,
-      name: data.name.trim(),
-      email: normalizedEmail,
-      phone: normalizedPhone,
-      role: data.role,
+    // 2. Establish WorkspaceMembership in PENDING status (or keep existing active)
+    let membership = await WorkspaceMembership.findOne({
+      userId: user._id,
       collegeId,
-      departmentId,
-      courseId: data.courseId ? new mongoose.Types.ObjectId(data.courseId) : undefined,
-      sectionId: data.sectionId ? new mongoose.Types.ObjectId(data.sectionId) : undefined,
-      semesterId: data.semesterId ? new mongoose.Types.ObjectId(data.semesterId) : undefined,
-      accountStatus: AccountStatus.PENDING_ACTIVATION,
-      activationStatus: 'pending',
-      passwordHash: null,
     });
 
-    // 2. Generate secure activation code and hash
+    if (!membership) {
+      membership = await WorkspaceMembership.create({
+        userId: user._id,
+        collegeId,
+        status: user.accountStatus === AccountStatus.ACTIVE ? MembershipStatus.ACTIVE : MembershipStatus.PENDING,
+        isDefault: !existingUser,
+        joinedAt: new Date(),
+        createdBy: creator.id,
+      });
+    }
+
+    // 3. Establish WorkspaceRoleAssignment in PENDING (or ACTIVE if already active user)
+    const existingRoleAssignment = await WorkspaceRoleAssignment.findOne({
+      membershipId: membership._id,
+      role: data.role,
+      departmentId: departmentId || null,
+    });
+
+    if (!existingRoleAssignment) {
+      await WorkspaceRoleAssignment.create({
+        membershipId: membership._id,
+        userId: user._id,
+        collegeId,
+        role: data.role,
+        departmentId: departmentId || null,
+        status: membership.status === MembershipStatus.ACTIVE ? RoleAssignmentStatus.ACTIVE : RoleAssignmentStatus.PENDING,
+        assignedAt: new Date(),
+        assignedBy: creator.id,
+      });
+    }
+
+    // 4. Generate secure activation code and hash
     const rawActivationCode = generateActivationCode();
     const codeHash = hashActivationCode(rawActivationCode);
     const expiresAt = new Date(Date.now() + env.INVITATION_EXPIRES_IN * 1000);
 
-    // 3. Create Invitation record
+    // 5. Create Invitation record
     const invitation = await Invitation.create({
       userId: user._id,
       collegeId,
-      departmentId,
+      departmentId: departmentId || undefined,
       role: data.role,
       codeHash,
       status: InvitationStatus.PENDING,
@@ -390,9 +470,11 @@ export class InvitationService {
       lastSentAt: new Date(),
     });
 
-    // 4. Record Audit Log
+    // 6. Record Audit Log
     await AuditLog.create({
       collegeId: collegeId.toString(),
+      workspaceMembershipId: membership.id,
+      departmentId: departmentId ? departmentId.toString() : undefined,
       actorUserId: creator.id,
       action: 'INVITATION_CREATED',
       entityType: 'Invitation',
@@ -400,14 +482,16 @@ export class InvitationService {
       newValue: {
         targetUserId: user.id,
         instituteId: user.instituteId,
-        role: user.role,
+        role: data.role,
         collegeId: collegeId.toString(),
+        isExistingUser: !!existingUser,
       },
     });
 
     if (data.role === AppRole.COLLEGE_ADMIN) {
       await AuditLog.create({
         collegeId: collegeId.toString(),
+        workspaceMembershipId: membership.id,
         actorUserId: creator.id,
         action: 'COLLEGE_ADMIN_PROVISIONED',
         entityType: 'User',
@@ -415,7 +499,7 @@ export class InvitationService {
         newValue: {
           targetUserId: user.id,
           instituteId: user.instituteId,
-          role: user.role,
+          role: data.role,
           collegeId: collegeId.toString(),
         },
       });
@@ -426,6 +510,8 @@ export class InvitationService {
 
       await AuditLog.create({
         collegeId: collegeId.toString(),
+        workspaceMembershipId: membership.id,
+        departmentId: departmentId.toString(),
         actorUserId: creator.id,
         action: 'HOD_PROVISIONED',
         entityType: 'User',
@@ -433,7 +519,7 @@ export class InvitationService {
         newValue: {
           targetUserId: user.id,
           instituteId: user.instituteId,
-          role: user.role,
+          role: data.role,
           collegeId: collegeId.toString(),
           departmentId: departmentId.toString(),
         },
@@ -452,18 +538,19 @@ export class InvitationService {
   }
 
   /**
-   * Account Activation Endpoint:
-   * Validates collegeCode, instituteId, activationCode, sets password, marks account ACTIVE.
+   * Account & Workspace Activation Endpoint:
+   * Validates collegeCode, instituteId, activationCode, sets password if new,
+   * activates WorkspaceMembership and WorkspaceRoleAssignment.
    */
   static async activateAccount(
     collegeCode: string,
     instituteId: string,
     rawActivationCode: string,
-    newPassword: string
+    newPassword?: string
   ): Promise<{ success: boolean; message: string; user: Record<string, unknown> }> {
-    if (!collegeCode || !instituteId || !rawActivationCode || !newPassword) {
+    if (!collegeCode || !instituteId || !rawActivationCode) {
       throw ApiError.badRequest(
-        'collegeCode, instituteId, activationCode, and password are required'
+        'collegeCode, instituteId, and activationCode are required'
       );
     }
 
@@ -489,38 +576,29 @@ export class InvitationService {
       throw ApiError.badRequest('Invalid activation details');
     }
 
-    // 3. Confirm user belongs to this college
-    if (!user.collegeId || user.collegeId.toString() !== college._id.toString()) {
-      throw ApiError.badRequest('Invalid activation details');
-    }
+    // 3. Find pending invitation for user and this specific college
+    const invitation = await Invitation.findOne({
+      userId: user._id,
+      collegeId: college._id,
+      status: { $in: [InvitationStatus.PENDING, 'pending', 'PENDING'] },
+    }).sort({ createdAt: -1 });
 
-    // 4. Check account state
-    if (user.accountStatus === AccountStatus.ACTIVE) {
-      throw ApiError.badRequest('Account has already been activated. Please log in.');
+    if (!invitation) {
+      throw ApiError.badRequest('No pending invitation found for this account in this institution');
     }
 
     if (user.accountStatus === AccountStatus.DEACTIVATED) {
       throw ApiError.forbidden('Account has been deactivated. Please contact your administrator.');
     }
 
-    // 5. Find pending invitation for user
-    const invitation = await Invitation.findOne({
-      userId: user._id,
-      status: { $in: [InvitationStatus.PENDING, 'pending', 'PENDING'] },
-    }).sort({ createdAt: -1 });
-
-    if (!invitation) {
-      throw ApiError.badRequest('No pending invitation found for this account');
-    }
-
-    // 6. Check expiration
+    // 4. Check expiration
     if (invitation.isExpired()) {
       invitation.status = InvitationStatus.EXPIRED;
       await invitation.save();
       throw ApiError.badRequest('Invitation has expired. Please request a new invitation.');
     }
 
-    // 7. Verify activation code match
+    // 5. Verify activation code match
     const isCodeMatch = verifyActivationCode(rawActivationCode, invitation.codeHash);
     if (!isCodeMatch) {
       invitation.attemptCount += 1;
@@ -528,36 +606,77 @@ export class InvitationService {
       throw ApiError.badRequest('Invalid activation code');
     }
 
-    // 8. Validate password policy & hash
-    const validation = PasswordService.validatePassword(newPassword);
-    if (!validation.valid) {
-      throw ApiError.badRequest(validation.message || 'Invalid password format');
+    // 6. Handle password: new user requires password; existing active user preserves existing password
+    if (!user.passwordHash || user.accountStatus !== AccountStatus.ACTIVE) {
+      if (!newPassword) {
+        throw ApiError.badRequest('Password is required to activate a new account');
+      }
+      const validation = PasswordService.validatePassword(newPassword);
+      if (!validation.valid) {
+        throw ApiError.badRequest(validation.message || 'Invalid password format');
+      }
+      const passwordHash = await PasswordService.hashPassword(newPassword);
+      user.passwordHash = passwordHash;
+      user.accountStatus = AccountStatus.ACTIVE;
+      user.activationStatus = 'activated';
+      if (!user.collegeId) {
+        user.collegeId = college._id;
+        user.role = invitation.role;
+        user.departmentId = invitation.departmentId;
+      }
+      await user.save();
     }
 
-    const passwordHash = await PasswordService.hashPassword(newPassword);
+    // 7. Activate WorkspaceMembership for this college
+    let membership = await WorkspaceMembership.findOne({
+      userId: user._id,
+      collegeId: college._id,
+    });
 
-    // 9. Activate user account (preserves _id and instituteId)
-    user.passwordHash = passwordHash;
-    user.accountStatus = AccountStatus.ACTIVE;
-    user.activationStatus = 'activated';
-    await user.save();
+    if (!membership) {
+      membership = await WorkspaceMembership.create({
+        userId: user._id,
+        collegeId: college._id,
+        status: MembershipStatus.ACTIVE,
+        joinedAt: new Date(),
+      });
+    } else {
+      membership.status = MembershipStatus.ACTIVE;
+      membership.joinedAt = new Date();
+      await membership.save();
+    }
 
-    // 10. Mark all pending invitations for this user as USED (single-use)
-    await Invitation.updateMany(
-      { userId: user._id, status: { $in: [InvitationStatus.PENDING, 'pending', 'PENDING'] } },
-      { status: InvitationStatus.USED, usedAt: new Date() }
+    // 8. Activate WorkspaceRoleAssignment for this college
+    await WorkspaceRoleAssignment.updateMany(
+      {
+        membershipId: membership._id,
+        role: invitation.role,
+      },
+      {
+        $set: {
+          status: RoleAssignmentStatus.ACTIVE,
+          assignedAt: new Date(),
+        },
+      }
     );
 
-    // 11. Audit log
+    // 9. Mark invitation as USED
+    invitation.status = InvitationStatus.USED;
+    invitation.usedAt = new Date();
+    await invitation.save();
+
+    // 10. Audit log
     await AuditLog.create({
       collegeId: college.id,
+      workspaceMembershipId: membership.id,
       actorUserId: user.id,
       action: 'ACCOUNT_ACTIVATED',
       entityType: 'User',
       entityId: user.id,
       newValue: {
         instituteId: user.instituteId,
-        role: user.role,
+        role: invitation.role,
+        collegeId: college.id,
       },
     });
 

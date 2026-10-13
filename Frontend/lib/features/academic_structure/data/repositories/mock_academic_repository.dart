@@ -364,7 +364,15 @@ class MockAcademicRepository implements AcademicRepository {
   }
 
   @override
-  Future<List<Student>> getStudents({String? sectionId, String? departmentId}) async { 
+  Future<List<Student>> getStudents({
+    String? sectionId,
+    String? departmentId,
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? search,
+    String? status,
+  }) async { 
     await _delay(); 
     return List.from(_students.where((e) => e.isActive && (sectionId == null || e.sectionId == sectionId) && (departmentId == null || e.departmentId == departmentId))); 
   }

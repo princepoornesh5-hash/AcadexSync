@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/models/notification_models.dart';
+import '../coordinators/notification_navigation_coordinator.dart';
 
-class NotificationCard extends StatelessWidget {
+class NotificationCard extends ConsumerWidget {
   final NotificationModel notification;
   final VoidCallback onReadToggle;
   final VoidCallback onDelete;
@@ -92,7 +93,7 @@ class NotificationCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isUnread = !notification.isRead;
     final iconColor = _getColorForPriority(context, notification.priority);
     final bgColor = Theme.of(context).colorScheme.surface;
@@ -110,22 +111,10 @@ class NotificationCard extends StatelessWidget {
       child: InkWell(
         onTap: () {
           if (isUnread) onReadToggle();
-          final target = notification.navigationTarget ??
-              (notification.relatedEntityType?.toUpperCase() == 'REQUEST' && notification.relatedEntityId != null
-                  ? '/requests/${notification.relatedEntityId}'
-                  : null);
-          if (target != null && target.isNotEmpty) {
-            try {
-              context.push(target);
-            } catch (_) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('This item is no longer available.')),
-              );
-            }
-          }
+          ref.read(notificationNavigationCoordinatorProvider).handleNotificationTap(context, notification);
         },
         child: Container(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: bgColor,
             border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
@@ -178,6 +167,41 @@ class NotificationCard extends StatelessWidget {
                       notification.message,
                       style: AcadexTypography.bodySmall(color: AcadexColors.inkSecondary),
                     ),
+                    if (notification.collegeId != null || notification.audienceType == NotificationAudienceType.platform) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: notification.collegeId != null
+                                  ? AcadexColors.primary.withValues(alpha: 0.1)
+                                  : Colors.amber.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  notification.collegeId != null ? LucideIcons.building2 : LucideIcons.globe,
+                                  size: 11,
+                                  color: notification.collegeId != null ? AcadexColors.primary : Colors.amber.shade800,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  notification.collegeId != null ? 'Campus Workspace' : 'Global Platform',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: notification.collegeId != null ? AcadexColors.primary : Colors.amber.shade900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     if (notification.navigationTarget != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),

@@ -1024,6 +1024,93 @@ final studentsProvider = StateNotifierProvider.autoDispose.family<StudentNotifie
   return StudentNotifier(ref, sectionId: args.sectionId, departmentId: args.departmentId)..loadInitial();
 });
 
+class StudentFilterCriteria {
+  final String? departmentId;
+  final String? courseId;
+  final String? academicYearId;
+  final String? semesterId;
+  final String? sectionId;
+  final String? search;
+
+  const StudentFilterCriteria({
+    this.departmentId,
+    this.courseId,
+    this.academicYearId,
+    this.semesterId,
+    this.sectionId,
+    this.search,
+  });
+
+  StudentFilterCriteria copyWith({
+    String? departmentId,
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? sectionId,
+    String? search,
+    bool clearDepartment = false,
+    bool clearCourse = false,
+    bool clearYear = false,
+    bool clearSemester = false,
+    bool clearSection = false,
+    bool clearSearch = false,
+  }) {
+    return StudentFilterCriteria(
+      departmentId: clearDepartment ? null : (departmentId ?? this.departmentId),
+      courseId: clearCourse ? null : (courseId ?? this.courseId),
+      academicYearId: clearYear ? null : (academicYearId ?? this.academicYearId),
+      semesterId: clearSemester ? null : (semesterId ?? this.semesterId),
+      sectionId: clearSection ? null : (sectionId ?? this.sectionId),
+      search: clearSearch ? null : (search ?? this.search),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is StudentFilterCriteria &&
+          runtimeType == other.runtimeType &&
+          departmentId == other.departmentId &&
+          courseId == other.courseId &&
+          academicYearId == other.academicYearId &&
+          semesterId == other.semesterId &&
+          sectionId == other.sectionId &&
+          search == other.search;
+
+  @override
+  int get hashCode =>
+      departmentId.hashCode ^
+      courseId.hashCode ^
+      academicYearId.hashCode ^
+      semesterId.hashCode ^
+      sectionId.hashCode ^
+      search.hashCode;
+}
+
+final studentListFilterProvider = StateProvider.autoDispose<StudentFilterCriteria>((ref) {
+  final authState = ref.watch(auth.authProvider);
+  String? defaultDeptId;
+  if (authState is AuthAuthenticated) {
+    if (authState.user.role == AppRole.hod) {
+      defaultDeptId = authState.user.departmentId;
+    }
+  }
+  return StudentFilterCriteria(departmentId: defaultDeptId);
+});
+
+final filteredStudentsProvider = FutureProvider.autoDispose<List<Student>>((ref) async {
+  final filter = ref.watch(studentListFilterProvider);
+  final repo = ref.watch(apiAcademicRepositoryProvider);
+  return repo.getStudents(
+    departmentId: filter.departmentId,
+    courseId: filter.courseId,
+    academicYearId: filter.academicYearId,
+    semesterId: filter.semesterId,
+    sectionId: filter.sectionId,
+    search: filter.search,
+  );
+});
+
 final studentByIdProvider = FutureProvider.autoDispose.family<Student?, String>((ref, id) async {
   return ref.watch(academicRepositoryProvider).getStudentById(id);
 });
@@ -1268,8 +1355,27 @@ final myFacultyAssignmentsProvider = Provider.autoDispose<List<FacultyAssignment
 
   return assignments.where((a) {
     if (!a.isActive) return false;
-    // Canonical comparison: FacultyAssignment.facultyId refers strictly to Faculty._id
-    return a.facultyId == myFaculty!.id;
+    // Canonical comparison: FacultyAssignment.facultyId refers strictly to Faculty._id (with fallback for legacy records)
+    return a.facultyId == myFaculty!.id || a.facultyId == currentUserId;
+  }).toList();
+});
+
+// --- Parameterized Faculty Assignments for Timetable (Section + Semester level) ---
+final facultyAssignmentsForTimetableProvider = Provider.autoDispose.family<List<FacultyAssignment>, ({String? sectionId, String? semesterId})>((ref, args) {
+  final assignments = ref.watch(facultyAssignmentsProvider).valueOrNull ?? [];
+  return assignments.where((a) {
+    if (!a.isActive) return false;
+    if (args.sectionId != null && args.sectionId!.isNotEmpty && args.sectionId != 'none') {
+      if (a.sectionId == args.sectionId) return true;
+      if ((a.sectionId == null || a.sectionId!.isEmpty) && args.semesterId != null && a.semesterId == args.semesterId) {
+        return true;
+      }
+      return false;
+    }
+    if (args.semesterId != null && args.semesterId!.isNotEmpty) {
+      return a.semesterId == args.semesterId;
+    }
+    return true;
   }).toList();
 });
 

@@ -1,5 +1,5 @@
 import { AppRole } from '../constants/roles';
-import { AccountStatus, TokenType } from '../constants/status';
+import { AccountStatus, TokenType, MembershipStatus } from '../constants/status';
 
 export interface AuthenticatedUser {
   id: string;
@@ -17,6 +17,12 @@ export interface AuthenticatedUser {
   accountStatus: AccountStatus;
   activationStatus?: string;
   sessionId?: string;
+  workspaceMembershipId?: string | null;
+  workspaceMembershipStatus?: MembershipStatus;
+  activeRoles?: AppRole[];
+  authorizedDepartmentIds?: string[];
+  isAuthoritativeWorkspace?: boolean;
+  isSuperAdmin?: boolean;
 }
 
 export interface JwtPayload {
@@ -34,6 +40,8 @@ export interface JwtPayload {
   firebaseUid?: string;
   tokenType: TokenType;
   sessionId?: string;
+  requireSession?: boolean;
   iat?: number;
   exp?: number;
 }
+

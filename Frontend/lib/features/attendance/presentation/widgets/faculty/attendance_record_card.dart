@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../../app/theme/app_theme.dart';
 import '../../../domain/models/attendance_session.dart';
 import '../../../domain/models/attendance_status.dart';
@@ -63,6 +64,19 @@ class AttendanceRecordCard extends StatelessWidget {
                               color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                             ),
                           ),
+                          if (session.isSubstitution) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(LucideIcons.repeat, size: 12, color: AcadexColors.warning),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "Covered via Substitution",
+                                  style: AcadexTypography.caption(color: AcadexColors.warning).copyWith(fontWeight: FontWeight.w600, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),

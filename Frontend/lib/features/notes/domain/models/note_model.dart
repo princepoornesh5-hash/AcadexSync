@@ -98,6 +98,7 @@ class NoteModel {
   final String collegeId;
   final String semesterId;
   final String? academicYearId;
+  final String? facultyAssignmentId;
   
   // Ownership
   final String facultyId;
@@ -135,6 +136,7 @@ class NoteModel {
     this.collegeId = '',
     required this.semesterId,
     this.academicYearId,
+    this.facultyAssignmentId,
     this.facultyId = '',
     required this.authorUserId,
     this.status = NoteStatus.draft,
@@ -176,6 +178,7 @@ class NoteModel {
       collegeId: (json['collegeId'] ?? '').toString(),
       semesterId: (json['semesterId'] ?? '').toString(),
       academicYearId: json['academicYearId']?.toString(),
+      facultyAssignmentId: json['facultyAssignmentId']?.toString(),
       facultyId: (json['facultyId'] ?? '').toString(),
       authorUserId: (json['authorUserId'] ?? '').toString(),
       status: json['status'] != null
@@ -212,6 +215,7 @@ class NoteModel {
       'collegeId': collegeId,
       'semesterId': semesterId,
       if (academicYearId != null) 'academicYearId': academicYearId,
+      if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
       'facultyId': facultyId,
       'authorUserId': authorUserId,
       'status': status.value,
@@ -252,6 +256,7 @@ class NoteModel {
     String? collegeId,
     String? semesterId,
     String? academicYearId,
+    String? facultyAssignmentId,
     String? facultyId,
     String? authorUserId,
     NoteStatus? status,
@@ -283,6 +288,7 @@ class NoteModel {
       collegeId: collegeId ?? this.collegeId,
       semesterId: semesterId ?? this.semesterId,
       academicYearId: academicYearId ?? this.academicYearId,
+      facultyAssignmentId: facultyAssignmentId ?? this.facultyAssignmentId,
       facultyId: facultyId ?? this.facultyId,
       authorUserId: authorUserId ?? this.authorUserId,
       status: status ?? this.status,

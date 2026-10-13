@@ -11,6 +11,33 @@ import 'package:campus_management/features/academic_structure/domain/models/acad
 import 'package:campus_management/features/academic_structure/presentation/providers/academic_providers.dart';
 import 'package:campus_management/features/academic_structure/presentation/screens/academic_structure_home_screen.dart';
 import 'package:campus_management/features/academic_structure/data/repositories/mock_academic_repository.dart';
+import 'package:campus_management/features/timetable/presentation/providers/timetable_providers.dart';
+import 'package:campus_management/features/timetable/data/repositories/timetable_repository.dart';
+import 'package:campus_management/features/timetable/domain/models/timetable_models.dart';
+
+class MockTimetableRepository implements TimetableRepository {
+  final List<TimetableContainerModel> containers;
+  MockTimetableRepository([this.containers = const []]);
+
+  @override
+  Future<List<TimetableContainerModel>> getTimetableContainers({
+    required String collegeId,
+    String? departmentId,
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? sectionId,
+    TimetableStatus? status,
+  }) async {
+    return containers.where((c) {
+      if (departmentId != null && c.departmentId != departmentId) return false;
+      return true;
+    }).toList();
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 void main() {
   const testCollegeAdminUser = UserModel(
@@ -125,6 +152,7 @@ void main() {
                   token: 'test-token',
                 ))),
             academicRepositoryProvider.overrideWithValue(mockAcademicRepo),
+            timetableRepositoryProvider.overrideWithValue(MockTimetableRepository()),
           ],
           child: const MaterialApp(
             home: AcademicStructureHomeScreen(),

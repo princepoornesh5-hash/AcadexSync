@@ -35,7 +35,10 @@ class AssessmentComponentModel {
 enum StudentMarkStatus {
   notEntered('NOT_ENTERED', 'Not Entered'),
   entered('ENTERED', 'Entered'),
+  present('PRESENT', 'Present'),
   absent('ABSENT', 'Absent'),
+  exempted('EXEMPTED', 'Exempted'),
+  notAppeared('NOT_APPEARED', 'Not Appeared'),
   excused('EXCUSED', 'Excused');
 
   final String value;
@@ -44,10 +47,16 @@ enum StudentMarkStatus {
 
   static StudentMarkStatus fromValue(String? val) {
     switch (val?.toUpperCase()) {
+      case 'PRESENT':
+        return StudentMarkStatus.present;
       case 'ENTERED':
         return StudentMarkStatus.entered;
       case 'ABSENT':
         return StudentMarkStatus.absent;
+      case 'EXEMPTED':
+        return StudentMarkStatus.exempted;
+      case 'NOT_APPEARED':
+        return StudentMarkStatus.notAppeared;
       case 'EXCUSED':
         return StudentMarkStatus.excused;
       case 'NOT_ENTERED':
@@ -59,20 +68,24 @@ enum StudentMarkStatus {
 
 class StudentAssessmentEntryModel {
   final String studentId;
+  final String? studentEnrollmentId;
   final String studentName;
   final String? rollNumber;
   final String? admissionNumber;
   final Map<String, double?> componentMarks;
+  final double? marks;
   final double totalMarks;
   final StudentMarkStatus status;
   final String? remarks;
 
   const StudentAssessmentEntryModel({
     required this.studentId,
+    this.studentEnrollmentId,
     required this.studentName,
     this.rollNumber,
     this.admissionNumber,
     required this.componentMarks,
+    this.marks,
     this.totalMarks = 0,
     this.status = StudentMarkStatus.notEntered,
     this.remarks,
@@ -91,13 +104,19 @@ class StudentAssessmentEntryModel {
       }
     }
 
+    final singleMark = (json['marks'] as num?)?.toDouble() ??
+        (json['obtainedMarks'] as num?)?.toDouble() ??
+        (json['totalMarks'] as num?)?.toDouble();
+
     return StudentAssessmentEntryModel(
       studentId: json['studentId']?.toString() ?? '',
+      studentEnrollmentId: json['studentEnrollmentId']?.toString(),
       studentName: json['studentName']?.toString() ?? 'Student',
       rollNumber: json['rollNumber']?.toString(),
       admissionNumber: json['admissionNumber']?.toString(),
       componentMarks: marks,
-      totalMarks: (json['totalMarks'] as num?)?.toDouble() ?? 0.0,
+      marks: singleMark,
+      totalMarks: (json['totalMarks'] as num?)?.toDouble() ?? (singleMark ?? 0.0),
       status: StudentMarkStatus.fromValue(json['status']?.toString()),
       remarks: json['remarks']?.toString(),
     );
@@ -105,10 +124,12 @@ class StudentAssessmentEntryModel {
 
   Map<String, dynamic> toJson() => {
     'studentId': studentId,
+    if (studentEnrollmentId != null) 'studentEnrollmentId': studentEnrollmentId,
     'studentName': studentName,
     'rollNumber': rollNumber,
     'admissionNumber': admissionNumber,
     'componentMarks': componentMarks,
+    'marks': marks ?? totalMarks,
     'totalMarks': totalMarks,
     'status': status.value,
     'remarks': remarks,
@@ -116,23 +137,131 @@ class StudentAssessmentEntryModel {
 
   StudentAssessmentEntryModel copyWith({
     String? studentId,
+    String? studentEnrollmentId,
     String? studentName,
     String? rollNumber,
     String? admissionNumber,
     Map<String, double?>? componentMarks,
+    double? marks,
     double? totalMarks,
     StudentMarkStatus? status,
     String? remarks,
   }) {
     return StudentAssessmentEntryModel(
       studentId: studentId ?? this.studentId,
+      studentEnrollmentId: studentEnrollmentId ?? this.studentEnrollmentId,
       studentName: studentName ?? this.studentName,
       rollNumber: rollNumber ?? this.rollNumber,
       admissionNumber: admissionNumber ?? this.admissionNumber,
       componentMarks: componentMarks ?? Map.from(this.componentMarks),
+      marks: marks ?? this.marks,
       totalMarks: totalMarks ?? this.totalMarks,
       status: status ?? this.status,
       remarks: remarks ?? this.remarks,
+    );
+  }
+}
+
+class MarksRosterItemModel {
+  final String studentEnrollmentId;
+  final String studentId;
+  final String studentName;
+  final String? rollNumber;
+  final String? admissionNumber;
+  final double? marks;
+  final double maximumMarks;
+  final double passMarks;
+  final StudentMarkStatus status;
+  final String? remarks;
+  final bool isLocked;
+  final DateTime? lockedAt;
+
+  const MarksRosterItemModel({
+    required this.studentEnrollmentId,
+    required this.studentId,
+    required this.studentName,
+    this.rollNumber,
+    this.admissionNumber,
+    this.marks,
+    this.maximumMarks = 25,
+    this.passMarks = 0,
+    this.status = StudentMarkStatus.notEntered,
+    this.remarks,
+    this.isLocked = false,
+    this.lockedAt,
+  });
+
+  factory MarksRosterItemModel.fromJson(Map<String, dynamic> json) {
+    return MarksRosterItemModel(
+      studentEnrollmentId: json['studentEnrollmentId']?.toString() ?? '',
+      studentId: json['studentId']?.toString() ?? '',
+      studentName: json['studentName']?.toString() ?? 'Student',
+      rollNumber: json['rollNumber']?.toString(),
+      admissionNumber: json['admissionNumber']?.toString(),
+      marks: (json['marks'] as num?)?.toDouble(),
+      maximumMarks: (json['maximumMarks'] as num?)?.toDouble() ?? 25.0,
+      passMarks: (json['passMarks'] as num?)?.toDouble() ?? 0.0,
+      status: StudentMarkStatus.fromValue(json['status']?.toString()),
+      remarks: json['remarks']?.toString(),
+      isLocked: json['isLocked'] as bool? ?? false,
+      lockedAt: json['lockedAt'] != null ? DateTime.tryParse(json['lockedAt'].toString()) : null,
+    );
+  }
+}
+
+class MarksRosterSummaryModel {
+  final int totalStudents;
+  final int enteredCount;
+  final int presentCount;
+  final int absentCount;
+  final int exemptedCount;
+  final int notAppearedCount;
+  final int unresolvedCount;
+
+  const MarksRosterSummaryModel({
+    this.totalStudents = 0,
+    this.enteredCount = 0,
+    this.presentCount = 0,
+    this.absentCount = 0,
+    this.exemptedCount = 0,
+    this.notAppearedCount = 0,
+    this.unresolvedCount = 0,
+  });
+
+  factory MarksRosterSummaryModel.fromJson(Map<String, dynamic> json) {
+    return MarksRosterSummaryModel(
+      totalStudents: (json['totalStudents'] as num?)?.toInt() ?? 0,
+      enteredCount: (json['enteredCount'] as num?)?.toInt() ?? 0,
+      presentCount: (json['presentCount'] as num?)?.toInt() ?? 0,
+      absentCount: (json['absentCount'] as num?)?.toInt() ?? 0,
+      exemptedCount: (json['exemptedCount'] as num?)?.toInt() ?? 0,
+      notAppearedCount: (json['notAppearedCount'] as num?)?.toInt() ?? 0,
+      unresolvedCount: (json['unresolvedCount'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class MarksRosterResponseModel {
+  final Map<String, dynamic> assessment;
+  final MarksRosterSummaryModel summary;
+  final List<MarksRosterItemModel> roster;
+
+  const MarksRosterResponseModel({
+    required this.assessment,
+    required this.summary,
+    required this.roster,
+  });
+
+  factory MarksRosterResponseModel.fromJson(Map<String, dynamic> json) {
+    final rawRoster = json['roster'] as List? ?? [];
+    return MarksRosterResponseModel(
+      assessment: json['assessment'] is Map ? Map<String, dynamic>.from(json['assessment'] as Map) : {},
+      summary: MarksRosterSummaryModel.fromJson(
+        json['summary'] is Map ? Map<String, dynamic>.from(json['summary'] as Map) : {},
+      ),
+      roster: rawRoster
+          .map((r) => MarksRosterItemModel.fromJson(Map<String, dynamic>.from(r as Map)))
+          .toList(),
     );
   }
 }
@@ -173,10 +302,15 @@ class AssessmentAuditEntryModel {
 
 enum InternalAssessmentStatus {
   draft('DRAFT', 'Draft'),
+  scheduled('SCHEDULED', 'Scheduled'),
+  completed('COMPLETED', 'Completed'),
   open('OPEN', 'Open for Entry'),
+  marksEntry('MARKS_ENTRY', 'Marks Entry'),
+  submitted('SUBMITTED', 'Submitted'),
   closed('CLOSED', 'Closed & Locked'),
   reviewed('REVIEWED', 'Reviewed'),
   published('PUBLISHED', 'Published & Locked'),
+  locked('LOCKED', 'Locked'),
   archived('ARCHIVED', 'Archived');
 
   final String value;
@@ -185,14 +319,24 @@ enum InternalAssessmentStatus {
 
   static InternalAssessmentStatus fromValue(String? val) {
     switch (val?.toUpperCase()) {
+      case 'SCHEDULED':
+        return InternalAssessmentStatus.scheduled;
+      case 'COMPLETED':
+        return InternalAssessmentStatus.completed;
       case 'OPEN':
         return InternalAssessmentStatus.open;
+      case 'MARKS_ENTRY':
+        return InternalAssessmentStatus.marksEntry;
+      case 'SUBMITTED':
+        return InternalAssessmentStatus.submitted;
       case 'CLOSED':
         return InternalAssessmentStatus.closed;
       case 'REVIEWED':
         return InternalAssessmentStatus.reviewed;
       case 'PUBLISHED':
         return InternalAssessmentStatus.published;
+      case 'LOCKED':
+        return InternalAssessmentStatus.locked;
       case 'ARCHIVED':
         return InternalAssessmentStatus.archived;
       case 'DRAFT':
@@ -219,6 +363,8 @@ class InternalAssessmentModel {
   final List<AssessmentComponentModel> components;
   final List<StudentAssessmentEntryModel> entries;
   final InternalAssessmentStatus status;
+  final String? sourceType;
+  final String? importBatchId;
   final DateTime? publishedAt;
   final DateTime? lockedAt;
   final DateTime? closedAt;
@@ -241,6 +387,8 @@ class InternalAssessmentModel {
     this.components = const [],
     this.entries = const [],
     this.status = InternalAssessmentStatus.draft,
+    this.sourceType,
+    this.importBatchId,
     this.publishedAt,
     this.lockedAt,
     this.closedAt,
@@ -282,6 +430,8 @@ class InternalAssessmentModel {
       components: comps,
       entries: entries,
       status: InternalAssessmentStatus.fromValue(json['status']?.toString()),
+      sourceType: json['sourceType']?.toString(),
+      importBatchId: json['importBatchId']?.toString(),
       publishedAt: json['publishedAt'] != null
           ? DateTime.tryParse(json['publishedAt'].toString())
           : null,
@@ -475,3 +625,139 @@ class SubjectAssessmentSummaryModel {
     );
   }
 }
+
+class AssessmentScheduleModel {
+  final String? id;
+  final String collegeId;
+  final String assessmentId;
+  final DateTime date;
+  final String dateString;
+  final String startTime;
+  final String endTime;
+  final String? roomId;
+  final String? roomName;
+  final String? invigilatorFacultyId;
+  final String? invigilatorName;
+  final String? instructions;
+  final String status;
+
+  const AssessmentScheduleModel({
+    this.id,
+    required this.collegeId,
+    required this.assessmentId,
+    required this.date,
+    required this.dateString,
+    required this.startTime,
+    required this.endTime,
+    this.roomId,
+    this.roomName,
+    this.invigilatorFacultyId,
+    this.invigilatorName,
+    this.instructions,
+    this.status = 'SCHEDULED',
+  });
+
+  factory AssessmentScheduleModel.fromJson(Map<String, dynamic> json) {
+    return AssessmentScheduleModel(
+      id: json['id']?.toString() ?? json['_id']?.toString(),
+      collegeId: json['collegeId']?.toString() ?? '',
+      assessmentId: json['assessmentId'] is Map
+          ? (json['assessmentId']['_id']?.toString() ?? '')
+          : (json['assessmentId']?.toString() ?? ''),
+      date: json['date'] != null
+          ? DateTime.tryParse(json['date'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      dateString: json['dateString']?.toString() ?? '',
+      startTime: json['startTime']?.toString() ?? '',
+      endTime: json['endTime']?.toString() ?? '',
+      roomId: json['roomId'] is Map
+          ? (json['roomId']['_id']?.toString() ?? '')
+          : json['roomId']?.toString(),
+      roomName: json['roomId'] is Map ? json['roomId']['name']?.toString() : null,
+      invigilatorFacultyId: json['invigilatorFacultyId'] is Map
+          ? (json['invigilatorFacultyId']['_id']?.toString() ?? '')
+          : json['invigilatorFacultyId']?.toString(),
+      invigilatorName: json['invigilatorFacultyId'] is Map
+          ? json['invigilatorFacultyId']['name']?.toString()
+          : null,
+      instructions: json['instructions']?.toString(),
+      status: json['status']?.toString() ?? 'SCHEDULED',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'assessmentId': assessmentId,
+    'date': date.toIso8601String(),
+    'dateString': dateString,
+    'startTime': startTime,
+    'endTime': endTime,
+    if (roomId != null) 'roomId': roomId,
+    if (invigilatorFacultyId != null) 'invigilatorFacultyId': invigilatorFacultyId,
+    if (instructions != null) 'instructions': instructions,
+  };
+}
+
+class AssessmentMarkModel {
+  final String? id;
+  final String collegeId;
+  final String assessmentId;
+  final String? facultyAssignmentId;
+  final String subjectId;
+  final String studentEnrollmentId;
+  final String studentId;
+  final String studentName;
+  final String? rollNumber;
+  final String? admissionNumber;
+  final double? marks;
+  final double maximumMarks;
+  final double? passMarks;
+  final StudentMarkStatus status;
+  final String? remarks;
+  final bool isLocked;
+  final String sourceType;
+
+  const AssessmentMarkModel({
+    this.id,
+    required this.collegeId,
+    required this.assessmentId,
+    this.facultyAssignmentId,
+    required this.subjectId,
+    required this.studentEnrollmentId,
+    required this.studentId,
+    required this.studentName,
+    this.rollNumber,
+    this.admissionNumber,
+    this.marks,
+    required this.maximumMarks,
+    this.passMarks,
+    required this.status,
+    this.remarks,
+    this.isLocked = false,
+    this.sourceType = 'LIVE',
+  });
+
+  factory AssessmentMarkModel.fromJson(Map<String, dynamic> json) {
+    return AssessmentMarkModel(
+      id: json['id']?.toString() ?? json['_id']?.toString(),
+      collegeId: json['collegeId']?.toString() ?? '',
+      assessmentId: json['assessmentId']?.toString() ?? '',
+      facultyAssignmentId: json['facultyAssignmentId']?.toString(),
+      subjectId: json['subjectId']?.toString() ?? '',
+      studentEnrollmentId: json['studentEnrollmentId']?.toString() ?? '',
+      studentId: json['studentId']?.toString() ?? '',
+      studentName: json['studentName']?.toString() ?? 'Student',
+      rollNumber: json['rollNumber']?.toString(),
+      admissionNumber: json['admissionNumber']?.toString(),
+      marks: (json['marks'] as num?)?.toDouble(),
+      maximumMarks: (json['maximumMarks'] as num?)?.toDouble() ?? 100.0,
+      passMarks: (json['passMarks'] as num?)?.toDouble(),
+      status: StudentMarkStatus.fromValue(json['status']?.toString()),
+      remarks: json['remarks']?.toString(),
+      isLocked: json['isLocked'] as bool? ?? false,
+      sourceType: json['sourceType']?.toString() ?? 'LIVE',
+    );
+  }
+}
+
+typedef AssessmentModel = InternalAssessmentModel;
+typedef AssessmentStatus = InternalAssessmentStatus;

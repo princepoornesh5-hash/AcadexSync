@@ -245,6 +245,18 @@ class RealtimeService {
     }
   }
 
+  /// Sends a switch_workspace request to rebind rooms without dropping the socket connection.
+  void switchWorkspace(String targetCollegeId) {
+    if (_status == RealtimeConnectionStatus.connected && _channel != null) {
+      try {
+        _channel!.sink.add(jsonEncode({
+          'action': 'switch_workspace',
+          'collegeId': targetCollegeId,
+        }));
+      } catch (_) {}
+    }
+  }
+
   /// Responds to app lifecycle changes (mobile foreground / background / resume).
   void handleAppLifecycleState(dynamic lifecycleState) {
     // String or AppLifecycleState

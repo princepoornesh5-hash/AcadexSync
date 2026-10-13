@@ -40,19 +40,24 @@ export interface RealtimeEventEnvelope<T = Record<string, unknown>> {
   payload: T;
 }
 
-export type ClientInboundAction = 'authenticate' | 'subscribe' | 'unsubscribe' | 'ping';
+export type ClientInboundAction = 'authenticate' | 'subscribe' | 'unsubscribe' | 'ping' | 'switch_workspace';
 
 export interface ClientInboundMessage {
   action: ClientInboundAction;
   token?: string;
   channel?: string;
   requestId?: string;
+  targetCollegeId?: string;
+  workspaceId?: string;
 }
 
 export type ServerOutboundType =
   | 'authenticated'
   | 'subscribed'
   | 'unsubscribed'
+  | 'workspace_switched'
+  | 'workspace_revoked'
+  | 'roles_updated'
   | 'event'
   | 'pong'
   | 'error';

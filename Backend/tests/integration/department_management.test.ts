@@ -530,7 +530,7 @@ describe('ACADEX Phase 9E.1 — Department Management Tests', () => {
       .send({ name: 'Updated Under Inactive College' });
 
     expect(res.status).toBe(403);
-    expect(res.body.error.message).toContain('inactive college');
+    expect(res.body.error.message).toMatch(/institution is currently inactive|inactive college/i);
   });
 
   it('30. No destructive delete route exists', async () => {

@@ -42,6 +42,14 @@ class _FacultyAttendanceHistoryScreenState extends ConsumerState<FacultyAttendan
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(LucideIcons.calendarClock),
+            tooltip: "Historical Attendance Entry",
+            onPressed: () => context.push('/attendance/historical'),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Column(
         children: [

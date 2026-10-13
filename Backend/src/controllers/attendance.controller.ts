@@ -9,7 +9,12 @@ import {
   correctAttendanceRecordSchema,
   attendanceQuerySchema,
   attendanceAnalyticsQuerySchema,
+  getHistoricalRosterQuerySchema,
+  createDetailedHistoricalSessionSchema,
+  createHistoricalSummariesSchema,
+  correctHistoricalStudentAttendanceSchema,
 } from '../validations/attendance.validation';
+import { HistoricalAttendanceService } from '../services/historicalAttendance.service';
 import { AppRole } from '../constants/roles';
 
 export class AttendanceController {
@@ -175,4 +180,37 @@ export class AttendanceController {
     );
     return ApiResponse.success(res, summary);
   });
+
+  // =========================================================================
+  // 6. HISTORICAL ATTENDANCE ENTRY (PROMPT 2)
+  // =========================================================================
+
+  static getHistoricalRoster = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const validatedQuery = getHistoricalRosterQuerySchema.parse(req.query);
+    const result = await HistoricalAttendanceService.getHistoricalRoster(req.user, validatedQuery);
+    return ApiResponse.success(res, result, 'Historical roster resolved successfully');
+  });
+
+  static createDetailedHistoricalSession = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const validatedData = createDetailedHistoricalSessionSchema.parse(req.body);
+    const session = await HistoricalAttendanceService.createDetailedHistoricalSession(req.user, validatedData);
+    return ApiResponse.created(res, session, 'Historical detailed attendance session recorded successfully');
+  });
+
+  static createHistoricalSummaries = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const validatedData = createHistoricalSummariesSchema.parse(req.body);
+    const result = await HistoricalAttendanceService.createHistoricalSummaries(req.user, validatedData);
+    return ApiResponse.created(res, result, 'Historical attendance summaries recorded successfully');
+  });
+
+  static correctHistoricalStudentAttendance = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const validatedData = correctHistoricalStudentAttendanceSchema.parse(req.body);
+    const record = await HistoricalAttendanceService.correctHistoricalStudentAttendance(req.user, validatedData);
+    return ApiResponse.success(res, record, 'Historical student attendance corrected successfully');
+  });
 }
+

@@ -27,7 +27,15 @@ abstract class AcademicRepository {
   Future<PaginatedResponse<Faculty>> getPaginatedFaculty({String? departmentId, int limit = 20, DocumentSnapshot? startAfter});
   Future<Faculty?> getFacultyById(String id);
   Future<Map<String, dynamic>> getFacultySummary(String id);
-  Future<List<Student>> getStudents({String? sectionId, String? departmentId});
+  Future<List<Student>> getStudents({
+    String? sectionId,
+    String? departmentId,
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? search,
+    String? status,
+  });
   Future<PaginatedResponse<Student>> getPaginatedStudents({String? sectionId, String? departmentId, int limit = 20, DocumentSnapshot? startAfter});
   Future<Student?> getStudentById(String id);
   Future<bool> checkStudentExists(String rollNumber, String email);

@@ -90,9 +90,10 @@ const StudentSchema = new Schema<IStudent>(
 );
 
 StudentSchema.index(
-  { userId: 1 },
+  { collegeId: 1, userId: 1 },
   { unique: true, partialFilterExpression: { userId: { $type: 'objectId' } } }
 );
+StudentSchema.index({ userId: 1 });
 StudentSchema.index(
   { collegeId: 1, rollNumber: 1 },
   { unique: true, partialFilterExpression: { rollNumber: { $type: 'string' } } }

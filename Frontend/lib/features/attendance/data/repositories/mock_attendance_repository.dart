@@ -902,6 +902,48 @@ class MockAttendanceRepository implements AttendanceRepository {
       unmarkedCount: unmarked,
     );
   }
+
+  @override
+  Future<Map<String, dynamic>> getHistoricalRoster({
+    required String academicYearId,
+    required String semesterId,
+    String? sectionId,
+    String? subjectId,
+  }) async => {'roster': [], 'count': 0};
+
+  @override
+  Future<AttendanceSession> createDetailedHistoricalSession({
+    required String academicYearId,
+    required String semesterId,
+    String? sectionId,
+    required String subjectId,
+    String? facultyAssignmentId,
+    required DateTime date,
+    required String timeSlot,
+    required List<Map<String, dynamic>> records,
+    String? remarks,
+  }) async => _sessions.first;
+
+  @override
+  Future<List<dynamic>> createHistoricalSummaries({
+    required String academicYearId,
+    required String semesterId,
+    String? sectionId,
+    required String subjectId,
+    required String periodLabel,
+    DateTime? periodStart,
+    DateTime? periodEnd,
+    required List<Map<String, dynamic>> entries,
+  }) async => [];
+
+  @override
+  Future<AttendanceRecord> correctHistoricalStudentAttendance({
+    String? recordId,
+    String? sessionId,
+    String? studentEnrollmentId,
+    required AttendanceStatus newStatus,
+    required String reason,
+  }) async => _sessions.first.records.first;
 }
 
 class _MockStudentTracker {

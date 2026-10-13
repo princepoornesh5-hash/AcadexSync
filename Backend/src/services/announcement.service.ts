@@ -749,7 +749,11 @@ export class AnnouncementService {
 
     // For students: check enrolled courses, semesters, and sections
     if (requester.role === AppRole.STUDENT) {
-      const studentProfile = await Student.findOne({ userId: requester.id });
+      const studentProfile = await Student.findOne({
+        userId: requester.id,
+        ...(requester.collegeId ? { collegeId: requester.collegeId } : {}),
+      });
+
       if (studentProfile) {
         const enrollments = await StudentEnrollment.find({
           studentId: studentProfile._id,
@@ -782,7 +786,11 @@ export class AnnouncementService {
 
     // For faculty: check assigned courses, semesters, and sections
     if (requester.role === AppRole.FACULTY) {
-      const facultyProfile = await Faculty.findOne({ userId: requester.id });
+      const facultyProfile = await Faculty.findOne({
+        userId: requester.id,
+        ...(requester.collegeId ? { collegeId: requester.collegeId } : {}),
+      });
+
       if (facultyProfile) {
         const assignments = await FacultyAssignment.find({
           facultyId: facultyProfile._id,

@@ -141,6 +141,7 @@ class AcadexDropdown<T> extends StatelessWidget {
           const SizedBox(height: 6),
         ],
         DropdownButtonFormField<T>(
+          isExpanded: true,
           initialValue: value,
           items: items,
           onChanged: onChanged,

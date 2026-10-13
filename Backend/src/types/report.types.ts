@@ -37,6 +37,9 @@ export interface StudentAttendanceReport {
   };
   summary: AttendanceSummaryMetrics;
   subjectsBreakdown: SubjectAttendanceMetrics[];
+  historicalPercentageMetrics?: Array<{ periodLabel: string; percentage: number; type: string }>;
+  hasDetailedData?: boolean;
+  hasPercentageOnlyData?: boolean;
   lowAttendanceAlert: boolean;
   dateRange: {
     from?: string;

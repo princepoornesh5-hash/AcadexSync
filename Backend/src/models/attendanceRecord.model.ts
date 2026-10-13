@@ -22,6 +22,9 @@ export interface IAttendanceRecord extends Document {
   modifiedBy?: string;
   remarks?: string;
   isCancelled: boolean;
+  studentEnrollmentId?: mongoose.Types.ObjectId;
+  sourceType?: 'LIVE' | 'IMPORTED' | 'HISTORICAL_MANUAL';
+  importBatchId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,6 +60,9 @@ const AttendanceRecordSchema = new Schema<IAttendanceRecord>(
     modifiedBy: { type: String, default: null },
     remarks: { type: String, default: null },
     isCancelled: { type: Boolean, default: false },
+    studentEnrollmentId: { type: Schema.Types.ObjectId, ref: 'StudentEnrollment', default: null, index: true },
+    sourceType: { type: String, enum: ['LIVE', 'IMPORTED', 'HISTORICAL_MANUAL'], default: 'LIVE' },
+    importBatchId: { type: String, default: null, index: true },
   },
   {
     timestamps: true,

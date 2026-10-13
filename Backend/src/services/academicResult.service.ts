@@ -10,6 +10,7 @@ import {
   AcademicRecord,
   SubjectAcademicRecord,
   InternalAssessment,
+  AssessmentMark,
   StudentEnrollment,
   Student,
   Subject,
@@ -186,7 +187,7 @@ export class AcademicResultService {
         collegeId,
         courseId,
         semesterId,
-        status: 'active',
+        $or: [{ status: 'active' }, { isActive: true }],
       });
 
       if (defaultSubjects.length === 0) {
@@ -264,10 +265,25 @@ export class AcademicResultService {
       let subjMax = 0;
       const assessmentsIncluded = [];
 
+      const assessIds = publishedAssessments.map((a) => a._id);
+      const canonicalMarks = await AssessmentMark.find({
+        collegeId: new Types.ObjectId(collegeId),
+        assessmentId: { $in: assessIds },
+        studentId: new Types.ObjectId(studentId),
+      });
+      const canonicalMarksMap = new Map<string, any>();
+      for (const cm of canonicalMarks) {
+        canonicalMarksMap.set(cm.assessmentId.toString(), cm);
+      }
+
       for (const assess of publishedAssessments) {
-        const studentEntry = assess.entries.find(
-          (e) => e.studentId.toString() === studentId.toString()
-        );
+        const canonicalMark = canonicalMarksMap.get(assess._id.toString());
+        const studentEntry = canonicalMark
+          ? {
+              totalMarks: canonicalMark.marks !== null ? canonicalMark.marks : 0,
+              status: canonicalMark.status,
+            }
+          : assess.entries.find((e) => e.studentId.toString() === studentId.toString());
 
         if (studentEntry) {
           const obtained = Number(studentEntry.totalMarks || 0);

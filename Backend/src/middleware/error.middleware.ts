@@ -54,6 +54,12 @@ export function errorHandler(
       statusCode = 400;
       code = 'INVALID_JSON';
       message = 'Malformed JSON in request body.';
+    }
+    // Multer upload / body size limit error
+    else if (errorObj.name === 'MulterError' || (err as any).type === 'entity.too.large') {
+      statusCode = 400;
+      code = 'FILE_TOO_LARGE';
+      message = 'File size exceeds maximum permitted limit';
     } else {
       message = errorObj.message || message;
     }

@@ -31,6 +31,7 @@ export class NoteService {
   static async requestUploadUrl(
     collegeId: string,
     data: {
+      facultyAssignmentId?: string;
       departmentId?: string;
       courseId?: string;
       academicYearId?: string;
@@ -81,21 +82,46 @@ export class NoteService {
       throw ApiError.forbidden('Cannot upload notes for an inactive subject');
     }
 
-    // Teaching Authorization: Assert that Faculty or HOD is authorized to manage notes for this subject
-    await TeachingAuthorizationService.assertSubjectTeachingAccess(
-      collegeId,
-      {
-        id: requester.id,
-        role: requester.role,
-        collegeId: requester.collegeId,
-        departmentId: requester.departmentId,
-        email: requester.email,
-        name: requester.name,
-      },
-      subject._id,
-      data.sectionId,
-      'academic notes'
-    );
+    let resolvedFacultyAssignment: any = null;
+    if (data.facultyAssignmentId) {
+      resolvedFacultyAssignment = await TeachingAuthorizationService.assertFacultyAssignmentAccess(
+        collegeId,
+        {
+          id: requester.id,
+          role: requester.role,
+          collegeId: requester.collegeId,
+          departmentId: requester.departmentId,
+          email: requester.email,
+          name: requester.name,
+        },
+        data.facultyAssignmentId,
+        'academic notes'
+      );
+
+      if (data.subjectId && resolvedFacultyAssignment.subjectId.toString() !== data.subjectId.toString()) {
+        throw ApiError.badRequest('Subject mismatch with specified faculty assignment');
+      }
+      data.subjectId = resolvedFacultyAssignment.subjectId.toString();
+      if (resolvedFacultyAssignment.sectionId) {
+        data.sectionId = resolvedFacultyAssignment.sectionId.toString();
+      }
+    } else {
+      // Teaching Authorization: Assert that Faculty or HOD is authorized to manage notes for this subject
+      resolvedFacultyAssignment = await TeachingAuthorizationService.assertSubjectTeachingAccess(
+        collegeId,
+        {
+          id: requester.id,
+          role: requester.role,
+          collegeId: requester.collegeId,
+          departmentId: requester.departmentId,
+          email: requester.email,
+          name: requester.name,
+        },
+        subject._id,
+        data.sectionId,
+        'academic notes'
+      );
+    }
 
     let facultyDoc: InstanceType<typeof Faculty> | null = null;
     if (requester.role === AppRole.FACULTY) {
@@ -106,9 +132,15 @@ export class NoteService {
     }
 
     const noteId = new mongoose.Types.ObjectId();
-    const courseId = subject.courseId ? subject.courseId.toString() : data.courseId || '';
-    const semesterId = subject.semesterId.toString();
-    const departmentId = subject.departmentId.toString();
+    const courseId = resolvedFacultyAssignment?.courseId
+      ? resolvedFacultyAssignment.courseId.toString()
+      : (subject.courseId ? subject.courseId.toString() : data.courseId || '');
+    const semesterId = resolvedFacultyAssignment?.semesterId
+      ? resolvedFacultyAssignment.semesterId.toString()
+      : subject.semesterId.toString();
+    const departmentId = resolvedFacultyAssignment?.departmentId
+      ? resolvedFacultyAssignment.departmentId.toString()
+      : subject.departmentId.toString();
 
     const folder = ImageKitService.buildNoteFolder(
       collegeId,
@@ -126,11 +158,14 @@ export class NoteService {
       collegeId: new mongoose.Types.ObjectId(collegeId),
       departmentId: new mongoose.Types.ObjectId(departmentId),
       courseId: courseId ? new mongoose.Types.ObjectId(courseId) : null,
-      academicYearId: data.academicYearId ? new mongoose.Types.ObjectId(data.academicYearId) : null,
+      academicYearId: resolvedFacultyAssignment?.academicYearId
+        ? resolvedFacultyAssignment.academicYearId
+        : (data.academicYearId ? new mongoose.Types.ObjectId(data.academicYearId) : null),
       semesterId: new mongoose.Types.ObjectId(semesterId),
       sectionId: data.sectionId ? new mongoose.Types.ObjectId(data.sectionId) : null,
       subjectId: subject._id,
       facultyId: facultyDoc ? facultyDoc._id : null,
+      facultyAssignmentId: resolvedFacultyAssignment ? resolvedFacultyAssignment._id : null,
       authorUserId: new mongoose.Types.ObjectId(requester.id),
       title: data.title.trim(),
       description: (data.description || '').trim(),
@@ -286,17 +321,58 @@ export class NoteService {
         throw ApiError.forbidden('This note is restricted to faculty members');
       }
 
-      const studentProfile = await Student.findOne({ userId: requester.id });
+      const studentProfile = await Student.findOne({
+        userId: requester.id,
+        ...(requester.collegeId ? { collegeId: requester.collegeId } : {}),
+      });
+
       if (!studentProfile) throw ApiError.notFound('Student profile not found');
 
-      // Verify matching semester / course
-      if (studentProfile.semesterId && studentProfile.semesterId.toString() !== note.semesterId.toString()) {
-        throw ApiError.forbidden('Note belongs to a different academic semester');
+      if (studentProfile.collegeId.toString() !== note.collegeId.toString()) {
+        throw ApiError.forbidden('Note belongs to a different college');
       }
-      if (note.visibility === NoteVisibility.SECTION_ONLY && note.sectionId) {
-        if (studentProfile.sectionId?.toString() !== note.sectionId.toString()) {
-          throw ApiError.forbidden('This note is restricted to a different section');
+
+      let activeEnrollments = await StudentEnrollment.find({
+        collegeId: note.collegeId,
+        studentId: studentProfile._id,
+        status: 'active',
+      });
+
+      if ((!activeEnrollments || activeEnrollments.length === 0) && studentProfile.departmentId && studentProfile.semesterId) {
+        activeEnrollments = [
+          {
+            departmentId: studentProfile.departmentId,
+            courseId: studentProfile.courseId,
+            academicYearId: studentProfile.academicYearId,
+            semesterId: studentProfile.semesterId,
+            sectionId: studentProfile.sectionId,
+          } as any,
+        ];
+      }
+
+      if (!activeEnrollments || activeEnrollments.length === 0) {
+        throw ApiError.forbidden('You have no active enrollment to access academic notes');
+      }
+
+      // Check if note matches any active enrollment
+      const matchesEnrollment = activeEnrollments.some((en) => {
+        if (en.departmentId.toString() !== note.departmentId.toString()) return false;
+        if (note.courseId && en.courseId && en.courseId.toString() !== note.courseId.toString()) return false;
+        if (en.semesterId.toString() !== note.semesterId.toString()) return false;
+        if (note.visibility === NoteVisibility.SECTION_ONLY) {
+          return en.sectionId && note.sectionId && en.sectionId.toString() === note.sectionId.toString();
         }
+        if (note.sectionId && en.sectionId) {
+          return en.sectionId.toString() === note.sectionId.toString();
+        }
+        if (note.sectionId && !en.sectionId) {
+          return false;
+        }
+        return true;
+      });
+
+      if (!matchesEnrollment) {
+        throw ApiError.forbidden('You are not authorized to download this note. It belongs to a different academic semester, section, or department.');
       }
     }
 
@@ -561,8 +637,34 @@ export class NoteService {
       throw ApiError.forbidden('Only students can access their personal notes feed');
     }
 
-    const studentProfile = await Student.findOne({ userId: requester.id });
+    const studentProfile = await Student.findOne({
+      userId: requester.id,
+      ...(requester.collegeId ? { collegeId: requester.collegeId } : {}),
+    });
+
     if (!studentProfile) throw ApiError.notFound('Student profile not found');
+
+    let activeEnrollments = await StudentEnrollment.find({
+      collegeId: studentProfile.collegeId,
+      studentId: studentProfile._id,
+      status: 'active',
+    });
+
+    if ((!activeEnrollments || activeEnrollments.length === 0) && studentProfile.departmentId && studentProfile.semesterId) {
+      activeEnrollments = [
+        {
+          departmentId: studentProfile.departmentId,
+          courseId: studentProfile.courseId,
+          academicYearId: studentProfile.academicYearId,
+          semesterId: studentProfile.semesterId,
+          sectionId: studentProfile.sectionId,
+        } as any,
+      ];
+    }
+
+    if (!activeEnrollments || activeEnrollments.length === 0) {
+      return { items: [], page: 1, limit: query.limit || 20, total: 0, totalPages: 0 };
+    }
 
     const filter: Record<string, unknown> = {
       collegeId: studentProfile.collegeId,
@@ -570,9 +672,30 @@ export class NoteService {
       visibility: { $ne: NoteVisibility.FACULTY_ONLY },
     };
 
-    if (studentProfile.semesterId) {
-      filter.semesterId = studentProfile.semesterId;
-    }
+    const enrollmentOrConditions = activeEnrollments.map((en) => {
+      const cond: any = {
+        departmentId: en.departmentId,
+        semesterId: en.semesterId,
+      };
+      if (en.courseId) cond.courseId = en.courseId;
+      if (en.sectionId) {
+        cond.$or = [
+          { sectionId: en.sectionId },
+          { sectionId: null },
+          { sectionId: { $exists: false } },
+        ];
+      } else {
+        cond.$or = [
+          { sectionId: null },
+          { sectionId: { $exists: false } },
+        ];
+      }
+      return cond;
+    });
+
+    filter.$and = filter.$and || [];
+    (filter.$and as any[]).push({ $or: enrollmentOrConditions });
+
     if (query.subjectId) {
       if (!mongoose.Types.ObjectId.isValid(query.subjectId)) throw ApiError.badRequest('Invalid subjectId');
       filter.subjectId = new mongoose.Types.ObjectId(query.subjectId);
@@ -616,6 +739,57 @@ export class NoteService {
 
     if (requester.role === AppRole.STUDENT) {
       filter.visibility = { $ne: NoteVisibility.FACULTY_ONLY };
+
+      const studentProfile = await Student.findOne({
+        userId: requester.id,
+        ...(requester.collegeId ? { collegeId: requester.collegeId } : {}),
+      });
+
+      if (!studentProfile) throw ApiError.notFound('Student profile not found');
+
+      let activeEnrollments = await StudentEnrollment.find({
+        collegeId: studentProfile.collegeId,
+        studentId: studentProfile._id,
+        status: 'active',
+      });
+      if ((!activeEnrollments || activeEnrollments.length === 0) && studentProfile.departmentId && studentProfile.semesterId) {
+        activeEnrollments = [
+          {
+            departmentId: studentProfile.departmentId,
+            courseId: studentProfile.courseId,
+            academicYearId: studentProfile.academicYearId,
+            semesterId: studentProfile.semesterId,
+            sectionId: studentProfile.sectionId,
+          } as any,
+        ];
+      }
+      if (!activeEnrollments || activeEnrollments.length === 0) {
+        return { items: [], page: 1, limit: query.limit || 20, total: 0, totalPages: 0 };
+      }
+
+      const enrollmentOrConditions = activeEnrollments.map((en) => {
+        const cond: any = {
+          departmentId: en.departmentId,
+          semesterId: en.semesterId,
+        };
+        if (en.courseId) cond.courseId = en.courseId;
+        if (en.sectionId) {
+          cond.$or = [
+            { sectionId: en.sectionId },
+            { sectionId: null },
+            { sectionId: { $exists: false } },
+          ];
+        } else {
+          cond.$or = [
+            { sectionId: null },
+            { sectionId: { $exists: false } },
+          ];
+        }
+        return cond;
+      });
+
+      filter.$and = filter.$and || [];
+      (filter.$and as any[]).push({ $or: enrollmentOrConditions });
     }
 
     const page = Math.max(1, query.page || 1);
@@ -692,6 +866,61 @@ export class NoteService {
     if (requester.role === AppRole.STUDENT) {
       filter.lifecycleState = NoteLifecycleState.READY;
       filter.visibility = { $ne: NoteVisibility.FACULTY_ONLY };
+
+      const studentProfile = await Student.findOne({
+        userId: requester.id,
+        ...(requester.collegeId ? { collegeId: requester.collegeId } : {}),
+      });
+
+      if (!studentProfile) {
+        return { items: [], page: 1, limit: 1, total: 0, totalPages: 0 };
+      }
+
+      let activeEnrollments = await StudentEnrollment.find({
+        collegeId: studentProfile.collegeId,
+        studentId: studentProfile._id,
+        status: 'active',
+      });
+
+      if ((!activeEnrollments || activeEnrollments.length === 0) && studentProfile.departmentId && studentProfile.semesterId) {
+        activeEnrollments = [
+          {
+            departmentId: studentProfile.departmentId,
+            courseId: studentProfile.courseId,
+            academicYearId: studentProfile.academicYearId,
+            semesterId: studentProfile.semesterId,
+            sectionId: studentProfile.sectionId,
+          } as any,
+        ];
+      }
+
+      if (!activeEnrollments || activeEnrollments.length === 0) {
+        return { items: [], page: 1, limit: query.limit || 20, total: 0, totalPages: 0 };
+      }
+
+      const enrollmentOrConditions = activeEnrollments.map((en) => {
+        const cond: any = {
+          departmentId: en.departmentId,
+          semesterId: en.semesterId,
+        };
+        if (en.courseId) cond.courseId = en.courseId;
+        if (en.sectionId) {
+          cond.$or = [
+            { sectionId: en.sectionId },
+            { sectionId: null },
+            { sectionId: { $exists: false } },
+          ];
+        } else {
+          cond.$or = [
+            { sectionId: null },
+            { sectionId: { $exists: false } },
+          ];
+        }
+        return cond;
+      });
+
+      filter.$and = filter.$and || [];
+      (filter.$and as any[]).push({ $or: enrollmentOrConditions });
     }
 
     if (query.search && query.search.trim() !== '') {

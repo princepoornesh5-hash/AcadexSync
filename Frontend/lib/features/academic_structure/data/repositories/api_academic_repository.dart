@@ -1322,13 +1322,24 @@ class ApiAcademicRepository implements AcademicRepository {
   // ===========================================================================
 
   @override
-  Future<List<Student>> getStudents({String? sectionId, String? departmentId, String? search, String? status}) async {
+  Future<List<Student>> getStudents({
+    String? sectionId,
+    String? departmentId,
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? search,
+    String? status,
+  }) async {
     try {
       final queryParams = <String, dynamic>{
         'limit': 100,
       };
       if (sectionId != null && sectionId.isNotEmpty) queryParams['sectionId'] = sectionId;
       if (departmentId != null && departmentId.isNotEmpty) queryParams['departmentId'] = departmentId;
+      if (courseId != null && courseId.isNotEmpty) queryParams['courseId'] = courseId;
+      if (academicYearId != null && academicYearId.isNotEmpty) queryParams['academicYearId'] = academicYearId;
+      if (semesterId != null && semesterId.isNotEmpty) queryParams['semesterId'] = semesterId;
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
       if (status != null && status.isNotEmpty) queryParams['status'] = status;
 
@@ -1670,14 +1681,71 @@ class ApiAcademicRepository implements AcademicRepository {
 
   @override
   Future<StudentAcademicProfile> getStudentAcademicProfile(String studentId) async {
-    final student = await getStudentById(studentId);
-    if (student == null) throw Exception('Student not found: $studentId');
-    return StudentAcademicProfile(
-      student: student,
-      overallAttendancePercentage: 0.0,
-      enrolledSubjects: const [],
-      notesCount: 0,
-    );
+    try {
+      // 1. Try authoritative Student 360 endpoint first (single round-trip, complete context)
+      try {
+        final response = await _client.dio.get('/academics/students/$studentId/360');
+        final body = response.data as Map<String, dynamic>;
+        final data = body['data'] as Map<String, dynamic>? ?? body;
+        return StudentAcademicProfile.fromJson(data);
+      } on DioException catch (dioErr) {
+        if (dioErr.response?.statusCode != 404) {
+          rethrow;
+        }
+      }
+
+      // 2. Fallback to basic profile if 360 route not available
+      final response = await _client.dio.get('/academics/students/$studentId');
+      final body = response.data as Map<String, dynamic>;
+      final data = body['data'] as Map<String, dynamic>? ?? body;
+      final student = Student.fromJson(data);
+
+      FacultyPriorityContext? facultyContext;
+      if (data.containsKey('facultyContext') && data['facultyContext'] != null) {
+        facultyContext = FacultyPriorityContext.fromJson(data['facultyContext'] as Map<String, dynamic>);
+      }
+
+      Department? department;
+      Course? course;
+      Semester? semester;
+      Section? section;
+      AcademicYear? academicYear;
+
+      if (student.departmentId.isNotEmpty) {
+        try { department = await getDepartmentById(student.departmentId); } catch (_) {}
+      }
+      if (student.courseId.isNotEmpty) {
+        try { course = await getCourseById(student.courseId); } catch (_) {}
+      }
+      if (student.semesterId.isNotEmpty) {
+        try { semester = await getSemesterById(student.semesterId); } catch (_) {}
+      }
+      if (student.sectionId.isNotEmpty) {
+        try { section = await getSectionById(student.sectionId); } catch (_) {}
+      }
+      if (student.academicYearId.isNotEmpty) {
+        try { academicYear = await getAcademicYearById(student.academicYearId); } catch (_) {}
+      }
+
+      List<Subject> enrolledSubjects = [];
+      if (student.semesterId.isNotEmpty) {
+        try { enrolledSubjects = await getSubjects(semesterId: student.semesterId); } catch (_) {}
+      }
+
+      return StudentAcademicProfile(
+        student: student,
+        department: department,
+        course: course,
+        semester: semester,
+        section: section,
+        academicYear: academicYear,
+        enrolledSubjects: enrolledSubjects,
+        overallAttendancePercentage: facultyContext?.attendancePercentage ?? 0.0,
+        facultyPriorityContext: facultyContext,
+      );
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch student academic profile');
+    }
   }
 
   @override

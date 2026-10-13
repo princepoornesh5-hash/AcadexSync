@@ -169,9 +169,24 @@ export class TeacherSubstitutionService {
     },
     requester: AuthenticatedUser
   ): Promise<ITeacherSubstitution> {
-    // 1. Authorization: Only SUPER_ADMIN, COLLEGE_ADMIN, and HOD can manage substitutions
-    if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
-      throw ApiError.forbidden('Only administrators and HODs are permitted to manage teacher substitutions');
+    // 1. Authorization: SUPER_ADMIN, COLLEGE_ADMIN, HOD, and FACULTY (for self-takeover)
+    let authenticatedFacultyDoc: any = null;
+
+    if (requester.role === AppRole.FACULTY) {
+      authenticatedFacultyDoc = await Faculty.findOne({
+        $or: [{ userId: requester.id }, { _id: requester.id }],
+        collegeId: requester.collegeId,
+      });
+      if (!authenticatedFacultyDoc) {
+        throw ApiError.forbidden('Faculty profile not found');
+      }
+
+      // Faculty can only create substitution for THEMSELVES as the substitute
+      if (data.substituteFacultyId.toString() !== authenticatedFacultyDoc._id.toString()) {
+        throw ApiError.forbidden('Faculty cannot assign another teacher as substitute. Only HOD or the substitute themselves can initiate class takeover.');
+      }
+    } else if (![AppRole.SUPER_ADMIN, AppRole.COLLEGE_ADMIN, AppRole.HOD].includes(requester.role)) {
+      throw ApiError.forbidden('Only administrators, HODs, or authorized faculty are permitted to manage teacher substitutions');
     }
 
     // 2. Resolve target Timetable
@@ -189,9 +204,12 @@ export class TeacherSubstitutionService {
       throw ApiError.forbidden('Cross-college teacher substitution is strictly prohibited');
     }
 
-    // Department verification for HOD
+    // Department verification for HOD and Faculty
     if (requester.role === AppRole.HOD && requester.departmentId && timetable.departmentId.toString() !== requester.departmentId) {
       throw ApiError.forbidden('HOD can only manage teacher substitutions within their assigned department');
+    }
+    if (requester.role === AppRole.FACULTY && authenticatedFacultyDoc && authenticatedFacultyDoc.departmentId.toString() !== timetable.departmentId.toString()) {
+      throw ApiError.forbidden('Faculty can only take over classes within their assigned department');
     }
 
     // 3. Resolve target timetable entry

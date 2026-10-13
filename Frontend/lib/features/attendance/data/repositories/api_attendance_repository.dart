@@ -88,6 +88,11 @@ class ApiAttendanceRepository implements AttendanceRepository {
             academicStage: academicStage,
             date: date,
             isAttendanceMarked: item['isAttendanceMarked'] == true,
+            isSubstitution: item['isSubstitution'] == true || item['isSubstituted'] == true,
+            originalFacultyName: item['originalFacultyName']?.toString(),
+            originalFacultyId: item['originalFacultyId']?.toString(),
+            substitutionReason: item['substitutionReason']?.toString(),
+            substitutionId: item['substitutionId']?.toString(),
           );
         }).toList();
       }
@@ -365,6 +370,12 @@ class ApiAttendanceRepository implements AttendanceRepository {
       }
       if (session.facultyAssignmentId != null && session.facultyAssignmentId!.isNotEmpty) {
         payload['facultyAssignmentId'] = session.facultyAssignmentId;
+      }
+      if (session.isSubstitution) {
+        payload['isSubstitution'] = true;
+        if (session.substitutionId != null && session.substitutionId!.isNotEmpty) {
+          payload['substitutionId'] = session.substitutionId;
+        }
       }
       final response = await _client.dio.post('/attendance/sessions', data: payload);
       return response.statusCode == 200 || response.statusCode == 201;
@@ -792,5 +803,136 @@ class ApiAttendanceRepository implements AttendanceRepository {
       endDate: dateRange?.endDate ?? now,
       attendancePercentage: 0.0,
     );
+  }
+
+  @override
+  Future<Map<String, dynamic>> getHistoricalRoster({
+    required String academicYearId,
+    required String semesterId,
+    String? sectionId,
+    String? subjectId,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'academicYearId': academicYearId,
+        'semesterId': semesterId,
+        if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
+        if (subjectId != null && subjectId.isNotEmpty) 'subjectId': subjectId,
+      };
+      final response = await _client.dio.get(
+        '/attendance/historical/roster',
+        queryParameters: queryParams,
+      );
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      return Map<String, dynamic>.from(data as Map);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch historical attendance roster');
+    }
+  }
+
+  @override
+  Future<AttendanceSession> createDetailedHistoricalSession({
+    required String academicYearId,
+    required String semesterId,
+    String? sectionId,
+    required String subjectId,
+    String? facultyAssignmentId,
+    required DateTime date,
+    required String timeSlot,
+    required List<Map<String, dynamic>> records,
+    String? remarks,
+  }) async {
+    try {
+      final dateStr = '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final payload = <String, dynamic>{
+        'academicYearId': academicYearId,
+        'semesterId': semesterId,
+        if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
+        'subjectId': subjectId,
+        if (facultyAssignmentId != null && facultyAssignmentId.isNotEmpty) 'facultyAssignmentId': facultyAssignmentId,
+        'date': dateStr,
+        'timeSlot': timeSlot,
+        'records': records,
+        if (remarks != null && remarks.isNotEmpty) 'remarks': remarks,
+      };
+      final response = await _client.dio.post(
+        '/attendance/historical/sessions',
+        data: payload,
+      );
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      return AttendanceSession.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to record detailed historical attendance session');
+    }
+  }
+
+  @override
+  Future<List<dynamic>> createHistoricalSummaries({
+    required String academicYearId,
+    required String semesterId,
+    String? sectionId,
+    required String subjectId,
+    required String periodLabel,
+    DateTime? periodStart,
+    DateTime? periodEnd,
+    required List<Map<String, dynamic>> entries,
+  }) async {
+    try {
+      final payload = <String, dynamic>{
+        'academicYearId': academicYearId,
+        'semesterId': semesterId,
+        if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
+        'subjectId': subjectId,
+        'periodLabel': periodLabel,
+        if (periodStart != null)
+          'periodStart': '${periodStart.year.toString().padLeft(4, '0')}-${periodStart.month.toString().padLeft(2, '0')}-${periodStart.day.toString().padLeft(2, '0')}',
+        if (periodEnd != null)
+          'periodEnd': '${periodEnd.year.toString().padLeft(4, '0')}-${periodEnd.month.toString().padLeft(2, '0')}-${periodEnd.day.toString().padLeft(2, '0')}',
+        'entries': entries,
+      };
+      final response = await _client.dio.post(
+        '/attendance/historical/summaries',
+        data: payload,
+      );
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      if (data is Map && data['summaries'] is List) {
+        return data['summaries'] as List<dynamic>;
+      }
+      if (data is List) return data;
+      return [];
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to record historical attendance summaries');
+    }
+  }
+
+  @override
+  Future<AttendanceRecord> correctHistoricalStudentAttendance({
+    String? recordId,
+    String? sessionId,
+    String? studentEnrollmentId,
+    required AttendanceStatus newStatus,
+    required String reason,
+  }) async {
+    try {
+      final payload = <String, dynamic>{
+        if (recordId != null) 'recordId': recordId,
+        if (sessionId != null) 'sessionId': sessionId,
+        if (studentEnrollmentId != null) 'studentEnrollmentId': studentEnrollmentId,
+        'newStatus': newStatus.name,
+        'reason': reason,
+      };
+      final response = await _client.dio.post(
+        '/attendance/historical/records/student',
+        data: payload,
+      );
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      return AttendanceRecord.fromJson(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to correct historical student attendance');
+    }
   }
 }

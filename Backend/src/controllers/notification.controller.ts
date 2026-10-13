@@ -4,7 +4,12 @@ import { ApiResponse } from '../utils/apiResponse';
 
 export class NotificationController {
   static listNotifications = async (req: Request, res: Response): Promise<void> => {
-    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
+    const scope = (req.query.scope as string)?.toLowerCase();
+    const collegeId =
+      scope === 'all' || scope === 'global'
+        ? 'global'
+        : req.collegeId || req.user?.collegeId?.toString() || 'global';
+
     const result = await NotificationService.listNotifications(
       req.user!.id,
       collegeId,
@@ -14,70 +19,67 @@ export class NotificationController {
   };
 
   static getUnreadCount = async (req: Request, res: Response): Promise<void> => {
-    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
-    const count = await NotificationService.getUnreadCount(
-      req.user!.id,
-      collegeId
-    );
+    const scope = (req.query.scope as string)?.toLowerCase();
+    const collegeId =
+      scope === 'all' || scope === 'global'
+        ? 'global'
+        : req.collegeId || req.user?.collegeId?.toString() || 'global';
+
+    const count = await NotificationService.getUnreadCount(req.user!.id, collegeId);
     ApiResponse.success(res, { unreadCount: count }, 'Unread count retrieved');
   };
 
   static getById = async (req: Request, res: Response): Promise<void> => {
-    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
+    // Cross-workspace lookup by recipient user ownership
     const notification = await NotificationService.getNotificationById(
       req.params.id,
       req.user!.id,
-      collegeId
+      'global'
     );
     ApiResponse.success(res, notification, 'Notification retrieved');
   };
 
   static markAsRead = async (req: Request, res: Response): Promise<void> => {
-    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
+    // Cross-workspace mark-as-read by recipient user ownership
     const notification = await NotificationService.markAsRead(
       req.params.id,
       req.user!.id,
-      collegeId
+      'global'
     );
     ApiResponse.success(res, notification, 'Notification marked as read');
   };
 
   static markAsUnread = async (req: Request, res: Response): Promise<void> => {
-    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
     const notification = await NotificationService.markAsUnread(
       req.params.id,
       req.user!.id,
-      collegeId
+      'global'
     );
     ApiResponse.success(res, notification, 'Notification marked as unread');
   };
 
   static archive = async (req: Request, res: Response): Promise<void> => {
-    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
     const notification = await NotificationService.archiveNotification(
       req.params.id,
       req.user!.id,
-      collegeId
+      'global'
     );
     ApiResponse.success(res, notification, 'Notification archived');
   };
 
   static delete = async (req: Request, res: Response): Promise<void> => {
-    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
-    await NotificationService.deleteNotification(
-      req.params.id,
-      req.user!.id,
-      collegeId
-    );
+    await NotificationService.deleteNotification(req.params.id, req.user!.id, 'global');
     ApiResponse.success(res, null, 'Notification deleted successfully');
   };
 
   static markAllAsRead = async (req: Request, res: Response): Promise<void> => {
-    const collegeId = req.collegeId || req.user?.collegeId?.toString() || 'global';
-    const result = await NotificationService.markAllAsRead(
-      req.user!.id,
-      collegeId
-    );
+    const scope = (req.query.scope as string)?.toLowerCase();
+    const collegeId =
+      scope === 'all' || scope === 'global'
+        ? 'global'
+        : req.collegeId || req.user?.collegeId?.toString() || 'global';
+
+    const result = await NotificationService.markAllAsRead(req.user!.id, collegeId);
     ApiResponse.success(res, result, 'All notifications marked as read');
   };
 
@@ -95,10 +97,7 @@ export class NotificationController {
   };
 
   static getPreferences = async (req: Request, res: Response): Promise<void> => {
-    const preferences = await NotificationService.getPreferences(
-      req.user!.id,
-      req.collegeId
-    );
+    const preferences = await NotificationService.getPreferences(req.user!.id, req.collegeId);
     ApiResponse.success(res, preferences, 'Notification preferences retrieved');
   };
 

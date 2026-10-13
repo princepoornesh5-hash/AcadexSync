@@ -2,6 +2,22 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+class StaleWorkspaceResponseException implements Exception {
+  final String? requestWorkspaceId;
+  final int currentWorkspaceEpoch;
+  final int requestEpoch;
+
+  const StaleWorkspaceResponseException({
+    this.requestWorkspaceId,
+    required this.currentWorkspaceEpoch,
+    required this.requestEpoch,
+  });
+
+  @override
+  String toString() =>
+      'StaleWorkspaceResponseException: Discarded response from prior workspace epoch ($requestEpoch vs current $currentWorkspaceEpoch)';
+}
+
 class ApiClient {
   static const String _envBaseUrl = String.fromEnvironment('API_BASE_URL');
   static const String _envAiUrl = String.fromEnvironment('AI_BASE_URL');
@@ -30,6 +46,15 @@ class ApiClient {
 
   static const String keyAccessToken = 'access_token';
   static const String keyRefreshToken = 'refresh_token';
+  static const String keyActiveWorkspaceId = 'active_workspace_id';
+
+  int _workspaceEpoch = 0;
+  int get currentWorkspaceEpoch => _workspaceEpoch;
+
+  void incrementWorkspaceEpoch() {
+    _workspaceEpoch++;
+    debugPrint('[API_CLIENT] Advanced workspace epoch to $_workspaceEpoch');
+  }
 
   late final Dio dio;
   late final Dio aiDio;
@@ -71,9 +96,43 @@ class ApiClient {
             if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';
             }
+            final workspaceId = await _storage.read(key: keyActiveWorkspaceId);
+            if (workspaceId != null && workspaceId.isNotEmpty) {
+              options.headers['X-Workspace-Id'] = workspaceId;
+            }
+            options.extra['workspace_epoch'] = _workspaceEpoch;
+            options.extra['request_workspace_id'] = workspaceId;
           } catch (_) {}
           return handler.next(options);
         },
+
+        onResponse: (response, handler) {
+          final reqEpoch = response.requestOptions.extra['workspace_epoch'];
+          final isAuthOrSwitch = response.requestOptions.path.contains('/auth/login') ||
+              response.requestOptions.path.contains('/auth/refresh') ||
+              response.requestOptions.path.contains('/auth/activate') ||
+              response.requestOptions.path.contains('/workspaces/switch');
+
+          if (!isAuthOrSwitch && reqEpoch != null && reqEpoch != _workspaceEpoch) {
+            debugPrint(
+              '[API_CLIENT] Discarding response from stale workspace epoch $reqEpoch (current is $_workspaceEpoch)',
+            );
+            return handler.reject(
+              DioException(
+                requestOptions: response.requestOptions,
+                error: StaleWorkspaceResponseException(
+                  requestWorkspaceId:
+                      response.requestOptions.extra['request_workspace_id'] as String?,
+                  currentWorkspaceEpoch: _workspaceEpoch,
+                  requestEpoch: reqEpoch as int,
+                ),
+                type: DioExceptionType.unknown,
+              ),
+            );
+          }
+          return handler.next(response);
+        },
+
         onError: (DioException error, handler) async {
           final isAuthEndpoint = error.requestOptions.path.contains('/auth/login') ||
               error.requestOptions.path.contains('/auth/refresh') ||
@@ -148,16 +207,29 @@ class ApiClient {
   }
 
   Future<void> clearTokens() async {
+    incrementWorkspaceEpoch();
     try {
       await _storage.delete(key: keyAccessToken);
       await _storage.delete(key: keyRefreshToken);
+      await _storage.delete(key: keyActiveWorkspaceId);
     } catch (_) {}
   }
 
   Future<void> clearToken() async => clearTokens();
 
+  Future<void> setActiveWorkspace(String? workspaceId) async {
+    if (workspaceId != null && workspaceId.isNotEmpty) {
+      await _storage.write(key: keyActiveWorkspaceId, value: workspaceId);
+    } else {
+      await _storage.delete(key: keyActiveWorkspaceId);
+    }
+  }
+
+  Future<String?> getActiveWorkspace() async => _storage.read(key: keyActiveWorkspaceId);
+
   Future<String?> getToken() async => _storage.read(key: keyAccessToken);
   Future<String?> getRefreshToken() async => _storage.read(key: keyRefreshToken);
+
 }
 
 final apiClient = ApiClient();

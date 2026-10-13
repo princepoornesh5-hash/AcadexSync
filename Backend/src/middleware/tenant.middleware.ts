@@ -109,3 +109,56 @@ export function buildTenantFilter(req: Request, baseFilter: Record<string, unkno
     collegeId: req.user.collegeId,
   };
 }
+
+/**
+ * Department Scope Guard Middleware:
+ * Ensures HOD users cannot access or mutate resources outside their assigned department.
+ * SUPER_ADMIN and COLLEGE_ADMIN are exempt within authorized college.
+ */
+export function requireDepartmentScope(
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): void {
+  if (!req.user) {
+    return next(ApiError.unauthorized('User authentication required for department validation'));
+  }
+
+  // Super Admin and College Admin have college-wide privileges
+  if (req.user.role === AppRole.SUPER_ADMIN || req.user.role === AppRole.COLLEGE_ADMIN) {
+    return next();
+  }
+
+  // HOD must remain strictly within assigned department scope
+  if (req.user.role === AppRole.HOD) {
+    const userDeptId = req.user.departmentId;
+    const authorizedDepts = req.user.authorizedDepartmentIds || (userDeptId ? [userDeptId] : []);
+
+    if (!userDeptId && authorizedDepts.length === 0) {
+      return next(ApiError.forbidden('HOD is not assigned to any department'));
+    }
+
+    const targetDeptId =
+      req.params.departmentId ||
+      (req.query.departmentId as string) ||
+      req.body?.departmentId;
+
+    if (targetDeptId) {
+      const targetStr = targetDeptId.toString();
+      const isAuthorized =
+        (userDeptId && userDeptId.toString() === targetStr) ||
+        authorizedDepts.includes(targetStr);
+
+      if (!isAuthorized) {
+        return next(
+          ApiError.forbidden(
+            'Cross-department access is strictly prohibited. You may only access your assigned department resources.'
+          )
+        );
+      }
+    }
+  }
+
+  return next();
+}
+

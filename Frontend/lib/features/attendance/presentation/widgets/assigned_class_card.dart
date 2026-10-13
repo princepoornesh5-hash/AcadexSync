@@ -139,6 +139,38 @@ class AssignedClassCard extends StatelessWidget {
                           ],
                         ],
                       ),
+                      if (assignedClass.isSubstitution) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isDark ? AcadexColors.warning.withValues(alpha: 0.15) : AcadexColors.warningLight,
+                            borderRadius: AcadexRadius.borderRadiusSm,
+                            border: Border.all(
+                              color: isDark ? AcadexColors.warning.withValues(alpha: 0.3) : AcadexColors.warning.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(LucideIcons.repeat, size: 12, color: AcadexColors.warning),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  assignedClass.originalFacultyName != null && assignedClass.originalFacultyName!.isNotEmpty
+                                      ? 'Substitution: Covering for ${assignedClass.originalFacultyName}'
+                                      : 'Substitution Coverage',
+                                  style: AcadexTypography.caption(
+                                    color: AcadexColors.warning,
+                                  ).copyWith(fontWeight: FontWeight.w600, fontSize: 11),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -154,6 +186,14 @@ class AssignedClassCard extends StatelessWidget {
                               variant: AcadexBadgeVariant.warning,
                               icon: LucideIcons.clock,
                             ),
+                          if (assignedClass.isSubstitution) ...[
+                            const SizedBox(width: 8),
+                            const AcadexBadge(
+                              label: 'Substitution',
+                              variant: AcadexBadgeVariant.warning,
+                              icon: LucideIcons.repeat,
+                            ),
+                          ],
                           if (assignedClass.roomNumber != null && assignedClass.roomNumber!.isNotEmpty) ...[
                             const SizedBox(width: 8),
                             AcadexBadge(

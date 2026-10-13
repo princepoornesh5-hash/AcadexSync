@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { DepartmentAnalyticsService } from '../services/departmentAnalytics.service';
+import { AcademicAnalyticsService } from '../services/academicAnalytics.service';
 import { ApiResponse } from '../utils/apiResponse';
 import { ApiError } from '../utils/apiError';
 import { departmentAnalyticsQuerySchema } from '../validations/departmentAnalytics.validation';
@@ -44,6 +45,13 @@ export class DepartmentAnalyticsController {
     if (!req.user) throw ApiError.unauthorized('Authentication required');
     const query = departmentAnalyticsQuerySchema.parse(req.query);
     const result = await DepartmentAnalyticsService.getTrendAnalytics(req.user, query);
+    return ApiResponse.success(res, result);
+  };
+
+  static getAssessments = async (req: Request, res: Response): Promise<Response> => {
+    if (!req.user) throw ApiError.unauthorized('Authentication required');
+    const query = departmentAnalyticsQuerySchema.parse(req.query);
+    const result = await AcademicAnalyticsService.getAssessmentAnalytics(req.user, query);
     return ApiResponse.success(res, result);
   };
 }

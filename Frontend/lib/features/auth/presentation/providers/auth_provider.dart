@@ -178,6 +178,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Best effort remote logout
     } finally {
       await _sessionManager.clearSession();
+      await _apiClient.clearTokens();
       _invalidateUserScopedCaches();
       state = const AuthUnauthenticated();
     }
@@ -195,6 +196,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Best effort remote logout
     } finally {
       await _sessionManager.clearSession();
+      await _apiClient.clearTokens();
       _invalidateUserScopedCaches();
       state = const AuthUnauthenticated();
     }
@@ -214,6 +216,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = AuthAuthenticated(user: updatedUser, token: currentState.token);
     }
   }
+
 
   Future<void> changePassword({
     required String currentPassword,

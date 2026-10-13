@@ -583,12 +583,12 @@ describe('ACADEX Phase 9H.1 — Student Management & Enrollment Tests', () => {
     expect(resHodA.status).toBe(200);
     expect(resHodA.body.data.items).toHaveLength(3);
 
-    // 28. Faculty A1 sees deptA1 students
+    // 28. Faculty A1 without assignments sees 0 students (Prompt 6: visibility must derive from FacultyAssignments, not department)
     const resFacA = await request(app)
       .get('/api/v1/academics/students')
       .set(facultyA1Header);
     expect(resFacA.status).toBe(200);
-    expect(resFacA.body.data.items).toHaveLength(3);
+    expect(resFacA.body.data.items).toHaveLength(0);
   });
 
   it('29, 30, 31. Student sees own profile only, cross-college and cross-dept access rejected', async () => {

@@ -115,10 +115,25 @@ class MockAcademicRepo implements AcademicRepository {
   }
 
   @override
-  Future<List<Student>> getStudents({String? sectionId, String? departmentId}) async {
+  Future<List<Student>> getStudents({
+    String? departmentId,
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? sectionId,
+    String? search,
+    String? status,
+  }) async {
     var res = students;
     if (departmentId != null) res = res.where((s) => s.departmentId == departmentId).toList();
+    if (courseId != null) res = res.where((s) => s.courseId == courseId).toList();
+    if (academicYearId != null) res = res.where((s) => s.academicYearId == academicYearId).toList();
+    if (semesterId != null) res = res.where((s) => s.semesterId == semesterId).toList();
     if (sectionId != null) res = res.where((s) => s.sectionId == sectionId).toList();
+    if (search != null && search.isNotEmpty) {
+      final q = search.toLowerCase();
+      res = res.where((s) => s.name.toLowerCase().contains(q) || s.rollNumber.toLowerCase().contains(q)).toList();
+    }
     return res;
   }
 

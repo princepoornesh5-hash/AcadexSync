@@ -2,6 +2,12 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export enum AssessmentStatus {
   DRAFT = 'DRAFT',
+  SCHEDULED = 'SCHEDULED',
+  COMPLETED = 'COMPLETED',
+  MARKS_ENTRY = 'MARKS_ENTRY',
+  SUBMITTED = 'SUBMITTED',
+  LOCKED = 'LOCKED',
+  // Backward compatibility with legacy workflow
   OPEN = 'OPEN',
   CLOSED = 'CLOSED',
   REVIEWED = 'REVIEWED',
@@ -11,10 +17,14 @@ export enum AssessmentStatus {
 
 export enum AssessmentType {
   UNIT_TEST = 'UNIT_TEST',
+  INTERNAL = 'INTERNAL',
   INTERNAL_EXAM = 'INTERNAL_EXAM',
+  MID_TERM = 'MID_TERM',
+  MODEL_EXAM = 'MODEL_EXAM',
+  LAB_EXAM = 'LAB_EXAM',
+  PRACTICAL = 'PRACTICAL',
   QUIZ = 'QUIZ',
   ASSIGNMENT = 'ASSIGNMENT',
-  PRACTICAL = 'PRACTICAL',
   PROJECT = 'PROJECT',
   OTHER = 'OTHER',
 }
@@ -22,8 +32,11 @@ export enum AssessmentType {
 export enum StudentMarkStatus {
   NOT_ENTERED = 'NOT_ENTERED',
   ENTERED = 'ENTERED',
+  PRESENT = 'PRESENT',
   ABSENT = 'ABSENT',
   EXCUSED = 'EXCUSED',
+  EXEMPTED = 'EXEMPTED',
+  NOT_APPEARED = 'NOT_APPEARED',
 }
 
 export interface IAssessmentComponent {
@@ -56,6 +69,28 @@ export interface IAssessmentAuditEntry {
   newValue?: Record<string, unknown> | null;
 }
 
+export interface IAssessmentSchedule {
+  date: Date | string;
+  dateString?: string;
+  startTime?: string | null;
+  endTime?: string | null;
+  roomId?: mongoose.Types.ObjectId | null;
+  roomNumber?: string | null;
+  building?: string | null;
+  invigilatorFacultyId?: mongoose.Types.ObjectId | null;
+  invigilatorName?: string | null;
+  instructions?: string | null;
+  status?: 'SCHEDULED' | 'RESCHEDULED' | 'CANCELLED' | 'COMPLETED';
+}
+
+export interface IAssessmentCorrectionScope {
+  requestId: mongoose.Types.ObjectId;
+  studentEnrollmentIds: mongoose.Types.ObjectId[];
+  unlockedAt: Date;
+  unlockedBy: mongoose.Types.ObjectId;
+  reason?: string;
+}
+
 export interface IInternalAssessment extends Document {
   collegeId: mongoose.Types.ObjectId;
   departmentId: mongoose.Types.ObjectId;
@@ -70,16 +105,27 @@ export interface IInternalAssessment extends Document {
   title: string;
   assessmentType: AssessmentType;
   maximumMarks: number;
+  passMarks?: number;
+  weightage?: number;
+  description?: string | null;
   assessmentDate?: Date;
+  schedule?: IAssessmentSchedule | null;
   components: IAssessmentComponent[];
   entries: IStudentAssessmentEntry[];
   status: AssessmentStatus;
+  submittedAt?: Date;
+  submittedBy?: mongoose.Types.ObjectId;
   publishedAt?: Date;
   publishedBy?: mongoose.Types.ObjectId;
   reviewedAt?: Date;
   reviewedBy?: mongoose.Types.ObjectId;
   lockedAt?: Date;
   lockedBy?: mongoose.Types.ObjectId;
+  correctionScope?: IAssessmentCorrectionScope | null;
+  sourceType?: 'LIVE' | 'IMPORTED' | 'HISTORICAL_MANUAL';
+  importBatchId?: string;
+  createdBy?: mongoose.Types.ObjectId | null;
+  updatedBy?: mongoose.Types.ObjectId | null;
   auditLog: IAssessmentAuditEntry[];
   createdAt: Date;
   updatedAt: Date;
@@ -144,11 +190,15 @@ const InternalAssessmentSchema = new Schema<IInternalAssessment>(
     assessmentType: {
       type: String,
       enum: Object.values(AssessmentType),
-      default: AssessmentType.INTERNAL_EXAM,
+      default: AssessmentType.INTERNAL,
       index: true,
     },
     maximumMarks: { type: Number, default: 0 },
+    passMarks: { type: Number, default: 0 },
+    weightage: { type: Number, default: 0 },
+    description: { type: String, default: null, trim: true },
     assessmentDate: { type: Date, default: null },
+    schedule: { type: Schema.Types.Mixed, default: null },
     components: [AssessmentComponentSchema],
     entries: [StudentAssessmentEntrySchema],
     status: {
@@ -157,12 +207,23 @@ const InternalAssessmentSchema = new Schema<IInternalAssessment>(
       default: AssessmentStatus.DRAFT,
       index: true,
     },
+    submittedAt: { type: Date, default: null },
+    submittedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     publishedAt: { type: Date, default: null },
     publishedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     reviewedAt: { type: Date, default: null },
     reviewedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     lockedAt: { type: Date, default: null },
     lockedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    correctionScope: { type: Schema.Types.Mixed, default: null },
+    sourceType: {
+      type: String,
+      enum: ['LIVE', 'IMPORTED', 'HISTORICAL_MANUAL'],
+      default: 'LIVE',
+    },
+    importBatchId: { type: String, default: null, index: true },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    updatedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     auditLog: [AssessmentAuditEntrySchema],
   },
   {
@@ -183,6 +244,8 @@ const InternalAssessmentSchema = new Schema<IInternalAssessment>(
         if (ret.publishedBy) ret.publishedBy = ret.publishedBy.toString();
         if (ret.reviewedBy) ret.reviewedBy = ret.reviewedBy.toString();
         if (ret.lockedBy) ret.lockedBy = ret.lockedBy.toString();
+        if (ret.createdBy) ret.createdBy = ret.createdBy.toString();
+        if (ret.updatedBy) ret.updatedBy = ret.updatedBy.toString();
         delete ret.__v;
         return ret;
       },
@@ -190,17 +253,33 @@ const InternalAssessmentSchema = new Schema<IInternalAssessment>(
   }
 );
 
+// Decoupled: allow multiple assessments for the same section & subject, with compound query indexing
 InternalAssessmentSchema.index(
-  { collegeId: 1, academicYearId: 1, semesterId: 1, sectionId: 1, subjectId: 1 },
-  { unique: true }
+  { collegeId: 1, academicYearId: 1, semesterId: 1, sectionId: 1, subjectId: 1 }
+);
+
+// Prevent accidental duplicate titles for the exact same teaching assignment
+InternalAssessmentSchema.index(
+  { collegeId: 1, facultyAssignmentId: 1, title: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: { $ne: 'ARCHIVED' },
+      facultyAssignmentId: { $type: 'objectId' },
+    },
+  }
 );
 
 InternalAssessmentSchema.index({ collegeId: 1, sectionId: 1 });
 InternalAssessmentSchema.index({ collegeId: 1, subjectId: 1 });
-InternalAssessmentSchema.index({ collegeId: 1, facultyAssignmentId: 1 });
+InternalAssessmentSchema.index({ collegeId: 1, facultyAssignmentId: 1, status: 1 });
 InternalAssessmentSchema.index({ collegeId: 1, departmentId: 1, status: 1 });
 
 export const InternalAssessment = mongoose.model<IInternalAssessment>(
   'InternalAssessment',
   InternalAssessmentSchema
 );
+
+// Canonical model and interface aliases
+export const Assessment = InternalAssessment;
+export type IAssessment = IInternalAssessment;

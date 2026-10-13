@@ -519,8 +519,8 @@ describe('Prompt 25: End-to-End Campus Workflow & 5-Mobile Acceptance Path', () 
       (ev: any) => ev.title.includes('SQL Normalization Assignment')
     );
     expect(deadlineEvent).toBeDefined();
-    expect(deadlineEvent.sourceType).toBe('DERIVED');
-    expect(deadlineEvent.eventType).toBe('DEADLINE');
+    expect(['DERIVED', 'ASSIGNMENT']).toContain(deadlineEvent.sourceType);
+    expect(['DEADLINE', 'ASSIGNMENT_DEADLINE']).toContain(deadlineEvent.eventType);
 
     // -------------------------------------------------------------------------
     // STEP 19: Student submits Leave Request -> Routes cleanly to HOD

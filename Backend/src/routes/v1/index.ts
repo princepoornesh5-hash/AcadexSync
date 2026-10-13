@@ -25,6 +25,8 @@ import academicRecordRouter from './academicRecord.routes';
 import academicResultRouter from './academicResult.routes';
 import { profileRouter } from './profile.routes';
 import { dashboardRouter } from './dashboard.routes';
+import importRouter from './import.routes';
+import { workspaceRouter } from './workspace.routes';
 
 const router = Router();
 
@@ -57,5 +59,7 @@ router.use('/calendar', academicCalendarRouter);
 router.use('/audit', auditRouter);
 router.use('/reports', reportRouter);
 router.use('/analytics', analyticsRouter);
+router.use('/imports', importRouter);
+router.use('/workspaces', workspaceRouter);
 
 export const v1Router = router;

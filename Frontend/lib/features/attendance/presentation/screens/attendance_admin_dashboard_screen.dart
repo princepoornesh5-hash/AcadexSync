@@ -233,6 +233,18 @@ class AttendanceAdminDashboardScreen extends ConsumerWidget {
             ),
           ),
         ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () => context.push('/attendance/historical'),
+            icon: const Icon(LucideIcons.calendarClock, size: 18),
+            label: const Text('Historical Entry'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
       ],
     );
   }

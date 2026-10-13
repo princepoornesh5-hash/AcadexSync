@@ -122,6 +122,16 @@ class AcadexNavigationService {
       matchingPrefixes: const ['/academics/colleges'],
     ),
     AcadexNavItem(
+      id: 'students',
+      label: 'Students',
+      icon: LucideIcons.graduationCap,
+      route: '/academics/students',
+      group: AcadexNavGroup.academics,
+      allowedRoles: const [AppRole.collegeAdmin, AppRole.hod, AppRole.faculty],
+      isPrimary: true,
+      matchingPrefixes: const ['/academics/students'],
+    ),
+    AcadexNavItem(
       id: 'my_classes',
       label: 'My Classes',
       icon: LucideIcons.bookOpen,

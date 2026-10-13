@@ -49,6 +49,7 @@ router.put('/students/:id', StudentController.updateProfile);
 router.patch('/students/:id/institute-id', requireHodOrAbove, StudentController.correctInstituteId);
 router.patch('/students/:id/department', requireCollegeAdmin, StudentController.transferDepartment);
 router.get('/students/:id/summary', StudentController.getSummary);
+router.get('/students/:id/360', StudentController.getStudent360);
 
 // Academic Structure & Tree (Phase 9I.1)
 router.get('/tree', AcademicController.getAcademicTree);

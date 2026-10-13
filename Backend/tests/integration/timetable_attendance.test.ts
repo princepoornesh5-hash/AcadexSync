@@ -6,6 +6,16 @@ import mongoose from 'mongoose';
 import { Student } from '../../src/models/student.model';
 import { StudentEnrollment } from '../../src/models/studentEnrollment.model';
 
+import { Department } from '../../src/models/department.model';
+import { Course } from '../../src/models/course.model';
+import { AcademicYear } from '../../src/models/academicYear.model';
+import { Semester } from '../../src/models/semester.model';
+import { Section } from '../../src/models/section.model';
+import { Subject } from '../../src/models/subject.model';
+import { Faculty } from '../../src/models/faculty.model';
+import { FacultyAssignment } from '../../src/models/facultyAssignment.model';
+import { DepartmentStatus } from '../../src/constants/status';
+
 describe('Timetable & Attendance Integration Tests', () => {
   const collegeId = new mongoose.Types.ObjectId().toString();
   const departmentId = new mongoose.Types.ObjectId().toString();
@@ -27,6 +37,91 @@ describe('Timetable & Attendance Integration Tests', () => {
 
   beforeEach(async () => {
     await clearTestDB();
+
+    await Department.create({
+      _id: new mongoose.Types.ObjectId(departmentId),
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      name: 'Computer Science',
+      code: 'CS',
+      status: DepartmentStatus.ACTIVE,
+    });
+
+    await Course.create({
+      _id: new mongoose.Types.ObjectId(courseId),
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      departmentId: new mongoose.Types.ObjectId(departmentId),
+      name: 'B.Sc Computer Science',
+      code: 'BSCCS',
+      duration: 4,
+    });
+
+    await AcademicYear.create({
+      _id: new mongoose.Types.ObjectId(academicYearId),
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      name: '2026-2027',
+      startDate: new Date('2026-06-01'),
+      endDate: new Date('2027-05-31'),
+      isCurrent: true,
+    });
+
+    await Semester.create({
+      _id: new mongoose.Types.ObjectId(semesterId),
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      departmentId: new mongoose.Types.ObjectId(departmentId),
+      courseId: new mongoose.Types.ObjectId(courseId),
+      academicYearId: new mongoose.Types.ObjectId(academicYearId),
+      name: 'Semester 5',
+      number: 5,
+    });
+
+    await Section.create({
+      _id: new mongoose.Types.ObjectId(sectionId),
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      departmentId: new mongoose.Types.ObjectId(departmentId),
+      courseId: new mongoose.Types.ObjectId(courseId),
+      semesterId: new mongoose.Types.ObjectId(semesterId),
+      name: 'Section A',
+      capacity: 60,
+    });
+
+    await Subject.create({
+      _id: new mongoose.Types.ObjectId(subjectId),
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      departmentId: new mongoose.Types.ObjectId(departmentId),
+      courseId: new mongoose.Types.ObjectId(courseId),
+      semesterId: new mongoose.Types.ObjectId(semesterId),
+      name: 'Operating Systems',
+      code: 'CS501',
+      credits: 4,
+      status: 'active',
+      isActive: true,
+    });
+
+    await Faculty.create({
+      _id: new mongoose.Types.ObjectId(facultyId),
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      departmentId: new mongoose.Types.ObjectId(departmentId),
+      userId: new mongoose.Types.ObjectId(),
+      instituteId: 'FAC-001',
+      name: 'Dr. Turing',
+      email: 'turing@cs.edu',
+      designation: 'Professor',
+      status: 'active',
+      isActive: true,
+    });
+
+    await FacultyAssignment.create({
+      collegeId: new mongoose.Types.ObjectId(collegeId),
+      departmentId: new mongoose.Types.ObjectId(departmentId),
+      facultyId: new mongoose.Types.ObjectId(facultyId),
+      facultyName: 'Dr. Turing',
+      courseId: new mongoose.Types.ObjectId(courseId),
+      semesterId: new mongoose.Types.ObjectId(semesterId),
+      sectionId: new mongoose.Types.ObjectId(sectionId),
+      subjectId: new mongoose.Types.ObjectId(subjectId),
+      academicYearId: new mongoose.Types.ObjectId(academicYearId),
+      isActive: true,
+    });
   });
 
   it('should create and publish timetable with periods, breaks, and merged entries', async () => {
@@ -52,8 +147,8 @@ describe('Timetable & Attendance Integration Tests', () => {
       breaks: [
         {
           name: 'Tea Break',
-          startTime: '10:00',
-          endTime: '10:15',
+          startTime: '11:00',
+          endTime: '11:15',
           appliesToDays: [TimetableDay.MONDAY, TimetableDay.TUESDAY],
           isVerticalSpan: true,
           breakType: TimetableBreakType.TEA,

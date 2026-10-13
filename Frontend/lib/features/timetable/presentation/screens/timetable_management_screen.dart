@@ -195,14 +195,16 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     super.dispose();
   }
 
-  void _openCreateTimetable({TimetableContainerModel? initialContainer}) {
-    final courses = ref.read(coursesProvider).value ?? [];
-    final academicYears = ref.read(academicYearsProvider).value ?? [];
-    final semesters = ref.read(semestersProvider).value ?? [];
-    final sections = ref.read(sectionsProvider).value ?? [];
-    final subjects = ref.read(subjectsProvider).value ?? [];
-    final facultyAssignments = ref.read(facultyAssignmentsProvider).value ?? [];
-    final rooms = ref.read(roomsProvider).value ?? [];
+  Future<void> _openCreateTimetable({TimetableContainerModel? initialContainer}) async {
+    final courses = await ref.read(coursesProvider.future).catchError((_) => <Course>[]);
+    final academicYears = await ref.read(academicYearsProvider.future).catchError((_) => <AcademicYear>[]);
+    final semesters = await ref.read(semestersProvider.future).catchError((_) => <Semester>[]);
+    final sections = await ref.read(sectionsProvider.future).catchError((_) => <Section>[]);
+    final subjects = await ref.read(subjectsProvider.future).catchError((_) => <Subject>[]);
+    final facultyAssignments = await ref.read(facultyAssignmentsProvider.future).catchError((_) => <FacultyAssignment>[]);
+    final rooms = await ref.read(roomsProvider.future).catchError((_) => <Room>[]);
+
+    if (!mounted) return;
 
     final terminology = ref.read(terminologyProvider);
     final check = AcademicPrerequisiteGuard.checkTimetablePrerequisites(
@@ -419,13 +421,35 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
       ),
       data: (containers) {
         if (containers.isEmpty) {
-          final courses = ref.watch(coursesProvider).value ?? [];
-          final academicYears = ref.watch(academicYearsProvider).value ?? [];
-          final semesters = ref.watch(semestersProvider).value ?? [];
-          final sections = ref.watch(sectionsProvider).value ?? [];
-          final subjects = ref.watch(subjectsProvider).value ?? [];
-          final facultyAssignments = ref.watch(facultyAssignmentsProvider).value ?? [];
-          final rooms = ref.watch(roomsProvider).value ?? [];
+          final coursesAsync = ref.watch(coursesProvider);
+          final academicYearsAsync = ref.watch(academicYearsProvider);
+          final semestersAsync = ref.watch(semestersProvider);
+          final sectionsAsync = ref.watch(sectionsProvider);
+          final subjectsAsync = ref.watch(subjectsProvider);
+          final facultyAssignmentsAsync = ref.watch(facultyAssignmentsProvider);
+          final roomsAsync = ref.watch(roomsProvider);
+
+          final isPrereqLoading = coursesAsync.isLoading ||
+              academicYearsAsync.isLoading ||
+              semestersAsync.isLoading ||
+              sectionsAsync.isLoading ||
+              subjectsAsync.isLoading ||
+              facultyAssignmentsAsync.isLoading ||
+              roomsAsync.isLoading;
+
+          if (isPrereqLoading) {
+            return const Center(
+              child: AcadexLoadingState(message: 'Validating academic prerequisites...'),
+            );
+          }
+
+          final courses = coursesAsync.value ?? [];
+          final academicYears = academicYearsAsync.value ?? [];
+          final semesters = semestersAsync.value ?? [];
+          final sections = sectionsAsync.value ?? [];
+          final subjects = subjectsAsync.value ?? [];
+          final facultyAssignments = facultyAssignmentsAsync.value ?? [];
+          final rooms = roomsAsync.value ?? [];
 
           final terminology = ref.watch(terminologyProvider);
           final prereqCheck = AcademicPrerequisiteGuard.checkTimetablePrerequisites(

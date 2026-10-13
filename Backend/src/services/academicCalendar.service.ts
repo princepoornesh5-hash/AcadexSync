@@ -1140,7 +1140,18 @@ export class AcademicCalendarService {
     const assessmentFilter: any = {
       collegeId: new mongoose.Types.ObjectId(collegeId),
       assessmentDate: { $gte: startDateTime, $lte: endDateTime },
-      status: { $in: [AssessmentStatus.OPEN, AssessmentStatus.CLOSED, AssessmentStatus.REVIEWED, AssessmentStatus.PUBLISHED] },
+      status: {
+        $in: [
+          AssessmentStatus.SCHEDULED,
+          AssessmentStatus.OPEN,
+          AssessmentStatus.CLOSED,
+          AssessmentStatus.REVIEWED,
+          AssessmentStatus.PUBLISHED,
+          AssessmentStatus.MARKS_ENTRY,
+          AssessmentStatus.SUBMITTED,
+          AssessmentStatus.LOCKED,
+        ],
+      },
     };
 
     if (requester.role === AppRole.STUDENT) {
@@ -1165,9 +1176,9 @@ export class AcademicCalendarService {
         scope: CalendarEventScope.CLASS,
         startDate: aDateStr,
         endDate: aDateStr,
-        startTime: null,
-        endTime: null,
-        allDay: true,
+        startTime: (ia as any).schedule?.startTime || null,
+        endTime: (ia as any).schedule?.endTime || null,
+        allDay: !(ia as any).schedule?.startTime,
         departmentId: ia.departmentId?.toString(),
         courseId: ia.courseId?.toString(),
         academicYearId: ia.academicYearId?.toString(),
@@ -1175,7 +1186,7 @@ export class AcademicCalendarService {
         sectionId: ia.sectionId?.toString() || null,
         subjectId: subDoc?._id?.toString() || ia.subjectId?.toString() || null,
         academicContext: subDoc?.name || ia.title,
-        location: null,
+        location: (ia as any).schedule?.roomId ? `Room ${(ia as any).schedule.roomId}` : null,
         isRecurring: false,
         recurrence: CalendarRecurrence.NONE,
         status: CalendarEventStatus.PUBLISHED,

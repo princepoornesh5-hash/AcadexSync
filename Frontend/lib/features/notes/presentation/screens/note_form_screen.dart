@@ -8,7 +8,6 @@ import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../academic_structure/domain/models/academic_models.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../domain/models/note_model.dart';
@@ -43,6 +42,7 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
   String? _selectedSectionId;
   String? _selectedCourseId;
   String? _selectedSemesterId;
+  String? _selectedFacultyAssignmentId;
 
   bool _isInit = false;
 
@@ -62,6 +62,7 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
       _selectedSectionId = widget.existingNote!.sectionId;
       _selectedCourseId = widget.existingNote!.courseId;
       _selectedSemesterId = widget.existingNote!.semesterId;
+      _selectedFacultyAssignmentId = widget.existingNote!.facultyAssignmentId;
     }
   }
 
@@ -362,36 +363,140 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
                         _buildSectionTitle('Academic Context'),
                         Builder(
                           builder: (context) {
-                            List<Subject> availableSubjects = subjectsAsync.value ?? [];
-                            List<Section> availableSections = sectionsAsync.value ?? [];
+                            final isDark = Theme.of(context).brightness == Brightness.dark;
+                            final subjects = subjectsAsync.value ?? [];
+                            final sections = sectionsAsync.value ?? [];
+                            final semesters = semestersAsync.value ?? [];
 
                             if (user.role == AppRole.faculty) {
-                              availableSubjects = ref.watch(facultyAssignedSubjectsProvider(user.id));
-                              if (availableSubjects.isEmpty) {
-                                final myAssignments = ref.watch(myFacultyAssignmentsProvider);
-                                final assignedSubIds = myAssignments.map((a) => a.subjectId).toSet();
-                                availableSubjects = (subjectsAsync.value ?? []).where((s) => assignedSubIds.contains(s.id)).toList();
+                              final myAssignments = ref.watch(myFacultyAssignmentsProvider);
+
+                              if (myAssignments.isEmpty) {
+                                return Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                    borderRadius: AcadexRadius.borderRadiusMd,
+                                    border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      const Icon(LucideIcons.alertCircle, color: AcadexColors.warning, size: 36),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        "No active teaching assignments are available for your account.",
+                                        style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        "Teaching assignments must be allocated by your Head of Department before you can author and publish course study notes.",
+                                        style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                );
                               }
 
-                              if (_selectedSubjectId != null) {
-                                availableSections = ref.watch(facultyAssignedSectionsProvider((facultyId: user.id, subjectId: _selectedSubjectId)));
-                                if (availableSections.isEmpty) {
-                                  final myAssignments = ref.watch(myFacultyAssignmentsProvider);
-                                  final matchingSecIds = myAssignments
-                                      .where((a) => a.subjectId == _selectedSubjectId)
-                                      .map((a) => a.sectionId)
-                                      .toSet();
-                                  availableSections = (sectionsAsync.value ?? []).where((s) => matchingSecIds.contains(s.id)).toList();
+                              // Auto-select if only 1 assignment or match existing
+                              if (!_isInit && widget.existingNote == null) {
+                                _isInit = true;
+                                if (myAssignments.length == 1) {
+                                  final a = myAssignments.first;
+                                  _selectedFacultyAssignmentId = a.id;
+                                  _selectedSubjectId = a.subjectId;
+                                  _selectedSectionId = a.sectionId;
+                                  _selectedSemesterId = a.semesterId;
+                                  _selectedCourseId = a.courseId;
                                 }
-                              } else {
-                                availableSections = ref.watch(facultyAssignedSectionsProvider((facultyId: user.id, subjectId: null)));
+                              } else if (_selectedFacultyAssignmentId == null && _selectedSubjectId != null) {
+                                final match = myAssignments.where((a) => a.subjectId == _selectedSubjectId && (_selectedSectionId == null || a.sectionId == _selectedSectionId)).firstOrNull;
+                                if (match != null) {
+                                  _selectedFacultyAssignmentId = match.id;
+                                }
                               }
-                            } else if (user.role == AppRole.hod && user.departmentId != null) {
+
+                              final currentAssignment = myAssignments.where((a) => a.id == _selectedFacultyAssignmentId).firstOrNull;
+                              final resolvedSubject = currentAssignment != null ? subjects.where((s) => s.id == currentAssignment.subjectId).firstOrNull : null;
+                              final resolvedSection = currentAssignment != null && currentAssignment.sectionId != null ? sections.where((s) => s.id == currentAssignment.sectionId).firstOrNull : null;
+                              final resolvedSemester = currentAssignment != null ? semesters.where((s) => s.id == currentAssignment.semesterId).firstOrNull : null;
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  DropdownButtonFormField<String>(
+                                    decoration: _inputDecoration('Teaching Assignment / Class *'),
+                                    value: _selectedFacultyAssignmentId,
+                                    items: myAssignments.map((a) {
+                                      final subj = subjects.where((s) => s.id == a.subjectId).firstOrNull;
+                                      final sec = sections.where((s) => s.id == a.sectionId).firstOrNull;
+                                      final sem = semesters.where((s) => s.id == a.semesterId).firstOrNull;
+                                      final subTitle = subj != null ? '${subj.name} (${subj.code})' : 'Subject ${a.subjectId}';
+                                      final secTitle = sec != null ? 'Section ${sec.name}' : (a.sectionId != null ? 'Section ${a.sectionId}' : 'All Sections');
+                                      final semTitle = sem != null ? 'Sem ${sem.name}' : '';
+                                      return DropdownMenuItem(
+                                        value: a.id,
+                                        child: Text(
+                                          '$subTitle • $secTitle${semTitle.isNotEmpty ? ' • $semTitle' : ''}',
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: (val) {
+                                      setState(() {
+                                        _selectedFacultyAssignmentId = val;
+                                        final match = myAssignments.where((a) => a.id == val).firstOrNull;
+                                        if (match != null) {
+                                          _selectedSubjectId = match.subjectId;
+                                          _selectedSectionId = match.sectionId;
+                                          _selectedSemesterId = match.semesterId;
+                                          _selectedCourseId = match.courseId;
+                                          if (_selectedCourseId == null || _selectedCourseId!.isEmpty) {
+                                            final subj = subjects.where((s) => s.id == match.subjectId).firstOrNull;
+                                            _selectedCourseId = subj?.courseId;
+                                          }
+                                        }
+                                      });
+                                    },
+                                    validator: (val) => val == null ? 'Please select a teaching assignment' : null,
+                                  ),
+                                  if (currentAssignment != null) ...[
+                                    const SizedBox(height: 12),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                      decoration: BoxDecoration(
+                                        color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+                                        borderRadius: AcadexRadius.borderRadiusMd,
+                                        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(LucideIcons.checkCircle2, size: 16, color: AcadexColors.success),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Verified Teaching Scope: ${resolvedSubject?.name ?? "Subject"} • ${resolvedSection != null ? "Section ${resolvedSection.name}" : "All Sections"}${resolvedSemester != null ? " • Sem ${resolvedSemester.name}" : ""}',
+                                              style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInk : AcadexColors.ink).copyWith(fontWeight: FontWeight.w600),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              );
+                            }
+
+                            // HOD / Admin fallback
+                            var availableSubjects = subjects;
+                            var availableSections = sections;
+                            if (user.role == AppRole.hod && user.departmentId != null) {
                               availableSubjects = availableSubjects.where((s) => s.departmentId == user.departmentId).toList();
                               availableSections = availableSections.where((s) => s.departmentId == user.departmentId).toList();
                             }
 
-                            // Automatically select if only 1 option
                             if (!_isInit && widget.existingNote == null) {
                               if (availableSubjects.length == 1) _selectedSubjectId = availableSubjects.first.id;
                               if (availableSections.length == 1) _selectedSectionId = availableSections.first.id;
@@ -402,7 +507,7 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
                               children: [
                                 DropdownButtonFormField<String>(
                                   decoration: _inputDecoration('Subject *'),
-                                  initialValue: _selectedSubjectId,
+                                  value: _selectedSubjectId,
                                   items: availableSubjects
                                       .map((s) => DropdownMenuItem(value: s.id, child: Text('${s.code} - ${s.name}')))
                                       .toList(),
@@ -411,10 +516,10 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
                                       _selectedSubjectId = val;
                                       _selectedSectionId = null;
                                       if (val != null) {
-                                        final subj = (subjectsAsync.value ?? []).where((s) => s.id == val).firstOrNull;
+                                        final subj = subjects.where((s) => s.id == val).firstOrNull;
                                         if (subj != null) {
                                           _selectedSemesterId = subj.semesterId;
-                                          final sem = (semestersAsync.value ?? []).where((s) => s.id == subj.semesterId).firstOrNull;
+                                          final sem = semesters.where((s) => s.id == subj.semesterId).firstOrNull;
                                           if (sem != null) {
                                             _selectedCourseId = sem.courseId;
                                           }
@@ -427,7 +532,7 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
                                 const SizedBox(height: 16),
                                 DropdownButtonFormField<String>(
                                   decoration: _inputDecoration('Section *'),
-                                  initialValue: _selectedSectionId,
+                                  value: _selectedSectionId,
                                   items: availableSections
                                       .map((s) => DropdownMenuItem(value: s.id, child: Text("Section ${s.name}")))
                                       .toList(),
@@ -435,7 +540,7 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
                                     setState(() {
                                       _selectedSectionId = val;
                                       if (val != null && _selectedSemesterId == null) {
-                                        final sect = (sectionsAsync.value ?? []).where((s) => s.id == val).firstOrNull;
+                                        final sect = sections.where((s) => s.id == val).firstOrNull;
                                         if (sect != null) {
                                           _selectedSemesterId = sect.semesterId;
                                         }
@@ -577,6 +682,7 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
           courseId: _selectedCourseId,
           departmentId: user.departmentId,
           sectionId: _selectedSectionId,
+          facultyAssignmentId: _selectedFacultyAssignmentId,
         );
       } else {
         final note = NoteModel(
@@ -593,6 +699,7 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
           departmentId: user.departmentId ?? widget.existingNote?.departmentId ?? '',
           collegeId: user.collegeId ?? widget.existingNote?.collegeId ?? '',
           semesterId: _selectedSemesterId!,
+          facultyAssignmentId: _selectedFacultyAssignmentId,
           facultyId: user.role == AppRole.faculty ? user.id : widget.existingNote?.facultyId ?? user.id,
           authorUserId: user.id,
           status: _status,

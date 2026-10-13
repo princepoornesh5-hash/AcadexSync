@@ -251,7 +251,7 @@ final departmentSetupProvider = FutureProvider.autoDispose.family<DepartmentSetu
   final activeCollegeYears = academicYears.where((y) => (effectiveCollegeId.isEmpty || y.collegeId == effectiveCollegeId) && y.isActive).toList();
   final effectiveAcademicYear = currentAcademicYear ?? (activeCollegeYears.isNotEmpty ? activeCollegeYears.first : null);
 
-  final deptSemesters = semesters.where((s) => s.departmentId == effectiveDeptId && (s.isCurrent || s.status == 'active')).toList();
+  final deptSemesters = semesters.where((s) => s.departmentId == effectiveDeptId && s.status != 'archived' && (s.isActive || s.isCurrent || s.status == 'active' || s.status == 'upcoming')).toList();
   final deptSections = sections.where((s) => s.departmentId == effectiveDeptId && s.isActive).toList();
   final deptSubjects = subjects.where((s) => s.departmentId == effectiveDeptId && s.isActive).toList();
   final deptAssignments = assignments.where((a) => a.departmentId == effectiveDeptId && a.isActive).toList();

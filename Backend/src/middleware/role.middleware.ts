@@ -11,7 +11,11 @@ export function requireRoles(...allowedRoles: AppRole[]) {
       return next(ApiError.unauthorized('Authentication required'));
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    const hasAllowedRole =
+      allowedRoles.includes(req.user.role) ||
+      (req.user.activeRoles && req.user.activeRoles.some((r) => allowedRoles.includes(r)));
+
+    if (!hasAllowedRole) {
       return next(
         ApiError.forbidden(
           `Access denied. Role "${req.user.role}" does not have permission to perform this action.`
@@ -32,10 +36,14 @@ export function requireMinRole(minRole: AppRole) {
       return next(ApiError.unauthorized('Authentication required'));
     }
 
-    const userLevel = ROLE_HIERARCHY[req.user.role] || 0;
+    const effectiveRoles =
+      req.user.activeRoles && req.user.activeRoles.length > 0
+        ? req.user.activeRoles
+        : [req.user.role];
+    const userMaxLevel = Math.max(...effectiveRoles.map((r) => ROLE_HIERARCHY[r] || 0));
     const requiredLevel = ROLE_HIERARCHY[minRole] || 0;
 
-    if (userLevel < requiredLevel) {
+    if (userMaxLevel < requiredLevel) {
       return next(
         ApiError.forbidden(
           `Access denied. Requires at least "${minRole}" level privileges.`
