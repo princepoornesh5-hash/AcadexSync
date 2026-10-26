@@ -2,15 +2,17 @@ import crypto from 'crypto';
 import { User, IUser } from '../models/user.model';
 import { AuthSession } from '../models/authSession.model';
 import { College } from '../models/college.model';
+import { WorkspaceMembership } from '../models/workspaceMembership.model';
 import { PasswordService } from './password.service';
 import { OtpService } from './otp.service';
-import { AppRole } from '../constants/roles';
+import { AppRole, normalizeRole } from '../constants/roles';
 import {
   AccountStatus,
   CollegeStatus,
   OtpPurpose,
   OtpDeliveryMethod,
   TokenType,
+  MembershipStatus,
 } from '../constants/status';
 import {
   signAccessToken,
@@ -497,5 +499,137 @@ export class AuthService {
       throw ApiError.notFound('User not found');
     }
     return user;
+  }
+
+  /**
+   * Development Role Quick-Login
+   * Strictly gated to NODE_ENV === 'development'.
+   * Issues authoritative session, access token, and refresh token.
+   */
+  static async devLogin(
+    roleInput?: string,
+    identifier?: string,
+    metadata: ClientMetadata = {}
+  ): Promise<LoginResult & { workspaceId?: string }> {
+    if (env.NODE_ENV !== 'development' && env.NODE_ENV !== 'test') {
+      throw ApiError.forbidden('Development login is disabled in non-development environments');
+    }
+
+    let user: IUser | null = null;
+
+    if (identifier && identifier.trim()) {
+      const { type, normalized } = normalizeIdentifier(identifier.trim());
+      user = await User.findOne(
+        type === 'email' ? { email: normalized } : { instituteId: normalized }
+      );
+    }
+
+    if (!user && roleInput) {
+      let targetRole: AppRole;
+      try {
+        targetRole = normalizeRole(roleInput);
+      } catch (err: any) {
+        throw ApiError.badRequest(err.message || 'Invalid role value');
+      }
+
+      // Prioritize primary SVGP demo test identities
+      const roleEmailMap: Record<string, string> = {
+        [AppRole.SUPER_ADMIN]: 'admin@acadex.com',
+        [AppRole.COLLEGE_ADMIN]: 'college@acadex.com',
+        [AppRole.HOD]: 'hod@acadex.com',
+        [AppRole.FACULTY]: 'faculty@acadex.com',
+        [AppRole.STUDENT]: 'student@acadex.com',
+      };
+
+      const preferredEmail = roleEmailMap[targetRole];
+      if (preferredEmail) {
+        user = await User.findOne({ email: preferredEmail });
+      }
+
+      // If not found by email, lookup by role and SVGP college
+      if (!user) {
+        const svgp = await College.findOne({ code: 'SVGP' });
+        const collegeFilter =
+          svgp && targetRole !== AppRole.SUPER_ADMIN ? { collegeId: svgp._id } : {};
+        user = await User.findOne({ role: targetRole, ...collegeFilter });
+      }
+
+      // Fallback for Super Admin
+      if (!user && targetRole === AppRole.SUPER_ADMIN) {
+        user = await User.findOne({ role: AppRole.SUPER_ADMIN });
+      }
+    }
+
+    if (!user) {
+      throw ApiError.notFound(
+        `No demo user found for role "${roleInput || 'specified'}". Ensure SVGP demo data is seeded.`
+      );
+    }
+
+    if (user.accountStatus !== AccountStatus.ACTIVE) {
+      throw ApiError.forbidden('Demo user account is currently deactivated or inactive.');
+    }
+
+    // Resolve workspace membership
+    let activeWorkspaceId: string | undefined = user.collegeId ? user.collegeId.toString() : undefined;
+    const membership = await WorkspaceMembership.findOne({
+      userId: user._id,
+      status: MembershipStatus.ACTIVE,
+    });
+    if (membership) {
+      activeWorkspaceId = membership.collegeId.toString();
+    }
+
+    // Create persistent AuthSession
+    const sessionId = crypto.randomUUID();
+    const refreshToken = signRefreshToken({
+      userId: user.id,
+      instituteId: user.instituteId,
+      email: user.email,
+      phone: user.phone,
+      name: user.name,
+      role: user.role,
+      collegeId: activeWorkspaceId,
+      departmentId: user.departmentId?.toString(),
+      sessionId,
+    });
+
+    const refreshTokenHash = hashToken(refreshToken);
+    const expiresAt = new Date(Date.now() + env.REFRESH_TOKEN_EXPIRES_IN * 1000);
+
+    await AuthSession.create({
+      userId: user._id,
+      sessionId,
+      refreshTokenHash,
+      userAgent: metadata.userAgent || 'ACADEX-DevMode',
+      ipAddress: metadata.ipAddress || '127.0.0.1',
+      expiresAt,
+      lastUsedAt: new Date(),
+    });
+
+    const accessToken = signAccessToken({
+      userId: user.id,
+      instituteId: user.instituteId,
+      email: user.email,
+      phone: user.phone,
+      name: user.name,
+      role: user.role,
+      collegeId: activeWorkspaceId,
+      departmentId: user.departmentId?.toString(),
+      courseId: user.courseId?.toString(),
+      sectionId: user.sectionId?.toString(),
+      semesterId: user.semesterId?.toString(),
+      sessionId,
+    });
+
+    user.lastLoginAt = new Date();
+    await user.save();
+
+    return {
+      accessToken,
+      refreshToken,
+      workspaceId: activeWorkspaceId,
+      user: user.toJSON(),
+    };
   }
 }

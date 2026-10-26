@@ -9,6 +9,7 @@ import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_form_controls.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
 import '../../../../core/presentation/widgets/animated_particle_sphere.dart';
+import '../../domain/models/activation_model.dart';
 
 class ActivationScreen extends ConsumerStatefulWidget {
   const ActivationScreen({super.key});
@@ -19,12 +20,11 @@ class ActivationScreen extends ConsumerStatefulWidget {
 
 class _ActivationScreenState extends ConsumerState<ActivationScreen> {
   final _step1FormKey = GlobalKey<FormState>();
-  final _step2FormKey = GlobalKey<FormState>();
+  final _step4FormKey = GlobalKey<FormState>();
+  final _step5FormKey = GlobalKey<FormState>();
 
-  final _collegeCodeController = TextEditingController();
-  final _instituteIdController = TextEditingController();
-  final _activationCodeController = TextEditingController();
-
+  final _codeController = TextEditingController();
+  final _otpController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -33,52 +33,54 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
 
   @override
   void dispose() {
-    _collegeCodeController.dispose();
-    _instituteIdController.dispose();
-    _activationCodeController.dispose();
+    _codeController.dispose();
+    _otpController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _submitStep1() {
+  void _formatActivationCode(String value) {
+    // Keep raw uppercase characters and dashes
+    final formatted = value.toUpperCase();
+    if (formatted != value) {
+      _codeController.value = _codeController.value.copyWith(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
+  }
+
+  void _submitCode() {
     if (!_step1FormKey.currentState!.validate()) return;
-    ref.read(activationNotifierProvider.notifier).proceedToPasswordStep(
-      _collegeCodeController.text.trim().toUpperCase(),
-      _instituteIdController.text.trim().toUpperCase(),
-      _activationCodeController.text.trim().toUpperCase(),
+    ref.read(activationNotifierProvider.notifier).validateActivationCode(_codeController.text);
+  }
+
+  void _submitOtp() {
+    if (!_step4FormKey.currentState!.validate()) return;
+    ref.read(activationNotifierProvider.notifier).verifyOtp(_otpController.text);
+  }
+
+  void _submitPassword() {
+    final notifier = ref.read(activationNotifierProvider.notifier);
+    final state = ref.read(activationNotifierProvider);
+
+    if (state.isExistingUser) {
+      notifier.completeActivation();
+      return;
+    }
+
+    if (!_step5FormKey.currentState!.validate()) return;
+    notifier.completeActivation(
+      password: _passwordController.text,
+      confirmPassword: _confirmPasswordController.text,
     );
   }
 
-  void _submitStep2() {
-    if (!_step2FormKey.currentState!.validate()) return;
-    ref.read(activationNotifierProvider.notifier).completeActivation(
-      _passwordController.text,
-    );
-  }
-
-  double _calculatePasswordStrength(String password) {
-    if (password.isEmpty) return 0.0;
-    double strength = 0.0;
-    if (password.length >= 8) strength += 0.25;
-    if (password.contains(RegExp(r'[a-zA-Z]'))) strength += 0.25;
-    if (password.contains(RegExp(r'[0-9]'))) strength += 0.25;
-    if (password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) strength += 0.25;
-    return strength;
-  }
-
-  String _getPasswordStrengthLabel(double strength) {
-    if (strength <= 0.25) return 'Weak';
-    if (strength <= 0.5) return 'Fair';
-    if (strength <= 0.75) return 'Good';
-    return 'Strong';
-  }
-
-  Color _getPasswordStrengthColor(double strength) {
-    if (strength <= 0.25) return AcadexColors.error;
-    if (strength <= 0.5) return AcadexColors.warning;
-    if (strength <= 0.75) return AcadexColors.accentOrange;
-    return AcadexColors.success;
+  String _formatTime(int totalSeconds) {
+    final minutes = (totalSeconds ~/ 60).toString().padLeft(2, '0');
+    final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
   }
 
   @override
@@ -87,7 +89,7 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     ref.listen<ActivationState>(activationNotifierProvider, (previous, next) {
-      if (next.error != null) {
+      if (next.error != null && next.error != previous?.error) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -99,11 +101,13 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
               ],
             ),
             backgroundColor: AcadexColors.error,
-            duration: const Duration(seconds: 5),
+            duration: const Duration(seconds: 4),
           ),
         );
       }
     });
+
+    final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Scaffold(
       backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
@@ -112,39 +116,47 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 28.0),
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 16.0 : 20.0,
+                vertical: 24.0,
+              ),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 460),
+                constraints: const BoxConstraints(maxWidth: 480),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Back to login bar
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        icon: const Icon(LucideIcons.arrowLeft, size: 16),
-                        label: const Text('Back to Sign In'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                    // Back to login button
+                    if (state.currentStep != ActivationStep.success)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          icon: const Icon(LucideIcons.arrowLeft, size: 16),
+                          label: const Text('Back to Sign In'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                          ),
+                          onPressed: () {
+                            ref.read(activationNotifierProvider.notifier).reset();
+                            context.go('/login');
+                          },
                         ),
-                        onPressed: () {
-                          ref.read(activationNotifierProvider.notifier).reset();
-                          context.go('/login');
-                        },
                       ),
-                    ),
                     const SizedBox(height: 12),
 
-                    // Main Container Card
+                    // Main Card Container
                     AcadexCard(
-                      padding: const EdgeInsets.all(28),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        child: state.step == 0
-                            ? _buildStep1(isDark, state)
-                            : state.step == 1
-                                ? _buildStep2(isDark, state)
-                                : _buildStep3Success(isDark, state),
+                      padding: EdgeInsets.all(isMobile ? 20 : 28),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (state.currentStep != ActivationStep.success)
+                            _buildProgressIndicator(state.currentStep, isDark),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 250),
+                            child: _buildCurrentStep(state, isDark),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -157,29 +169,56 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
     );
   }
 
-  Widget _buildStepIndicator(int currentStep, bool isDark) {
+  Widget _buildProgressIndicator(ActivationStep currentStep, bool isDark) {
+    const totalSteps = 5;
+    final stepIndex = currentStep.index.clamp(0, 4);
+
+    String stepLabel;
+    switch (currentStep) {
+      case ActivationStep.enterCode:
+        stepLabel = 'Activation Code';
+        break;
+      case ActivationStep.confirmIdentity:
+        stepLabel = 'Confirm Identity';
+        break;
+      case ActivationStep.selectContact:
+        stepLabel = 'Contact Channel';
+        break;
+      case ActivationStep.verifyOtp:
+        stepLabel = 'Verification';
+        break;
+      case ActivationStep.setPassword:
+        stepLabel = 'Security Setup';
+        break;
+      case ActivationStep.success:
+        stepLabel = 'Completed';
+        break;
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 24.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Text(
-                  currentStep == 0 ? 'STEP 1 OF 2' : 'STEP 2 OF 2',
-                  style: AcadexTypography.eyebrow(color: AcadexColors.primary),
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Text(
+                'STEP ${stepIndex + 1} OF $totalSteps',
+                style: AcadexTypography.caption(
+                  color: AcadexColors.primary,
+                ).copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
               ),
               const SizedBox(width: 8),
-              Row(
-                children: [
-                  _buildProgressDot(active: true, completed: currentStep > 0),
-                  const SizedBox(width: 6),
-                  _buildProgressDot(active: currentStep >= 1, completed: currentStep > 1),
-                ],
+              Flexible(
+                child: Text(
+                  stepLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AcadexTypography.caption(
+                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                  ).copyWith(fontWeight: FontWeight.w600),
+                ),
               ),
             ],
           ),
@@ -187,8 +226,8 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: currentStep == 0 ? 0.5 : 1.0,
-              backgroundColor: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+              value: (stepIndex + 1) / totalSteps,
+              backgroundColor: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
               valueColor: const AlwaysStoppedAnimation<Color>(AcadexColors.primary),
               minHeight: 4,
             ),
@@ -198,390 +237,149 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
     );
   }
 
-  Widget _buildProgressDot({required bool active, required bool completed}) {
-    return Container(
-      width: 10,
-      height: 10,
-      decoration: BoxDecoration(
-        color: completed
-            ? AcadexColors.success
-            : active
-                ? AcadexColors.primary
-                : AcadexColors.hairline,
-        shape: BoxShape.circle,
-      ),
-    );
+  Widget _buildCurrentStep(ActivationState state, bool isDark) {
+    switch (state.currentStep) {
+      case ActivationStep.enterCode:
+        return _buildStep1Code(state, isDark);
+      case ActivationStep.confirmIdentity:
+        return _buildStep2Identity(state, isDark);
+      case ActivationStep.selectContact:
+        return _buildStep3Contact(state, isDark);
+      case ActivationStep.verifyOtp:
+        return _buildStep4Otp(state, isDark);
+      case ActivationStep.setPassword:
+        return _buildStep5Password(state, isDark);
+      case ActivationStep.success:
+        return _buildStep6Success(state, isDark);
+    }
   }
 
-  Widget _buildStep1(bool isDark, ActivationState state) {
+  // -------------------------------------------------------------------------
+  // STEP 1: Enter Activation Code
+  // -------------------------------------------------------------------------
+  Widget _buildStep1Code(ActivationState state, bool isDark) {
     return Form(
       key: _step1FormKey,
       child: Column(
-        key: const ValueKey('step1'),
+        key: const ValueKey('step_1_code'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildStepIndicator(0, isDark),
-
           Center(
             child: Container(
-              width: 52,
-              height: 52,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
                 color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(LucideIcons.userCheck, size: 26, color: AcadexColors.primary),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          Text(
-            "Account Activation",
-            textAlign: TextAlign.center,
-            style: AcadexTypography.heading2(
-              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            "Enter the institutional details provided by your college administrator to activate your access.",
-            textAlign: TextAlign.center,
-            style: AcadexTypography.bodySmall(
-              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Error Banner if present
-          if (state.error != null) ...[
-            _buildErrorBanner(state.error!, isDark),
-            const SizedBox(height: 16),
-          ],
-
-          // College Code Input
-          AcadexTextField(
-            controller: _collegeCodeController,
-            label: "College Code",
-            hint: "e.g. GIT or ENG-COLLEGE",
-            prefixIcon: LucideIcons.building,
-            validator: (v) {
-              if (v == null || v.trim().isEmpty) return "Please enter your college code";
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // PIN Number Input
-          AcadexTextField(
-            controller: _instituteIdController,
-            label: "PIN Number",
-            hint: "e.g. 26CSE042, FAC-CSE-014, or ADMIN-001",
-            prefixIcon: LucideIcons.idCard,
-            validator: (v) {
-              if (v == null || v.trim().isEmpty) return "Please enter your PIN Number";
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Single-Use Activation Code Input
-          AcadexTextField(
-            controller: _activationCodeController,
-            label: "Activation Code",
-            hint: "e.g. ACT-849201",
-            prefixIcon: LucideIcons.keyRound,
-            validator: (v) {
-              if (v == null || v.trim().isEmpty) return "Please enter your activation code";
-              return null;
-            },
-          ),
-          const SizedBox(height: 28),
-
-          // Continue Button
-          AcadexButton(
-            label: "Continue",
-            icon: LucideIcons.arrowRight,
-            isFullWidth: true,
-            size: AcadexButtonSize.lg,
-            onPressed: _submitStep1,
-          ),
-          const SizedBox(height: 16),
-
-          Center(
-            child: TextButton(
-              onPressed: () {
-                ref.read(activationNotifierProvider.notifier).reset();
-                context.go('/login');
-              },
-              child: Text(
-                'Already activated? Sign In',
-                style: AcadexTypography.bodySmall(
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStep2(bool isDark, ActivationState state) {
-    final password = _passwordController.text;
-    final strength = _calculatePasswordStrength(password);
-
-    return Form(
-      key: _step2FormKey,
-      child: Column(
-        key: const ValueKey('step2'),
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildStepIndicator(1, isDark),
-
-          Center(
-            child: Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(LucideIcons.shieldCheck, size: 26, color: AcadexColors.primary),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          Text(
-            "Create Password",
-            textAlign: TextAlign.center,
-            style: AcadexTypography.heading2(
-              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            "Set a secure password for your ${state.instituteId ?? 'account'} profile.",
-            textAlign: TextAlign.center,
-            style: AcadexTypography.bodySmall(
-              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+              child: const Icon(LucideIcons.keyRound, size: 28, color: AcadexColors.primary),
             ),
           ),
           const SizedBox(height: 20),
+          Text(
+            'Activate Your Account',
+            textAlign: TextAlign.center,
+            style: AcadexTypography.heading2(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Enter the activation code provided by your institution to begin setting up your account.',
+            textAlign: TextAlign.center,
+            style: AcadexTypography.bodySmall(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 24),
 
-          // Error Banner if present
           if (state.error != null) ...[
-            _buildErrorBanner(state.error!, isDark),
+            _buildErrorBox(state.error!, isDark),
             const SizedBox(height: 16),
           ],
 
-          // New Password Input
-          Text(
-            'New Password',
-            style: AcadexTypography.caption(
-              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-            ).copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 6),
-          TextFormField(
-            controller: _passwordController,
+          AcadexTextField(
+            controller: _codeController,
+            label: 'Activation Code',
+            hint: 'e.g. SVGP-A1B2-C3D4',
+            prefixIcon: LucideIcons.keyRound,
+            autofocus: true,
             enabled: !state.isLoading,
-            obscureText: !_isPasswordVisible,
-            onChanged: (v) => setState(() {}),
-            style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-            decoration: InputDecoration(
-              hintText: '••••••••',
-              prefixIcon: Icon(
-                LucideIcons.lock,
-                size: 18,
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-              ),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _isPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye,
-                  size: 18,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                ),
-                onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-              ),
-            ),
-            validator: (v) {
-              if (v == null || v.isEmpty) return "Please enter a password";
-              if (v.length < 8) return "Password must be at least 8 characters";
-              return null;
-            },
-          ),
-          const SizedBox(height: 10),
-
-          // Password Strength Bar
-          if (password.isNotEmpty) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Password Strength:',
-                  style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-                ),
-                Text(
-                  _getPasswordStrengthLabel(strength),
-                  style: AcadexTypography.caption(
-                    color: _getPasswordStrengthColor(strength),
-                  ).copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(3),
-              child: LinearProgressIndicator(
-                value: strength,
-                backgroundColor: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-                valueColor: AlwaysStoppedAnimation<Color>(_getPasswordStrengthColor(strength)),
-                minHeight: 4,
-              ),
-            ),
-            const SizedBox(height: 14),
-          ],
-
-          // Password Requirements Checklist
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkCanvas : AcadexColors.canvasSoft,
-              borderRadius: AcadexRadius.borderRadiusMd,
-              border: Border.all(
-                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildRequirementItem('At least 8 characters', password.length >= 8, isDark),
-                const SizedBox(height: 4),
-                _buildRequirementItem('Letters & numbers', RegExp(r'[a-zA-Z]').hasMatch(password) && RegExp(r'[0-9]').hasMatch(password), isDark),
-                const SizedBox(height: 4),
-                _buildRequirementItem('Special character (!@#\$%^&*)', RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password), isDark),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Confirm Password Input
-          Text(
-            'Confirm Password',
-            style: AcadexTypography.caption(
-              color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-            ).copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 6),
-          TextFormField(
-            controller: _confirmPasswordController,
-            enabled: !state.isLoading,
-            obscureText: !_isConfirmPasswordVisible,
-            style: AcadexTypography.body(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
-            decoration: InputDecoration(
-              hintText: '••••••••',
-              prefixIcon: Icon(
-                LucideIcons.lock,
-                size: 18,
-                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-              ),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _isConfirmPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye,
-                  size: 18,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                ),
-                onPressed: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
-              ),
-            ),
-            validator: (v) {
-              if (v == null || v.isEmpty) return "Please confirm your password";
-              if (v != _passwordController.text) return "Passwords do not match";
+            onChanged: _formatActivationCode,
+            onSubmitted: (_) => _submitCode(),
+            validator: (val) {
+              if (val == null || val.trim().isEmpty) {
+                return 'Please enter your activation code';
+              }
               return null;
             },
           ),
           const SizedBox(height: 24),
 
-          // Submit Action
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: AcadexButton(
-                  label: "Back",
-                  variant: AcadexButtonVariant.secondary,
-                  icon: LucideIcons.arrowLeft,
-                  onPressed: state.isLoading
-                      ? null
-                      : () {
-                          ref.read(activationNotifierProvider.notifier).reset();
-                        },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 4,
-                child: AcadexButton(
-                  label: state.isLoading ? "Activating..." : "Activate Account",
-                  icon: LucideIcons.checkCircle,
-                  isLoading: state.isLoading,
-                  size: AcadexButtonSize.lg,
-                  onPressed: state.isLoading ? null : _submitStep2,
-                ),
-              ),
-            ],
+          AcadexButton(
+            label: state.isLoading ? 'Validating...' : 'Continue',
+            icon: LucideIcons.arrowRight,
+            isLoading: state.isLoading,
+            isFullWidth: true,
+            size: AcadexButtonSize.lg,
+            onPressed: state.isLoading ? null : _submitCode,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStep3Success(bool isDark, ActivationState state) {
-    final user = state.validatedUser;
-    final name = user?['name']?.toString() ?? 'User';
-    final email = user?['email']?.toString() ?? '';
-    final role = user?['role']?.toString() ?? 'Student';
+  // -------------------------------------------------------------------------
+  // STEP 2: Confirm Identity ("Is this you?")
+  // -------------------------------------------------------------------------
+  Widget _buildStep2Identity(ActivationState state, bool isDark) {
+    final result = state.validationResult;
+    final notifier = ref.read(activationNotifierProvider.notifier);
 
     return Column(
-      key: const ValueKey('step3_success'),
+      key: const ValueKey('step_2_identity'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Center(
           child: Container(
-            width: 64,
-            height: 64,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              color: AcadexColors.success.withValues(alpha: 0.15),
+              color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
               shape: BoxShape.circle,
             ),
-            child: const Icon(LucideIcons.checkCircle2, size: 36, color: AcadexColors.success),
+            child: const Icon(LucideIcons.userCheck, size: 28, color: AcadexColors.primary),
           ),
         ),
         const SizedBox(height: 20),
-
         Text(
-          "Account Activated!",
+          'Confirm Your Identity',
           textAlign: TextAlign.center,
-          style: AcadexTypography.heading1(
+          style: AcadexTypography.heading2(
             color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          "Account activated successfully. You can now sign in using your PIN Number or Email and your password.",
+          'Please verify that these details match your academic profile.',
           textAlign: TextAlign.center,
           style: AcadexTypography.bodySmall(
             color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
 
-        // User Identity Preview Card
+        if (state.error != null) ...[
+          _buildErrorBox(state.error!, isDark),
+          const SizedBox(height: 16),
+        ],
+
+        // Identity Card
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
-            borderRadius: AcadexRadius.borderRadiusLg,
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
             ),
@@ -592,48 +390,738 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    name,
-                    style: AcadexTypography.body(
-                      color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                    ).copyWith(fontWeight: FontWeight.bold),
+                  Expanded(
+                    child: Text(
+                      result?.displayName ?? 'Academic User',
+                      style: AcadexTypography.heading3(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ),
+                    ),
                   ),
-                  AcadexBadge(
-                    label: role.toUpperCase(),
-                    variant: AcadexBadgeVariant.success,
+                  if (result?.role != null)
+                    AcadexBadge(
+                      label: result!.role,
+                      variant: AcadexBadgeVariant.primary,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(LucideIcons.building, size: 16, color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      result?.institutionName ?? '',
+                      style: AcadexTypography.bodySmall(
+                        color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                      ).copyWith(fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ],
               ),
-              if (email.isNotEmpty) ...[
-                const SizedBox(height: 4),
+              if (result != null && result.contactOptions.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 8),
                 Text(
-                  email,
+                  'Registered Contact Channels:',
                   style: AcadexTypography.caption(
                     color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                   ),
                 ),
-              ],
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(LucideIcons.idCard, size: 14, color: AcadexColors.primary),
-                  const SizedBox(width: 6),
-                  Text(
-                    'PIN: ${state.instituteId ?? "—"}',
-                    style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                    ).copyWith(fontWeight: FontWeight.w600),
+                const SizedBox(height: 6),
+                for (final opt in result.contactOptions)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4.0),
+                    child: Row(
+                      children: [
+                        Icon(
+                          opt.method == 'email' ? LucideIcons.mail : LucideIcons.phone,
+                          size: 14,
+                          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          opt.maskedValue,
+                          style: AcadexTypography.bodySmall(
+                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        Text(
+          'Is this you?',
+          textAlign: TextAlign.center,
+          style: AcadexTypography.body(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ).copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 16),
+
+        AcadexButton(
+          label: 'Yes, Continue',
+          icon: LucideIcons.check,
+          isFullWidth: true,
+          size: AcadexButtonSize.lg,
+          onPressed: () => notifier.confirmIdentity(true),
+        ),
+        const SizedBox(height: 10),
+
+        AcadexButton(
+          label: "This Isn't Me",
+          icon: LucideIcons.x,
+          variant: AcadexButtonVariant.secondary,
+          isFullWidth: true,
+          onPressed: () => notifier.confirmIdentity(false),
+        ),
+      ],
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // STEP 3: Select Registered Contact Method
+  // -------------------------------------------------------------------------
+  Widget _buildStep3Contact(ActivationState state, bool isDark) {
+    final notifier = ref.read(activationNotifierProvider.notifier);
+    final options = state.validationResult?.contactOptions ?? [];
+
+    return Column(
+      key: const ValueKey('step_3_contact'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Center(
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(LucideIcons.send, size: 28, color: AcadexColors.primary),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Select Contact Method',
+          textAlign: TextAlign.center,
+          style: AcadexTypography.heading2(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'We will send a one-time verification code (OTP) to your selected registered contact.',
+          textAlign: TextAlign.center,
+          style: AcadexTypography.bodySmall(
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        if (state.error != null) ...[
+          _buildErrorBox(state.error!, isDark),
+          const SizedBox(height: 16),
+        ],
+
+        for (final opt in options)
+          _buildContactOptionCard(
+            option: opt,
+            isSelected: state.selectedContactMethod == opt.method,
+            isDark: isDark,
+            onTap: () => notifier.selectContactMethod(opt.method),
+          ),
+        const SizedBox(height: 24),
+
+        AcadexButton(
+          label: state.isLoading ? 'Sending Code...' : 'Send Verification Code',
+          icon: LucideIcons.send,
+          isLoading: state.isLoading,
+          isFullWidth: true,
+          size: AcadexButtonSize.lg,
+          onPressed: state.isLoading || state.selectedContactMethod == null
+              ? null
+              : () => notifier.sendOtp(),
+        ),
+        const SizedBox(height: 10),
+
+        AcadexButton(
+          label: 'Back',
+          variant: AcadexButtonVariant.ghost,
+          isFullWidth: true,
+          onPressed: () => notifier.goToStep(ActivationStep.confirmIdentity),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContactOptionCard({
+    required ContactOption option,
+    required bool isSelected,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    final isEmail = option.method == 'email';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? (isDark ? AcadexColors.primaryHover.withValues(alpha: 0.15) : AcadexColors.primaryLight)
+                : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? AcadexColors.primary : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+              width: isSelected ? 1.5 : 1.0,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                isEmail ? LucideIcons.mail : LucideIcons.phone,
+                size: 20,
+                color: isSelected ? AcadexColors.primary : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isEmail ? 'Registered Email' : 'Registered Phone',
+                      style: AcadexTypography.caption(
+                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      ).copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      option.maskedValue,
+                      style: AcadexTypography.body(
+                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                      ).copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              Radio<String>(
+                value: option.method,
+                groupValue: isSelected ? option.method : null,
+                activeColor: AcadexColors.primary,
+                onChanged: (_) => onTap(),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 28),
+      ),
+    );
+  }
 
-        // Sign In Button
+  // -------------------------------------------------------------------------
+  // STEP 4: Verify OTP
+  // -------------------------------------------------------------------------
+  Widget _buildStep4Otp(ActivationState state, bool isDark) {
+    final notifier = ref.read(activationNotifierProvider.notifier);
+    final destination = state.sendOtpResult?.maskedDestination ?? 'your contact';
+
+    return Form(
+      key: _step4FormKey,
+      child: Column(
+        key: const ValueKey('step_4_otp'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(LucideIcons.shieldCheck, size: 28, color: AcadexColors.primary),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Enter Verification Code',
+            textAlign: TextAlign.center,
+            style: AcadexTypography.heading2(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
+          ),
+          const SizedBox(height: 8),
+          RichText(
+            textAlign: TextAlign.center,
+            text: TextSpan(
+              style: AcadexTypography.bodySmall(
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+              ),
+              children: [
+                const TextSpan(text: 'We sent a 6-digit code to '),
+                TextSpan(
+                  text: destination,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          if (state.error != null) ...[
+            _buildErrorBox(state.error!, isDark),
+            const SizedBox(height: 16),
+          ],
+
+          AcadexTextField(
+            controller: _otpController,
+            label: '6-Digit Security Code',
+            hint: '123456',
+            prefixIcon: LucideIcons.key,
+            keyboardType: TextInputType.number,
+            autofocus: true,
+            enabled: !state.isLoading,
+            onSubmitted: (_) => _submitOtp(),
+            validator: (val) {
+              if (val == null || val.trim().isEmpty) {
+                return 'Please enter the 6-digit verification code';
+              }
+              if (val.trim().length != 6) {
+                return 'Code must be exactly 6 digits';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Expiry and timer countdown
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            decoration: BoxDecoration(
+              color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  LucideIcons.clock,
+                  size: 14,
+                  color: state.otpExpiryRemaining <= 60 ? AcadexColors.error : AcadexColors.primary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  state.otpExpiryRemaining > 0
+                      ? 'Code expires in: ${_formatTime(state.otpExpiryRemaining)}'
+                      : 'Code has expired. Please request a new code.',
+                  style: AcadexTypography.caption(
+                    color: state.otpExpiryRemaining <= 60
+                        ? AcadexColors.error
+                        : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                  ).copyWith(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          AcadexButton(
+            label: state.isLoading ? 'Verifying...' : 'Verify Code',
+            icon: LucideIcons.check,
+            isLoading: state.isLoading,
+            isFullWidth: true,
+            size: AcadexButtonSize.lg,
+            onPressed: state.isLoading ? null : _submitOtp,
+          ),
+          const SizedBox(height: 12),
+
+          // Resend button governed by cooldown
+          Center(
+            child: state.resendCooldownRemaining > 0
+                ? Text(
+                    'Resend code in ${state.resendCooldownRemaining}s',
+                    style: AcadexTypography.bodySmall(
+                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    ),
+                  )
+                : TextButton.icon(
+                    icon: const Icon(LucideIcons.rotateCw, size: 14),
+                    label: const Text('Resend Code'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AcadexColors.primary,
+                    ),
+                    onPressed: state.isLoading ? null : () => notifier.resendOtp(),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // STEP 5: Set & Confirm Password (or Activate for Existing User)
+  // -------------------------------------------------------------------------
+  Widget _buildStep5Password(ActivationState state, bool isDark) {
+    if (state.isExistingUser) {
+      return _buildExistingUserActivation(state, isDark);
+    }
+    return _buildNewUserPasswordSetup(state, isDark);
+  }
+
+  Widget _buildExistingUserActivation(ActivationState state, bool isDark) {
+    return Column(
+      key: const ValueKey('step_5_existing_user'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Center(
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(LucideIcons.building2, size: 28, color: AcadexColors.primary),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Activate Workspace Access',
+          textAlign: TextAlign.center,
+          style: AcadexTypography.heading2(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Your ACADEX account was verified. Your existing login credentials will be used to access this college workspace.',
+          textAlign: TextAlign.center,
+          style: AcadexTypography.bodySmall(
+            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        if (state.error != null) ...[
+          _buildErrorBox(state.error!, isDark),
+          const SizedBox(height: 16),
+        ],
+
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Target Workspace:',
+                style: AcadexTypography.caption(
+                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                state.validationResult?.institutionName ?? 'College Workspace',
+                style: AcadexTypography.body(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ).copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Assigned Role: ${state.validationResult?.role ?? "MEMBER"}',
+                style: AcadexTypography.bodySmall(
+                  color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
         AcadexButton(
-          label: "Continue to Sign In",
+          label: state.isLoading ? 'Activating...' : 'Activate Workspace Access',
+          icon: LucideIcons.building2,
+          isLoading: state.isLoading,
+          isFullWidth: true,
+          size: AcadexButtonSize.lg,
+          onPressed: state.isLoading ? null : _submitPassword,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNewUserPasswordSetup(ActivationState state, bool isDark) {
+    final pass = _passwordController.text;
+    final confirm = _confirmPasswordController.text;
+
+    final isNotEmpty = pass.isNotEmpty && confirm.isNotEmpty;
+    final isMatch = isNotEmpty && pass == confirm;
+    final hasMinLength = pass.length >= 8;
+    final hasLetter = RegExp(r'[a-zA-Z]').hasMatch(pass);
+    final hasDigit = RegExp(r'[0-9]').hasMatch(pass);
+    final meetsPolicy = hasMinLength && hasLetter && hasDigit;
+
+    // Critical Requirement: Show "Passwords matched" ONLY when both nonempty, matching, and satisfying policy
+    final showMatchedSuccess = isMatch && meetsPolicy;
+
+    return Form(
+      key: _step5FormKey,
+      child: Column(
+        key: const ValueKey('step_5_password'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.primaryHover.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(LucideIcons.lockKeyhole, size: 28, color: AcadexColors.primary),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Create Your Password',
+            textAlign: TextAlign.center,
+            style: AcadexTypography.heading2(
+              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Set a secure password for your ACADEX account to complete activation.',
+            textAlign: TextAlign.center,
+            style: AcadexTypography.bodySmall(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          if (state.error != null) ...[
+            _buildErrorBox(state.error!, isDark),
+            const SizedBox(height: 16),
+          ],
+
+          // Password Field
+          AcadexTextField(
+            controller: _passwordController,
+            label: 'New Password',
+            hint: 'At least 8 characters',
+            prefixIcon: LucideIcons.lock,
+            isPassword: !_isPasswordVisible,
+            enabled: !state.isLoading,
+            onChanged: (_) => setState(() {}),
+            suffix: IconButton(
+              icon: Icon(
+                _isPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye,
+                size: 18,
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+              ),
+              onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+            ),
+            validator: (val) {
+              if (val == null || val.isEmpty) return 'Please enter a password';
+              if (val.length < 8) return 'Password must be at least 8 characters';
+              if (!RegExp(r'[a-zA-Z]').hasMatch(val) || !RegExp(r'[0-9]').hasMatch(val)) {
+                return 'Password must contain at least one letter and one number';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Confirm Password Field
+          AcadexTextField(
+            controller: _confirmPasswordController,
+            label: 'Confirm Password',
+            hint: 'Re-enter your password',
+            prefixIcon: LucideIcons.lock,
+            isPassword: !_isConfirmPasswordVisible,
+            enabled: !state.isLoading,
+            onChanged: (_) => setState(() {}),
+            suffix: IconButton(
+              icon: Icon(
+                _isConfirmPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye,
+                size: 18,
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+              ),
+              onPressed: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
+            ),
+            validator: (val) {
+              if (val == null || val.isEmpty) return 'Please confirm your password';
+              if (val != _passwordController.text) return 'Passwords do not match';
+              return null;
+            },
+          ),
+          const SizedBox(height: 14),
+
+          // Password Match Status
+          if (showMatchedSuccess)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.success.withValues(alpha: 0.15) : AcadexColors.successLight,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AcadexColors.success),
+              ),
+              child: Row(
+                children: [
+                  const Icon(LucideIcons.checkCircle2, size: 16, color: AcadexColors.success),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Passwords matched',
+                    style: AcadexTypography.caption(
+                      color: isDark ? Colors.white : AcadexColors.successDark,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            )
+          else if (isNotEmpty && !isMatch)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AcadexColors.error),
+              ),
+              child: Row(
+                children: [
+                  const Icon(LucideIcons.circleAlert, size: 16, color: AcadexColors.error),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Passwords do not match',
+                    style: AcadexTypography.caption(
+                      color: isDark ? Colors.white : AcadexColors.errorDark,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 14),
+
+          // Password Policy Checklist
+          _buildPolicyChecklist(
+            hasMinLength: hasMinLength,
+            hasLetterAndNumber: hasLetter && hasDigit,
+            isDark: isDark,
+          ),
+          const SizedBox(height: 24),
+
+          AcadexButton(
+            label: state.isLoading ? 'Activating Account...' : 'Activate Account',
+            icon: LucideIcons.checkCircle,
+            isLoading: state.isLoading,
+            isFullWidth: true,
+            size: AcadexButtonSize.lg,
+            onPressed: state.isLoading ? null : _submitPassword,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPolicyChecklist({
+    required bool hasMinLength,
+    required bool hasLetterAndNumber,
+    required bool isDark,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildPolicyRow('At least 8 characters long', hasMinLength, isDark),
+        const SizedBox(height: 4),
+        _buildPolicyRow('Contains at least one letter and one number', hasLetterAndNumber, isDark),
+      ],
+    );
+  }
+
+  Widget _buildPolicyRow(String text, bool isMet, bool isDark) {
+    return Row(
+      children: [
+        Icon(
+          isMet ? LucideIcons.check : LucideIcons.circle,
+          size: 14,
+          color: isMet ? AcadexColors.success : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: AcadexTypography.caption(
+              color: isMet
+                  ? (isDark ? AcadexColors.darkInk : AcadexColors.ink)
+                  : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // STEP 6 & 7: Success & Redirect to Login
+  // -------------------------------------------------------------------------
+  Widget _buildStep6Success(ActivationState state, bool isDark) {
+    final message = state.completionResult?.message ??
+        'Your account has been activated successfully. You can now sign in with your credentials.';
+
+    return Column(
+      key: const ValueKey('step_6_success'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Center(
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: isDark ? AcadexColors.success.withValues(alpha: 0.2) : AcadexColors.successLight,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(LucideIcons.checkCheck, size: 36, color: AcadexColors.success),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Account Activated!',
+          textAlign: TextAlign.center,
+          style: AcadexTypography.heading2(
+            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: AcadexTypography.body(
+            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+          ),
+        ),
+        const SizedBox(height: 32),
+
+        AcadexButton(
+          label: 'Proceed to Sign In',
           icon: LucideIcons.logIn,
           isFullWidth: true,
           size: AcadexButtonSize.lg,
@@ -646,35 +1134,12 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
     );
   }
 
-  Widget _buildRequirementItem(String text, bool isMet, bool isDark) {
-    return Row(
-      children: [
-        Icon(
-          isMet ? LucideIcons.check : LucideIcons.circle,
-          size: 14,
-          color: isMet
-              ? AcadexColors.success
-              : (isDark ? AcadexColors.darkInkFaint : AcadexColors.inkFaint),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          text,
-          style: AcadexTypography.caption(
-            color: isMet
-                ? (isDark ? AcadexColors.darkInk : AcadexColors.ink)
-                : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildErrorBanner(String message, bool isDark) {
+  Widget _buildErrorBox(String message, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDark ? AcadexColors.errorDarkContainer : AcadexColors.errorLight,
-        borderRadius: AcadexRadius.borderRadiusMd,
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AcadexColors.error),
       ),
       child: Row(
@@ -687,7 +1152,7 @@ class _ActivationScreenState extends ConsumerState<ActivationScreen> {
               message,
               style: AcadexTypography.caption(
                 color: isDark ? Colors.white : AcadexColors.errorDark,
-              ).copyWith(fontWeight: FontWeight.w500),
+              ),
             ),
           ),
         ],

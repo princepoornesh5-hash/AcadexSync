@@ -256,9 +256,9 @@ export class InvitationService {
         throw ApiError.forbidden('Cannot provision accounts for an inactive department');
       }
 
-      const allowedRoles = [AppRole.STUDENT];
+      const allowedRoles = [AppRole.FACULTY, AppRole.STUDENT];
       if (!allowedRoles.includes(targetRole)) {
-        throw ApiError.forbidden(`HOD cannot provision accounts with role "${targetRole}". Only Student accounts can be created.`);
+        throw ApiError.forbidden(`HOD cannot provision accounts with role "${targetRole}". Only Faculty and Student accounts can be created.`);
       }
 
       return {
@@ -341,6 +341,10 @@ export class InvitationService {
       normalizedPhone = normalizePhone(data.phone);
     }
 
+    if (!normalizedEmail && !normalizedPhone) {
+      throw ApiError.badRequest('At least one contact method (email or phone) is required to issue an invitation.');
+    }
+
     const userByInstituteId = await User.findOne({ instituteId: normalizedInstituteId });
     const userByEmail = normalizedEmail ? await User.findOne({ email: normalizedEmail }) : null;
     const userByPhone = normalizedPhone ? await User.findOne({ phone: normalizedPhone }) : null;
@@ -353,6 +357,14 @@ export class InvitationService {
       throw ApiError.conflict(
         'Ambiguous or conflicting identity match across provided instituteId, email, or phone. Identity verification required.'
       );
+    }
+
+    if (userByInstituteId && userByInstituteId.collegeId?.toString() === collegeId.toString()) {
+      throw ApiError.conflict('User with this instituteId already exists');
+    }
+
+    if (userByEmail && userByEmail.collegeId?.toString() === collegeId.toString()) {
+      throw ApiError.conflict('User with this email already exists');
     }
 
     if (uniqueMatchedUserIds.size === 1) {
@@ -576,6 +588,17 @@ export class InvitationService {
       throw ApiError.badRequest('Invalid activation details');
     }
 
+    // If user has a home college different from the requested one and has no invitation here
+    if (user.collegeId && user.collegeId.toString() !== college._id.toString()) {
+      const anyCollegeInvite = await Invitation.findOne({
+        userId: user._id,
+        collegeId: college._id,
+      });
+      if (!anyCollegeInvite) {
+        throw ApiError.badRequest('Invalid activation details');
+      }
+    }
+
     // 3. Find pending invitation for user and this specific college
     const invitation = await Invitation.findOne({
       userId: user._id,
@@ -584,6 +607,18 @@ export class InvitationService {
     }).sort({ createdAt: -1 });
 
     if (!invitation) {
+      const usedInvitation = await Invitation.findOne({
+        userId: user._id,
+        collegeId: college._id,
+        status: { $in: [InvitationStatus.USED, 'used', 'USED'] },
+      });
+      if (
+        usedInvitation ||
+        (user.accountStatus === AccountStatus.ACTIVE &&
+          user.collegeId?.toString() === college._id.toString())
+      ) {
+        throw ApiError.badRequest('This account has already been activated. Please log in with your credentials.');
+      }
       throw ApiError.badRequest('No pending invitation found for this account in this institution');
     }
 

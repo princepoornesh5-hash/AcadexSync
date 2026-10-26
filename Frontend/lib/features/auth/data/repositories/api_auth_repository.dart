@@ -157,14 +157,34 @@ class ApiAuthRepository implements AuthRepository {
 
   @override
   Future<UserModel> loginAsDevelopmentRole(AppRole role) async {
-    // Development convenience fallback — not for production
-    return UserModel(
-      id: 'dev-${role.value}',
-      name: '${role.displayName} (Dev)',
-      email: '${role.value.toLowerCase()}@acadex.edu',
-      role: role,
-      accountStatus: AccountStatus.active,
-    );
+    try {
+      final response = await _client.dio.post('/auth/dev-login', data: {
+        'role': role.value,
+      });
+
+      final body = response.data as Map<String, dynamic>;
+      final data = body['data'] as Map<String, dynamic>? ?? body;
+      final accessToken = data['accessToken'] as String?;
+      final refreshToken = data['refreshToken'] as String?;
+      final userJson = data['user'] as Map<String, dynamic>;
+      final workspaceId = data['workspaceId'] as String?;
+
+      if (accessToken != null) {
+        await _client.saveTokens(
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+        );
+      }
+
+      if (workspaceId != null && workspaceId.isNotEmpty) {
+        await _client.setActiveWorkspace(workspaceId);
+      }
+
+      return UserModel.fromJson(userJson);
+    } on DioException catch (e) {
+      debugPrint('[AUTH] Dev-login network/server error: ${e.type} | message: ${e.message} | response: ${e.response?.data}');
+      throw _extractError(e, 'Development login failed');
+    }
   }
 
   /// Extracts a human-readable error message from a DioException.

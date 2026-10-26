@@ -9,6 +9,7 @@ import '../../../../core/presentation/widgets/acadex_empty_state.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
 import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
+import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
 import '../../../attendance/domain/models/assigned_class.dart';
 import '../../../attendance/presentation/providers/attendance_providers.dart';
@@ -28,7 +29,19 @@ class MyAssignmentsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final myAssignments = ref.watch(myFacultyAssignmentsProvider);
+    final assignmentsAsync = ref.watch(myFacultyAssignmentsAsyncProvider);
+    final syncAssignments = ref.watch(myFacultyAssignmentsProvider);
+
+    // De-duplicate assignments and prefer syncAssignments (which includes test overrides)
+    final Set<String> seenIds = {};
+    final List<FacultyAssignment> rawAssignments = syncAssignments.isNotEmpty
+        ? syncAssignments
+        : (assignmentsAsync.valueOrNull ?? []);
+    final myAssignments = rawAssignments.where((a) => seenIds.add(a.id)).toList();
+
+    final isLoading = assignmentsAsync.isLoading && myAssignments.isEmpty;
+    final hasError = assignmentsAsync.hasError && myAssignments.isEmpty;
+
     final subMap = ref.watch(subjectMapProvider);
     final crsMap = ref.watch(courseMapProvider);
     final semMap = ref.watch(semesterMapProvider);
@@ -94,7 +107,49 @@ class MyAssignmentsScreen extends ConsumerWidget {
                 const SizedBox(height: 14),
               ],
 
-              if (myAssignments.isEmpty)
+              if (isLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 48),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (hasError)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 24),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(LucideIcons.alertTriangle, size: 48, color: AcadexColors.error),
+                        const SizedBox(height: 12),
+                        Text(
+                          "Failed to Load Teaching Assignments",
+                          style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          "An error occurred while fetching your active teaching assignments. Please try again.",
+                          style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            ref.invalidate(myFacultyAssignmentsAsyncProvider);
+                            ref.invalidate(myFacultyAssignmentsProvider);
+                          },
+                          icon: const Icon(LucideIcons.refreshCw, size: 16),
+                          label: const Text("Retry"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AcadexColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: AcadexRadius.borderRadiusMd),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else if (myAssignments.isEmpty)
                 const Padding(
                   padding: EdgeInsets.only(top: 8, bottom: 24),
                   child: Center(

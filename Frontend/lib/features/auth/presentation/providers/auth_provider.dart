@@ -115,6 +115,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Invalidate user notes & personal schedules
       _ref.invalidate(userNotesProvider);
       _ref.invalidate(myFacultyAssignmentsProvider);
+      _ref.invalidate(myFacultyAssignmentsAsyncProvider);
       _ref.invalidate(todayScheduleProvider);
       _ref.invalidate(weeklyTimetableProvider);
       _ref.invalidate(currentStudentAcademicProfileProvider);
@@ -156,13 +157,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> loginAsDevelopmentRole(AppRole role) async {
     state = const AuthLoading();
     try {
+      // Clear previous tokens and user cache to prevent stale session leakage
+      await _apiClient.clearTokens();
+      await _sessionManager.clearSession();
+      _invalidateUserScopedCaches();
+
       final user = await _repository.loginAsDevelopmentRole(role);
-      const token = 'dev-token';
+      final token = await _apiClient.getToken() ?? await _sessionManager.getAccessToken() ?? '';
       await _sessionManager.saveSession(token: token, user: user);
       _invalidateUserScopedCaches();
       state = AuthAuthenticated(user: user, token: token);
+      await _manageFcmToken(true, user.id);
     } catch (e) {
-      state = AuthError(message: e.toString());
+      final cleanMsg = e.toString().replaceFirst('Exception: ', '');
+      state = AuthError(message: cleanMsg);
     }
   }
 

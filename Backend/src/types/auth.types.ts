@@ -41,6 +41,11 @@ export interface JwtPayload {
   tokenType: TokenType;
   sessionId?: string;
   requireSession?: boolean;
+  invitationId?: string;
+  flowId?: string;
+  tokenId?: string;
+  contactMethod?: string;
+  purpose?: string;
   iat?: number;
   exp?: number;
 }

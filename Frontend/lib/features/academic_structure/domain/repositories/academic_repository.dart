@@ -121,6 +121,7 @@ abstract class AcademicRepository {
     String? subjectId,
     String? academicYearId,
   });
+  Future<List<FacultyAssignment>> getMyFacultyAssignments();
   Future<void> createFacultyAssignment(FacultyAssignment assignment);
   Future<void> updateFacultyAssignment(
     String assignmentId, {

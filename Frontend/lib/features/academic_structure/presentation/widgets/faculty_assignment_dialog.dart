@@ -187,6 +187,7 @@ class _FacultyAssignmentDialogState extends ConsumerState<FacultyAssignmentDialo
       try {
         ref.invalidate(facultyAssignmentsProvider);
         ref.invalidate(myFacultyAssignmentsProvider);
+        ref.invalidate(myFacultyAssignmentsAsyncProvider);
         if (_selectedDepartmentId != null) {
           ref.invalidate(departmentSetupProvider(_selectedDepartmentId!));
         }

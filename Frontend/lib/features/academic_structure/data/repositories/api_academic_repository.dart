@@ -1228,6 +1228,29 @@ class ApiAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<List<FacultyAssignment>> getMyFacultyAssignments() async {
+    try {
+      final response = await _client.dio.get('/academics/faculty-assignments/my');
+      final body = response.data;
+      List raw = [];
+      if (body is Map<String, dynamic>) {
+        final data = body['data'];
+        if (data is List) {
+          raw = data;
+        } else if (data is Map<String, dynamic> && data['items'] is List) {
+          raw = data['items'] as List;
+        }
+      } else if (body is List) {
+        raw = body;
+      }
+
+      return raw.map((e) => FacultyAssignment.fromJson(e as Map<String, dynamic>)).toList();
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch personal faculty assignments');
+    }
+  }
+
+  @override
   Future<void> createFacultyAssignment(FacultyAssignment assignment) async {
     try {
       await _client.dio.post('/academics/faculty-assignments', data: assignment.toJson());

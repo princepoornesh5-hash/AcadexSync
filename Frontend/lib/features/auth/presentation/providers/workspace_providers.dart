@@ -112,6 +112,7 @@ class WorkspaceSwitchController {
       _ref.invalidate(adminAnnouncementsProvider);
       _ref.invalidate(userNotesProvider);
       _ref.invalidate(myFacultyAssignmentsProvider);
+      _ref.invalidate(myFacultyAssignmentsAsyncProvider);
       _ref.invalidate(todayScheduleProvider);
       _ref.invalidate(weeklyTimetableProvider);
       _ref.invalidate(currentStudentAcademicProfileProvider);

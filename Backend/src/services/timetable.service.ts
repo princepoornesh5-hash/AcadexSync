@@ -1469,6 +1469,30 @@ export class TimetableService {
     const faIds = Array.from(new Set(entries.map((e) => e.facultyAssignmentId?.toString()).filter(Boolean)));
     const facultyIds = Array.from(new Set(entries.map((e) => e.facultyId?.toString()).filter(Boolean)));
 
+    // For entries missing facultyAssignmentId, dynamically look up the matching active canonical assignment
+    for (const e of entries) {
+      if (!e.facultyAssignmentId && e.subjectId && e.facultyId && (e as any).collegeId) {
+        const query: Record<string, unknown> = {
+          collegeId: (e as any).collegeId,
+          facultyId: e.facultyId,
+          subjectId: e.subjectId,
+          status: 'active',
+          isActive: true,
+        };
+        if ((e as any).sectionId) {
+          query.$or = [{ sectionId: (e as any).sectionId }, { sectionId: null }, { sectionId: { $exists: false } }];
+        }
+        const candidateFa = await FacultyAssignment.findOne(query).lean();
+        if (candidateFa) {
+          e.facultyAssignmentId = candidateFa._id as mongoose.Types.ObjectId;
+          const candidateIdStr = candidateFa._id.toString();
+          if (!faIds.includes(candidateIdStr)) {
+            faIds.push(candidateIdStr);
+          }
+        }
+      }
+    }
+
     const [subjects, sections, semesters, courses, facultyAssignments, faculties] = await Promise.all([
       Subject.find({ _id: { $in: subjectIds } }).lean(),
       Section.find({ _id: { $in: sectionIds } }).lean(),
@@ -1504,6 +1528,9 @@ export class TimetableService {
       const facultyEmail = faculty?.email || undefined;
       const facultyDesignation = faculty?.designation || undefined;
 
+      const hasValidAssignment = Boolean(fa && fa.isActive && fa.status === 'active');
+      const isOrphaned = Boolean(e.facultyAssignmentId && (!fa || !fa.isActive || fa.status !== 'active'));
+
       const descParts = [
         cohort,
         academicStage,
@@ -1523,6 +1550,8 @@ export class TimetableService {
         facultyDesignation,
         cohort,
         academicStage,
+        hasValidAssignment,
+        isOrphaned,
         contextualDescription: descParts.join(' · '),
       } as ITimetableGridEntry;
     });

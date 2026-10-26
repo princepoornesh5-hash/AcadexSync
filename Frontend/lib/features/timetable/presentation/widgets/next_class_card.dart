@@ -155,7 +155,7 @@ class NextClassCard extends ConsumerWidget {
                 ),
                 const SizedBox(width: 10),
                 AcadexBadge(
-                  label: '${entry.startTime} – ${entry.endTime}',
+                  label: '${entry.startTime} - ${entry.endTime}',
                   variant: AcadexBadgeVariant.neutral,
                 ),
                 const Spacer(),

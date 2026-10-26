@@ -61,6 +61,8 @@ export class SmsDeliveryAdapter implements IOtpDeliveryAdapter {
   }
 }
 
+import { ApiError } from '../utils/apiError';
+
 export class OtpDeliveryService {
   private static adapter: IOtpDeliveryAdapter = new DevOtpDeliveryAdapter();
 
@@ -72,7 +74,31 @@ export class OtpDeliveryService {
     return this.adapter;
   }
 
+  static isConfigured(_deliveryMethod: OtpDeliveryMethod): boolean {
+    if (process.env.NODE_ENV !== 'production') {
+      return true; // dev and test environments utilize the testing adapter
+    }
+    // In production, placeholder development adapter is strictly rejected
+    if (this.adapter instanceof DevOtpDeliveryAdapter) {
+      return false;
+    }
+    return true;
+  }
+
+  static assertConfigured(deliveryMethod: OtpDeliveryMethod): void {
+    if (!this.isConfigured(deliveryMethod)) {
+      Logger.error(
+        `[OTP DELIVERY ERROR] Production delivery adapter for ${deliveryMethod} is not configured.`
+      );
+      throw ApiError.internal(
+        `Contact delivery service for ${deliveryMethod} is not configured in this environment. Please contact your campus administrator.`
+      );
+    }
+  }
+
   static async sendOtp(options: SendOtpOptions): Promise<boolean> {
+    this.assertConfigured(options.deliveryMethod);
     return this.adapter.sendOtp(options);
   }
 }
+

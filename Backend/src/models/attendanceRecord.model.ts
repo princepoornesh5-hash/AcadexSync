@@ -1,5 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { AttendanceStatus } from '../constants/status';
+import { normalizeTimeSlot } from '../utils/dateTime';
 
 export interface IAttendanceRecord extends Document {
   collegeId: mongoose.Types.ObjectId;
@@ -86,6 +87,13 @@ const AttendanceRecordSchema = new Schema<IAttendanceRecord>(
     },
   }
 );
+
+AttendanceRecordSchema.pre('validate', function (next) {
+  if (this.timeSlot) {
+    this.timeSlot = normalizeTimeSlot(this.timeSlot);
+  }
+  next();
+});
 
 AttendanceRecordSchema.index(
   { sessionId: 1, studentId: 1 },

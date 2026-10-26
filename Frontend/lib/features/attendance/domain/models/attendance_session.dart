@@ -171,7 +171,7 @@ class AttendanceSession {
       subjectName: (json['subjectName'] ?? '').toString(),
       sectionId: (json['sectionId'] ?? '').toString(),
       sectionName: (json['sectionName'] ?? '').toString(),
-      timeSlot: (json['timeSlot'] ?? '').toString(),
+      timeSlot: (json['timeSlot'] ?? '').toString().replaceAll('–', '-').replaceAll('—', '-').trim(),
       date: json['date'] != null ? DateTime.tryParse(json['date'].toString()) ?? DateTime.now() : DateTime.now(),
       records: (json['records'] as List<dynamic>?)
               ?.map((e) => AttendanceRecord.fromJson(e as Map<String, dynamic>))

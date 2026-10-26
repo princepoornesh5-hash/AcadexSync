@@ -399,7 +399,7 @@ class _TimetableCardState extends ConsumerState<TimetableCard> {
                               sectionId: entry.sectionId,
                               sectionName: sectionName,
                               semester: entry.semesterId,
-                              timeSlot: '${entry.startTime} – ${entry.endTime}',
+                              timeSlot: '${entry.startTime} - ${entry.endTime}',
                               startTime: entry.startTime,
                               endTime: entry.endTime,
                               roomNumber: entry.roomNumber,

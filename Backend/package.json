@@ -11,7 +11,9 @@
     "test": "jest --runInBand",
     "test:coverage": "jest --runInBand --coverage",
     "test:watch": "jest --watch",
-    "create-super-admin": "ts-node src/scripts/create-super-admin.ts"
+    "create-super-admin": "ts-node src/scripts/create-super-admin.ts",
+    "seed:svgp": "ts-node src/scripts/seed-svgp-demo.ts",
+    "seed:svgp:reset": "ts-node src/scripts/seed-svgp-demo.ts --reset"
   },
   "keywords": [
     "acadex",

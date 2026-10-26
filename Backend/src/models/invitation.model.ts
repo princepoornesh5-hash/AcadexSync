@@ -47,7 +47,7 @@ const InvitationSchema = new Schema<IInvitation>(
     revokedBy: { type: String, default: null },
     lastSentAt: { type: Date, default: Date.now },
     attemptCount: { type: Number, default: 0 },
-    metadata: { type: Schema.Types.Mixed, default: null },
+    metadata: { type: Schema.Types.Mixed, default: () => ({}) },
   },
   {
     timestamps: true,

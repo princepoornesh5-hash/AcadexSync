@@ -85,7 +85,6 @@ describe('ACADEX Activation Deep Diagnosis & Multi-Account Isolation Suite', () 
       userId: superAdminUser.id,
       instituteId: 'SUP-001',
       role: AppRole.SUPER_ADMIN,
-      sessionId: 'test-sa-session',
     });
   });
 

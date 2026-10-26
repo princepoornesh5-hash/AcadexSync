@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from '../../controllers/auth.controller';
 import { InvitationController } from '../../controllers/invitation.controller';
+import { ActivationController } from '../../controllers/activation.controller';
 import { authenticateRequest } from '../../middleware/auth.middleware';
 import {
   loginRateLimiter,
@@ -18,8 +19,15 @@ const router = Router();
 // Public Authentication Endpoints
 router.post('/login', loginRateLimiter, AuthController.login);
 router.post('/refresh', AuthController.refresh);
+router.post('/dev-login', AuthController.devLogin);
 
-// Public Account Activation Endpoint
+// Public Multi-Step Account Activation Endpoints
+router.post('/activate/validate-code', activationRateLimiter, ActivationController.validateCode);
+router.post('/activate/send-otp', forgotPasswordRateLimiter, ActivationController.sendOtp);
+router.post('/activate/verify-otp', otpVerifyRateLimiter, ActivationController.verifyOtp);
+router.post('/activate/complete', activationRateLimiter, ActivationController.complete);
+
+// Backward-Compatible Legacy Activation Endpoint
 router.post('/activate', activationRateLimiter, InvitationController.activate);
 
 // Password Recovery Flow

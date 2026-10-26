@@ -8,6 +8,7 @@ import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../academic_structure/domain/models/academic_models.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../domain/models/note_model.dart';
@@ -369,7 +370,66 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
                             final semesters = semestersAsync.value ?? [];
 
                             if (user.role == AppRole.faculty) {
-                              final myAssignments = ref.watch(myFacultyAssignmentsProvider);
+                              final assignmentsAsync = ref.watch(myFacultyAssignmentsAsyncProvider);
+                              final syncAssignments = ref.watch(myFacultyAssignmentsProvider);
+                              final Set<String> seenIds = {};
+                              final List<FacultyAssignment> rawAssignments = syncAssignments.isNotEmpty
+                                  ? syncAssignments
+                                  : (assignmentsAsync.valueOrNull ?? []);
+                              final myAssignments = rawAssignments.where((a) => seenIds.add(a.id)).toList();
+
+                              final isLoading = assignmentsAsync.isLoading && myAssignments.isEmpty;
+                              final hasError = assignmentsAsync.hasError && myAssignments.isEmpty;
+
+                              if (isLoading) {
+                                return Container(
+                                  padding: const EdgeInsets.all(24),
+                                  alignment: Alignment.center,
+                                  child: const CircularProgressIndicator(),
+                                );
+                              }
+
+                              if (hasError) {
+                                return Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                                    borderRadius: AcadexRadius.borderRadiusMd,
+                                    border: Border.all(color: AcadexColors.error.withValues(alpha: 0.3)),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      const Icon(LucideIcons.alertTriangle, color: AcadexColors.error, size: 36),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        "Failed to load teaching assignments",
+                                        style: AcadexTypography.heading3(color: isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        "Unable to retrieve your teaching allocations from the server. Please check your connection and retry.",
+                                        style: AcadexTypography.caption(color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 12),
+                                      ElevatedButton.icon(
+                                        onPressed: () {
+                                          ref.invalidate(myFacultyAssignmentsAsyncProvider);
+                                          ref.invalidate(myFacultyAssignmentsProvider);
+                                        },
+                                        icon: const Icon(LucideIcons.refreshCw, size: 14),
+                                        label: const Text("Retry"),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AcadexColors.primary,
+                                          foregroundColor: Colors.white,
+                                          visualDensity: VisualDensity.compact,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
 
                               if (myAssignments.isEmpty) {
                                 return Container(
@@ -426,6 +486,7 @@ class _NoteFormScreenState extends ConsumerState<NoteFormScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   DropdownButtonFormField<String>(
+                                    isExpanded: true,
                                     decoration: _inputDecoration('Teaching Assignment / Class *'),
                                     value: _selectedFacultyAssignmentId,
                                     items: myAssignments.map((a) {

@@ -8,6 +8,7 @@ import '../../../auth/domain/models/role_enum.dart';
 import '../../../attendance/domain/models/assigned_class.dart';
 import '../../../attendance/presentation/providers/attendance_providers.dart';
 import '../../../calendar/presentation/providers/calendar_providers.dart';
+import '../../../academic_structure/presentation/providers/academic_providers.dart';
 import '../../domain/models/timetable_models.dart';
 import '../providers/timetable_lookup_providers.dart';
 import '../providers/timetable_providers.dart';
@@ -29,18 +30,40 @@ class DashboardTimetableLiveCard extends ConsumerWidget {
     String subjectName,
     String sectionName,
   ) {
+    String? resolvedFaId = entry.facultyAssignmentId;
+    if (resolvedFaId == null || resolvedFaId.isEmpty) {
+      final myAssignments = ref.read(myFacultyAssignmentsProvider);
+      final match = myAssignments.where((a) =>
+        a.subjectId == entry.subjectId &&
+        (a.sectionId == null || a.sectionId == entry.sectionId)
+      ).firstOrNull;
+      if (match != null) {
+        resolvedFaId = match.id;
+      }
+    }
+
+    if (resolvedFaId == null || resolvedFaId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot mark attendance: This timetable entry is not associated with an authorized teaching assignment.'),
+          backgroundColor: AcadexColors.error,
+        ),
+      );
+      return;
+    }
+
     final assignedClass = AssignedClass(
       id: entry.id,
       timetableId: entry.timetableId,
       timetableEntryId: entry.id,
       facultyId: entry.facultyId,
-      facultyAssignmentId: entry.facultyAssignmentId,
+      facultyAssignmentId: resolvedFaId,
       subjectId: entry.subjectId,
       subjectName: subjectName,
       sectionId: entry.sectionId,
       sectionName: sectionName,
       semester: entry.semesterId,
-      timeSlot: '${entry.startTime} – ${entry.endTime}',
+      timeSlot: '${entry.startTime} - ${entry.endTime}',
       startTime: entry.startTime,
       endTime: entry.endTime,
       roomNumber: entry.roomNumber,

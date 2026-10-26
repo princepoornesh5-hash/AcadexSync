@@ -80,3 +80,43 @@ export function normalizeIdentifier(rawIdentifier: string): NormalizedIdentifier
     normalized: trimmed.toUpperCase(),
   };
 }
+
+/**
+ * Masks an email address for identity confirmation display (e.g. p***h@example.com).
+ */
+export function maskEmail(email?: string | null): string {
+  if (!email || typeof email !== 'string') return '';
+  const trimmed = email.trim();
+  const atIndex = trimmed.indexOf('@');
+  if (atIndex <= 0) return trimmed;
+  const username = trimmed.slice(0, atIndex);
+  const domain = trimmed.slice(atIndex); // includes '@'
+
+  if (username.length <= 1) {
+    return `${username}***${domain}`;
+  }
+  if (username.length === 2) {
+    return `${username[0]}***${domain}`;
+  }
+  return `${username[0]}***${username[username.length - 1]}${domain}`;
+}
+
+/**
+ * Masks a phone number for identity confirmation display (e.g. +91 ••••• ••210 or ••••••3210).
+ */
+export function maskPhone(phone?: string | null): string {
+  if (!phone || typeof phone !== 'string') return '';
+  const cleaned = phone.trim();
+  const digitsOnly = cleaned.replace(/\D/g, '');
+  if (digitsOnly.length < 4) return '••••';
+
+  const lastDigits = digitsOnly.slice(-3);
+  const hasCountryCode = cleaned.startsWith('+');
+
+  if (hasCountryCode) {
+    const countryCodeMatch = cleaned.match(/^(\+\d{1,3})/);
+    const cc = countryCodeMatch ? countryCodeMatch[1] : '+';
+    return `${cc} ••••• ••${lastDigits}`;
+  }
+  return `••••••${lastDigits}`;
+}

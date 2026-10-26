@@ -11,8 +11,15 @@ class WorkspaceRepository {
     try {
       final response = await _client.dio.get('/workspaces/my-memberships');
       final body = response.data as Map<String, dynamic>;
-      final data = body['data'] as Map<String, dynamic>? ?? body;
-      final membershipsJson = (data['memberships'] as List<dynamic>?) ?? [];
+      final rawData = body['data'];
+      final List<dynamic> membershipsJson;
+      if (rawData is List) {
+        membershipsJson = rawData;
+      } else if (rawData is Map<String, dynamic>) {
+        membershipsJson = (rawData['memberships'] as List<dynamic>?) ?? [];
+      } else {
+        membershipsJson = (body['memberships'] as List<dynamic>?) ?? [];
+      }
 
       return membershipsJson
           .map((m) => WorkspaceMembershipModel.fromJson(m as Map<String, dynamic>))

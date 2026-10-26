@@ -56,6 +56,8 @@ export enum TokenType {
   ACCESS = 'access',
   REFRESH = 'refresh',
   PASSWORD_RESET = 'password_reset',
+  ACTIVATION_FLOW = 'activation_flow',
+  ACTIVATION_TOKEN = 'activation_token',
 }
 
 export enum AcademicYearStatus {

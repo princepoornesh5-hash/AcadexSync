@@ -678,6 +678,7 @@ class FacultyNotifier extends PaginationNotifier<Faculty> {
     await refresh();
     ref.invalidate(facultyAssignmentsProvider);
     ref.invalidate(myFacultyAssignmentsProvider);
+    ref.invalidate(myFacultyAssignmentsAsyncProvider);
     ref.invalidate(facultyByIdProvider(facultyId));
     ref.invalidate(facultySummaryProvider(facultyId));
     ref.invalidate(facultyStatsProvider);
@@ -688,6 +689,7 @@ class FacultyNotifier extends PaginationNotifier<Faculty> {
     await refresh();
     ref.invalidate(facultyAssignmentsProvider);
     ref.invalidate(myFacultyAssignmentsProvider);
+    ref.invalidate(myFacultyAssignmentsAsyncProvider);
     ref.invalidate(facultyByIdProvider(facultyId));
     ref.invalidate(facultySummaryProvider(facultyId));
     ref.invalidate(departmentFacultyCountsProvider);
@@ -721,6 +723,7 @@ class FacultyNotifier extends PaginationNotifier<Faculty> {
     ref.invalidate(facultySummaryProvider(facultyId));
     ref.invalidate(facultyAssignmentsProvider);
     ref.invalidate(myFacultyAssignmentsProvider);
+    ref.invalidate(myFacultyAssignmentsAsyncProvider);
     ref.invalidate(departmentFacultyCountsProvider);
     ref.invalidate(facultyStatsProvider);
     ref.invalidate(collegeAdminStatsProvider);
@@ -1164,6 +1167,7 @@ class FacultyAssignmentsNotifier extends AutoDisposeAsyncNotifier<List<FacultyAs
       try {
         ref.invalidateSelf();
         ref.invalidate(myFacultyAssignmentsProvider);
+        ref.invalidate(myFacultyAssignmentsAsyncProvider);
         ref.invalidate(facultyProvider(null));
         if (assignment.departmentId.isNotEmpty) {
           ref.invalidate(departmentSetupProvider(assignment.departmentId));
@@ -1184,6 +1188,7 @@ class FacultyAssignmentsNotifier extends AutoDisposeAsyncNotifier<List<FacultyAs
       try {
         ref.invalidateSelf();
         ref.invalidate(myFacultyAssignmentsProvider);
+        ref.invalidate(myFacultyAssignmentsAsyncProvider);
         ref.invalidate(facultyProvider(null));
         if (assignment.departmentId.isNotEmpty) {
           ref.invalidate(departmentSetupProvider(assignment.departmentId));
@@ -1204,6 +1209,7 @@ class FacultyAssignmentsNotifier extends AutoDisposeAsyncNotifier<List<FacultyAs
       try {
         ref.invalidateSelf();
         ref.invalidate(myFacultyAssignmentsProvider);
+        ref.invalidate(myFacultyAssignmentsAsyncProvider);
         ref.invalidate(facultyProvider(null));
         ref.invalidate(facultyStatsProvider);
         ref.invalidate(hodStatsProvider);
@@ -1217,6 +1223,7 @@ class FacultyAssignmentsNotifier extends AutoDisposeAsyncNotifier<List<FacultyAs
       try {
         ref.invalidateSelf();
         ref.invalidate(myFacultyAssignmentsProvider);
+        ref.invalidate(myFacultyAssignmentsAsyncProvider);
         ref.invalidate(facultyProvider(null));
         ref.invalidate(facultyStatsProvider);
         ref.invalidate(hodStatsProvider);
@@ -1332,32 +1339,59 @@ final facultyAssignedSectionsProvider = Provider.autoDispose.family<List<Section
   return result;
 });
 
-// --- Personal Faculty Assignments Provider ---
-final myFacultyAssignmentsProvider = Provider.autoDispose<List<FacultyAssignment>>((ref) {
+// --- Personal Faculty Assignments Async Provider (Canonical Backend Contract) ---
+final myFacultyAssignmentsAsyncProvider = FutureProvider.autoDispose<List<FacultyAssignment>>((ref) async {
   final authState = ref.watch(auth.authProvider);
   if (authState is! AuthAuthenticated) return [];
-  final assignments = ref.watch(facultyAssignmentsProvider).valueOrNull ?? [];
+
+  final user = authState.user;
+  if (user.role != AppRole.faculty && user.role != AppRole.hod) {
+    return [];
+  }
+
+  final repo = ref.watch(academicRepositoryProvider);
+  return repo.getMyFacultyAssignments();
+});
+
+// --- Personal Faculty Assignments Provider (Authoritative List) ---
+final myFacultyAssignmentsProvider = Provider.autoDispose<List<FacultyAssignment>>((ref) {
+  final asyncVal = ref.watch(myFacultyAssignmentsAsyncProvider);
+  final directList = asyncVal.valueOrNull;
+  if (directList != null && directList.isNotEmpty) {
+    return directList;
+  }
+
+  // Fallback for test harnesses that mock/override facultyAssignmentsProvider directly
+  final allAssignments = ref.watch(facultyAssignmentsProvider).valueOrNull ?? [];
+  if (allAssignments.isEmpty) {
+    return directList ?? [];
+  }
+
+  final authState = ref.watch(auth.authProvider);
+  if (authState is! AuthAuthenticated) return directList ?? [];
   final currentUserId = authState.user.id;
   final currentUserEmail = authState.user.email.trim().toLowerCase();
 
-  // Find canonical faculty profile matching this authenticated user (User -> Faculty -> Faculty._id)
   final facultyList = ref.watch(facultyProvider(null)).items;
   Faculty? myFaculty;
   for (final f in facultyList) {
-    if (f.userId == currentUserId || (currentUserEmail.isNotEmpty && f.email.trim().toLowerCase() == currentUserEmail)) {
+    if (f.id == currentUserId ||
+        (f.userId != null && f.userId == currentUserId) ||
+        (currentUserEmail.isNotEmpty && f.email.trim().toLowerCase() == currentUserEmail)) {
       myFaculty = f;
       break;
     }
   }
 
-  // If authenticated user does not have a linked faculty profile, they own zero teaching assignments
-  if (myFaculty == null) return [];
+  final targetIds = {
+    currentUserId,
+    if (myFaculty != null) ...[myFaculty.id, if (myFaculty.userId != null) myFaculty.userId!],
+  };
 
-  return assignments.where((a) {
-    if (!a.isActive) return false;
-    // Canonical comparison: FacultyAssignment.facultyId refers strictly to Faculty._id (with fallback for legacy records)
-    return a.facultyId == myFaculty!.id || a.facultyId == currentUserId;
-  }).toList();
+  final filtered = allAssignments.where((a) => a.isActive && targetIds.contains(a.facultyId)).toList();
+  if (filtered.isNotEmpty) return filtered;
+
+  return directList ?? [];
 });
 
 // --- Parameterized Faculty Assignments for Timetable (Section + Semester level) ---

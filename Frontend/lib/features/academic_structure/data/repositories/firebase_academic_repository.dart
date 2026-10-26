@@ -1755,6 +1755,17 @@ class FirebaseAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<List<FacultyAssignment>> getMyFacultyAssignments() async {
+    final filters = _getScopeFilters(hasCollegeId: true);
+    final user = _currentUser;
+    if (user == null) return [];
+    filters['isActive'] = true;
+    final docs = await _firestoreService.queryCollection('facultyAssignments', filters);
+    final list = docs.map((d) => FacultyAssignment.fromJson(d)).where((a) => a.isActive).toList();
+    return list.where((a) => a.facultyId == user.id).toList();
+  }
+
+  @override
   Future<void> createFacultyAssignment(FacultyAssignment assignment) async {
     _validateScope(assignment.collegeId, assignment.departmentId);
 

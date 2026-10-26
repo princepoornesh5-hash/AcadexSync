@@ -64,12 +64,24 @@ export class OtpService {
       }
     }
 
-    // 2. Generate secure code & hash
+    // 2. Invalidate any previous unconsumed OTPs for this user and purpose
+    await Otp.updateMany(
+      {
+        userId: userObjectId,
+        purpose,
+        consumedAt: null,
+      },
+      {
+        $set: { consumedAt: new Date() },
+      }
+    );
+
+    // 3. Generate secure code & hash
     const rawOtp = this.generateOtpCode(6);
     const otpHash = this.hashOtpCode(rawOtp);
     const expiresAt = new Date(Date.now() + env.OTP_EXPIRES_IN * 1000);
 
-    // 3. Persist OTP record
+    // 4. Persist OTP record
     await Otp.create({
       userId: userObjectId,
       purpose,
@@ -82,12 +94,16 @@ export class OtpService {
     });
 
     // 4. Dispatch via delivery adapter
-    await OtpDeliveryService.sendOtp({
+    const delivered = await OtpDeliveryService.sendOtp({
       destination,
       otp: rawOtp,
       purpose,
       deliveryMethod,
     });
+
+    if (!delivered) {
+      throw ApiError.internal('Failed to deliver verification code. Please try again later.');
+    }
 
     return { success: true };
   }
@@ -98,15 +114,25 @@ export class OtpService {
   static async verifyAndConsumeOtp(
     userId: mongoose.Types.ObjectId | string,
     purpose: OtpPurpose,
-    rawOtp: string
+    rawOtp: string,
+    expectedDestination?: string,
+    expectedDeliveryMethod?: OtpDeliveryMethod
   ): Promise<IOtp> {
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
-    // Find latest OTP for user & purpose
-    const otpDoc = await Otp.findOne({
+    const query: Record<string, unknown> = {
       userId: userObjectId,
       purpose,
-    }).sort({ createdAt: -1 });
+    };
+    if (expectedDestination) {
+      query.destination = expectedDestination;
+    }
+    if (expectedDeliveryMethod) {
+      query.deliveryMethod = expectedDeliveryMethod;
+    }
+
+    // Find latest OTP for user & purpose
+    const otpDoc = await Otp.findOne(query).sort({ createdAt: -1 });
 
     if (!otpDoc) {
       throw ApiError.badRequest('No verification code found. Please request a new code.');

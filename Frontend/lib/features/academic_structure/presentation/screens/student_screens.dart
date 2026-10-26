@@ -60,6 +60,11 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
   }
 
   void _syncFilters() {
+    // Clear selections whenever the filter scope changes to avoid stale selected
+    // IDs referencing students that are no longer in the visible dataset.
+    if (_selectedIds.isNotEmpty) {
+      setState(() => _selectedIds.clear());
+    }
     ref.read(studentListFilterProvider.notifier).state = StudentFilterCriteria(
       departmentId: _departmentId,
       courseId: _courseId,
@@ -161,6 +166,8 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
     final authState = ref.watch(authProvider);
     final currentUser = authState is AuthAuthenticated ? authState.user : null;
     final isHod = currentUser?.role == AppRole.hod;
+    // isStaff controls bulk-action visibility and the checkbox column.
+    // Faculty does NOT have bulk-action rights on the student directory.
     final isStaff = currentUser?.role == AppRole.superAdmin ||
         currentUser?.role == AppRole.collegeAdmin ||
         currentUser?.role == AppRole.hod;
@@ -389,6 +396,18 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                   return true;
                 }).toList();
 
+                // Prune any selected IDs that are no longer present in the
+                // loaded dataset. This handles workspace changes, data reloads,
+                // and any case where the underlying list is replaced without
+                // an explicit filter change (e.g. pull-to-refresh).
+                final visibleIds = filtered.map((s) => s.id).toSet();
+                final staleIds = _selectedIds.difference(visibleIds);
+                if (staleIds.isNotEmpty) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) setState(() => _selectedIds.removeAll(staleIds));
+                  });
+                }
+
                 if (filtered.isEmpty) {
                   return AcadexEmptyState(
                     title: "No students found",
@@ -403,7 +422,7 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
 
                 return isMobile
                     ? _buildMobileList(filtered, isDark)
-                    : _buildDesktopTable(filtered, theme);
+                    : _buildDesktopTable(filtered, theme, isStaff: isStaff);
               },
             ),
           ),
@@ -683,9 +702,17 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
     );
   }
 
-  Widget _buildDesktopTable(List<Student> students, ThemeData theme) {
+  Widget _buildDesktopTable(
+    List<Student> students,
+    ThemeData theme, {
+    bool isStaff = false,
+  }) {
+    // Checkbox column is only meaningful for staff roles (HOD, College Admin,
+    // Super Admin) who have access to bulk-action operations (promote, transfer,
+    // graduate). Faculty users are read-only on this screen and must not see a
+    // non-functional selection affordance.
     return AcadexDataTable(
-      showCheckboxColumn: true,
+      showCheckboxColumn: isStaff,
       columns: const ["Student", "Roll No.", "Status", "Actions"],
       rows: students.map((s) {
         final statusLabel = s.accountStatus == AccountStatus.pendingActivation
@@ -693,52 +720,63 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
             : s.lifecycleState.displayName;
 
         return DataRow(
-          selected: _selectedIds.contains(s.id),
-          onSelectChanged: (selected) {
-            setState(() {
-              if (selected == true) {
-                _selectedIds.add(s.id);
-              } else {
-                _selectedIds.remove(s.id);
-              }
-            });
-          },
+          selected: isStaff && _selectedIds.contains(s.id),
+          // onSelectChanged must be null when checkboxes are hidden; providing a
+          // non-null callback while showCheckboxColumn is false can still cause
+          // Flutter's DataTable to render a hidden-but-active interactive area.
+          onSelectChanged: isStaff
+              ? (selected) {
+                  setState(() {
+                    if (selected == true) {
+                      _selectedIds.add(s.id);
+                    } else {
+                      _selectedIds.remove(s.id);
+                    }
+                  });
+                }
+              : null,
           cells: [
             DataCell(
-              InkWell(
-                onTap: () => context.push('/academics/students/${s.id}'),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircleAvatar(
-                      radius: 14,
-                      backgroundColor: AcadexColors.primary.withValues(alpha: 0.12),
-                      child: Text(
-                        s.name.isNotEmpty ? s.name[0].toUpperCase() : 'S',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AcadexColors.primary,
+              Semantics(
+                label: 'View profile for ${s.name}',
+                child: InkWell(
+                  onTap: () => context.push('/academics/students/${s.id}'),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: AcadexColors.primary.withValues(alpha: 0.12),
+                        child: Text(
+                          s.name.isNotEmpty ? s.name[0].toUpperCase() : 'S',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AcadexColors.primary,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      s.name,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      Text(
+                        s.name,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
             DataCell(
-              InkWell(
-                onTap: () => context.push('/academics/students/${s.id}'),
-                child: Text(
-                  s.rollNumber.isNotEmpty ? s.rollNumber : (s.instituteId ?? '—'),
-                  style: AcadexTypography.body(color: AcadexColors.primary).copyWith(
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.3,
+              Semantics(
+                label: 'Roll number: ${s.rollNumber.isNotEmpty ? s.rollNumber : (s.instituteId ?? 'not assigned')}',
+                child: InkWell(
+                  onTap: () => context.push('/academics/students/${s.id}'),
+                  child: Text(
+                    s.rollNumber.isNotEmpty ? s.rollNumber : (s.instituteId ?? '—'),
+                    style: AcadexTypography.body(color: AcadexColors.primary).copyWith(
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                 ),
               ),
@@ -751,7 +789,7 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
             ),
             DataCell(
               IconButton(
-                tooltip: "View Profile",
+                tooltip: 'View ${s.name}\'s profile',
                 icon: const Icon(LucideIcons.chevronRight, size: 18, color: AcadexColors.primary),
                 onPressed: () => context.push('/academics/students/${s.id}'),
               ),

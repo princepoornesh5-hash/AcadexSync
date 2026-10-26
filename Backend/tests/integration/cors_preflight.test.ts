@@ -23,7 +23,7 @@ describe('ACADEX — Backend CORS & Preflight Integration Tests', () => {
           .options('/api/v1/auth/login')
           .set('Origin', origin)
           .set('Access-Control-Request-Method', 'POST')
-          .set('Access-Control-Request-Headers', 'content-type,authorization,x-college-id');
+          .set('Access-Control-Request-Headers', 'content-type,authorization,x-college-id,x-workspace-id');
 
         expect(res.status).toBe(204);
         expect(res.headers['access-control-allow-origin']).toBe(origin);
@@ -31,6 +31,7 @@ describe('ACADEX — Backend CORS & Preflight Integration Tests', () => {
         expect(res.headers['access-control-allow-methods']).toContain('POST');
         expect(res.headers['access-control-allow-headers']).toContain('Content-Type');
         expect(res.headers['access-control-allow-headers']).toContain('Authorization');
+        expect(res.headers['access-control-allow-headers'].toLowerCase()).toContain('x-workspace-id');
       }
     });
 

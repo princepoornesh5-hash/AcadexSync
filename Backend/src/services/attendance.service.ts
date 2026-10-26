@@ -42,6 +42,7 @@ import {
   getTimetableDayFromDate as getTimetableDayFromDateUtil,
   startOfCalendarDay,
   endOfCalendarDay,
+  normalizeTimeSlot,
 } from '../utils/dateTime';
 
 export function getTimetableDayFromDate(date: Date | string, timeZone: string = DEFAULT_INSTITUTION_TIMEZONE): TimetableDay {
@@ -115,6 +116,12 @@ export class AttendanceService {
     const collegeTimezone = collegeDoc?.timezone || DEFAULT_INSTITUTION_TIMEZONE;
     const sessionDate = data.date ? new Date(data.date) : new Date();
     const calendarDateStr = formatDateToCalendarString(data.date || sessionDate, collegeTimezone);
+    const dayStart = startOfCalendarDay(calendarDateStr, collegeTimezone);
+    const dayEnd = endOfCalendarDay(calendarDateStr, collegeTimezone);
+
+    if (data.timeSlot) {
+      data.timeSlot = normalizeTimeSlot(data.timeSlot);
+    }
 
     let sectionDoc: InstanceType<typeof Section> | null = null;
     let subjectDoc: InstanceType<typeof Subject> | null = null;
@@ -287,7 +294,7 @@ export class AttendanceService {
           // Authoritative FacultyAssignment Check
           if (entry.facultyAssignmentId) {
             const assignment = await FacultyAssignment.findById(entry.facultyAssignmentId);
-            if (!assignment || !assignment.isActive) {
+            if (!assignment || !assignment.isActive || assignment.status !== 'active') {
               throw ApiError.forbidden('Faculty assignment is inactive or invalid');
             }
             if (!activeSubstitution && assignment.facultyId.toString() !== authenticatedFacultyDoc._id.toString()) {
@@ -379,7 +386,9 @@ export class AttendanceService {
         if (entry.roomNumber) data.roomNumber = entry.roomNumber;
         if (entry.building) data.building = entry.building;
         if (!data.timeSlot) {
-          data.timeSlot = `${entry.startTime} - ${entry.endTime}`;
+          data.timeSlot = normalizeTimeSlot(`${entry.startTime} - ${entry.endTime}`);
+        } else {
+          data.timeSlot = normalizeTimeSlot(data.timeSlot);
         }
       }
     } else if (authenticatedFacultyDoc && data.sectionId && data.subjectId) {
@@ -469,22 +478,64 @@ export class AttendanceService {
     }
 
     // Check duplicate session for the same section/semester, subject, date, timeSlot
+    let existingSession: InstanceType<typeof AttendanceSession> | null = null;
     if (data.subjectId && data.timeSlot) {
-      const duplicateQuery: Record<string, unknown> = {
+      const normalizedSlot = normalizeTimeSlot(data.timeSlot);
+      data.timeSlot = normalizedSlot;
+      const dashVariants = ['-', '–', '—', '−'];
+      const slotParts = normalizedSlot.split(/\s*-\s*/);
+      const slotStart = slotParts[0];
+      const slotEnd = slotParts[1] || '';
+      const exactSlots = Array.from(new Set([
+        normalizedSlot,
+        ...dashVariants.map((d) => `${slotStart} ${d} ${slotEnd}`),
+        ...dashVariants.map((d) => `${slotStart}${d}${slotEnd}`),
+      ]));
+
+      const orConditions: any[] = [
+        {
+          date: { $gte: dayStart, $lte: dayEnd },
+          timeSlot: { $in: exactSlots },
+          ...(data.sectionId
+            ? { sectionId: new mongoose.Types.ObjectId(data.sectionId) }
+            : data.semesterId
+            ? { semesterId: new mongoose.Types.ObjectId(data.semesterId) }
+            : {}),
+        },
+      ];
+
+      if (data.timetableEntryId) {
+        orConditions.push({
+          date: { $gte: dayStart, $lte: dayEnd },
+          timetableEntryId: data.timetableEntryId,
+        });
+      }
+
+      existingSession = await AttendanceSession.findOne({
         collegeId: new mongoose.Types.ObjectId(collegeId),
         subjectId: new mongoose.Types.ObjectId(data.subjectId),
-        date: sessionDate,
-        timeSlot: data.timeSlot,
         status: { $ne: AttendanceSessionStatus.CANCELLED },
-      };
-      if (data.sectionId) {
-        duplicateQuery.sectionId = new mongoose.Types.ObjectId(data.sectionId);
-      } else if (data.semesterId) {
-        duplicateQuery.semesterId = new mongoose.Types.ObjectId(data.semesterId);
-      }
-      const existing = await AttendanceSession.findOne(duplicateQuery);
-      if (existing) {
-        throw ApiError.conflict('An active attendance session already exists for this class, subject, date, and timeslot');
+        $or: orConditions,
+      });
+
+      if (existingSession) {
+        // Enforce lifecycle rules on existing session
+        if (existingSession.status === AttendanceSessionStatus.LOCKED || existingSession.isLocked) {
+          throw ApiError.badRequest('Cannot mark attendance: Attendance session is locked');
+        }
+        if (existingSession.status === AttendanceSessionStatus.CLOSED) {
+          throw ApiError.badRequest('Cannot mark attendance: Attendance session is closed');
+        }
+
+        // Authorization check: Verify faculty identity
+        if (authenticatedFacultyDoc) {
+          const authFacultyIdStr = authenticatedFacultyDoc._id.toString();
+          const sessFacultyIdStr = existingSession.facultyId.toString();
+          const sessSubIdStr = existingSession.substituteFacultyId?.toString();
+          if (sessFacultyIdStr !== authFacultyIdStr && sessSubIdStr !== authFacultyIdStr && sessFacultyIdStr !== requester?.id) {
+            throw ApiError.forbidden('An active attendance session already exists for this occurrence and is assigned to another faculty');
+          }
+        }
       }
     }
 
@@ -544,29 +595,154 @@ export class AttendanceService {
       }
     }
 
-    const session = await AttendanceSession.create({
-      ...data,
-      collegeId: new mongoose.Types.ObjectId(collegeId),
-      departmentId: sectionDoc ? sectionDoc.departmentId : data.departmentId,
-      courseId: sectionDoc ? sectionDoc.courseId : data.courseId,
-      academicYearId: sectionDoc ? sectionDoc.academicYearId : data.academicYearId,
-      semesterId: sectionDoc ? sectionDoc.semesterId : data.semesterId,
-      sectionId: sectionDoc ? sectionDoc._id : (data.sectionId ? new mongoose.Types.ObjectId(data.sectionId) : null),
-      sectionName: sectionDoc ? sectionDoc.name : (data.sectionName || null),
-      subjectName: subjectDoc ? subjectDoc.name : data.subjectName || 'Subject',
-      date: sessionDate,
-      records: populatedRecords,
-      status: data.status || AttendanceSessionStatus.OPEN,
-      createdBy: actorUserId,
-      isSubmitted: data.isSubmitted ?? true,
-      isLocked: data.isLocked ?? false,
-      isSubstitution: data.isSubstitution ?? false,
-      substituteFacultyId: data.substituteFacultyId ?? null,
-      substitutionId: data.substitutionId ?? null,
-      originalFacultyId: data.originalFacultyId ?? null,
-      originalFacultyAssignmentId: data.originalFacultyAssignmentId ?? null,
-      substitutionReason: data.substitutionReason ?? null,
-    });
+    // Idempotent resolution if an open session already exists for this scheduled class occurrence
+    if (existingSession) {
+      if (populatedRecords.length > 0) {
+        existingSession.records = populatedRecords;
+        existingSession.isSubmitted = true;
+        existingSession.lastModifiedBy = actorUserId;
+        try {
+          await existingSession.save();
+        } catch (vErr: any) {
+          if (vErr.name === 'VersionError') {
+            const fresh = await AttendanceSession.findById(existingSession._id);
+            if (fresh) existingSession = fresh;
+          } else {
+            throw vErr;
+          }
+        }
+
+        await AttendanceRecord.deleteMany({ sessionId: existingSession._id });
+        const recordsToInsert = populatedRecords.map((r) => ({
+          collegeId: existingSession!.collegeId,
+          sessionId: existingSession!._id,
+          studentId: r.studentId,
+          studentName: r.studentName,
+          rollNumber: r.rollNumber,
+          sectionId: existingSession!.sectionId || null,
+          subjectId: existingSession!.subjectId,
+          courseId: existingSession!.courseId,
+          departmentId: existingSession!.departmentId,
+          academicYearId: existingSession!.academicYearId,
+          semesterId: existingSession!.semesterId,
+          facultyId: existingSession!.facultyId,
+          date: existingSession!.date,
+          timeSlot: existingSession!.timeSlot,
+          status: r.status,
+          oldStatus: r.oldStatus,
+          remarks: r.remarks || undefined,
+          lastModified: new Date(),
+          modifiedBy: actorUserId,
+          isCancelled: false,
+        }));
+        await AttendanceRecord.insertMany(recordsToInsert);
+
+        if (actorUserId) {
+          await AuditLog.create({
+            collegeId,
+            actorUserId,
+            action: 'ATTENDANCE_SESSION_UPDATED',
+            entityType: 'AttendanceSession',
+            entityId: existingSession.id,
+            newValue: {
+              sectionId: existingSession.sectionId?.toString(),
+              subjectId: existingSession.subjectId?.toString(),
+              date: existingSession.date,
+              recordsCount: populatedRecords.length,
+            },
+          });
+        }
+
+        if (populatedRecords.length > 0) {
+          await this.dispatchAttendanceNotifications(existingSession, populatedRecords).catch((err) =>
+            logger.warn(`Failed to dispatch attendance notifications: ${err.message}`)
+          );
+        }
+      }
+      return existingSession;
+    }
+
+    let session: IAttendanceSession;
+    try {
+      session = await AttendanceSession.create({
+        ...data,
+        collegeId: new mongoose.Types.ObjectId(collegeId),
+        departmentId: sectionDoc ? sectionDoc.departmentId : data.departmentId,
+        courseId: sectionDoc ? sectionDoc.courseId : data.courseId,
+        academicYearId: sectionDoc ? sectionDoc.academicYearId : data.academicYearId,
+        semesterId: sectionDoc ? sectionDoc.semesterId : data.semesterId,
+        sectionId: sectionDoc ? sectionDoc._id : (data.sectionId ? new mongoose.Types.ObjectId(data.sectionId) : null),
+        sectionName: sectionDoc ? sectionDoc.name : (data.sectionName || null),
+        subjectName: subjectDoc ? subjectDoc.name : data.subjectName || 'Subject',
+        date: sessionDate,
+        records: populatedRecords,
+        status: data.status || AttendanceSessionStatus.OPEN,
+        createdBy: actorUserId,
+        isSubmitted: data.isSubmitted ?? true,
+        isLocked: data.isLocked ?? false,
+        isSubstitution: data.isSubstitution ?? false,
+        substituteFacultyId: data.substituteFacultyId ?? null,
+        substitutionId: data.substitutionId ?? null,
+        originalFacultyId: data.originalFacultyId ?? null,
+        originalFacultyAssignmentId: data.originalFacultyAssignmentId ?? null,
+        substitutionReason: data.substitutionReason ?? null,
+      });
+    } catch (err: any) {
+      if (err.code === 11000 || (err.name === 'MongoServerError' && err.message?.includes('E11000'))) {
+        let raceExisting = await AttendanceSession.findOne({
+          collegeId: new mongoose.Types.ObjectId(collegeId),
+          subjectId: new mongoose.Types.ObjectId(data.subjectId),
+          date: { $gte: dayStart, $lte: dayEnd },
+          timeSlot: normalizeTimeSlot(data.timeSlot),
+          status: { $ne: AttendanceSessionStatus.CANCELLED },
+          ...(data.sectionId ? { sectionId: new mongoose.Types.ObjectId(data.sectionId) } : {}),
+        });
+        if (raceExisting) {
+          if (raceExisting.status === AttendanceSessionStatus.OPEN && !raceExisting.isLocked && populatedRecords.length > 0) {
+            raceExisting.records = populatedRecords;
+            raceExisting.isSubmitted = true;
+            raceExisting.lastModifiedBy = actorUserId;
+            try {
+              await raceExisting.save();
+            } catch (vErr: any) {
+              if (vErr.name === 'VersionError') {
+                const fresh = await AttendanceSession.findById(raceExisting._id);
+                if (fresh) raceExisting = fresh;
+              } else {
+                throw vErr;
+              }
+            }
+            const targetSession = raceExisting;
+            await AttendanceRecord.deleteMany({ sessionId: targetSession._id });
+            const recordsToInsert = populatedRecords.map((r) => ({
+              collegeId: targetSession.collegeId,
+              sessionId: targetSession._id,
+              studentId: r.studentId,
+              studentName: r.studentName,
+              rollNumber: r.rollNumber,
+              sectionId: targetSession.sectionId || null,
+              subjectId: targetSession.subjectId,
+              courseId: targetSession.courseId,
+              departmentId: targetSession.departmentId,
+              academicYearId: targetSession.academicYearId,
+              semesterId: targetSession.semesterId,
+              facultyId: targetSession.facultyId,
+              date: targetSession.date,
+              timeSlot: targetSession.timeSlot,
+              status: r.status,
+              oldStatus: r.oldStatus,
+              remarks: r.remarks || undefined,
+              lastModified: new Date(),
+              modifiedBy: actorUserId,
+              isCancelled: false,
+            }));
+            await AttendanceRecord.insertMany(recordsToInsert);
+          }
+          return raceExisting;
+        }
+      }
+      throw err;
+    }
 
     if (populatedRecords.length > 0) {
       const recordsToInsert = populatedRecords.map((r) => ({

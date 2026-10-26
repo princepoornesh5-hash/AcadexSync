@@ -1,4 +1,5 @@
 import '../../../academic_structure/domain/models/academic_models.dart';
+import '../models/activation_model.dart';
 
 abstract class AccountActivationRepository {
   /// Generates a new activation code for a pre-provisioned student.
@@ -14,4 +15,25 @@ abstract class AccountActivationRepository {
 
   /// Completes the activation process for either role and creates Auth account.
   Future<String> completeActivation(String identifier, String code, String newPassword);
+}
+
+abstract class ActivationRepository {
+  Future<ActivationValidationResult> validateActivationCode(String activationCode);
+  
+  Future<SendOtpResult> sendActivationOtp({
+    required String activationFlowId,
+    required String contactMethod,
+  });
+  
+  Future<VerifyOtpResult> verifyActivationOtp({
+    required String activationFlowId,
+    required String contactMethod,
+    required String otp,
+  });
+  
+  Future<CompleteActivationResult> completeActivation({
+    required String activationToken,
+    String? password,
+    String? confirmPassword,
+  });
 }

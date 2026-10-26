@@ -1672,6 +1672,21 @@ class MockAcademicRepository implements AcademicRepository {
   }
 
   @override
+  Future<List<FacultyAssignment>> getMyFacultyAssignments() async {
+    await _delay();
+    if (currentUser == null) return List.from(_facultyAssignments.where((a) => a.isActive));
+    final currentUserId = currentUser!.id;
+    final userEmail = currentUser!.email.trim().toLowerCase();
+    final matchingFac = _faculty.where((f) =>
+      f.id == currentUserId ||
+      (f.userId != null && f.userId == currentUserId) ||
+      (userEmail.isNotEmpty && f.email.trim().toLowerCase() == userEmail)
+    ).firstOrNull;
+    final facId = matchingFac?.id ?? currentUserId;
+    return _facultyAssignments.where((fa) => fa.isActive && (fa.facultyId == facId || fa.facultyId == currentUserId)).toList();
+  }
+
+  @override
   Future<void> createFacultyAssignment(FacultyAssignment assignment) async {
     await _delay();
     // 1. Validate faculty exists, is active, and matches college & department

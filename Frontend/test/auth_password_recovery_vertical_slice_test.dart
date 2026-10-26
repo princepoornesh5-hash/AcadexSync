@@ -91,7 +91,7 @@ void main() {
 
       expect(find.text('Forgot your password?'), findsOneWidget);
       expect(find.text('STEP 1 OF 3'), findsOneWidget);
-      expect(find.text('Email or Phone Number'), findsOneWidget);
+      expect(find.text('PIN Number, Email, or Phone'), findsOneWidget);
       expect(find.widgetWithText(AcadexButton, 'Send Verification Code'), findsOneWidget);
       expect(find.text('Back to Sign In'), findsOneWidget);
     });
@@ -109,7 +109,7 @@ void main() {
       await tester.tap(btn);
       await tester.pumpAndSettle();
 
-      expect(find.text('Please enter your email or phone number'), findsOneWidget);
+      expect(find.text('Please enter your PIN Number, email, or phone'), findsOneWidget);
     });
 
     testWidgets('3. Send OTP loading state prevents duplicate submission', (tester) async {

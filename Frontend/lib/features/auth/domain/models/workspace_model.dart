@@ -49,8 +49,12 @@ class WorkspaceMembershipModel {
         ? AppRoleExtension.fromValue(json['primaryRole'].toString())
         : (parsedRoles.isNotEmpty ? parsedRoles.first : AppRole.student);
 
+    final firstDept = (json['departments'] is List && (json['departments'] as List).isNotEmpty)
+        ? (json['departments'] as List).first as Map<String, dynamic>?
+        : null;
+
     return WorkspaceMembershipModel(
-      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      id: (json['id'] ?? json['_id'] ?? json['membershipId'] ?? '').toString(),
       collegeId: (json['collegeId'] ?? '').toString(),
       collegeName: (json['collegeName'] ?? 'College Workspace').toString(),
       collegeCode: (json['collegeCode'] ?? '').toString(),
@@ -61,9 +65,9 @@ class WorkspaceMembershipModel {
       isDefault: json['isDefault'] == true,
       roles: parsedRoles,
       primaryRole: primaryRoleVal,
-      departmentId: json['departmentId']?.toString(),
-      departmentName: json['departmentName'] as String?,
-      departmentCode: json['departmentCode'] as String?,
+      departmentId: (json['departmentId'] ?? firstDept?['id'])?.toString(),
+      departmentName: (json['departmentName'] ?? firstDept?['name']) as String?,
+      departmentCode: (json['departmentCode'] ?? firstDept?['code']) as String?,
       joinedAt: json['joinedAt'] != null ? DateTime.tryParse(json['joinedAt'].toString()) : null,
       lastAccessedAt: json['lastAccessedAt'] != null ? DateTime.tryParse(json['lastAccessedAt'].toString()) : null,
     );

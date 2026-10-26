@@ -2269,6 +2269,69 @@ export class AcademicService {
     return assignment;
   }
 
+  static async getMyFacultyAssignments(requester: AuthenticatedUser): Promise<IFacultyAssignment[]> {
+    if (!requester.collegeId || !mongoose.Types.ObjectId.isValid(requester.collegeId)) {
+      return [];
+    }
+
+    const collegeId = new mongoose.Types.ObjectId(requester.collegeId);
+    let facultyProfile = await Faculty.findOne({ userId: requester.id, collegeId });
+    if (!facultyProfile && mongoose.Types.ObjectId.isValid(requester.id)) {
+      facultyProfile = await Faculty.findOne({
+        $or: [
+          { userId: new mongoose.Types.ObjectId(requester.id) },
+          { _id: new mongoose.Types.ObjectId(requester.id) },
+        ],
+        collegeId,
+      });
+    }
+    if (!facultyProfile && requester.email) {
+      facultyProfile = await Faculty.findOne({ email: requester.email.toLowerCase(), collegeId });
+    }
+
+    if (!facultyProfile) {
+      return [];
+    }
+
+    const mongoQuery: Record<string, unknown> = {
+      collegeId,
+      facultyId: {
+        $in: [
+          facultyProfile._id,
+          ...(facultyProfile.userId ? [facultyProfile.userId] : []),
+          ...(mongoose.Types.ObjectId.isValid(requester.id) ? [new mongoose.Types.ObjectId(requester.id)] : []),
+        ],
+      },
+      status: 'active',
+      isActive: true,
+    };
+
+    const items = await FacultyAssignment.find(mongoQuery).sort({ createdAt: -1 });
+
+    for (const item of items) {
+      if (!item.cohort || !item.academicStage) {
+        if (item.academicYearId && item.courseId && item.semesterId) {
+          const [ay, crs, sem] = await Promise.all([
+            AcademicYear.findById(item.academicYearId),
+            Course.findById(item.courseId),
+            Semester.findById(item.semesterId),
+          ]);
+          if (ay && crs && sem) {
+            const match = ay.name.match(/(\d{4})/);
+            const ayStart = match ? parseInt(match[1], 10) : new Date(ay.startDate).getFullYear();
+            const stage = Math.max(1, Math.ceil(sem.number / 2));
+            const entry = ayStart - (stage - 1);
+            const grad = entry + (crs.duration || 3);
+            item.cohort = `${entry}–${grad.toString().slice(-2)}`;
+            item.academicStage = `${stage}${stage === 1 ? 'st' : stage === 2 ? 'nd' : stage === 3 ? 'rd' : 'th'} Year`;
+          }
+        }
+      }
+    }
+
+    return items;
+  }
+
   static async listFacultyAssignments(
     requester: AuthenticatedUser,
     query: {

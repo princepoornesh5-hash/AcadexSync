@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../features/auth/presentation/providers/workspace_providers.dart';
 import '../../domain/models/attendance_session.dart';
 import '../../domain/models/attendance_record.dart';
 import '../../domain/models/attendance_status.dart';
@@ -17,6 +18,8 @@ final historySearchQueryProvider = StateProvider<String>((ref) => '');
 final historyStatusFilterProvider = StateProvider<String?>((ref) => null); // null, 'open', 'locked', 'closed', 'cancelled'
 
 final facultyHistoryListProvider = FutureProvider<List<AttendanceSession>>((ref) async {
+  // Workspace-aware: Refetch history on workspace switch
+  ref.watch(activeWorkspaceProvider);
   final repo = ref.watch(attendanceRepoProvider);
   return repo.getFacultySessions();
 });
@@ -27,7 +30,16 @@ final filteredFacultyHistoryProvider = Provider<AsyncValue<List<AttendanceSessio
   final statusFilter = ref.watch(historyStatusFilterProvider)?.toLowerCase();
 
   return asyncList.whenData((list) {
-    return list.where((session) {
+    // Deduplicate by session ID to prevent duplicate items from API/cache/merging
+    final seenIds = <String>{};
+    final uniqueList = <AttendanceSession>[];
+    for (final s in list) {
+      if (seenIds.add(s.id)) {
+        uniqueList.add(s);
+      }
+    }
+
+    return uniqueList.where((session) {
       if (statusFilter != null && statusFilter.isNotEmpty) {
         if (statusFilter == 'open' && !session.isOpen) return false;
         if (statusFilter == 'locked' && !session.isLockedState) return false;

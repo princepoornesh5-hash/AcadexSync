@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../../app/theme/app_theme.dart';
 import '../../../domain/models/attendance_session.dart';
-import '../../../domain/models/attendance_status.dart';
 import 'attendance_lock_chip.dart';
 
 class AttendanceRecordCard extends StatelessWidget {
@@ -19,9 +18,14 @@ class AttendanceRecordCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final present = session.records.where((r) => r.status == AttendanceStatus.present).length;
-    final absent = session.records.where((r) => r.status == AttendanceStatus.absent).length;
-    final lateCount = session.records.where((r) => r.status == AttendanceStatus.late).length;
+    final present = session.presentCount;
+    final absent = session.absentCount;
+    final lateCount = session.lateCount;
+    final excused = session.excusedCount;
+    final unmarked = session.unmarkedCount;
+    final total = session.totalStudents;
+    final normalizedTimeSlot = session.timeSlot.replaceAll('–', '-').replaceAll('—', '-');
+    final shortRef = session.id.length >= 6 ? session.id.substring(session.id.length - 6) : session.id;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -59,7 +63,7 @@ class AttendanceRecordCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            "${session.sectionName} • ${session.timeSlot}",
+                            "${session.sectionName} • $normalizedTimeSlot • #$shortRef",
                             style: AcadexTypography.caption(
                               color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                             ),
@@ -108,7 +112,11 @@ class AttendanceRecordCard extends StatelessWidget {
                       _buildStat("Present", present.toString(), AcadexColors.success, isDark),
                       _buildStat("Late", lateCount.toString(), AcadexColors.warning, isDark),
                       _buildStat("Absent", absent.toString(), AcadexColors.error, isDark),
-                      _buildStat("Total", session.records.length.toString(), isDark ? AcadexColors.darkInk : AcadexColors.ink, isDark),
+                      if (excused > 0)
+                        _buildStat("Excused", excused.toString(), const Color(0xFF6366F1), isDark),
+                      if (unmarked > 0)
+                        _buildStat("Unmarked", unmarked.toString(), isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted, isDark),
+                      _buildStat("Total", total.toString(), isDark ? AcadexColors.darkInk : AcadexColors.ink, isDark),
                     ],
                   ),
                 ),

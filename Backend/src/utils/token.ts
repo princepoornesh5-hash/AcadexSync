@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { env } from '../config/env';
 import { JwtPayload } from '../types/auth.types';
 import { TokenType } from '../constants/status';
+import { AppRole } from '../constants/roles';
 import { ApiError } from './apiError';
 
 function base64UrlEncode(str: string): string {
@@ -158,6 +159,86 @@ export function signPasswordResetToken(
     expiresInSeconds,
     env.JWT_RESET_SECRET
   );
+}
+
+/**
+ * Generates an Activation Flow Token (short-lived, 15 minutes)
+ * Encapsulates the resolved activation flow state between code validation and OTP verification.
+ */
+export function signActivationFlowToken(
+  payload: {
+    flowId: string;
+    invitationId: string;
+    userId: string;
+    collegeId: string;
+  },
+  expiresInSeconds = 900
+): string {
+  return signJwtToken(
+    {
+      userId: payload.userId,
+      role: AppRole.STUDENT,
+      tokenType: TokenType.ACTIVATION_FLOW,
+      invitationId: payload.invitationId,
+      flowId: payload.flowId,
+      collegeId: payload.collegeId,
+      purpose: 'activation_flow',
+    },
+    expiresInSeconds,
+    env.ACTIVATION_CODE_SECRET
+  );
+}
+
+/**
+ * Verifies an Activation Flow Token, ensuring it is valid and has not expired.
+ */
+export function verifyActivationFlowToken(token: string): JwtPayload {
+  const payload = verifyJwtToken(token, TokenType.ACTIVATION_FLOW, env.ACTIVATION_CODE_SECRET);
+  if (payload.purpose !== 'activation_flow') {
+    throw ApiError.unauthorized('Invalid token purpose. Expected activation flow token.');
+  }
+  return payload;
+}
+
+/**
+ * Generates an Activation Completion Authorization Token (short-lived, 10 minutes)
+ * Issued exclusively upon successful OTP verification.
+ */
+export function signActivationCompletionToken(
+  payload: {
+    tokenId: string;
+    invitationId: string;
+    userId: string;
+    collegeId: string;
+    contactMethod: string;
+  },
+  expiresInSeconds = 600
+): string {
+  return signJwtToken(
+    {
+      userId: payload.userId,
+      role: AppRole.STUDENT,
+      tokenType: TokenType.ACTIVATION_TOKEN,
+      invitationId: payload.invitationId,
+      tokenId: payload.tokenId,
+      collegeId: payload.collegeId,
+      contactMethod: payload.contactMethod,
+      purpose: 'activation_completion',
+    },
+    expiresInSeconds,
+    env.ACTIVATION_CODE_SECRET
+  );
+}
+
+/**
+ * Verifies an Activation Completion Token, ensuring it is valid and has not expired.
+ */
+export function verifyActivationCompletionToken(token: string): JwtPayload {
+  const payload = verifyJwtToken(token, TokenType.ACTIVATION_TOKEN, env.ACTIVATION_CODE_SECRET);
+  if (payload.purpose !== 'activation_completion') {
+    throw ApiError.unauthorized('Invalid token purpose. Expected activation completion token.');
+  }
+  return payload;
 }
 
 /**

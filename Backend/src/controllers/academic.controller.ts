@@ -355,8 +355,8 @@ export class AcademicController {
 
   static getMyFacultyAssignments = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user) throw ApiError.unauthorized('User not authenticated');
-    const result = await AcademicService.listFacultyAssignments(req.user, { page: 1, limit: 100 });
-    return ApiResponse.success(res, result.items);
+    const items = await AcademicService.getMyFacultyAssignments(req.user);
+    return ApiResponse.success(res, items);
   });
 
   static assignFaculty = asyncHandler(async (req: Request, res: Response) => {

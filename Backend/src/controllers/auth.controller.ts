@@ -180,4 +180,21 @@ export class AuthController {
 
     return ApiResponse.success(res, null, result.message);
   });
+
+  /**
+   * POST /api/v1/auth/dev-login
+   * Development-only role quick-login.
+   */
+  static devLogin = asyncHandler(async (req: Request, res: Response) => {
+    const { role, identifier } = req.body;
+
+    const metadata = {
+      userAgent: req.headers['user-agent'],
+      ipAddress: req.ip || req.socket.remoteAddress,
+    };
+
+    const result = await AuthService.devLogin(role, identifier, metadata);
+
+    return ApiResponse.success(res, result, 'Development session established successfully');
+  });
 }

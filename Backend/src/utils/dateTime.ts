@@ -124,3 +124,19 @@ export function isTimeOverlapping(s1: string, e1: string, s2: string, e2: string
   return s1 < e2 && e1 > s2;
 }
 
+/**
+ * Standardizes time slot strings across unicode dashes (en-dash \u2013, em-dash \u2014,
+ * figure dash \u2012, minus \u2212, fullwidth \uFF0D, hyphen-minus) and normalizes spacing.
+ * Converts "10:00 – 12:00" or "10:00-12:00" or "9:00 - 10:00" to canonical "HH:mm - HH:mm".
+ */
+export function normalizeTimeSlot(timeSlot?: string | null): string {
+  if (!timeSlot) return '';
+  const normalizedDashes = timeSlot.replace(/[\u2010-\u2015\u2212\uFF0D]/g, '-').trim();
+  const match = normalizedDashes.match(/^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$/);
+  if (match) {
+    const pad = (t: string) => (t.length === 4 ? `0${t}` : t);
+    return `${pad(match[1])} - ${pad(match[2])}`;
+  }
+  return normalizedDashes.replace(/\s*-\s*/g, ' - ').trim();
+}
+

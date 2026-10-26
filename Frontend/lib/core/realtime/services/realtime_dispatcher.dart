@@ -111,6 +111,7 @@ class RealtimeDispatcher {
         _debounceAndExecute('facultyAssignment', () {
           _ref.invalidate(facultyAssignmentsProvider);
           _ref.invalidate(myFacultyAssignmentsProvider);
+          _ref.invalidate(myFacultyAssignmentsAsyncProvider);
           _ref.invalidate(weeklyTimetableProvider);
           _ref.invalidate(facultyCourseAssignmentsProvider);
           _ref.invalidate(homeDashboardProvider);
@@ -293,6 +294,7 @@ class RealtimeDispatcher {
     _ref.invalidate(requestSummaryCountsProvider);
     _ref.invalidate(weeklyTimetableProvider);
     _ref.invalidate(myFacultyAssignmentsProvider);
+    _ref.invalidate(myFacultyAssignmentsAsyncProvider);
     _ref.invalidate(facultyCourseAssignmentsProvider);
     _ref.invalidate(studentAssignmentsProvider);
     _ref.invalidate(homeDashboardProvider);
