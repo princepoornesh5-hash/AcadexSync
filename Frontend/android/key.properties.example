@@ -1,0 +1,27 @@
+# ==============================================================================
+# ACADEX Android Production Release Signing Template
+# ==============================================================================
+# INSTRUCTIONS:
+# 1. Generate a production keystore (if not already created by release engineering):
+#    keytool -genkey -v -keystore acadex-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias acadex_key_alias
+#
+# 2. Place this file at: Frontend/android/key.properties (NEVER commit key.properties!)
+#
+# 3. Fill in the values below:
+#    - storeFile: Relative path from Frontend/android/ to your .jks/.keystore file
+#    - storePassword: Password for your keystore
+#    - keyAlias: The alias name used when creating the key
+#    - keyPassword: Password for your key alias
+#
+# 4. Alternatively, in CI/CD pipelines (e.g. GitHub Actions, Fastlane),
+#    inject environment variables instead of creating a file:
+#    - KEYSTORE_PATH
+#    - KEYSTORE_PASSWORD
+#    - KEY_ALIAS
+#    - KEY_PASSWORD
+# ==============================================================================
+
+storeFile=app/acadex-release.jks
+storePassword=YOUR_KEYSTORE_PASSWORD_HERE
+keyAlias=acadex_key_alias
+keyPassword=YOUR_KEY_PASSWORD_HERE

@@ -1,8 +1,12 @@
 import crypto from 'crypto';
+import mongoose from 'mongoose';
 import { User, IUser } from '../models/user.model';
 import { AuthSession } from '../models/authSession.model';
 import { College } from '../models/college.model';
 import { WorkspaceMembership } from '../models/workspaceMembership.model';
+import { WorkspaceRoleAssignment } from '../models/workspaceRoleAssignment.model';
+import { WorkspaceMembershipService } from './workspaceMembership.service';
+import { WorkspaceCompatibilityService } from './workspaceCompatibility.service';
 import { PasswordService } from './password.service';
 import { OtpService } from './otp.service';
 import { AppRole, normalizeRole } from '../constants/roles';
@@ -13,6 +17,7 @@ import {
   OtpDeliveryMethod,
   TokenType,
   MembershipStatus,
+  RoleAssignmentStatus,
 } from '../constants/status';
 import {
   signAccessToken,
@@ -29,12 +34,30 @@ import { AuditService } from './audit.service';
 export interface ClientMetadata {
   userAgent?: string;
   ipAddress?: string;
+  preferredWorkspaceId?: string;
+  collegeId?: string;
 }
 
 export interface LoginResult {
   accessToken: string;
   refreshToken: string;
   user: Record<string, unknown>;
+  activeWorkspace?: {
+    collegeId: string;
+    collegeName: string;
+    membershipId: string | null;
+    role: string;
+    instituteId?: string | null;
+  } | null;
+  availableWorkspaces?: Array<{
+    collegeId: string;
+    collegeName: string;
+    membershipId: string;
+    role: string;
+    instituteId?: string | null;
+    isDefault?: boolean;
+  }>;
+  requiresWorkspaceSelection?: boolean;
 }
 
 export class AuthService {
@@ -64,7 +87,19 @@ export class AuthService {
     } else {
       query = { instituteId: normalized };
     }
-    const user = await User.findOne(query);
+    let user = await User.findOne(query);
+
+    if (!user) {
+      // Check if identifier matches a WorkspaceMembership institutional PIN
+      const normalizedPin = rawIdentifier.trim().toUpperCase();
+      const membershipWithPin = await WorkspaceMembership.findOne({
+        instituteId: normalizedPin,
+        status: { $in: [MembershipStatus.ACTIVE, MembershipStatus.PENDING] },
+      });
+      if (membershipWithPin) {
+        user = await User.findById(membershipWithPin.userId);
+      }
+    }
 
     if (!user) {
       throw ApiError.unauthorized('Invalid credentials');
@@ -83,16 +118,6 @@ export class AuthService {
       throw ApiError.forbidden('Account is currently not active.');
     }
 
-    // Check institution status for tenant users
-    if (user.role !== AppRole.SUPER_ADMIN && user.collegeId) {
-      const college = await College.findById(user.collegeId);
-      if (college && (college.status === CollegeStatus.INACTIVE || !college.isActive)) {
-        throw ApiError.forbidden(
-          'Your institution is currently inactive. Please contact your administrator.'
-        );
-      }
-    }
-
     // Verify password
     const isPasswordValid = await PasswordService.verifyPassword(password, user.passwordHash);
     if (!isPasswordValid) {
@@ -103,18 +128,145 @@ export class AuthService {
     user.lastLoginAt = new Date();
     await user.save();
 
-    // Create session
     const sessionId = crypto.randomUUID();
+
+    // -------------------------------------------------------------------------
+    // PLATFORM SUPER ADMIN LOGIN
+    // -------------------------------------------------------------------------
+    if (user.role === AppRole.SUPER_ADMIN) {
+      const refreshToken = signRefreshToken({
+        userId: user.id,
+        instituteId: user.instituteId,
+        email: user.email,
+        phone: user.phone,
+        name: user.name,
+        role: AppRole.SUPER_ADMIN,
+        collegeId: undefined,
+        departmentId: undefined,
+        sessionId,
+      });
+
+      const refreshTokenHash = hashToken(refreshToken);
+      const expiresAt = new Date(Date.now() + env.REFRESH_TOKEN_EXPIRES_IN * 1000);
+
+      await AuthSession.create({
+        userId: user._id,
+        sessionId,
+        refreshTokenHash,
+        userAgent: metadata.userAgent,
+        ipAddress: metadata.ipAddress,
+        expiresAt,
+        lastUsedAt: new Date(),
+      });
+
+      const accessToken = signAccessToken({
+        userId: user.id,
+        instituteId: user.instituteId,
+        email: user.email,
+        phone: user.phone,
+        name: user.name,
+        role: AppRole.SUPER_ADMIN,
+        collegeId: undefined,
+        departmentId: undefined,
+        sessionId,
+      });
+
+      await AuditService.log({
+        actorUserId: user.id,
+        actorEmail: user.email,
+        actorRole: AppRole.SUPER_ADMIN,
+        action: 'USER_LOGIN',
+        entityType: 'User',
+        entityId: user.id,
+        metadata: { loginType: 'SUPER_ADMIN' },
+        ipAddress: metadata.ipAddress,
+        userAgent: metadata.userAgent,
+      });
+
+      return {
+        accessToken,
+        refreshToken,
+        user: user.toJSON(),
+        activeWorkspace: null,
+        availableWorkspaces: [],
+        requiresWorkspaceSelection: false,
+      };
+    }
+
+    // -------------------------------------------------------------------------
+    // INSTITUTIONAL TENANT USER MEMBERSHIP RESOLUTION
+    // -------------------------------------------------------------------------
+    const eligibleMemberships = await WorkspaceMembershipService.getEligibleMembershipsForUser(user.id);
+
+    let activeCollegeId: string;
+    let activeRole: AppRole;
+    let activeDepartmentId: string | null = null;
+    let activeInstituteId: string;
+    let activeMembershipId: string | null = null;
+    let activeCollegeName = '';
+    let requiresWorkspaceSelection = false;
+
+    if (eligibleMemberships.length > 0) {
+      let selected: any = null;
+      if (metadata.preferredWorkspaceId) {
+        selected = eligibleMemberships.find(
+          (m: any) =>
+            (m.collegeId?._id || m.collegeId)?.toString() === metadata.preferredWorkspaceId ||
+            (m._id || m.id)?.toString() === metadata.preferredWorkspaceId
+        );
+      }
+      if (!selected) {
+        selected = eligibleMemberships.find((m: any) => m.isDefault);
+      }
+      if (!selected) {
+        selected = eligibleMemberships[0];
+      }
+
+      activeCollegeId = (selected.collegeId?._id || selected.collegeId)?.toString();
+      activeCollegeName = selected.college?.name || 'Institutional Workspace';
+      activeRole = selected.primaryRole;
+      const dept = selected.roles?.find((r: any) => r.departmentId)?.departmentId;
+      activeDepartmentId = dept ? (dept._id || dept).toString() : null;
+      activeInstituteId = selected.instituteId || user.instituteId;
+      activeMembershipId = (selected._id || selected.id)?.toString();
+
+      requiresWorkspaceSelection =
+        eligibleMemberships.length > 1 &&
+        !metadata.preferredWorkspaceId &&
+        !eligibleMemberships.some((m: any) => m.isDefault);
+    } else {
+      // Legacy compatibility fallback
+      if (WorkspaceCompatibilityService.isLegacyFallbackEnabled() && user.collegeId) {
+        const legacyCollege = await College.findById(user.collegeId);
+        if (!legacyCollege || legacyCollege.status === CollegeStatus.INACTIVE || !legacyCollege.isActive) {
+          throw ApiError.forbidden(
+            'Your institution is currently inactive. Please contact your administrator.'
+          );
+        }
+        activeCollegeId = legacyCollege.id;
+        activeCollegeName = legacyCollege.name;
+        activeRole = user.role;
+        activeDepartmentId = user.departmentId?.toString() || null;
+        activeInstituteId = user.instituteId;
+        activeMembershipId = null;
+        requiresWorkspaceSelection = false;
+      } else {
+        throw ApiError.forbidden('No active workspace memberships found for this user.');
+      }
+    }
+
     const refreshToken = signRefreshToken({
       userId: user.id,
-      instituteId: user.instituteId,
+      instituteId: activeInstituteId,
       email: user.email,
       phone: user.phone,
       name: user.name,
-      role: user.role,
-      collegeId: user.collegeId?.toString(),
-      departmentId: user.departmentId?.toString(),
+      role: activeRole,
+      collegeId: activeCollegeId,
+      departmentId: activeDepartmentId || undefined,
       sessionId,
+      workspaceMembershipId: activeMembershipId,
+      membershipId: activeMembershipId,
     });
 
     const refreshTokenHash = hashToken(refreshToken);
@@ -132,29 +284,77 @@ export class AuthService {
 
     const accessToken = signAccessToken({
       userId: user.id,
-      instituteId: user.instituteId,
+      instituteId: activeInstituteId,
       email: user.email,
       phone: user.phone,
       name: user.name,
-      role: user.role,
-      collegeId: user.collegeId?.toString(),
-      departmentId: user.departmentId?.toString(),
+      role: activeRole,
+      collegeId: activeCollegeId,
+      departmentId: activeDepartmentId || undefined,
       courseId: user.courseId?.toString(),
       sectionId: user.sectionId?.toString(),
       semesterId: user.semesterId?.toString(),
       sessionId,
+      workspaceMembershipId: activeMembershipId,
+      membershipId: activeMembershipId,
     });
+
+    await AuditService.log({
+      actorUserId: user.id,
+      actorEmail: user.email,
+      actorRole: activeRole,
+      action: 'USER_LOGIN',
+      entityType: 'User',
+      entityId: user.id,
+      collegeId: activeCollegeId,
+      workspaceMembershipId: activeMembershipId || undefined,
+      metadata: {
+        activeCollegeId,
+        activeRole,
+        activeInstituteId,
+        workspaceMembershipId: activeMembershipId,
+      },
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
+    });
+
+    const availableWorkspaces = eligibleMemberships.map((m: any) => ({
+      collegeId: (m.collegeId?._id || m.collegeId)?.toString() || '',
+      collegeName: m.college?.name || 'Institutional Workspace',
+      membershipId: (m._id || m.id)?.toString() || '',
+      role: m.primaryRole,
+      instituteId: m.instituteId || null,
+      isDefault: !!m.isDefault,
+    }));
+
+    const activeWorkspace = {
+      collegeId: activeCollegeId,
+      collegeName: activeCollegeName,
+      membershipId: activeMembershipId,
+      role: activeRole,
+      instituteId: activeInstituteId,
+    };
+
+    const userJson: any = user.toJSON();
+    userJson.collegeId = activeCollegeId;
+    userJson.role = activeRole;
+    userJson.instituteId = activeInstituteId;
+    userJson.departmentId = activeDepartmentId;
+    userJson.workspaceMembershipId = activeMembershipId;
 
     return {
       accessToken,
       refreshToken,
-      user: user.toJSON(),
+      user: userJson,
+      activeWorkspace,
+      availableWorkspaces,
+      requiresWorkspaceSelection,
     };
   }
 
   /**
    * Session Refresh Flow:
-   * Validates refresh token, checks session revocation, verifies user and college are active, issues new access token.
+   * Validates refresh token, checks session revocation, verifies user, college, and membership status, issues new access token.
    */
   static async refreshToken(
     rawRefreshToken: string,
@@ -196,13 +396,80 @@ export class AuthService {
       throw ApiError.unauthorized('User account is no longer active');
     }
 
-    // Verify college is still active for non-super-admin users
-    if (user.role !== AppRole.SUPER_ADMIN && user.collegeId) {
-      const college = await College.findById(user.collegeId);
+    let activeRole = user.role;
+    let activeDepartmentId = user.departmentId?.toString() || null;
+    let activeInstituteId = user.instituteId;
+    let activeMembershipId = payload.workspaceMembershipId || payload.membershipId || null;
+    const targetCollegeId = payload.collegeId || user.collegeId?.toString();
+
+    // Verify college and membership status for non-super-admin users
+    if (user.role !== AppRole.SUPER_ADMIN && targetCollegeId) {
+      const college = await College.findById(targetCollegeId);
       if (college && (college.status === CollegeStatus.INACTIVE || !college.isActive)) {
         throw ApiError.forbidden(
           'Your institution is currently inactive. Please contact your administrator.'
         );
+      }
+
+      // Check authoritative membership state
+      let membership = null;
+      if (activeMembershipId && mongoose.Types.ObjectId.isValid(activeMembershipId)) {
+        membership = await WorkspaceMembership.findOne({
+          _id: activeMembershipId,
+          userId: user._id,
+          collegeId: targetCollegeId,
+        });
+      }
+      if (!membership) {
+        membership = await WorkspaceMembership.findOne({
+          userId: user._id,
+          collegeId: targetCollegeId,
+        });
+      }
+
+      if (membership) {
+        if (membership.status !== MembershipStatus.ACTIVE) {
+          throw ApiError.forbidden(`Workspace membership is ${membership.status.toLowerCase()}. Access denied.`);
+        }
+
+        const now = new Date();
+        if (membership.effectiveStartDate && membership.effectiveStartDate > now) {
+          throw ApiError.forbidden('Workspace membership is not yet effective. Access denied.');
+        }
+        if (membership.effectiveEndDate && membership.effectiveEndDate < now) {
+          throw ApiError.forbidden('Workspace membership has expired. Access denied.');
+        }
+
+        // Check active role assignments
+        const roleAssignments = await WorkspaceRoleAssignment.find({
+          membershipId: membership._id,
+          status: RoleAssignmentStatus.ACTIVE,
+          $and: [
+            {
+              $or: [
+                { effectiveStartDate: { $exists: false } },
+                { effectiveStartDate: null },
+                { effectiveStartDate: { $lte: now } },
+              ],
+            },
+            {
+              $or: [
+                { effectiveEndDate: { $exists: false } },
+                { effectiveEndDate: null },
+                { effectiveEndDate: { $gte: now } },
+              ],
+            },
+          ],
+        }).sort({ createdAt: 1 });
+
+        if (roleAssignments.length === 0) {
+          throw ApiError.forbidden('No active role assignments found in this workspace.');
+        }
+
+        activeRole = roleAssignments[0].role;
+        activeDepartmentId = roleAssignments[0].departmentId?.toString() || user.departmentId?.toString() || null;
+        activeInstituteId = membership.instituteId || user.instituteId;
+        activeMembershipId = membership.id;
       }
     }
 
@@ -214,22 +481,31 @@ export class AuthService {
 
     const accessToken = signAccessToken({
       userId: user.id,
-      instituteId: user.instituteId,
+      instituteId: activeInstituteId,
       email: user.email,
       phone: user.phone,
       name: user.name,
-      role: user.role,
-      collegeId: user.collegeId?.toString(),
-      departmentId: user.departmentId?.toString(),
+      role: activeRole,
+      collegeId: targetCollegeId,
+      departmentId: activeDepartmentId || undefined,
       courseId: user.courseId?.toString(),
       sectionId: user.sectionId?.toString(),
       semesterId: user.semesterId?.toString(),
       sessionId: session.sessionId,
+      workspaceMembershipId: activeMembershipId,
+      membershipId: activeMembershipId,
     });
+
+    const userJson: any = user.toJSON();
+    userJson.collegeId = targetCollegeId;
+    userJson.role = activeRole;
+    userJson.instituteId = activeInstituteId;
+    userJson.departmentId = activeDepartmentId;
+    userJson.workspaceMembershipId = activeMembershipId;
 
     return {
       accessToken,
-      user: user.toJSON(),
+      user: userJson,
     };
   }
 
@@ -572,26 +848,42 @@ export class AuthService {
 
     // Resolve workspace membership
     let activeWorkspaceId: string | undefined = user.collegeId ? user.collegeId.toString() : undefined;
+    let activeInstituteId: string = user.instituteId;
+    let activeMembershipId: string | null = null;
+    let activeRole: AppRole = user.role;
+
     const membership = await WorkspaceMembership.findOne({
       userId: user._id,
       status: MembershipStatus.ACTIVE,
     });
     if (membership) {
       activeWorkspaceId = membership.collegeId.toString();
+      activeInstituteId = membership.instituteId || user.instituteId;
+      activeMembershipId = membership.id;
+
+      const roleAssignment = await WorkspaceRoleAssignment.findOne({
+        membershipId: membership._id,
+        status: RoleAssignmentStatus.ACTIVE,
+      });
+      if (roleAssignment) {
+        activeRole = roleAssignment.role;
+      }
     }
 
     // Create persistent AuthSession
     const sessionId = crypto.randomUUID();
     const refreshToken = signRefreshToken({
       userId: user.id,
-      instituteId: user.instituteId,
+      instituteId: activeInstituteId,
       email: user.email,
       phone: user.phone,
       name: user.name,
-      role: user.role,
+      role: activeRole,
       collegeId: activeWorkspaceId,
       departmentId: user.departmentId?.toString(),
       sessionId,
+      workspaceMembershipId: activeMembershipId,
+      membershipId: activeMembershipId,
     });
 
     const refreshTokenHash = hashToken(refreshToken);
@@ -609,17 +901,19 @@ export class AuthService {
 
     const accessToken = signAccessToken({
       userId: user.id,
-      instituteId: user.instituteId,
+      instituteId: activeInstituteId,
       email: user.email,
       phone: user.phone,
       name: user.name,
-      role: user.role,
+      role: activeRole,
       collegeId: activeWorkspaceId,
       departmentId: user.departmentId?.toString(),
       courseId: user.courseId?.toString(),
       sectionId: user.sectionId?.toString(),
       semesterId: user.semesterId?.toString(),
       sessionId,
+      workspaceMembershipId: activeMembershipId,
+      membershipId: activeMembershipId,
     });
 
     user.lastLoginAt = new Date();

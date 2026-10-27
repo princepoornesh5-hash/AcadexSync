@@ -19,6 +19,7 @@ import '../../domain/models/academic_models.dart';
 import '../providers/academic_providers.dart';
 import '../widgets/acadex_academic_context_card.dart';
 import '../widgets/faculty_assignment_dialog.dart';
+import '../widgets/teaching_handover_dialog.dart';
 import '../utils/academic_prerequisite_guard.dart';
 import '../../../institution_config/presentation/providers/institution_config_providers.dart';
 import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
@@ -655,6 +656,13 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                                     IconButton(
                                       padding: const EdgeInsets.all(4),
                                       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                      tooltip: "Teaching Handover",
+                                      icon: const Icon(LucideIcons.arrowRightLeft, size: 16, color: AcadexColors.accentPurple),
+                                      onPressed: () => TeachingHandoverDialog.show(context, assignment: a),
+                                    ),
+                                    IconButton(
+                                      padding: const EdgeInsets.all(4),
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                                       tooltip: "Internal Assessment Marks",
                                       icon: const Icon(LucideIcons.award, size: 16, color: AcadexColors.primary),
                                       onPressed: () => context.push('/assessments/entry?sectionId=${a.sectionId}&subjectId=${a.subjectId}'),
@@ -769,6 +777,11 @@ class _FacultyAssignmentsManagementScreenState extends ConsumerState<FacultyAssi
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
+                                IconButton(
+                                  tooltip: "Teaching Handover",
+                                  icon: const Icon(LucideIcons.arrowRightLeft, size: 18, color: AcadexColors.accentPurple),
+                                  onPressed: () => TeachingHandoverDialog.show(context, assignment: a),
+                                ),
                                 IconButton(
                                   tooltip: "Internal Assessment Marks",
                                   icon: const Icon(LucideIcons.award, size: 18, color: AcadexColors.primary),

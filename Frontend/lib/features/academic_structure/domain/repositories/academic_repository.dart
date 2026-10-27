@@ -214,4 +214,45 @@ abstract class AcademicRepository {
   // Authoritative Current Academic Context & History (Prompt 24)
   Future<CurrentAcademicContext> getCurrentAcademicContext({String? departmentId, String? courseId});
   Future<List<Map<String, dynamic>>> getAcademicHistory({String? departmentId, String? courseId});
+
+  // Historical Academic Records, Faculty Handover & Tenure (Prompt 4)
+  Future<TeachingHandover> handoverFacultyAssignment({
+    required String assignmentId,
+    required String successorFacultyId,
+    String? handoverNotes,
+    bool reassignPendingWork = true,
+  }) => throw UnimplementedError('handoverFacultyAssignment not implemented');
+
+  Future<List<TeachingHandover>> getTeachingHandovers({String? subjectId, String? sectionId}) =>
+      throw UnimplementedError('getTeachingHandovers not implemented');
+
+  Future<List<DepartmentTenure>> getDepartmentTenureHistory(String departmentId, {String? collegeId}) =>
+      throw UnimplementedError('getDepartmentTenureHistory not implemented');
+
+  Future<void> appointDepartmentHod({
+    required String departmentId,
+    required String userId,
+    DateTime? startDate,
+    String? resolutionReference,
+    String? remarks,
+  }) => throw UnimplementedError('appointDepartmentHod not implemented');
+
+  Future<StudentTransfer> transferStudent({
+    required String studentId,
+    required String destinationCollegeId,
+    String? reason,
+    List<String> evidenceDocuments = const [],
+  }) => throw UnimplementedError('transferStudent not implemented');
+
+  Future<List<StudentTransfer>> getStudentTransfers(String studentId) =>
+      throw UnimplementedError('getStudentTransfers not implemented');
+
+  Future<List<TransferCredit>> getTransferCredits({String? studentId}) =>
+      throw UnimplementedError('getTransferCredits not implemented');
+
+  Future<TransferCredit> createTransferCredit(Map<String, dynamic> data) =>
+      throw UnimplementedError('createTransferCredit not implemented');
+
+  Future<void> updateTransferCreditStatus(String id, String status, {String? verificationRemarks}) =>
+      throw UnimplementedError('updateTransferCreditStatus not implemented');
 }

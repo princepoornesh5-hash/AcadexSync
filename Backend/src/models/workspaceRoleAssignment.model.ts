@@ -65,10 +65,12 @@ const WorkspaceRoleAssignmentSchema = new Schema<IWorkspaceRoleAssignment>(
       virtuals: true,
       transform: (_: unknown, ret: Record<string, any>) => {
         ret.id = ret._id?.toString();
-        ret.membershipId = ret.membershipId?.toString();
-        ret.userId = ret.userId?.toString();
-        ret.collegeId = ret.collegeId?.toString();
-        if (ret.departmentId) ret.departmentId = ret.departmentId.toString();
+        ret.membershipId = ret.membershipId?._id ? ret.membershipId._id.toString() : ret.membershipId?.toString();
+        ret.userId = ret.userId?._id ? ret.userId._id.toString() : ret.userId?.toString();
+        ret.collegeId = ret.collegeId?._id ? ret.collegeId._id.toString() : ret.collegeId?.toString();
+        if (ret.departmentId) {
+          ret.departmentId = ret.departmentId?._id ? ret.departmentId._id.toString() : ret.departmentId.toString();
+        }
         delete ret.__v;
         return ret;
       },
@@ -77,10 +79,12 @@ const WorkspaceRoleAssignmentSchema = new Schema<IWorkspaceRoleAssignment>(
       virtuals: true,
       transform: (_: unknown, ret: Record<string, any>) => {
         ret.id = ret._id?.toString();
-        ret.membershipId = ret.membershipId?.toString();
-        ret.userId = ret.userId?.toString();
-        ret.collegeId = ret.collegeId?.toString();
-        if (ret.departmentId) ret.departmentId = ret.departmentId.toString();
+        ret.membershipId = ret.membershipId?._id ? ret.membershipId._id.toString() : ret.membershipId?.toString();
+        ret.userId = ret.userId?._id ? ret.userId._id.toString() : ret.userId?.toString();
+        ret.collegeId = ret.collegeId?._id ? ret.collegeId._id.toString() : ret.collegeId?.toString();
+        if (ret.departmentId) {
+          ret.departmentId = ret.departmentId?._id ? ret.departmentId._id.toString() : ret.departmentId.toString();
+        }
         delete ret.__v;
         return ret;
       },

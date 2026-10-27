@@ -452,4 +452,157 @@ export class TeachingAuthorizationService {
 
     throw ApiError.forbidden('Only the assigned teaching faculty may enter or modify marks for this assessment.');
   }
+
+  /**
+   * Asserts read access to historical course materials (attendance, assignments, assessments).
+   * - Super Admin & College Admin: permitted.
+   * - HOD: permitted within department.
+   * - Successor Teacher: permitted if they hold an active or past FacultyAssignment for that subject and section.
+   * - Original Author: permitted to view what they created.
+   * Cross-tenant access is strictly denied.
+   */
+  static async assertHistoricalCourseReadAccess(
+    collegeId: string,
+    user: AuthUserContext,
+    scope: {
+      subjectId?: string | Types.ObjectId;
+      sectionId?: string | Types.ObjectId | null;
+      departmentId?: string | Types.ObjectId;
+    }
+  ): Promise<boolean> {
+    const roleUpper = (user.role || '').toUpperCase();
+
+    // Tenant check
+    if (user.collegeId && user.collegeId.toString() !== collegeId) {
+      throw ApiError.forbidden('Cross-institution historical access is strictly prohibited.');
+    }
+
+    if (roleUpper === 'SUPER_ADMIN' || roleUpper === 'COLLEGE_ADMIN') {
+      return true;
+    }
+
+    if (roleUpper === 'HOD') {
+      if (
+        user.departmentId &&
+        scope.departmentId &&
+        user.departmentId.toString() !== scope.departmentId.toString()
+      ) {
+        throw ApiError.forbidden('HOD can only view historical records within their assigned department.');
+      }
+      return true;
+    }
+
+    if (roleUpper === 'FACULTY') {
+      const faculty = await this.resolveFacultyProfile(collegeId, user);
+      if (!faculty) {
+        throw ApiError.forbidden('Faculty profile not found for this institution.');
+      }
+
+      if (scope.subjectId) {
+        // Check if faculty has or had a FacultyAssignment for this subject
+        const query: any = {
+          collegeId: new Types.ObjectId(collegeId),
+          facultyId: faculty._id,
+          subjectId: new Types.ObjectId(scope.subjectId),
+        };
+        if (scope.sectionId && Types.ObjectId.isValid(scope.sectionId.toString())) {
+          query.sectionId = new Types.ObjectId(scope.sectionId);
+        }
+
+        const assignment = await FacultyAssignment.findOne(query);
+        if (assignment) {
+          return true;
+        }
+
+        // Also check if they currently teach any section of this subject
+        const anySectionAssignment = await FacultyAssignment.findOne({
+          collegeId: new Types.ObjectId(collegeId),
+          facultyId: faculty._id,
+          subjectId: new Types.ObjectId(scope.subjectId),
+          status: 'active',
+        });
+        if (anySectionAssignment) {
+          return true;
+        }
+      }
+
+      throw ApiError.forbidden('You are not authorized to view historical records for this subject or section.');
+    }
+
+    if (roleUpper === 'STUDENT') {
+      return true;
+    }
+
+    throw ApiError.forbidden('You are not authorized to view historical course records.');
+  }
+
+  /**
+   * Asserts write access for historical attendance sessions.
+   * - Prevents successor teachers or unauthorized actors from modifying locked/submitted historical attendance.
+   * - Any authorized modification must preserve original creator attribution.
+   */
+  static async assertHistoricalAttendanceWriteAccess(
+    collegeId: string,
+    user: AuthUserContext,
+    session: any
+  ): Promise<void> {
+    const roleUpper = (user.role || '').toUpperCase();
+
+    // Tenant check
+    if (session.collegeId && session.collegeId.toString() !== collegeId) {
+      throw ApiError.forbidden('Cross-institution attendance modification is strictly prohibited.');
+    }
+
+    // Immutable historical record rule: Submitted or locked sessions cannot be altered by normal write operations
+    if (session.isLocked || session.isSubmitted) {
+      throw ApiError.forbidden('Historical submitted or locked attendance sessions cannot be modified without an approved correction request.');
+    }
+
+    if (roleUpper === 'SUPER_ADMIN' || roleUpper === 'COLLEGE_ADMIN') {
+      return;
+    }
+
+    if (roleUpper === 'HOD') {
+      if (
+        user.departmentId &&
+        session.departmentId &&
+        session.departmentId.toString() !== user.departmentId.toString()
+      ) {
+        throw ApiError.forbidden('HOD can only modify attendance sessions within their assigned department.');
+      }
+      return;
+    }
+
+    if (roleUpper === 'FACULTY') {
+      const faculty = await this.resolveFacultyProfile(collegeId, user);
+      if (!faculty) {
+        throw ApiError.forbidden('Faculty profile not found for this institution.');
+      }
+
+      // Check current assignment ownership
+      if (session.facultyAssignmentId) {
+        const fa = await FacultyAssignment.findOne({
+          _id: new Types.ObjectId(session.facultyAssignmentId),
+          collegeId: new Types.ObjectId(collegeId),
+        });
+
+        if (!fa || !fa.isActive || fa.status !== 'active') {
+          throw ApiError.forbidden('The teaching assignment is inactive or has been ended.');
+        }
+
+        if (fa.facultyId.toString() !== faculty._id.toString()) {
+          throw ApiError.forbidden('You do not own this teaching assignment.');
+        }
+        return;
+      }
+
+      if (session.facultyId && session.facultyId.toString() === faculty._id.toString()) {
+        return;
+      }
+
+      throw ApiError.forbidden('You are not authorized to modify this attendance session.');
+    }
+
+    throw ApiError.forbidden('You are not authorized to modify this attendance session.');
+  }
 }

@@ -5,13 +5,16 @@ import { Department } from '../models/department.model';
 import { Course } from '../models/course.model';
 import { Faculty } from '../models/faculty.model';
 import { AuditLog } from '../models/auditLog.model';
+import { DepartmentTenure } from '../models/departmentTenure.model';
+import { WorkspaceRoleAssignment } from '../models/workspaceRoleAssignment.model';
 import { AppRole } from '../constants/roles';
-import { AccountStatus, CollegeStatus, DepartmentStatus } from '../constants/status';
+import { AccountStatus, CollegeStatus, DepartmentStatus, RoleAssignmentStatus } from '../constants/status';
 import { ApiError } from '../utils/apiError';
 import { AuthenticatedUser } from '../types/auth.types';
 import { InvitationService, CreateInvitationResult } from './invitation.service';
 import { normalizeEmail, normalizePhone } from '../utils/identifier';
 import { UserService } from './user.service';
+import { DepartmentTenureService } from './departmentTenure.service';
 
 export interface ProvisionHodInput {
   departmentId: string;
@@ -500,38 +503,13 @@ export class HodService {
       throw ApiError.conflict('Target department already has an active or pending HOD');
     }
 
-    const previousRole = user.role;
-    const oldDepartmentId = user.departmentId?.toString();
 
-    // If user was previously HOD of another department, clear that department's hodId
-    if (oldDepartmentId && oldDepartmentId !== targetDept._id.toString() && previousRole === AppRole.HOD) {
-      await Department.findByIdAndUpdate(oldDepartmentId, { hodId: null });
-    }
 
-    // Authoritative assignment
-    user.role = AppRole.HOD;
-    user.departmentId = targetDept._id;
-    user.collegeId = targetDept.collegeId;
-    await user.save();
-
-    targetDept.hodId = user._id.toString();
-    await targetDept.save();
-
-    await AuditLog.create({
+    // Call DepartmentTenureService for atomic appointment, tenure tracking, and role assignment
+    await DepartmentTenureService.appointHod(requester, {
       collegeId: targetDept.collegeId.toString(),
-      actorUserId: requester.id,
-      action: 'HOD_ASSIGNED_FROM_EXISTING_USER',
-      entityType: 'User',
-      entityId: user.id,
-      previousValue: {
-        role: previousRole,
-        departmentId: oldDepartmentId,
-      },
-      newValue: {
-        role: AppRole.HOD,
-        departmentId: targetDept._id.toString(),
-        collegeId: targetDept.collegeId.toString(),
-      },
+      departmentId: targetDept._id.toString(),
+      newHodUserId: user._id.toString(),
     });
 
     return { user, department: targetDept };
@@ -539,7 +517,8 @@ export class HodService {
 
   /**
    * Unassign / Remove HOD Assignment
-   * Clears department hodId and demotes user role to FACULTY (or specified newRole)
+   * Clears department hodId, closes active DepartmentTenure, revokes HOD role assignment,
+   * and demotes user role to FACULTY (or specified newRole)
    */
   static async unassignHod(
     id: string,
@@ -569,6 +548,42 @@ export class HodService {
     const oldDeptId = hod.departmentId?.toString();
     if (oldDeptId) {
       await Department.findByIdAndUpdate(oldDeptId, { hodId: null });
+
+      // Close active tenure
+      await DepartmentTenure.updateMany(
+        {
+          departmentId: new mongoose.Types.ObjectId(oldDeptId),
+          userId: hod._id,
+          status: 'ACTIVE',
+        },
+        {
+          $set: {
+            status: 'COMPLETED',
+            endDate: new Date(),
+            revokedBy: new mongoose.Types.ObjectId(requester.id),
+            revokedAt: new Date(),
+          },
+        }
+      );
+
+      // Revoke workspace role assignment
+      await WorkspaceRoleAssignment.updateMany(
+        {
+          userId: hod._id,
+          departmentId: new mongoose.Types.ObjectId(oldDeptId),
+          role: AppRole.HOD,
+          status: RoleAssignmentStatus.ACTIVE,
+        },
+        {
+          $set: {
+            status: RoleAssignmentStatus.REVOKED,
+            revokedAt: new Date(),
+            revokedBy: requester.id,
+            effectiveEndDate: new Date(),
+            statusReason: 'HOD unassigned',
+          },
+        }
+      );
     }
 
     const previousRole = hod.role;

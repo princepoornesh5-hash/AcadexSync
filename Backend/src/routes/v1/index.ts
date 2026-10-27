@@ -28,6 +28,7 @@ import { dashboardRouter } from './dashboard.routes';
 import importRouter from './import.routes';
 import { workspaceRouter } from './workspace.routes';
 import { aiRouter } from './ai.routes';
+import { transferCreditRouter } from './transferCredit.routes';
 
 const router = Router();
 
@@ -63,5 +64,6 @@ router.use('/analytics', analyticsRouter);
 router.use('/imports', importRouter);
 router.use('/workspaces', workspaceRouter);
 router.use('/ai', aiRouter);
+router.use('/transfer-credits', transferCreditRouter);
 
 export const v1Router = router;

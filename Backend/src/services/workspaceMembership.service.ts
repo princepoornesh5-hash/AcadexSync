@@ -5,7 +5,7 @@ import { User } from '../models/user.model';
 import { College } from '../models/college.model';
 import { Department } from '../models/department.model';
 import { AuditService } from './audit.service';
-import { AppRole } from '../constants/roles';
+import { AppRole, ROLE_HIERARCHY } from '../constants/roles';
 import { MembershipStatus, RoleAssignmentStatus, CollegeStatus } from '../constants/status';
 import { ApiError } from '../utils/apiError';
 import { logger } from '../utils/logger';
@@ -369,12 +369,78 @@ export class WorkspaceMembershipService {
 
       results.push({
         ...mem.toObject(),
+        instituteId: mem.instituteId || null,
         roles,
         college: (mem as any).collegeId,
       });
     }
 
     return results as any;
+  }
+
+  /**
+   * Retrieves strictly eligible memberships for a given user for active workspace entry.
+   * Enforces:
+   * 1. Membership status is ACTIVE
+   * 2. Effective date range is valid (effectiveStartDate <= now <= effectiveEndDate)
+   * 3. Target college is active (status !== INACTIVE && isActive !== false)
+   * 4. Has at least one active, date-valid WorkspaceRoleAssignment
+   */
+  static async getEligibleMembershipsForUser(
+    userId: string | mongoose.Types.ObjectId
+  ): Promise<Array<IWorkspaceMembership & { roles: IWorkspaceRoleAssignment[]; primaryRole: AppRole; college: any }>> {
+    const rawMemberships = await this.getMembershipsForUser(userId, [MembershipStatus.ACTIVE]);
+    const now = new Date();
+
+    const eligible = [];
+    for (const mem of rawMemberships) {
+      // 1. Check membership effective dates
+      if (mem.effectiveStartDate && new Date(mem.effectiveStartDate) > now) {
+        continue;
+      }
+      if (mem.effectiveEndDate && new Date(mem.effectiveEndDate) < now) {
+        continue;
+      }
+
+      // 2. Check college is active
+      const college = mem.college;
+      if (!college || college.isActive === false || college.status === CollegeStatus.INACTIVE) {
+        continue;
+      }
+
+      // 3. Filter roles by active status and date validity
+      const validRoles = (mem.roles || []).filter((r: IWorkspaceRoleAssignment) => {
+        if (r.status !== RoleAssignmentStatus.ACTIVE) return false;
+        if (r.effectiveStartDate && new Date(r.effectiveStartDate) > now) return false;
+        if (r.effectiveEndDate && new Date(r.effectiveEndDate) < now) return false;
+        return true;
+      });
+
+      if (validRoles.length === 0) {
+        continue;
+      }
+
+      // Resolve primary role by hierarchy
+      let primaryRole = validRoles[0].role;
+      let maxWeight = ROLE_HIERARCHY[primaryRole] ?? 0;
+      for (const r of validRoles) {
+        const weight = ROLE_HIERARCHY[r.role] ?? 0;
+        if (weight > maxWeight) {
+          maxWeight = weight;
+          primaryRole = r.role;
+        }
+      }
+
+      eligible.push({
+        ...mem,
+        instituteId: mem.instituteId || null,
+        roles: validRoles,
+        primaryRole,
+        college,
+      });
+    }
+
+    return eligible as any;
   }
 
   /**

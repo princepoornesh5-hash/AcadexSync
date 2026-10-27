@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/network/api_client.dart';
 import '../providers/auth_provider.dart';
 import '../../domain/models/auth_state.dart';
 import '../../domain/models/role_enum.dart';
@@ -542,6 +543,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          'Server: ${ApiClient.defaultBaseUrl}',
+                          style: AcadexTypography.caption(
+                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          ).copyWith(fontSize: 10),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                       AcadexDropdown<String>(
                         value: _selectedDevRole,
                         hint: 'Select Test Role',

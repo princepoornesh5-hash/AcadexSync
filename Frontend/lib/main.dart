@@ -11,6 +11,7 @@ import 'app/theme/app_theme.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'core/observability/logger.dart';
+import 'core/network/api_client.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/auth/domain/models/auth_state.dart';
 import 'features/notifications/presentation/providers/notification_providers.dart';
@@ -34,6 +35,9 @@ void main() async {
   debugPrint('[BOOT_START]');
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
+
+    // Initialize Network and API Target Environment (Emulator vs Physical Phone detection)
+    await ApiClient.initializeEnvironment();
 
     // Centralized Android Edge-to-Edge System Bar Configuration
     SystemChrome.setSystemUIOverlayStyle(

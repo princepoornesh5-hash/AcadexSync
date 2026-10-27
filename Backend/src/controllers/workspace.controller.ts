@@ -18,15 +18,19 @@ export interface WorkspaceResponseItem {
   collegeId: string;
   collegeName: string;
   collegeCode: string;
+  instituteId?: string | null;
   status: string;
   isDefault: boolean;
   roles: AppRole[];
+  primaryRole?: AppRole;
   departments: Array<{
     id: string;
     name: string;
     code: string;
   }>;
   joinedAt?: Date;
+  effectiveStartDate?: Date;
+  effectiveEndDate?: Date | null;
 }
 
 export class WorkspaceController {
@@ -57,6 +61,7 @@ export class WorkspaceController {
         status: 'ACTIVE',
         isDefault: false,
         roles: [AppRole.SUPER_ADMIN],
+        primaryRole: AppRole.SUPER_ADMIN,
         departments: [],
       }));
 
@@ -73,12 +78,28 @@ export class WorkspaceController {
       [MembershipStatus.ACTIVE]
     );
 
-    // Format response deterministically
+    const now = new Date();
+
+    // Format response deterministically with date-validity check
     const formatted: WorkspaceResponseItem[] = rawMemberships
-      .filter((mem) => mem.college && (mem.college as any).isActive !== false)
+      .filter((mem) => {
+        if (!mem.college || (mem.college as any).isActive === false) return false;
+        if (mem.effectiveStartDate && new Date(mem.effectiveStartDate) > now) return false;
+        if (mem.effectiveEndDate && new Date(mem.effectiveEndDate) < now) return false;
+        return true;
+      })
       .map((mem) => {
         const collegeObj = mem.college as any;
         const activeRoles = mem.roles.map((r) => r.role);
+        let primaryRole = activeRoles[0] || AppRole.STUDENT;
+        let maxWeight = ROLE_HIERARCHY[primaryRole] ?? 0;
+        for (const r of activeRoles) {
+          const weight = ROLE_HIERARCHY[r] ?? 0;
+          if (weight > maxWeight) {
+            maxWeight = weight;
+            primaryRole = r;
+          }
+        }
 
         const departments = mem.roles
           .filter((r) => r.departmentId)
@@ -96,11 +117,15 @@ export class WorkspaceController {
           collegeId: collegeObj._id?.toString() || collegeObj.toString(),
           collegeName: collegeObj.name || 'Campus Workspace',
           collegeCode: collegeObj.code || '',
+          instituteId: mem.instituteId || null,
           status: mem.status,
           isDefault: mem.isDefault || false,
           roles: activeRoles,
+          primaryRole,
           departments,
           joinedAt: mem.joinedAt,
+          effectiveStartDate: mem.effectiveStartDate,
+          effectiveEndDate: mem.effectiveEndDate,
         };
       });
 
@@ -118,7 +143,7 @@ export class WorkspaceController {
       throw ApiError.unauthorized('User not authenticated');
     }
 
-    const { targetCollegeId } = req.body;
+    const { targetCollegeId, targetMembershipId } = req.body;
 
     const dbUser = await User.findById(userId);
     if (!dbUser) {
@@ -239,26 +264,53 @@ export class WorkspaceController {
       );
     }
 
-    // 2. Regular institutional users: targetCollegeId MUST be valid ObjectId
-    if (!targetCollegeId || !mongoose.Types.ObjectId.isValid(targetCollegeId)) {
-      throw ApiError.badRequest('A valid targetCollegeId is required for workspace switching');
-    }
+    // 2. Regular institutional users: resolve target membership & college
+    let membership = null;
+    let targetCollege = null;
 
-    const targetCollege = await College.findById(targetCollegeId);
-    if (!targetCollege || !targetCollege.isActive || targetCollege.status === CollegeStatus.INACTIVE) {
-      throw ApiError.notFound('Target workspace does not exist or is currently inactive');
-    }
+    if (targetMembershipId) {
+      if (!mongoose.Types.ObjectId.isValid(targetMembershipId)) {
+        throw ApiError.badRequest('Invalid membership identifier format');
+      }
+      membership = await WorkspaceMembership.findById(targetMembershipId);
+      if (!membership) {
+        throw ApiError.notFound('Target workspace membership not found');
+      }
+      if (membership.userId.toString() !== dbUser.id) {
+        await AuditService.log({
+          actorUserId: dbUser.id,
+          action: 'WORKSPACE_ACCESS_DENIED',
+          entityType: 'WorkspaceMembership',
+          entityId: membership.id,
+          collegeId: membership.collegeId.toString(),
+          metadata: { reason: 'Unauthorized access to requested workspace membership' },
+        });
+        throw ApiError.forbidden('Unauthorized access to requested workspace membership');
+      }
+      targetCollege = await College.findById(membership.collegeId);
+      if (!targetCollege || !targetCollege.isActive || targetCollege.status === CollegeStatus.INACTIVE) {
+        throw ApiError.notFound('Target workspace does not exist or is currently inactive');
+      }
+    } else {
+      if (!targetCollegeId || !mongoose.Types.ObjectId.isValid(targetCollegeId)) {
+        throw ApiError.badRequest('A valid targetCollegeId or targetMembershipId is required for workspace switching');
+      }
 
-    // 2. Authoritative Institutional Membership Verification
-    const membership = await WorkspaceMembership.findOne({
-      userId: dbUser._id,
-      collegeId: targetCollege._id,
-    });
+      targetCollege = await College.findById(targetCollegeId);
+      if (!targetCollege || !targetCollege.isActive || targetCollege.status === CollegeStatus.INACTIVE) {
+        throw ApiError.notFound('Target workspace does not exist or is currently inactive');
+      }
 
-    if (!membership) {
-      throw ApiError.forbidden(
-        'User does not hold an active membership in the requested workspace.'
-      );
+      membership = await WorkspaceMembership.findOne({
+        userId: dbUser._id,
+        collegeId: targetCollege._id,
+      });
+
+      if (!membership) {
+        throw ApiError.forbidden(
+          'User does not hold an active membership in the requested workspace.'
+        );
+      }
     }
 
     if (membership.status !== MembershipStatus.ACTIVE) {
@@ -267,11 +319,25 @@ export class WorkspaceController {
       );
     }
 
+    const now = new Date();
+    if (membership.effectiveStartDate && new Date(membership.effectiveStartDate) > now) {
+      throw ApiError.forbidden('Workspace membership is not yet effective.');
+    }
+    if (membership.effectiveEndDate && new Date(membership.effectiveEndDate) < now) {
+      throw ApiError.forbidden('Workspace membership has expired.');
+    }
+
     // Load active role assignments for this workspace
-    const roleAssignments = await WorkspaceRoleAssignment.find({
+    const rawRoleAssignments = await WorkspaceRoleAssignment.find({
       membershipId: membership._id,
       status: RoleAssignmentStatus.ACTIVE,
     }).populate('departmentId');
+
+    const roleAssignments = rawRoleAssignments.filter((ra) => {
+      if (ra.effectiveStartDate && new Date(ra.effectiveStartDate) > now) return false;
+      if (ra.effectiveEndDate && new Date(ra.effectiveEndDate) < now) return false;
+      return true;
+    });
 
     if (roleAssignments.length === 0) {
       throw ApiError.forbidden('No active role assignments found for this workspace membership.');
@@ -294,16 +360,21 @@ export class WorkspaceController {
       .filter((ra) => ra.departmentId)
       .map((ra) => (ra.departmentId as any)._id?.toString() || ra.departmentId?.toString());
 
+    // Resolve institution-specific PIN Number (DO NOT use global if membership has its own PIN)
+    const activeInstituteId = membership.instituteId || dbUser.instituteId;
+
     // Issue refreshed token for the current session bound to the target workspace
     const accessToken = signAccessToken({
       userId: dbUser.id,
-      instituteId: dbUser.instituteId,
+      instituteId: activeInstituteId,
       email: dbUser.email,
       phone: dbUser.phone,
       name: dbUser.name,
       role: primaryRole,
       collegeId: targetCollege.id,
       departmentId: authorizedDepartmentIds[0],
+      workspaceMembershipId: membership.id,
+      membershipId: membership.id,
       sessionId: req.user?.sessionId,
     });
 
@@ -313,6 +384,7 @@ export class WorkspaceController {
         ...req.user!,
         collegeId: targetCollege.id,
         workspaceMembershipId: membership._id.toString(),
+        instituteId: activeInstituteId,
         role: primaryRole,
         activeRoles,
         authorizedDepartmentIds,
@@ -324,6 +396,7 @@ export class WorkspaceController {
         metadata: {
           previousWorkspaceId: req.user?.collegeId,
           targetWorkspaceId: targetCollege.id,
+          instituteId: activeInstituteId,
           activeRoles,
         },
       }
@@ -338,8 +411,12 @@ export class WorkspaceController {
           membershipId: membership._id.toString(),
           collegeName: targetCollege.name,
           collegeCode: targetCollege.code,
+          instituteId: activeInstituteId,
           status: membership.status,
           roles: activeRoles,
+          role: primaryRole,
+          primaryRole,
+          departmentId: authorizedDepartmentIds[0] || null,
           isPlatform: false,
         },
         user: {
@@ -348,6 +425,7 @@ export class WorkspaceController {
           email: dbUser.email,
           role: primaryRole,
           collegeId: targetCollege.id,
+          instituteId: activeInstituteId,
           workspaceMembershipId: membership._id.toString(),
           activeRoles,
           departmentId: authorizedDepartmentIds[0] || null,

@@ -5,6 +5,9 @@
 backend/.env
 backend/.env.*
 !backend/.env.example
+key.properties
+*.keystore
+*.jks
 
 # Node
 node_modules/

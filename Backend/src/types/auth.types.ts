@@ -38,6 +38,8 @@ export interface JwtPayload {
   sectionId?: string;
   semesterId?: string;
   firebaseUid?: string;
+  workspaceMembershipId?: string | null;
+  membershipId?: string | null;
   tokenType: TokenType;
   sessionId?: string;
   requireSession?: boolean;

@@ -2468,3 +2468,308 @@ class CurrentAcademicContext {
     if (departmentScope != null) 'departmentScope': departmentScope,
   };
 }
+
+// =============================================================================
+// PROMPT 4: HISTORICAL RECORDS, TRANSFERS, FACULTY HANDOVER & TENURE MODELS
+// =============================================================================
+
+class TeachingHandover {
+  final String id;
+  final String collegeId;
+  final String departmentId;
+  final String subjectId;
+  final String sectionId;
+  final String sourceAssignmentId;
+  final String targetAssignmentId;
+  final String previousFacultyId;
+  final String successorFacultyId;
+  final bool reassignedPendingWork;
+  final Map<String, dynamic>? reassignedCounts;
+  final String handedOverBy;
+  final String status;
+  final DateTime handoverDate;
+  final String? notes;
+  final DateTime? createdAt;
+
+  const TeachingHandover({
+    required this.id,
+    required this.collegeId,
+    required this.departmentId,
+    required this.subjectId,
+    required this.sectionId,
+    required this.sourceAssignmentId,
+    required this.targetAssignmentId,
+    required this.previousFacultyId,
+    required this.successorFacultyId,
+    this.reassignedPendingWork = true,
+    this.reassignedCounts,
+    required this.handedOverBy,
+    this.status = 'COMPLETED',
+    required this.handoverDate,
+    this.notes,
+    this.createdAt,
+  });
+
+  factory TeachingHandover.fromJson(Map<String, dynamic> json) {
+    return TeachingHandover(
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      collegeId: json['collegeId']?.toString() ?? '',
+      departmentId: json['departmentId']?.toString() ?? '',
+      subjectId: json['subjectId']?.toString() ?? '',
+      sectionId: json['sectionId']?.toString() ?? '',
+      sourceAssignmentId: json['sourceAssignmentId']?.toString() ?? '',
+      targetAssignmentId: json['targetAssignmentId']?.toString() ?? '',
+      previousFacultyId: json['previousFacultyId']?.toString() ?? '',
+      successorFacultyId: json['successorFacultyId']?.toString() ?? '',
+      reassignedPendingWork: json['reassignedPendingWork'] as bool? ?? true,
+      reassignedCounts: json['reassignedCounts'] as Map<String, dynamic>?,
+      handedOverBy: json['handedOverBy']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'COMPLETED',
+      handoverDate: json['handoverDate'] != null
+          ? DateTime.tryParse(json['handoverDate'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      notes: json['notes'] as String?,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'collegeId': collegeId,
+    'departmentId': departmentId,
+    'subjectId': subjectId,
+    'sectionId': sectionId,
+    'sourceAssignmentId': sourceAssignmentId,
+    'targetAssignmentId': targetAssignmentId,
+    'previousFacultyId': previousFacultyId,
+    'successorFacultyId': successorFacultyId,
+    'reassignedPendingWork': reassignedPendingWork,
+    if (reassignedCounts != null) 'reassignedCounts': reassignedCounts,
+    'handedOverBy': handedOverBy,
+    'status': status,
+    'handoverDate': handoverDate.toIso8601String(),
+    if (notes != null) 'notes': notes,
+    if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+  };
+}
+
+class DepartmentTenure {
+  final String id;
+  final String collegeId;
+  final String departmentId;
+  final String userId;
+  final String? userName;
+  final String? userEmail;
+  final DateTime startDate;
+  final DateTime? endDate;
+  final String status;
+  final String? appointedBy;
+  final String? resolutionReference;
+  final String? remarks;
+  final DateTime? createdAt;
+
+  const DepartmentTenure({
+    required this.id,
+    required this.collegeId,
+    required this.departmentId,
+    required this.userId,
+    this.userName,
+    this.userEmail,
+    required this.startDate,
+    this.endDate,
+    this.status = 'ACTIVE',
+    this.appointedBy,
+    this.resolutionReference,
+    this.remarks,
+    this.createdAt,
+  });
+
+  bool get isActive => status == 'ACTIVE';
+
+  factory DepartmentTenure.fromJson(Map<String, dynamic> json) {
+    return DepartmentTenure(
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      collegeId: json['collegeId']?.toString() ?? '',
+      departmentId: json['departmentId']?.toString() ?? '',
+      userId: json['userId'] is Map ? json['userId']['_id']?.toString() ?? '' : json['userId']?.toString() ?? '',
+      userName: json['userId'] is Map ? json['userId']['name']?.toString() : json['userName']?.toString(),
+      userEmail: json['userId'] is Map ? json['userId']['email']?.toString() : json['userEmail']?.toString(),
+      startDate: json['startDate'] != null
+          ? DateTime.tryParse(json['startDate'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      endDate: json['endDate'] != null
+          ? DateTime.tryParse(json['endDate'].toString())
+          : null,
+      status: json['status']?.toString() ?? 'ACTIVE',
+      appointedBy: json['appointedBy']?.toString(),
+      resolutionReference: json['resolutionReference']?.toString(),
+      remarks: json['remarks']?.toString(),
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'collegeId': collegeId,
+    'departmentId': departmentId,
+    'userId': userId,
+    if (userName != null) 'userName': userName,
+    if (userEmail != null) 'userEmail': userEmail,
+    'startDate': startDate.toIso8601String(),
+    if (endDate != null) 'endDate': endDate!.toIso8601String(),
+    'status': status,
+    if (appointedBy != null) 'appointedBy': appointedBy,
+    if (resolutionReference != null) 'resolutionReference': resolutionReference,
+    if (remarks != null) 'remarks': remarks,
+    if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+  };
+}
+
+class StudentTransfer {
+  final String id;
+  final String globalUserId;
+  final String sourceCollegeId;
+  final String destinationCollegeId;
+  final String sourcePin;
+  final String destinationPin;
+  final String status;
+  final String? initiatedBy;
+  final String? approvedBy;
+  final DateTime effectiveDate;
+  final String? reason;
+  final List<String> evidenceDocuments;
+  final DateTime? createdAt;
+
+  const StudentTransfer({
+    required this.id,
+    required this.globalUserId,
+    required this.sourceCollegeId,
+    required this.destinationCollegeId,
+    required this.sourcePin,
+    required this.destinationPin,
+    this.status = 'PENDING',
+    this.initiatedBy,
+    this.approvedBy,
+    required this.effectiveDate,
+    this.reason,
+    this.evidenceDocuments = const [],
+    this.createdAt,
+  });
+
+  bool get isApproved => status == 'APPROVED';
+
+  factory StudentTransfer.fromJson(Map<String, dynamic> json) {
+    return StudentTransfer(
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      globalUserId: json['globalUserId']?.toString() ?? '',
+      sourceCollegeId: json['sourceCollegeId']?.toString() ?? '',
+      destinationCollegeId: json['destinationCollegeId']?.toString() ?? '',
+      sourcePin: json['sourcePin']?.toString() ?? '',
+      destinationPin: json['destinationPin']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'PENDING',
+      initiatedBy: json['initiatedBy']?.toString(),
+      approvedBy: json['approvedBy']?.toString(),
+      effectiveDate: json['effectiveDate'] != null
+          ? DateTime.tryParse(json['effectiveDate'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      reason: json['reason']?.toString(),
+      evidenceDocuments: (json['evidenceDocuments'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'globalUserId': globalUserId,
+    'sourceCollegeId': sourceCollegeId,
+    'destinationCollegeId': destinationCollegeId,
+    'sourcePin': sourcePin,
+    'destinationPin': destinationPin,
+    'status': status,
+    if (initiatedBy != null) 'initiatedBy': initiatedBy,
+    if (approvedBy != null) 'approvedBy': approvedBy,
+    'effectiveDate': effectiveDate.toIso8601String(),
+    if (reason != null) 'reason': reason,
+    'evidenceDocuments': evidenceDocuments,
+    if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+  };
+}
+
+class TransferCredit {
+  final String id;
+  final String collegeId;
+  final String studentId;
+  final String sourceCollegeName;
+  final String sourceSubjectCode;
+  final String sourceSubjectName;
+  final num creditsEarned;
+  final String? equivalentSubjectId;
+  final String? gradeObtained;
+  final String status;
+  final String? approvedBy;
+  final String? verificationRemarks;
+  final DateTime? createdAt;
+
+  const TransferCredit({
+    required this.id,
+    required this.collegeId,
+    required this.studentId,
+    required this.sourceCollegeName,
+    required this.sourceSubjectCode,
+    required this.sourceSubjectName,
+    required this.creditsEarned,
+    this.equivalentSubjectId,
+    this.gradeObtained,
+    this.status = 'PENDING',
+    this.approvedBy,
+    this.verificationRemarks,
+    this.createdAt,
+  });
+
+  bool get isApproved => status == 'APPROVED';
+
+  factory TransferCredit.fromJson(Map<String, dynamic> json) {
+    return TransferCredit(
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      collegeId: json['collegeId']?.toString() ?? '',
+      studentId: json['studentId']?.toString() ?? '',
+      sourceCollegeName: json['sourceCollegeName']?.toString() ?? '',
+      sourceSubjectCode: json['sourceSubjectCode']?.toString() ?? '',
+      sourceSubjectName: json['sourceSubjectName']?.toString() ?? '',
+      creditsEarned: (json['creditsEarned'] as num?) ?? 0,
+      equivalentSubjectId: json['equivalentSubjectId']?.toString(),
+      gradeObtained: json['gradeObtained']?.toString(),
+      status: json['status']?.toString() ?? 'PENDING',
+      approvedBy: json['approvedBy']?.toString(),
+      verificationRemarks: json['verificationRemarks']?.toString(),
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'collegeId': collegeId,
+    'studentId': studentId,
+    'sourceCollegeName': sourceCollegeName,
+    'sourceSubjectCode': sourceSubjectCode,
+    'sourceSubjectName': sourceSubjectName,
+    'creditsEarned': creditsEarned,
+    if (equivalentSubjectId != null) 'equivalentSubjectId': equivalentSubjectId,
+    if (gradeObtained != null) 'gradeObtained': gradeObtained,
+    'status': status,
+    if (approvedBy != null) 'approvedBy': approvedBy,
+    if (verificationRemarks != null) 'verificationRemarks': verificationRemarks,
+    if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+  };
+}

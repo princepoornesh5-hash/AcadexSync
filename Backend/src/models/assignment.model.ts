@@ -19,6 +19,9 @@ export interface IAssignment extends Document {
   facultyId: mongoose.Types.ObjectId;
   facultyAssignmentId?: mongoose.Types.ObjectId;
   facultyName: string;
+  originalFacultyId?: mongoose.Types.ObjectId | null;
+  originalFacultyAssignmentId?: mongoose.Types.ObjectId | null;
+  handoverId?: mongoose.Types.ObjectId | null;
   scope?: string;
   title: string;
   description: string;
@@ -58,6 +61,9 @@ const AssignmentSchema = new Schema<IAssignment>(
     facultyId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     facultyAssignmentId: { type: Schema.Types.ObjectId, ref: 'FacultyAssignment', default: null, index: true },
     facultyName: { type: String, required: true, trim: true },
+    originalFacultyId: { type: Schema.Types.ObjectId, ref: 'User', default: null, index: true },
+    originalFacultyAssignmentId: { type: Schema.Types.ObjectId, ref: 'FacultyAssignment', default: null },
+    handoverId: { type: Schema.Types.ObjectId, ref: 'TeachingHandover', default: null },
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
     questions: { type: [String], default: [] },

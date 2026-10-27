@@ -2107,5 +2107,71 @@ class FirebaseAcademicRepository implements AcademicRepository {
             })
         .toList();
   }
+
+  // ===========================================================================
+  // PROMPT 4: HISTORICAL RECORDS, TRANSFERS, FACULTY HANDOVER & TENURE
+  // ===========================================================================
+
+  @override
+  Future<TeachingHandover> handoverFacultyAssignment({
+    required String assignmentId,
+    required String successorFacultyId,
+    String? handoverNotes,
+    bool reassignPendingWork = true,
+  }) async {
+    throw UnimplementedError('handoverFacultyAssignment is implemented via ApiAcademicRepository');
+  }
+
+  @override
+  Future<List<TeachingHandover>> getTeachingHandovers({String? subjectId, String? sectionId}) async {
+    return [];
+  }
+
+  @override
+  Future<List<DepartmentTenure>> getDepartmentTenureHistory(String departmentId, {String? collegeId}) async {
+    return [];
+  }
+
+  @override
+  Future<void> appointDepartmentHod({
+    required String departmentId,
+    required String userId,
+    DateTime? startDate,
+    String? resolutionReference,
+    String? remarks,
+  }) async {
+    throw UnimplementedError('appointDepartmentHod is implemented via ApiAcademicRepository');
+  }
+
+  @override
+  Future<StudentTransfer> transferStudent({
+    required String studentId,
+    required String destinationCollegeId,
+    String? reason,
+    List<String> evidenceDocuments = const [],
+  }) async {
+    throw UnimplementedError('transferStudent is implemented via ApiAcademicRepository');
+  }
+
+  @override
+  Future<List<StudentTransfer>> getStudentTransfers(String studentId) async {
+    return [];
+  }
+
+  @override
+  Future<List<TransferCredit>> getTransferCredits({String? studentId}) async {
+    return [];
+  }
+
+  @override
+  Future<TransferCredit> createTransferCredit(Map<String, dynamic> data) async {
+    throw UnimplementedError('createTransferCredit is implemented via ApiAcademicRepository');
+  }
+
+  @override
+  Future<void> updateTransferCreditStatus(String id, String status, {String? verificationRemarks}) async {
+    throw UnimplementedError('updateTransferCreditStatus is implemented via ApiAcademicRepository');
+  }
 }
+
 

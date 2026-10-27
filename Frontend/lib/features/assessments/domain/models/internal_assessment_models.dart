@@ -346,6 +346,175 @@ enum InternalAssessmentStatus {
   }
 }
 
+class AcademicScopeTargetModel {
+  final String departmentId;
+  final String courseId;
+  final String academicYearId;
+  final String semesterId;
+  final String? sectionId;
+  final String? facultyAssignmentId;
+  final String? departmentName;
+  final String? sectionName;
+  final int? semesterNumber;
+  final int studentCount;
+
+  const AcademicScopeTargetModel({
+    required this.departmentId,
+    required this.courseId,
+    required this.academicYearId,
+    required this.semesterId,
+    this.sectionId,
+    this.facultyAssignmentId,
+    this.departmentName,
+    this.sectionName,
+    this.semesterNumber,
+    this.studentCount = 0,
+  });
+
+  factory AcademicScopeTargetModel.fromJson(Map<String, dynamic> json) {
+    return AcademicScopeTargetModel(
+      departmentId: json['departmentId']?.toString() ?? '',
+      courseId: json['courseId']?.toString() ?? '',
+      academicYearId: json['academicYearId']?.toString() ?? '',
+      semesterId: json['semesterId']?.toString() ?? '',
+      sectionId: json['sectionId']?.toString(),
+      facultyAssignmentId: json['facultyAssignmentId']?.toString(),
+      departmentName: json['departmentName']?.toString(),
+      sectionName: json['sectionName']?.toString(),
+      semesterNumber: (json['semesterNumber'] as num?)?.toInt(),
+      studentCount: (json['studentCount'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'departmentId': departmentId,
+    'courseId': courseId,
+    'academicYearId': academicYearId,
+    'semesterId': semesterId,
+    if (sectionId != null) 'sectionId': sectionId,
+    if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
+    if (departmentName != null) 'departmentName': departmentName,
+    if (sectionName != null) 'sectionName': sectionName,
+    if (semesterNumber != null) 'semesterNumber': semesterNumber,
+    'studentCount': studentCount,
+  };
+}
+
+class ScopePreviewStudentItem {
+  final String studentEnrollmentId;
+  final String studentId;
+  final String name;
+  final String? rollNumber;
+  final String? departmentId;
+  final String? sectionId;
+
+  const ScopePreviewStudentItem({
+    required this.studentEnrollmentId,
+    required this.studentId,
+    required this.name,
+    this.rollNumber,
+    this.departmentId,
+    this.sectionId,
+  });
+
+  factory ScopePreviewStudentItem.fromJson(Map<String, dynamic> json) {
+    return ScopePreviewStudentItem(
+      studentEnrollmentId: json['studentEnrollmentId']?.toString() ?? '',
+      studentId: json['studentId']?.toString() ?? '',
+      name: json['name']?.toString() ?? 'Student',
+      rollNumber: json['rollNumber']?.toString(),
+      departmentId: json['departmentId']?.toString(),
+      sectionId: json['sectionId']?.toString(),
+    );
+  }
+}
+
+class ScopePreviewBreakdownItem {
+  final String departmentId;
+  final String? sectionId;
+  final int count;
+
+  const ScopePreviewBreakdownItem({
+    required this.departmentId,
+    this.sectionId,
+    required this.count,
+  });
+
+  factory ScopePreviewBreakdownItem.fromJson(Map<String, dynamic> json) {
+    return ScopePreviewBreakdownItem(
+      departmentId: json['departmentId']?.toString() ?? '',
+      sectionId: json['sectionId']?.toString(),
+      count: (json['count'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class ScopePreviewResponseModel {
+  final int totalStudents;
+  final int uniqueStudents;
+  final int duplicateEnrollments;
+  final List<ScopePreviewBreakdownItem> breakdown;
+  final List<ScopePreviewStudentItem> students;
+
+  const ScopePreviewResponseModel({
+    required this.totalStudents,
+    required this.uniqueStudents,
+    required this.duplicateEnrollments,
+    this.breakdown = const [],
+    this.students = const [],
+  });
+
+  factory ScopePreviewResponseModel.fromJson(Map<String, dynamic> json) {
+    final rawBreakdown = json['breakdown'] as List? ?? [];
+    final rawStudents = json['students'] as List? ?? [];
+    return ScopePreviewResponseModel(
+      totalStudents: (json['totalStudents'] as num?)?.toInt() ?? 0,
+      uniqueStudents: (json['uniqueStudents'] as num?)?.toInt() ?? 0,
+      duplicateEnrollments: (json['duplicateEnrollments'] as num?)?.toInt() ?? 0,
+      breakdown: rawBreakdown.map((b) => ScopePreviewBreakdownItem.fromJson(Map<String, dynamic>.from(b as Map))).toList(),
+      students: rawStudents.map((s) => ScopePreviewStudentItem.fromJson(Map<String, dynamic>.from(s as Map))).toList(),
+    );
+  }
+}
+
+class ScheduleConflictDetail {
+  final String type;
+  final String description;
+  final String? conflictingAssessmentId;
+
+  const ScheduleConflictDetail({
+    required this.type,
+    required this.description,
+    this.conflictingAssessmentId,
+  });
+
+  factory ScheduleConflictDetail.fromJson(Map<String, dynamic> json) {
+    return ScheduleConflictDetail(
+      type: json['type']?.toString() ?? 'CONFLICT',
+      description: json['description']?.toString() ?? json['message']?.toString() ?? 'Conflict detected',
+      conflictingAssessmentId: json['conflictingAssessmentId']?.toString(),
+    );
+  }
+}
+
+class ScheduleConflictReportModel {
+  final bool hasConflict;
+  final List<ScheduleConflictDetail> conflicts;
+
+  const ScheduleConflictReportModel({
+    required this.hasConflict,
+    this.conflicts = const [],
+  });
+
+  factory ScheduleConflictReportModel.fromJson(Map<String, dynamic> json) {
+    final rawConflicts = json['conflicts'] as List? ?? [];
+    return ScheduleConflictReportModel(
+      hasConflict: json['hasConflict'] as bool? ?? rawConflicts.isNotEmpty,
+      conflicts: rawConflicts.map((c) => ScheduleConflictDetail.fromJson(Map<String, dynamic>.from(c as Map))).toList(),
+    );
+  }
+}
+
 class InternalAssessmentModel {
   final String? id;
   final String collegeId;
@@ -356,10 +525,14 @@ class InternalAssessmentModel {
   final String subjectId;
   final String? facultyAssignmentId;
   final String? facultyName;
+  final List<AcademicScopeTargetModel> academicScopes;
+  final bool isCommonExam;
+  final bool isPublishedToStudents;
   final String title;
   final String assessmentType;
   final double maximumMarks;
   final DateTime? assessmentDate;
+  final Map<String, dynamic>? schedule;
   final List<AssessmentComponentModel> components;
   final List<StudentAssessmentEntryModel> entries;
   final InternalAssessmentStatus status;
@@ -380,10 +553,14 @@ class InternalAssessmentModel {
     required this.subjectId,
     this.facultyAssignmentId,
     this.facultyName,
+    this.academicScopes = const [],
+    this.isCommonExam = false,
+    this.isPublishedToStudents = false,
     required this.title,
     this.assessmentType = 'INTERNAL_EXAM',
     this.maximumMarks = 50.0,
     this.assessmentDate,
+    this.schedule,
     this.components = const [],
     this.entries = const [],
     this.status = InternalAssessmentStatus.draft,
@@ -411,6 +588,11 @@ class InternalAssessmentModel {
         .map((a) => AssessmentAuditEntryModel.fromJson(Map<String, dynamic>.from(a as Map)))
         .toList();
 
+    final rawScopes = json['academicScopes'] as List? ?? [];
+    final scopes = rawScopes
+        .map((s) => AcademicScopeTargetModel.fromJson(Map<String, dynamic>.from(s as Map)))
+        .toList();
+
     return InternalAssessmentModel(
       id: json['id']?.toString() ?? json['_id']?.toString(),
       collegeId: json['collegeId']?.toString() ?? '',
@@ -421,12 +603,16 @@ class InternalAssessmentModel {
       subjectId: json['subjectId']?.toString() ?? '',
       facultyAssignmentId: json['facultyAssignmentId']?.toString(),
       facultyName: json['facultyName']?.toString(),
+      academicScopes: scopes,
+      isCommonExam: json['isCommonExam'] as bool? ?? scopes.isNotEmpty,
+      isPublishedToStudents: json['isPublishedToStudents'] as bool? ?? false,
       title: json['title']?.toString() ?? 'Internal Assessment',
       assessmentType: json['assessmentType']?.toString() ?? 'INTERNAL_EXAM',
       maximumMarks: (json['maximumMarks'] as num?)?.toDouble() ?? 50.0,
       assessmentDate: json['assessmentDate'] != null
           ? DateTime.tryParse(json['assessmentDate'].toString())
           : null,
+      schedule: json['schedule'] is Map ? Map<String, dynamic>.from(json['schedule'] as Map) : null,
       components: comps,
       entries: entries,
       status: InternalAssessmentStatus.fromValue(json['status']?.toString()),
@@ -444,6 +630,28 @@ class InternalAssessmentModel {
       auditLog: audit,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    if (id != null) 'id': id,
+    'collegeId': collegeId,
+    'departmentId': departmentId,
+    'courseId': courseId,
+    'semesterId': semesterId,
+    if (sectionId != null) 'sectionId': sectionId,
+    'subjectId': subjectId,
+    if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
+    if (facultyName != null) 'facultyName': facultyName,
+    'academicScopes': academicScopes.map((s) => s.toJson()).toList(),
+    'isCommonExam': isCommonExam,
+    'isPublishedToStudents': isPublishedToStudents,
+    'title': title,
+    'assessmentType': assessmentType,
+    'maximumMarks': maximumMarks,
+    if (assessmentDate != null) 'assessmentDate': assessmentDate!.toIso8601String(),
+    if (schedule != null) 'schedule': schedule,
+    'components': components.map((c) => c.toJson()).toList(),
+    'status': status.value,
+  };
 }
 
 class AssessmentContextModel {
@@ -640,6 +848,8 @@ class AssessmentScheduleModel {
   final String? invigilatorName;
   final String? instructions;
   final String status;
+  final List<String> targetSectionIds;
+  final List<String> targetDepartmentIds;
 
   const AssessmentScheduleModel({
     this.id,
@@ -655,9 +865,16 @@ class AssessmentScheduleModel {
     this.invigilatorName,
     this.instructions,
     this.status = 'SCHEDULED',
+    this.targetSectionIds = const [],
+    this.targetDepartmentIds = const [],
   });
 
   factory AssessmentScheduleModel.fromJson(Map<String, dynamic> json) {
+    final rawSecs = json['targetSectionIds'] as List? ?? [];
+    final secIds = rawSecs.map((s) => s is Map ? s['_id']?.toString() ?? '' : s.toString()).toList();
+    final rawDepts = json['targetDepartmentIds'] as List? ?? [];
+    final deptIds = rawDepts.map((d) => d is Map ? d['_id']?.toString() ?? '' : d.toString()).toList();
+
     return AssessmentScheduleModel(
       id: json['id']?.toString() ?? json['_id']?.toString(),
       collegeId: json['collegeId']?.toString() ?? '',
@@ -682,6 +899,8 @@ class AssessmentScheduleModel {
           : null,
       instructions: json['instructions']?.toString(),
       status: json['status']?.toString() ?? 'SCHEDULED',
+      targetSectionIds: secIds,
+      targetDepartmentIds: deptIds,
     );
   }
 
@@ -694,6 +913,8 @@ class AssessmentScheduleModel {
     if (roomId != null) 'roomId': roomId,
     if (invigilatorFacultyId != null) 'invigilatorFacultyId': invigilatorFacultyId,
     if (instructions != null) 'instructions': instructions,
+    'targetSectionIds': targetSectionIds,
+    'targetDepartmentIds': targetDepartmentIds,
   };
 }
 

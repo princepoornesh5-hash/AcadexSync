@@ -1910,5 +1910,189 @@ class ApiAcademicRepository implements AcademicRepository {
       throw _extractError(e, 'Failed to fetch academic history');
     }
   }
+
+  // ===========================================================================
+  // PROMPT 4: HISTORICAL RECORDS, TRANSFERS, FACULTY HANDOVER & TENURE
+  // ===========================================================================
+
+  @override
+  Future<TeachingHandover> handoverFacultyAssignment({
+    required String assignmentId,
+    required String successorFacultyId,
+    String? handoverNotes,
+    bool reassignPendingWork = true,
+  }) async {
+    try {
+      final response = await _client.dio.post(
+        '/academics/faculty-assignments/$assignmentId/handover',
+        data: {
+          'successorFacultyId': successorFacultyId,
+          if (handoverNotes != null) 'handoverNotes': handoverNotes,
+          'reassignPendingWork': reassignPendingWork,
+        },
+      );
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : body as Map<String, dynamic>;
+      return TeachingHandover.fromJson(data);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to handover faculty assignment');
+    }
+  }
+
+  @override
+  Future<List<TeachingHandover>> getTeachingHandovers({String? subjectId, String? sectionId}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (subjectId != null && subjectId.isNotEmpty) queryParams['subjectId'] = subjectId;
+      if (sectionId != null && sectionId.isNotEmpty) queryParams['sectionId'] = sectionId;
+      final response = await _client.dio.get(
+        '/academics/faculty-assignments/handovers',
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      if (data is List) {
+        return data.map((e) => TeachingHandover.fromJson(e as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch teaching handovers');
+    }
+  }
+
+  @override
+  Future<List<DepartmentTenure>> getDepartmentTenureHistory(String departmentId, {String? collegeId}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (collegeId != null && collegeId.isNotEmpty) queryParams['collegeId'] = collegeId;
+      final response = await _client.dio.get(
+        '/academics/departments/$departmentId/tenure-history',
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      if (data is List) {
+        return data.map((e) => DepartmentTenure.fromJson(e as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch department tenure history');
+    }
+  }
+
+  @override
+  Future<void> appointDepartmentHod({
+    required String departmentId,
+    required String userId,
+    DateTime? startDate,
+    String? resolutionReference,
+    String? remarks,
+  }) async {
+    try {
+      await _client.dio.post(
+        '/academics/departments/$departmentId/appoint-hod',
+        data: {
+          'userId': userId,
+          if (startDate != null) 'startDate': startDate.toIso8601String(),
+          if (resolutionReference != null) 'resolutionReference': resolutionReference,
+          if (remarks != null) 'remarks': remarks,
+        },
+      );
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to appoint department HOD');
+    }
+  }
+
+  @override
+  Future<StudentTransfer> transferStudent({
+    required String studentId,
+    required String destinationCollegeId,
+    String? reason,
+    List<String> evidenceDocuments = const [],
+  }) async {
+    try {
+      final response = await _client.dio.post(
+        '/academics/students/$studentId/transfer',
+        data: {
+          'destinationCollegeId': destinationCollegeId,
+          if (reason != null) 'reason': reason,
+          'evidenceDocuments': evidenceDocuments,
+        },
+      );
+      final body = response.data;
+      final data = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : body as Map<String, dynamic>;
+      return StudentTransfer.fromJson(data);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to transfer student');
+    }
+  }
+
+  @override
+  Future<List<StudentTransfer>> getStudentTransfers(String studentId) async {
+    try {
+      final response = await _client.dio.get('/academics/students/$studentId/transfers');
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      if (data is List) {
+        return data.map((e) => StudentTransfer.fromJson(e as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch student transfers');
+    }
+  }
+
+  @override
+  Future<List<TransferCredit>> getTransferCredits({String? studentId}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (studentId != null && studentId.isNotEmpty) queryParams['studentId'] = studentId;
+      final response = await _client.dio.get(
+        '/transfer-credits',
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+      final body = response.data;
+      final data = body is Map<String, dynamic> ? (body['data'] ?? body) : body;
+      if (data is List) {
+        return data.map((e) => TransferCredit.fromJson(e as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to fetch transfer credits');
+    }
+  }
+
+  @override
+  Future<TransferCredit> createTransferCredit(Map<String, dynamic> data) async {
+    try {
+      final response = await _client.dio.post('/transfer-credits', data: data);
+      final body = response.data;
+      final resultData = (body is Map<String, dynamic> && body['data'] != null)
+          ? body['data'] as Map<String, dynamic>
+          : body as Map<String, dynamic>;
+      return TransferCredit.fromJson(resultData);
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to create transfer credit');
+    }
+  }
+
+  @override
+  Future<void> updateTransferCreditStatus(String id, String status, {String? verificationRemarks}) async {
+    try {
+      await _client.dio.patch(
+        '/transfer-credits/$id/status',
+        data: {
+          'status': status,
+          if (verificationRemarks != null) 'verificationRemarks': verificationRemarks,
+        },
+      );
+    } on DioException catch (e) {
+      throw _extractError(e, 'Failed to update transfer credit status');
+    }
+  }
 }
 

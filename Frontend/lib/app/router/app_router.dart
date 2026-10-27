@@ -106,6 +106,7 @@ import '../../features/assignments/presentation/screens/assignment_detail_screen
 import '../../features/assignments/presentation/screens/assignment_activity_screen.dart';
 import '../../features/assessments/presentation/screens/internal_marks_screen.dart';
 import '../../features/assessments/presentation/screens/student_internal_marks_screen.dart';
+import '../../features/assessments/presentation/screens/exams_assessments_screen.dart';
 
 import '../../features/practicals/presentation/screens/practical_sessions_list_screen.dart';
 import '../../features/practicals/presentation/screens/new_practical_session_screen.dart';
@@ -1481,7 +1482,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state: state,
           child: const ShellWrapper(
             activeRoute: '/assessments',
-            child: StudentInternalMarksScreen(),
+            child: ExamsAssessmentsScreen(),
           ),
         ),
       ),

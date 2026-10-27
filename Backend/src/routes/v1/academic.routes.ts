@@ -28,6 +28,8 @@ router.patch('/hods/:id/department', requireCollegeAdmin, HodController.transfer
 router.post('/hods/:id/unassign', requireCollegeAdmin, HodController.unassign);
 router.patch('/hods/:id/status', requireCollegeAdmin, HodController.updateStatus);
 router.get('/hods/:id/summary', HodController.getSummary);
+router.get('/departments/:departmentId/tenure-history', HodController.getDepartmentTenureHistory);
+router.post('/departments/:departmentId/appoint-hod', requireCollegeAdmin, HodController.appointHod);
 
 // Faculty Management (Phase 9G.1)
 router.post('/faculty', requireHodOrAbove, FacultyController.provision);
@@ -48,6 +50,9 @@ router.get('/students/:id', StudentController.getById);
 router.put('/students/:id', StudentController.updateProfile);
 router.patch('/students/:id/institute-id', requireHodOrAbove, StudentController.correctInstituteId);
 router.patch('/students/:id/department', requireCollegeAdmin, StudentController.transferDepartment);
+router.post('/students/:id/transfer', requireCollegeAdmin, StudentController.transferStudent);
+router.get('/students/:id/transfers', StudentController.getStudentTransfers);
+router.get('/student-transfers', requireCollegeAdmin, StudentController.listTransfers);
 router.get('/students/:id/summary', StudentController.getSummary);
 router.get('/students/:id/360', StudentController.getStudent360);
 
@@ -132,6 +137,9 @@ router.get('/faculty-assignments/my', requireFacultyOrAbove, AcademicController.
 router.get('/faculty-assignments/:id', AcademicController.getFacultyAssignmentById);
 router.put('/faculty-assignments/:id', requireHodOrAbove, AcademicController.updateFacultyAssignment);
 router.delete('/faculty-assignments/:id', requireHodOrAbove, AcademicController.deleteFacultyAssignment);
+router.post('/faculty-assignments/:id/handover', requireHodOrAbove, AcademicController.handoverFacultyAssignment);
+router.get('/faculty-assignments/:id/handovers', requireFacultyOrAbove, AcademicController.listTeachingHandovers);
+router.get('/teaching-handovers', requireFacultyOrAbove, AcademicController.listTeachingHandovers);
 
 // Academic Integrity & Forensic Orphan Auditing (Prompt 13)
 router.get('/integrity/audit', requireCollegeAdmin, IntegrityController.audit);

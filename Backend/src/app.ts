@@ -71,10 +71,11 @@ export function createApp(): Express {
         return callback(null, true);
       }
 
-      // 3. Allow wildcard origin if explicitly configured
+      // 3. Prohibit wildcard in production with credentials: true
       if (allowedOrigins.includes('*')) {
         if (env.NODE_ENV === 'production') {
-          Logger.warn('CORS wildcard origin (*) is not recommended in production.');
+          Logger.error('CORS configuration rejected: Wildcard origin (*) is forbidden in production with credentials: true.');
+          return callback(new Error('CORS wildcard origin is not permitted in production with credentials.'));
         }
         return callback(null, true);
       }

@@ -116,6 +116,20 @@ async function main() {
     }
 
     // Explicit execution mode
+    if (process.env.NODE_ENV === 'production' && !args.includes('--confirm-production-write') && process.env.CONFIRM_PRODUCTION_WRITE !== 'true') {
+      console.error('\n=================================================================');
+      console.error('[SAFETY GUARD] Direct write migration in production requires explicit confirmation.');
+      console.error('Before running write migration in production:');
+      console.error('  1. An authorized database backup must be created and verified.');
+      console.error('  2. A staging dry-run must be executed and approved.');
+      console.error('  3. Index preflight must pass with 0 blockers.');
+      console.error('\nTo proceed, re-run with:');
+      console.error('  npx ts-node src/scripts/migrate-workspaces.ts --execute --confirm-production-write\n');
+      console.error('=================================================================');
+      process.exitCode = 1;
+      return;
+    }
+
     console.log('[MODE] EXPLICIT WRITE EXECUTION');
     console.log('Applying migration in batches...\n');
 

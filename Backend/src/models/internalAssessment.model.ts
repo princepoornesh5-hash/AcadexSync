@@ -244,6 +244,7 @@ const InternalAssessmentSchema = new Schema<IInternalAssessment>(
       default: AssessmentStatus.DRAFT,
       index: true,
     },
+    isPublishedToStudents: { type: Boolean, default: false, index: true },
     submittedAt: { type: Date, default: null },
     submittedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     publishedAt: { type: Date, default: null },

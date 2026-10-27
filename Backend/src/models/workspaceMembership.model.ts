@@ -62,8 +62,8 @@ const WorkspaceMembershipSchema = new Schema<IWorkspaceMembership>(
       virtuals: true,
       transform: (_: unknown, ret: Record<string, any>) => {
         ret.id = ret._id?.toString();
-        ret.userId = ret.userId?.toString();
-        ret.collegeId = ret.collegeId?.toString();
+        ret.userId = ret.userId?._id ? ret.userId._id.toString() : ret.userId?.toString();
+        ret.collegeId = ret.collegeId?._id ? ret.collegeId._id.toString() : ret.collegeId?.toString();
         delete ret.__v;
         return ret;
       },
@@ -72,8 +72,8 @@ const WorkspaceMembershipSchema = new Schema<IWorkspaceMembership>(
       virtuals: true,
       transform: (_: unknown, ret: Record<string, any>) => {
         ret.id = ret._id?.toString();
-        ret.userId = ret.userId?.toString();
-        ret.collegeId = ret.collegeId?.toString();
+        ret.userId = ret.userId?._id ? ret.userId._id.toString() : ret.userId?.toString();
+        ret.collegeId = ret.collegeId?._id ? ret.collegeId._id.toString() : ret.collegeId?.toString();
         delete ret.__v;
         return ret;
       },

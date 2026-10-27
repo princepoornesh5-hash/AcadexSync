@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { AcademicService } from '../services/academic.service';
+import { TeachingHandoverService } from '../services/teachingHandover.service';
 import { ApiResponse } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ApiError } from '../utils/apiError';
@@ -388,6 +389,33 @@ export class AcademicController {
     const courseId = req.query.courseId as string | undefined;
     const history = await AcademicService.getAcademicHistory(req.user, { departmentId, courseId });
     return ApiResponse.success(res, history, 'Academic history retrieved successfully');
+  });
+
+  // =========================================================================
+  // 9. TEACHING HANDOVER ENDPOINTS (PROMPT 4)
+  // =========================================================================
+
+  static handoverFacultyAssignment = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const result = await TeachingHandoverService.handoverTeachingAssignment(req.user, {
+      sourceAssignmentId: req.params.id,
+      successorFacultyId: req.body.successorFacultyId,
+      reassignPendingWork: req.body.reassignPendingWork,
+      notes: req.body.notes,
+      collegeId: req.body.collegeId || (req.query.collegeId as string),
+    });
+    return ApiResponse.success(res, result, 'Teaching assignment handed over successfully');
+  });
+
+  static listTeachingHandovers = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const results = await TeachingHandoverService.listHandovers(req.user, {
+      collegeId: req.query.collegeId as string,
+      departmentId: req.query.departmentId as string,
+      subjectId: req.query.subjectId as string,
+      facultyId: req.query.facultyId as string,
+    });
+    return ApiResponse.success(res, results, 'Teaching handovers retrieved successfully');
   });
 }
 

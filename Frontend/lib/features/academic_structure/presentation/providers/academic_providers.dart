@@ -1738,3 +1738,25 @@ final academicHistoryProvider = FutureProvider.autoDispose.family<List<Map<Strin
   final repo = ref.watch(academicRepositoryProvider);
   return repo.getAcademicHistory(departmentId: params.departmentId, courseId: params.courseId);
 });
+
+// --- Prompt 4: Historical Records, Transfers, Faculty Handover & Tenure Providers ---
+final teachingHandoversProvider = FutureProvider.autoDispose.family<List<TeachingHandover>, ({String? subjectId, String? sectionId})>((ref, params) async {
+  final repo = ref.watch(academicRepositoryProvider);
+  return repo.getTeachingHandovers(subjectId: params.subjectId, sectionId: params.sectionId);
+});
+
+final departmentTenureHistoryProvider = FutureProvider.autoDispose.family<List<DepartmentTenure>, String>((ref, departmentId) async {
+  final repo = ref.watch(academicRepositoryProvider);
+  return repo.getDepartmentTenureHistory(departmentId);
+});
+
+final studentTransfersProvider = FutureProvider.autoDispose.family<List<StudentTransfer>, String>((ref, studentId) async {
+  final repo = ref.watch(academicRepositoryProvider);
+  return repo.getStudentTransfers(studentId);
+});
+
+final transferCreditsProvider = FutureProvider.autoDispose.family<List<TransferCredit>, String?>((ref, studentId) async {
+  final repo = ref.watch(academicRepositoryProvider);
+  return repo.getTransferCredits(studentId: studentId);
+});
+

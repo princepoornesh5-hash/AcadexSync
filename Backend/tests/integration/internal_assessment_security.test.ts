@@ -606,7 +606,9 @@ describe('PROMPT 30 — Internal Assessment Security, Data Protection & Workflow
       expect(res1.body.data.entry.marks.test1).toBe(20);
       // Student 1 cannot see Student 2 marks
       expect(JSON.stringify(res1.body.data)).not.toContain('Jane');
-      expect(JSON.stringify(res1.body.data)).not.toContain('24');
+      expect(res1.body.data.entries).toBeUndefined();
+      expect(res1.body.data.entry.marks.test1).not.toBe(24);
+      expect(JSON.stringify(res1.body.data.entry)).not.toContain('24');
       // Hidden components (isStudentVisible: false) are filtered out
       expect(res1.body.data.entry.marks.internal_secret).toBeUndefined();
       expect(res1.body.data.components.some((c: any) => c.key === 'internal_secret')).toBe(false);

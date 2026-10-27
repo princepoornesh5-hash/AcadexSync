@@ -47,3 +47,6 @@ export * from './workspaceMembership.model';
 export * from './workspaceRoleAssignment.model';
 export * from './pendingAction.model';
 export * from './transferCredit.model';
+export * from './teachingHandover.model';
+export * from './departmentTenure.model';
+export * from './studentTransfer.model';

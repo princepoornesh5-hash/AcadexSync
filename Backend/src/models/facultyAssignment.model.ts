@@ -20,6 +20,9 @@ export interface IFacultyAssignment extends Document {
   isActive: boolean;
   assignedAt: Date;
   endedAt?: Date | null;
+  handoverFromAssignmentId?: mongoose.Types.ObjectId | null;
+  handoverFromFacultyId?: mongoose.Types.ObjectId | null;
+  handoverDate?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +44,9 @@ const FacultyAssignmentSchema = new Schema<IFacultyAssignment>(
     maxStudents: { type: Number, default: null },
     assignmentType: { type: String, default: 'lecture' },
     assignedBy: { type: String, default: null },
+    handoverFromAssignmentId: { type: Schema.Types.ObjectId, ref: 'FacultyAssignment', default: null },
+    handoverFromFacultyId: { type: Schema.Types.ObjectId, ref: 'Faculty', default: null },
+    handoverDate: { type: Date, default: null },
     status: {
       type: String,
       enum: ['active', 'inactive', 'ended', 'archived', 'ACTIVE', 'INACTIVE', 'ENDED', 'ARCHIVED'],

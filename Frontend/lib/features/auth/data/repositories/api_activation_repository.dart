@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/network/network_error_diagnostic.dart';
 import '../../domain/models/activation_model.dart';
 import '../../domain/repositories/activation_repository.dart';
 
@@ -97,22 +98,9 @@ class ApiActivationRepository implements ActivationRepository {
     }
   }
 
+  /// Extracts a human-readable, accurately diagnosed error message from a DioException.
   Exception _extractError(DioException e, String fallback) {
-    if (e.response == null) {
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.sendTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
-        return Exception('Connection timed out while reaching ACADEX server. Please check your connection and try again.');
-      }
-      if (e.type == DioExceptionType.connectionError || (e.message != null && e.message!.contains('XMLHttpRequest'))) {
-        return Exception('Unable to reach ACADEX server. Please check your network or verify backend service connectivity.');
-      }
-    }
-
-    final message = e.response?.data?['error']?['message'] ??
-        e.response?.data?['message'] ??
-        (e.message != null && !e.message!.contains('XMLHttpRequest') ? e.message : null) ??
-        fallback;
-    return Exception(message);
+    return NetworkErrorDiagnostic.toException(e, fallback);
   }
 }
+

@@ -414,6 +414,28 @@ class _WorkspaceItemTile extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (workspace.instituteId != null && workspace.instituteId!.isNotEmpty) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            'PIN: ${workspace.instituteId}',
+                            style: TextStyle(
+                              color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                       if (workspace.departmentName != null && workspace.departmentName!.isNotEmpty) ...[
                         const SizedBox(width: 6),
                         Expanded(

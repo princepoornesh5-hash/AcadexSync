@@ -272,4 +272,33 @@ export class TransferCreditService {
 
     return record;
   }
+
+  /**
+   * List transfer credits with tenant scoping.
+   */
+  static async list(
+    requester: AuthenticatedUser,
+    options: { collegeId?: string; studentId?: string; verificationStatus?: string } = {}
+  ): Promise<ITransferCredit[]> {
+    const query: Record<string, unknown> = {};
+
+    const collegeIdStr = requester.role === AppRole.SUPER_ADMIN && options.collegeId
+      ? options.collegeId
+      : requester.collegeId;
+
+    if (collegeIdStr && mongoose.Types.ObjectId.isValid(collegeIdStr)) {
+      query.collegeId = new mongoose.Types.ObjectId(collegeIdStr);
+    }
+    if (options.studentId && mongoose.Types.ObjectId.isValid(options.studentId)) {
+      query.studentId = new mongoose.Types.ObjectId(options.studentId);
+    }
+    if (options.verificationStatus) {
+      query.verificationStatus = options.verificationStatus;
+    }
+    if (requester.role === AppRole.STUDENT) {
+      query.userId = new mongoose.Types.ObjectId(requester.id);
+    }
+
+    return TransferCredit.find(query).sort({ createdAt: -1 });
+  }
 }

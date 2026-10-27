@@ -479,6 +479,8 @@ class ApiAssessmentRepository {
     double? passMarks,
     double? weightage,
     List<AssessmentComponentModel>? components,
+    List<AcademicScopeTargetModel>? academicScopes,
+    bool? isCommonExam,
     String? sourceType,
     bool? isHistorical,
   }) async {
@@ -501,6 +503,8 @@ class ApiAssessmentRepository {
           if (passMarks != null) 'passMarks': passMarks,
           if (weightage != null) 'weightage': weightage,
           if (components != null) 'components': components.map((c) => c.toJson()).toList(),
+          if (academicScopes != null) 'academicScopes': academicScopes.map((s) => s.toJson()).toList(),
+          if (isCommonExam != null) 'isCommonExam': isCommonExam,
           if (sourceType != null) 'sourceType': sourceType,
           if (isHistorical != null) 'isHistorical': isHistorical,
         },
@@ -736,6 +740,89 @@ class ApiAssessmentRepository {
       return {};
     } on DioException catch (e) {
       throw AcadexException.fromDio(e, context: 'Failed to respond to mark correction');
+    }
+  }
+
+  /// Previews multi-department / multi-section academic scope and student deduplication.
+  Future<ScopePreviewResponseModel> previewScope({
+    required String subjectId,
+    required List<AcademicScopeTargetModel> academicScopes,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post(
+        '/assessments/preview-scope',
+        data: {
+          'subjectId': subjectId,
+          'academicScopes': academicScopes.map((s) => s.toJson()).toList(),
+        },
+      );
+      if (response.data != null && response.data['data'] != null) {
+        return ScopePreviewResponseModel.fromJson(
+          Map<String, dynamic>.from(response.data['data'] as Map),
+        );
+      }
+      throw const AcadexException(
+        category: ErrorCategory.serverError,
+        technicalMessage: 'Failed to parse scope preview.',
+        userMessage: 'Unable to preview eligible student roster.',
+      );
+    } on DioException catch (e) {
+      throw AcadexException.fromDio(e, context: 'Failed to preview scope');
+    }
+  }
+
+  /// Checks for room, invigilator, or section schedule conflicts.
+  Future<ScheduleConflictReportModel> checkScheduleConflicts({
+    required DateTime date,
+    required String startTime,
+    required String endTime,
+    String? roomId,
+    String? invigilatorFacultyId,
+    List<String>? targetSectionIds,
+    String? excludeAssessmentId,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post(
+        '/assessments/check-conflicts',
+        data: {
+          'date': date.toIso8601String(),
+          'startTime': startTime,
+          'endTime': endTime,
+          if (roomId != null) 'roomId': roomId,
+          if (invigilatorFacultyId != null) 'invigilatorFacultyId': invigilatorFacultyId,
+          if (targetSectionIds != null) 'targetSectionIds': targetSectionIds,
+          if (excludeAssessmentId != null) 'excludeAssessmentId': excludeAssessmentId,
+        },
+      );
+      if (response.data != null && response.data['data'] != null) {
+        return ScheduleConflictReportModel.fromJson(
+          Map<String, dynamic>.from(response.data['data'] as Map),
+        );
+      }
+      return const ScheduleConflictReportModel(hasConflict: false);
+    } on DioException catch (e) {
+      throw AcadexException.fromDio(e, context: 'Failed to check schedule conflicts');
+    }
+  }
+
+  /// Publishes a confirmed exam schedule to enrolled students and emits notifications.
+  Future<InternalAssessmentModel> publishAssessmentExam(String assessmentId) async {
+    try {
+      final response = await _apiClient.dio.post(
+        '/assessments/$assessmentId/publish-exam',
+      );
+      if (response.data != null && response.data['data'] != null) {
+        return InternalAssessmentModel.fromJson(
+          Map<String, dynamic>.from(response.data['data'] as Map),
+        );
+      }
+      throw const AcadexException(
+        category: ErrorCategory.serverError,
+        technicalMessage: 'Failed to parse published exam response.',
+        userMessage: 'Exam published but failed to load response.',
+      );
+    } on DioException catch (e) {
+      throw AcadexException.fromDio(e, context: 'Failed to publish assessment exam');
     }
   }
 }

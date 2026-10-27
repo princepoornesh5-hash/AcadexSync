@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class StaleWorkspaceResponseException implements Exception {
@@ -25,39 +26,174 @@ class ApiClient {
   static const String _envApiHost = String.fromEnvironment('API_HOST');
   static const bool _envUseLocalhost = bool.fromEnvironment('USE_LOCALHOST', defaultValue: false);
   static const bool _envUseAdbReverse = bool.fromEnvironment('USE_ADB_REVERSE', defaultValue: false);
+  static const bool _envIsEmulator = bool.fromEnvironment('IS_EMULATOR', defaultValue: false);
+
+  /// Authoritative secure remote staging / development endpoint
+  static const String remoteDevelopmentBaseUrl = 'https://acadex-backend-main.onrender.com/api/v1';
+  static const String remoteDevelopmentAiUrl = 'https://acadex-backend-main.onrender.com/api/v1/ai';
+
+  static bool? _isEmulatorOverride;
+  static bool get isAndroidEmulator => _isEmulatorOverride ?? _envIsEmulator;
+  static set isAndroidEmulator(bool value) => _isEmulatorOverride = value;
+
+  static String? _dynamicBaseUrl;
+  static String? _dynamicAiUrl;
+
+  /// Dynamic or static base URL for API requests
+  static String get defaultBaseUrl {
+    if (_dynamicBaseUrl != null && _dynamicBaseUrl!.isNotEmpty) {
+      return _dynamicBaseUrl!;
+    }
+    if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
+    if (kReleaseMode) {
+      return remoteDevelopmentBaseUrl;
+    }
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android && _isEmulatorOverride == false) {
+      if (_envDevHost.isEmpty && _envApiHost.isEmpty && !_envUseLocalhost && !_envUseAdbReverse) {
+        return remoteDevelopmentBaseUrl;
+      }
+    }
+    return 'http://$developmentHost:5050/api/v1';
+  }
+
+  static String get defaultAiUrl {
+    if (_dynamicAiUrl != null && _dynamicAiUrl!.isNotEmpty) {
+      return _dynamicAiUrl!;
+    }
+    if (_envAiUrl.isNotEmpty) return _envAiUrl;
+    if (kReleaseMode) {
+      return remoteDevelopmentAiUrl;
+    }
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android && _isEmulatorOverride == false) {
+      if (_envDevHost.isEmpty && _envApiHost.isEmpty && !_envUseLocalhost && !_envUseAdbReverse) {
+        return remoteDevelopmentAiUrl;
+      }
+    }
+    return 'http://$developmentHost:5001/api/v1/ai';
+  }
 
   /// Resolves the platform-aware development host:
   /// 1. Compile-time host override (`DEV_HOST` or `API_HOST`).
   /// 2. Explicit localhost flag (`USE_LOCALHOST=true` or `USE_ADB_REVERSE=true`) for physical devices over `adb reverse`.
   /// 3. Platform default:
-  ///    - Android (`TargetPlatform.android` when not Web): `10.0.2.2` (Android emulator host loopback alias).
-  ///    - Other platforms (Web, iOS Simulator, macOS/desktop): `localhost`.
+  ///    - Android Emulator: `10.0.2.2` (loopback alias).
+  ///    - Other platforms (Web, desktop): `localhost`.
   static String get developmentHost {
     if (_envDevHost.isNotEmpty) return _envDevHost;
     if (_envApiHost.isNotEmpty) return _envApiHost;
     if (_envUseLocalhost || _envUseAdbReverse) return 'localhost';
 
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      if (_isEmulatorOverride == false) {
+        return 'localhost';
+      }
       return '10.0.2.2';
     }
     return 'localhost';
   }
 
-  static String get defaultBaseUrl {
-    if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
-    if (kReleaseMode) {
-      return 'https://acadex-backend-main.onrender.com/api/v1';
+  /// Proactively initializes the environment by detecting whether the app
+  /// is executing on an Android emulator or a physical phone, probing
+  /// local `adb reverse` reachability, and safely selecting the appropriate endpoint.
+  static Future<void> initializeEnvironment() async {
+    if (_envBaseUrl.isNotEmpty) {
+      debugPrint('[API_CLIENT] Using explicit compile-time API_BASE_URL: $_envBaseUrl');
+      return;
     }
-    return 'http://$developmentHost:5050/api/v1';
+
+    if (kReleaseMode) {
+      debugPrint('[API_CLIENT] Production release mode: Using $remoteDevelopmentBaseUrl');
+      return;
+    }
+
+    if (_envDevHost.isNotEmpty || _envApiHost.isNotEmpty) {
+      final host = _envDevHost.isNotEmpty ? _envDevHost : _envApiHost;
+      debugPrint('[API_CLIENT] Using configured dev host: $host');
+      updateBaseUrl('http://$host:5050/api/v1', newAiUrl: 'http://$host:5001/api/v1/ai');
+      return;
+    }
+
+    if (_envUseAdbReverse || _envUseLocalhost) {
+      debugPrint('[API_CLIENT] Using explicit adb reverse / localhost tunnel');
+      updateBaseUrl('http://localhost:5050/api/v1', newAiUrl: 'http://localhost:5001/api/v1/ai');
+      return;
+    }
+
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      debugPrint('[API_CLIENT] Platform ${defaultTargetPlatform.name}: using localhost');
+      return;
+    }
+
+    // Android Target Resolution
+    try {
+      const channel = MethodChannel('com.acadex.app/device_info');
+      final bool? isEmu = await channel.invokeMethod<bool>('isEmulator');
+      _isEmulatorOverride = isEmu ?? false;
+      debugPrint('[API_CLIENT] Android detection result: isEmulator=$_isEmulatorOverride');
+
+      if (_isEmulatorOverride == true) {
+        debugPrint('[API_CLIENT] Android Emulator detected: using 10.0.2.2');
+        updateBaseUrl('http://10.0.2.2:5050/api/v1', newAiUrl: 'http://10.0.2.2:5001/api/v1/ai');
+      } else {
+        // Physical Android Phone:
+        // 1. Probe localhost:5050 to see if `adb reverse` is active
+        bool isLocalAdbReachable = false;
+        try {
+          final probeDio = Dio(BaseOptions(
+            connectTimeout: const Duration(milliseconds: 350),
+            receiveTimeout: const Duration(milliseconds: 350),
+          ));
+          final res = await probeDio.get('http://127.0.0.1:5050/health');
+          if (res.statusCode == 200) {
+            isLocalAdbReachable = true;
+          }
+        } catch (_) {
+          isLocalAdbReachable = false;
+        }
+
+        if (isLocalAdbReachable) {
+          debugPrint('[API_CLIENT] Physical device has active adb reverse tunnel on localhost:5050');
+          updateBaseUrl('http://localhost:5050/api/v1', newAiUrl: 'http://localhost:5001/api/v1/ai');
+        } else {
+          debugPrint('[API_CLIENT] Physical Android device: using secure remote development endpoint: $remoteDevelopmentBaseUrl');
+          updateBaseUrl(remoteDevelopmentBaseUrl, newAiUrl: remoteDevelopmentAiUrl);
+        }
+      }
+    } catch (e) {
+      debugPrint('[API_CLIENT] Device info query note: $e. Fallback to secure remote development endpoint.');
+      updateBaseUrl(remoteDevelopmentBaseUrl, newAiUrl: remoteDevelopmentAiUrl);
+    }
   }
 
-  static String get defaultAiUrl {
-    if (_envAiUrl.isNotEmpty) return _envAiUrl;
-    if (kReleaseMode) {
-      return 'https://acadex-backend-main.onrender.com/api/v1/ai';
+  /// Updates active base URL at runtime and synchronizes Dio client instances.
+  static void updateBaseUrl(String newBaseUrl, {String? newAiUrl}) {
+    if (newBaseUrl.isEmpty) {
+      _dynamicBaseUrl = null;
+      _dynamicAiUrl = null;
+      apiClient.dio.options.baseUrl = defaultBaseUrl;
+      apiClient.aiDio.options.baseUrl = defaultAiUrl;
+      return;
     }
-    return 'http://$developmentHost:5001/api/v1/ai';
+    _dynamicBaseUrl = newBaseUrl;
+    if (newAiUrl != null && newAiUrl.isNotEmpty) {
+      _dynamicAiUrl = newAiUrl;
+    } else {
+      _dynamicAiUrl = '$newBaseUrl/ai';
+    }
+    apiClient.dio.options.baseUrl = _dynamicBaseUrl!;
+    apiClient.aiDio.options.baseUrl = _dynamicAiUrl!;
+    debugPrint('[API_CLIENT] Synchronized active baseUrl to: ${apiClient.dio.options.baseUrl}');
   }
+
+  /// Resets dynamic overrides for testing and runtime cleanup.
+  static void resetRuntimeOverrides() {
+    _dynamicBaseUrl = null;
+    _dynamicAiUrl = null;
+    _isEmulatorOverride = null;
+    apiClient.dio.options.baseUrl = defaultBaseUrl;
+    apiClient.aiDio.options.baseUrl = defaultAiUrl;
+  }
+
 
   static const String keyAccessToken = 'access_token';
   static const String keyRefreshToken = 'refresh_token';

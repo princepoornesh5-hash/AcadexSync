@@ -15,6 +15,7 @@ class WorkspaceMembershipModel {
   final String? departmentId;
   final String? departmentName;
   final String? departmentCode;
+  final String? instituteId;
   final DateTime? joinedAt;
   final DateTime? lastAccessedAt;
 
@@ -33,6 +34,7 @@ class WorkspaceMembershipModel {
     this.departmentId,
     this.departmentName,
     this.departmentCode,
+    this.instituteId,
     this.joinedAt,
     this.lastAccessedAt,
   });
@@ -68,6 +70,7 @@ class WorkspaceMembershipModel {
       departmentId: (json['departmentId'] ?? firstDept?['id'])?.toString(),
       departmentName: (json['departmentName'] ?? firstDept?['name']) as String?,
       departmentCode: (json['departmentCode'] ?? firstDept?['code']) as String?,
+      instituteId: json['instituteId'] as String?,
       joinedAt: json['joinedAt'] != null ? DateTime.tryParse(json['joinedAt'].toString()) : null,
       lastAccessedAt: json['lastAccessedAt'] != null ? DateTime.tryParse(json['lastAccessedAt'].toString()) : null,
     );
@@ -89,6 +92,7 @@ class WorkspaceMembershipModel {
       'departmentId': departmentId,
       'departmentName': departmentName,
       'departmentCode': departmentCode,
+      'instituteId': instituteId,
       'joinedAt': joinedAt?.toIso8601String(),
       'lastAccessedAt': lastAccessedAt?.toIso8601String(),
     };
@@ -109,6 +113,7 @@ class WorkspaceMembershipModel {
     String? departmentId,
     String? departmentName,
     String? departmentCode,
+    String? instituteId,
     DateTime? joinedAt,
     DateTime? lastAccessedAt,
   }) {
@@ -127,6 +132,7 @@ class WorkspaceMembershipModel {
       departmentId: departmentId ?? this.departmentId,
       departmentName: departmentName ?? this.departmentName,
       departmentCode: departmentCode ?? this.departmentCode,
+      instituteId: instituteId ?? this.instituteId,
       joinedAt: joinedAt ?? this.joinedAt,
       lastAccessedAt: lastAccessedAt ?? this.lastAccessedAt,
     );

@@ -244,10 +244,20 @@ export async function authenticateRequest(
       }
 
       // Authoritative Membership Lookup
-      const membership = await WorkspaceMembership.findOne({
-        userId: dbUser._id,
-        collegeId: targetCollege._id,
-      });
+      let membership = null;
+      if (payload.workspaceMembershipId && mongoose.Types.ObjectId.isValid(payload.workspaceMembershipId)) {
+        membership = await WorkspaceMembership.findOne({
+          _id: payload.workspaceMembershipId,
+          userId: dbUser._id,
+          collegeId: targetCollege._id,
+        });
+      }
+      if (!membership) {
+        membership = await WorkspaceMembership.findOne({
+          userId: dbUser._id,
+          collegeId: targetCollege._id,
+        });
+      }
 
       if (membership) {
         // Authoritative membership exists: enforce explicit lifecycle state
@@ -259,10 +269,38 @@ export async function authenticateRequest(
           );
         }
 
-        // Load active role assignments for this membership
+        const now = new Date();
+        if (membership.effectiveStartDate && membership.effectiveStartDate > now) {
+          return next(
+            ApiError.forbidden('Workspace membership is not yet effective. Access denied.')
+          );
+        }
+        if (membership.effectiveEndDate && membership.effectiveEndDate < now) {
+          return next(
+            ApiError.forbidden('Workspace membership has expired. Access denied.')
+          );
+        }
+
+        // Load active role assignments for this membership (filtered by date validity)
         const roleAssignments = await WorkspaceRoleAssignment.find({
           membershipId: membership._id,
           status: RoleAssignmentStatus.ACTIVE,
+          $and: [
+            {
+              $or: [
+                { effectiveStartDate: { $exists: false } },
+                { effectiveStartDate: null },
+                { effectiveStartDate: { $lte: now } },
+              ],
+            },
+            {
+              $or: [
+                { effectiveEndDate: { $exists: false } },
+                { effectiveEndDate: null },
+                { effectiveEndDate: { $gte: now } },
+              ],
+            },
+          ],
         }).sort({ createdAt: 1 });
 
         if (roleAssignments.length === 0) {
@@ -281,9 +319,12 @@ export async function authenticateRequest(
           .filter(Boolean) as string[];
         const activeRoles = roleAssignments.map((a) => a.role);
 
+        // Resolve active institutional PIN Number from membership, falling back to global user PIN
+        const activeInstituteId = membership.instituteId || dbUser.instituteId;
+
         req.user = {
           id: dbUser.id,
-          instituteId: dbUser.instituteId,
+          instituteId: activeInstituteId,
           email: dbUser.email || undefined,
           phone: dbUser.phone || undefined,
           name: dbUser.name,
@@ -403,6 +444,8 @@ export async function authenticateRequest(
     const resolvedRole = normalizeRole(payload.role);
     const resolvedCollegeId = headerWorkspaceId || tokenWorkspaceId;
 
+    const resolvedMembershipId = payload.workspaceMembershipId || payload.membershipId || null;
+
     req.user = {
       id: payload.userId,
       instituteId: payload.instituteId || payload.userId,
@@ -419,7 +462,7 @@ export async function authenticateRequest(
       accountStatus: AccountStatus.ACTIVE,
       activationStatus: 'activated',
       sessionId: payload.sessionId,
-      workspaceMembershipId: null,
+      workspaceMembershipId: resolvedMembershipId,
       activeRoles: [resolvedRole],
       authorizedDepartmentIds: payload.departmentId ? [payload.departmentId] : [],
       isAuthoritativeWorkspace: false,
@@ -431,12 +474,13 @@ export async function authenticateRequest(
       isSuperAdmin: resolvedRole === AppRole.SUPER_ADMIN,
       userRole: resolvedRole,
       userId: payload.userId,
+      workspaceMembershipId: resolvedMembershipId,
     };
 
     req.workspace = resolvedCollegeId
       ? {
           collegeId: resolvedCollegeId,
-          membershipId: null,
+          membershipId: resolvedMembershipId,
           roles: [resolvedRole],
           roleAssignments: [],
           departmentId: payload.departmentId || null,

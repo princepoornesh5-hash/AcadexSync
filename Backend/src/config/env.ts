@@ -157,12 +157,68 @@ const envSchema = z.object({
 
 export type EnvConfig = z.infer<typeof envSchema>;
 
+const INSECURE_DEV_SECRETS = new Set([
+  'acadex_development_jwt_secret_min_32_chars!',
+  'acadex_development_access_token_secret_min_32_chars!',
+  'acadex_development_refresh_token_secret_min_32_chars!',
+  'acadex_development_reset_token_secret_min_32_chars!',
+  'acadex_development_activation_secret_32_chars!',
+]);
+
+/**
+ * Validates that mandatory production secrets and secure configurations
+ * are strictly present when running in production mode.
+ * Fails fast without exposing or logging any secret values.
+ */
+export function validateProductionConfig(config: EnvConfig): void {
+  const violations: string[] = [];
+
+  // 1. Mandatory MongoDB URI
+  if (!config.MONGODB_URI || config.MONGODB_URI.trim().length === 0) {
+    violations.push('MONGODB_URI is required and cannot be empty in production');
+  }
+
+  // 2. JWT & Token Secrets must not use development defaults or be under 32 chars
+  const secretsToCheck: Array<{ name: keyof EnvConfig; value: string }> = [
+    { name: 'JWT_SECRET', value: config.JWT_SECRET },
+    { name: 'JWT_ACCESS_SECRET', value: config.JWT_ACCESS_SECRET },
+    { name: 'JWT_REFRESH_SECRET', value: config.JWT_REFRESH_SECRET },
+    { name: 'JWT_RESET_SECRET', value: config.JWT_RESET_SECRET },
+    { name: 'ACTIVATION_CODE_SECRET', value: config.ACTIVATION_CODE_SECRET },
+  ];
+
+  for (const { name, value } of secretsToCheck) {
+    if (!value || value.length < 32) {
+      violations.push(`${name} must be at least 32 characters in production`);
+    } else if (INSECURE_DEV_SECRETS.has(value) || value.toLowerCase().includes('development')) {
+      violations.push(`${name} is using an insecure development default; inject a high-entropy production key via secret manager`);
+    }
+  }
+
+  // 3. CORS Configuration: Unrestricted wildcard (*) is strictly prohibited in production when credentials are enabled
+  if (config.CORS_ORIGIN === '*' || config.CORS_ORIGIN.split(',').map((s) => s.trim()).includes('*')) {
+    violations.push('CORS_ORIGIN cannot be "*" (wildcard) in production when credentialed access is enabled; specify explicit allowed origins');
+  }
+
+  if (violations.length > 0) {
+    console.error('❌ CRITICAL: Production environment security check failed:');
+    violations.forEach((v) => console.error(`   - ${v}`));
+    throw new Error(`Production environment configuration validation failed: ${violations.join('; ')}`);
+  }
+}
+
 function loadEnv(): EnvConfig {
   const result = envSchema.safeParse(process.env);
   if (!result.success) {
     console.error('❌ Invalid environment variables:', result.error.format());
     throw new Error('Environment configuration validation failed');
   }
+
+  // Fail fast in production if mandatory secrets or secure CORS configurations are missing
+  if (result.data.NODE_ENV === 'production') {
+    validateProductionConfig(result.data);
+  }
+
   return result.data;
 }
 

@@ -258,6 +258,13 @@ export class InternalAssessmentService {
         isStudentVisible: c.visibleToStudents !== false,
       }));
 
+    if (!applicableComponents.some((c) => c.key === 'test1')) {
+      applicableComponents.push(
+        { key: 'test1', name: 'Internal Test 1', maxMarks: 25, weightage: 25, isStudentVisible: true },
+        { key: 'test2', name: 'Internal Test 2', maxMarks: 25, weightage: 25, isStudentVisible: true }
+      );
+    }
+
     // Fallback if no components configured
     if (applicableComponents.length === 0) {
       applicableComponents.push(
@@ -267,8 +274,9 @@ export class InternalAssessmentService {
       );
     }
 
-    // Compute default maximum marks from components
-    const defaultMaxMarks = applicableComponents.reduce((acc, c) => acc + (c.maxMarks || 0), 0);
+    // Compute default maximum marks from configuration and components
+    const componentsSum = applicableComponents.reduce((acc, c) => acc + (c.maxMarks || 0), 0);
+    const defaultMaxMarks = Math.max(assessmentConfig?.maxTotalMarks || 50, componentsSum);
 
     // 4. Fetch or initialize InternalAssessment record
     let assessment = targetAssessment || (await InternalAssessment.findOne({
@@ -1276,14 +1284,35 @@ export class InternalAssessmentService {
     // 1. Resolve assessment
     let assessment = await this.resolveAssessment(collegeId, { assessmentId, sectionId, subjectId });
     if (!assessment) {
-      throw ApiError.notFound('Assessment not found');
+      if (sectionId && subjectId) {
+        // Assert teaching authorization first so unauthorized users get 403, not 404
+        await TeachingAuthorizationService.assertSubjectSectionAccess(
+          collegeId,
+          user,
+          subjectId,
+          sectionId,
+          'assessments for this teaching context'
+        );
+        // If authorized, initialize the assessment draft automatically
+        await this.getAssessmentContext(collegeId, user, { sectionId, subjectId });
+        assessment = await this.resolveAssessment(collegeId, { assessmentId, sectionId, subjectId });
+      }
+      if (!assessment) {
+        throw ApiError.notFound('Assessment not found');
+      }
     }
 
     // 2. Strict teaching ownership check
     await TeachingAuthorizationService.assertAssessmentMarkingAccess(collegeId, user, assessment);
 
     // 3. Status and lifecycle lock enforcement
-    if (assessment.status === AssessmentStatus.LOCKED || assessment.status === AssessmentStatus.PUBLISHED) {
+    if (assessment.status === AssessmentStatus.PUBLISHED) {
+      throw ApiError.forbidden(
+        'Assessment marks have been published and locked. Contact your HOD or Administrator to unlock for revisions.'
+      );
+    }
+
+    if (assessment.status === AssessmentStatus.LOCKED) {
       throw ApiError.badRequest(
         'Assessment is locked. Direct modifications are strictly prohibited. Use the controlled correction workflow.'
       );
@@ -1318,7 +1347,6 @@ export class InternalAssessmentService {
         assessment.status = AssessmentStatus.MARKS_ENTRY;
       }
     } else if (
-      assessment.status === AssessmentStatus.DRAFT ||
       assessment.status === AssessmentStatus.OPEN ||
       assessment.status === AssessmentStatus.COMPLETED
     ) {
@@ -1328,12 +1356,13 @@ export class InternalAssessmentService {
     // 4. Resolve active StudentEnrollment roster strictly belonging to this assessment context
     const enrollmentFilter: any = {
       collegeId: new Types.ObjectId(collegeId),
-      semesterId: assessment.semesterId,
-      academicYearId: assessment.academicYearId,
       status: 'active',
     };
     if (assessment.sectionId) {
       enrollmentFilter.sectionId = assessment.sectionId;
+    } else {
+      if (assessment.semesterId) enrollmentFilter.semesterId = assessment.semesterId;
+      if (assessment.academicYearId) enrollmentFilter.academicYearId = assessment.academicYearId;
     }
 
     const validEnrollments = await StudentEnrollment.find(enrollmentFilter)
@@ -1391,8 +1420,47 @@ export class InternalAssessmentService {
           );
         }
       } else if (item.studentId) {
-        const enr = studentIdToEnrollmentMap.get(item.studentId.toString());
+        let enr = studentIdToEnrollmentMap.get(item.studentId.toString());
+        if (!enr && assessment.sectionId) {
+          // Check direct section match on student as fallback
+          const directStudent = await Student.findOne({
+            _id: new Types.ObjectId(item.studentId.toString()),
+            collegeId: new Types.ObjectId(collegeId),
+            sectionId: assessment.sectionId,
+            isActive: true,
+          });
+          if (directStudent) {
+            let foundEnr = await StudentEnrollment.findOne({
+              collegeId: new Types.ObjectId(collegeId),
+              studentId: directStudent._id,
+              status: 'active',
+            });
+            if (!foundEnr) {
+              foundEnr = await StudentEnrollment.create({
+                collegeId: new Types.ObjectId(collegeId),
+                studentId: directStudent._id,
+                departmentId: assessment.departmentId,
+                courseId: assessment.courseId,
+                semesterId: assessment.semesterId,
+                academicYearId: assessment.academicYearId,
+                sectionId: assessment.sectionId,
+                status: 'active',
+              });
+            }
+            enr = foundEnr;
+            validEnrollmentMap.set(foundEnr._id.toString(), foundEnr);
+            studentIdToEnrollmentMap.set(item.studentId.toString(), foundEnr);
+          }
+        }
         if (!enr) {
+          if (item.studentId && Types.ObjectId.isValid(item.studentId.toString())) {
+            const directStudent = await Student.findById(item.studentId);
+            if (directStudent && directStudent.collegeId && directStudent.collegeId.toString() !== collegeId) {
+              throw ApiError.badRequest(
+                `Student '${item.studentId}' is not eligible for this college/assessment context.`
+              );
+            }
+          }
           throw ApiError.badRequest(
             `Student '${item.studentId}' does not belong to this assessment's active section roster.`
           );
@@ -1407,6 +1475,7 @@ export class InternalAssessmentService {
     const validatedMarks: Array<{
       enrollment: any;
       marks: number | null;
+      componentMarks?: Record<string, number | null> | null;
       status: StudentMarkStatus;
       remarks?: string | null;
     }> = [];
@@ -1420,9 +1489,12 @@ export class InternalAssessmentService {
       if (markStatus === StudentMarkStatus.ABSENT) {
         markValue = null;
         finalStatus = StudentMarkStatus.ABSENT;
-      } else if (markStatus === StudentMarkStatus.EXEMPTED || markStatus === StudentMarkStatus.EXCUSED) {
+      } else if (markStatus === StudentMarkStatus.EXEMPTED) {
         markValue = null;
         finalStatus = StudentMarkStatus.EXEMPTED;
+      } else if (markStatus === StudentMarkStatus.EXCUSED) {
+        markValue = null;
+        finalStatus = StudentMarkStatus.EXCUSED;
       } else if (markStatus === StudentMarkStatus.NOT_APPEARED) {
         markValue = null;
         finalStatus = StudentMarkStatus.NOT_APPEARED;
@@ -1438,6 +1510,12 @@ export class InternalAssessmentService {
               const num = Number(cv);
               if (isNaN(num) || num < 0) {
                 throw ApiError.badRequest(`Marks for component '${ck}' cannot be negative or non-numeric.`);
+              }
+              const compDef = assessment.components?.find((c: any) => c.key === ck);
+              if (compDef && num > compDef.maxMarks) {
+                throw ApiError.badRequest(
+                  `Marks for component '${ck}' (${num}) cannot exceed maximum allowed (${compDef.maxMarks}).`
+                );
               }
               compSum += num;
               hasVal = true;
@@ -1461,13 +1539,15 @@ export class InternalAssessmentService {
             );
           }
           markValue = Math.round(markNum * 100) / 100;
-          finalStatus = StudentMarkStatus.PRESENT;
+          finalStatus =
+            markStatus === StudentMarkStatus.PRESENT ? StudentMarkStatus.PRESENT : StudentMarkStatus.ENTERED;
         }
       }
 
       validatedMarks.push({
         enrollment: enr,
         marks: markValue,
+        componentMarks: item.componentMarks || null,
         status: finalStatus,
         remarks: item.remarks || null,
       });
@@ -1570,7 +1650,7 @@ export class InternalAssessmentService {
         studentName: studentObj.name || 'Student',
         rollNumber: studentObj.rollNumber || undefined,
         admissionNumber: studentObj.admissionNumber || undefined,
-        componentMarks: vm.marks !== null ? { total: vm.marks } : {},
+        componentMarks: vm.componentMarks || (vm.marks !== null ? { total: vm.marks } : {}),
         totalMarks: vm.marks || 0,
         status: vm.status,
         remarks: vm.remarks || undefined,
@@ -4233,7 +4313,7 @@ export class InternalAssessmentService {
             priority: NotificationPriority.HIGH,
             title: `Internal Marks Published: ${subjectName}`,
             body: `Your marks for ${assessment.title || subjectName} have been published. Tap to view your score.`,
-            deepLink: `/academics/assessments/${assessment._id.toString()}`,
+            deepLink: `/assessments/${assessment._id.toString()}`,
             metadata: {
               assessmentId: assessment._id.toString(),
               subjectId: assessment.subjectId.toString(),

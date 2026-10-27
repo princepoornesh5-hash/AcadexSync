@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:intl/intl.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
@@ -100,6 +101,8 @@ class DepartmentDetailScreen extends ConsumerWidget {
                   _buildDetailsCard(context, isDark, dept, summaryAsync),
                   const SizedBox(height: 20),
                   _buildHodCard(context, isDark, hodAsync),
+                  const SizedBox(height: 20),
+                  _buildTenureHistoryCard(context, ref, isDark),
                 ] else ...[
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,6 +112,8 @@ class DepartmentDetailScreen extends ConsumerWidget {
                       Expanded(flex: 2, child: _buildHodCard(context, isDark, hodAsync)),
                     ],
                   ),
+                  const SizedBox(height: 20),
+                  _buildTenureHistoryCard(context, ref, isDark),
                 ],
                 const SizedBox(height: 32),
               ],
@@ -570,6 +575,156 @@ class DepartmentDetailScreen extends ConsumerWidget {
                     ),
                   ],
                 ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTenureHistoryCard(BuildContext context, WidgetRef ref, bool isDark) {
+    final tenureAsync = ref.watch(departmentTenureHistoryProvider(departmentId));
+
+    return AcadexCard(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(LucideIcons.history, size: 16, color: AcadexColors.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Department Leadership & HOD Tenure History',
+                style: AcadexTypography.body(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ).copyWith(fontWeight: FontWeight.w700),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AcadexColors.primary.withValues(alpha: 0.08),
+                  borderRadius: AcadexRadius.borderRadiusSm,
+                ),
+                child: const Text(
+                  'IMMUTABLE ATTRIBUTION',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: AcadexColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Historical approvals, moderation, and departmental actions are permanently attributed to the appointed HOD at the time of execution.',
+            style: AcadexTypography.caption(
+              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 14),
+          tenureAsync.when(
+            loading: () => const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())),
+            error: (err, _) => Text(AcadexException.sanitizedMessage(err), style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
+            data: (tenures) {
+              if (tenures.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Text(
+                    'No tenure transition records on file for this department.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    ),
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: tenures.length,
+                separatorBuilder: (_, __) => const Divider(height: 16),
+                itemBuilder: (context, index) {
+                  final tenure = tenures[index];
+                  final name = tenure.userName ?? 'Department HOD';
+                  final email = tenure.userEmail ?? '';
+                  final start = DateFormat('dd MMM yyyy').format(tenure.startDate);
+                  final end = tenure.endDate != null ? DateFormat('dd MMM yyyy').format(tenure.endDate!) : 'Present';
+                  final isCurrentActive = tenure.status == 'ACTIVE';
+
+                  return Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: isCurrentActive
+                            ? AcadexColors.successLight
+                            : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+                        child: Icon(
+                          isCurrentActive ? LucideIcons.shieldCheck : LucideIcons.shield,
+                          size: 16,
+                          color: isCurrentActive ? AcadexColors.success : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              ),
+                            ),
+                            if (email.isNotEmpty)
+                              Text(
+                                email,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                                ),
+                              ),
+                            Text(
+                              'Tenure: $start — $end',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: isCurrentActive ? AcadexColors.primary : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isCurrentActive
+                              ? AcadexColors.successLight
+                              : (tenure.status == 'REVOKED' ? AcadexColors.accentOrangeLight : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft)),
+                          borderRadius: AcadexRadius.borderRadiusFull,
+                        ),
+                        child: Text(
+                          tenure.status,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isCurrentActive
+                                ? AcadexColors.success
+                                : (tenure.status == 'REVOKED' ? AcadexColors.accentOrange : (isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               );
             },
           ),

@@ -9,15 +9,22 @@ export class AuthController {
    * POST /api/v1/auth/login
    */
   static login = asyncHandler(async (req: Request, res: Response) => {
-    const { identifier, password } = req.body;
+    const { identifier, password, collegeId, preferredWorkspaceId } = req.body;
 
     if (!identifier || !password) {
       throw ApiError.badRequest('Identifier (PIN Number, email, or phone) and password are required');
     }
 
+    const rawHeaderWorkspaceId = req.headers['x-workspace-id'];
+    const headerWorkspaceId = (
+      Array.isArray(rawHeaderWorkspaceId) ? rawHeaderWorkspaceId[0] : rawHeaderWorkspaceId
+    )?.trim();
+
     const metadata = {
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip || req.socket.remoteAddress,
+      preferredWorkspaceId: preferredWorkspaceId || collegeId || headerWorkspaceId,
+      collegeId: collegeId || preferredWorkspaceId || headerWorkspaceId,
     };
 
     const result = await AuthService.login(identifier, password, metadata);
@@ -92,7 +99,7 @@ export class AuthController {
 
     return ApiResponse.success(res, {
       id: user.id,
-      instituteId: user.instituteId,
+      instituteId: req.user?.instituteId || user.instituteId,
       name: user.name,
       email: user.email || null,
       phone: user.phone || null,

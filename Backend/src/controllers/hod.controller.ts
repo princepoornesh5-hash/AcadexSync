@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { HodService } from '../services/hod.service';
+import { DepartmentTenureService } from '../services/departmentTenure.service';
 import { ApiResponse } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ApiError } from '../utils/apiError';
@@ -167,5 +168,37 @@ export class HodController {
       return ApiResponse.success(res, null, 'No HOD currently assigned to this department');
     }
     return ApiResponse.success(res, hod);
+  });
+
+  /**
+   * GET /api/v1/departments/:departmentId/tenure-history
+   * Get HOD tenure history for a department
+   */
+  static getDepartmentTenureHistory = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const collegeId = (req.query.collegeId as string) || req.user.collegeId;
+    if (!collegeId) throw ApiError.badRequest('collegeId is required');
+    const history = await DepartmentTenureService.getTenureHistory(
+      req.user,
+      collegeId,
+      req.params.departmentId
+    );
+    return ApiResponse.success(res, history, 'Department tenure history retrieved successfully');
+  });
+
+  /**
+   * POST /api/v1/departments/:departmentId/appoint-hod
+   * Appoint a new HOD and record succession
+   */
+  static appointHod = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized('User not authenticated');
+    const collegeId = (req.body.collegeId as string) || req.user.collegeId;
+    const result = await DepartmentTenureService.appointHod(req.user, {
+      collegeId,
+      departmentId: req.params.departmentId,
+      newHodUserId: req.body.userId || req.body.newHodUserId,
+      notes: req.body.notes,
+    });
+    return ApiResponse.success(res, result, 'HOD appointed successfully');
   });
 }

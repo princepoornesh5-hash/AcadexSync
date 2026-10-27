@@ -16,6 +16,7 @@ import '../providers/academic_providers.dart';
 import '../widgets/student_bulk_action_dialogs.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
+import '../../../../core/errors/acadex_error.dart';
 
 class StudentProfileScreen extends ConsumerStatefulWidget {
   final String studentId;
@@ -990,18 +991,6 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
   }
 
   Widget _buildTimelineTab(Student student, StudentAcademicProfile profile, bool isDark, ThemeData theme) {
-    final hasHistory = student.history.isNotEmpty || profile.enrollmentHistory.isNotEmpty;
-
-    if (!hasHistory) {
-      return const Center(
-        child: AcadexEmptyState(
-          title: "No Academic History",
-          subtitle: "Past academic milestones, promotions, and transfers will appear here.",
-          icon: LucideIcons.history,
-        ),
-      );
-    }
-
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1032,7 +1021,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
             ),
             const SizedBox(height: 16),
           ],
-          if (student.history.isNotEmpty)
+          if (student.history.isNotEmpty) ...[
             AcadexCard(
               child: ListView.separated(
                 shrinkWrap: true,
@@ -1089,8 +1078,169 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> wit
                 },
               ),
             ),
+            const SizedBox(height: 16),
+          ],
+          _buildTransferHistoryCard(student, isDark, theme),
         ],
       ),
+    );
+  }
+
+  Widget _buildTransferHistoryCard(Student student, bool isDark, ThemeData theme) {
+    final transfersAsync = ref.watch(studentTransfersProvider(student.id));
+    final creditsAsync = ref.watch(transferCreditsProvider(student.id));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AcadexCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(LucideIcons.arrowRightLeft, size: 16, color: AcadexColors.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Inter-College Transfers",
+                    style: AcadexTypography.title(color: theme.colorScheme.onSurface),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AcadexColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      "CROSS-COLLEGE ISOLATION",
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AcadexColors.primary),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Student identity is preserved across institutions with distinct college PIN numbers and independent academic records.",
+                style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+              ),
+              const SizedBox(height: 12),
+              transfersAsync.when(
+                loading: () => const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator())),
+                error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
+                data: (transfers) {
+                  if (transfers.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Text(
+                        "No inter-college transfer history on record.",
+                        style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                      ),
+                    );
+                  }
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: transfers.length,
+                    separatorBuilder: (_, __) => const Divider(height: 16),
+                    itemBuilder: (_, i) {
+                      final t = transfers[i];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const CircleAvatar(
+                          radius: 14,
+                          backgroundColor: AcadexColors.canvasSoft,
+                          child: Icon(LucideIcons.building, size: 14, color: AcadexColors.primary),
+                        ),
+                        title: Text("Transfer: ${t.sourcePin} → ${t.destinationPin}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        subtitle: Text("Effective: ${t.effectiveDate.day}/${t.effectiveDate.month}/${t.effectiveDate.year} • ${t.reason ?? 'Academic transfer'}"),
+                        trailing: AcadexBadge(
+                          label: t.status,
+                          variant: t.isApproved ? AcadexBadgeVariant.success : AcadexBadgeVariant.warning,
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        AcadexCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(LucideIcons.fileCheck2, size: 16, color: AcadexColors.accentPurple),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Transfer Credits",
+                    style: AcadexTypography.title(color: theme.colorScheme.onSurface),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AcadexColors.accentPurple.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      "VERIFIED CREDITS",
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AcadexColors.accentPurple),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Prior credits accepted through authorised administrative verification with immutable source college attribution.",
+                style: AcadexTypography.caption(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+              ),
+              const SizedBox(height: 12),
+              creditsAsync.when(
+                loading: () => const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator())),
+                error: (e, _) => Text(AcadexException.sanitizedMessage(e), style: const TextStyle(color: AcadexColors.error, fontSize: 12)),
+                data: (credits) {
+                  if (credits.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Text(
+                        "No external transfer credits registered.",
+                        style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                      ),
+                    );
+                  }
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: credits.length,
+                    separatorBuilder: (_, __) => const Divider(height: 16),
+                    itemBuilder: (_, i) {
+                      final c = credits[i];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const CircleAvatar(
+                          radius: 14,
+                          backgroundColor: AcadexColors.canvasSoft,
+                          child: Icon(LucideIcons.award, size: 14, color: AcadexColors.accentPurple),
+                        ),
+                        title: Text("${c.sourceSubjectCode} - ${c.sourceSubjectName}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        subtitle: Text("Origin: ${c.sourceCollegeName} • ${c.creditsEarned} Credits • Grade: ${c.gradeObtained ?? '—'}"),
+                        trailing: AcadexBadge(
+                          label: c.status,
+                          variant: c.isApproved ? AcadexBadgeVariant.success : AcadexBadgeVariant.warning,
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
