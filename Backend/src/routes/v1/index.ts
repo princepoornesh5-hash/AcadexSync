@@ -27,6 +27,7 @@ import { profileRouter } from './profile.routes';
 import { dashboardRouter } from './dashboard.routes';
 import importRouter from './import.routes';
 import { workspaceRouter } from './workspace.routes';
+import { aiRouter } from './ai.routes';
 
 const router = Router();
 
@@ -61,5 +62,6 @@ router.use('/reports', reportRouter);
 router.use('/analytics', analyticsRouter);
 router.use('/imports', importRouter);
 router.use('/workspaces', workspaceRouter);
+router.use('/ai', aiRouter);
 
 export const v1Router = router;

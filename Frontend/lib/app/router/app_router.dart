@@ -9,7 +9,7 @@ import '../../features/auth/domain/models/user_model.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../core/presentation/utils/navigation_extensions.dart';
 import '../../core/presentation/providers/navigation_provider.dart';
-import '../../features/auth/presentation/screens/splash_screen.dart';
+import '../../features/auth/presentation/screens/startup_loading_view.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/activation_screen.dart';
@@ -431,12 +431,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           loc == '/verify-otp' ||
           loc == '/reset-password' ||
           loc == '/activate';
-      final isSplash = loc == '/';
+      final isStartup = loc == '/';
 
       if (currentAuthState is AuthProfileLoading || currentAuthState is AuthInitial) {
-        // Stay on splash or loading screen if trying to access auth screens or splash,
-        // otherwise block access to protected routes while loading.
-        return (isGoingToAuth || isSplash) ? null : '/';
+        // Minimal loading placeholder while background session restoration resolves
+        return (isGoingToAuth || isStartup) ? null : '/';
       }
 
       if (currentAuthState is AuthProfileError || currentAuthState is AuthError) {
@@ -461,7 +460,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       if (loc == '/access-restricted') return null;
 
-      if (isGoingToAuth || isSplash) {
+      if (isGoingToAuth || isStartup) {
         return getHomeRouteForRole(role);
       }
 
@@ -617,7 +616,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/',
-        builder: (context, state) => const SplashScreen(),
+        builder: (context, state) => const StartupLoadingView(),
       ),
       GoRoute(
         path: '/login',

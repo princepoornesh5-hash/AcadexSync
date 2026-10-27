@@ -137,6 +137,20 @@ const envSchema = z.object({
   FIREBASE_PROJECT_ID: z.string().default('acadex-app'),
   FIREBASE_CLIENT_EMAIL: z.string().default('firebase-adminsdk@acadex-app.iam.gserviceaccount.com'),
   FIREBASE_PRIVATE_KEY: z.string().default(''),
+
+  // Google Gemini AI Configuration
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+  AI_RATE_LIMIT_MAX: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().positive())
+    .default('30'),
+  AI_TIMEOUT_MS: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().positive())
+    .default('15000'),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

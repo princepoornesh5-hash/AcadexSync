@@ -263,7 +263,7 @@ class AcadexNavigationService {
       icon: LucideIcons.bot,
       route: '/ai-assistant',
       group: AcadexNavGroup.system,
-      allowedRoles: const [AppRole.superAdmin, AppRole.collegeAdmin, AppRole.hod, AppRole.faculty],
+      allowedRoles: AppRole.values,
       isPrimary: false, // Secondary contextual feature
       matchingPrefixes: const ['/ai-assistant'],
     ),

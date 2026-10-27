@@ -11,6 +11,8 @@ import 'widgets/ai_markdown_view.dart';
 import 'widgets/ai_composer.dart';
 import 'widgets/ai_chat_sidebar.dart';
 import 'widgets/ai_thinking_indicator.dart';
+import 'widgets/ai_proposal_card.dart';
+import '../domain/models/ai_message.dart';
 
 class AiAssistantScreen extends ConsumerStatefulWidget {
   const AiAssistantScreen({super.key});
@@ -442,7 +444,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                                 constraints: const BoxConstraints(maxWidth: 780),
                                 margin: const EdgeInsets.symmetric(vertical: 10),
                                 child: isAi
-                                    ? _buildAssistantRow(context, msg.text, isDark)
+                                    ? _buildAssistantRow(context, msg, isDark)
                                     : _buildUserRow(context, msg.text, isDark),
                               ),
                             );
@@ -581,7 +583,8 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
     );
   }
 
-  Widget _buildAssistantRow(BuildContext context, String text, bool isDark) {
+  Widget _buildAssistantRow(BuildContext context, AiMessage msg, bool isDark) {
+    final text = msg.text;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -613,6 +616,22 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                 text: text,
                 textColor: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A),
               ),
+              if (msg.proposal != null)
+                AiProposalCard(
+                  message: msg,
+                  onConfirm: () {
+                    final actionId = msg.proposal!['actionId'] as String;
+                    ref.read(aiChatProvider.notifier).confirmAction(actionId, msg.id);
+                  },
+                  onCancel: () {
+                    final actionId = msg.proposal!['actionId'] as String;
+                    ref.read(aiChatProvider.notifier).cancelAction(actionId, msg.id);
+                  },
+                  onReconcile: () {
+                    final actionId = msg.proposal!['actionId'] as String;
+                    ref.read(aiChatProvider.notifier).reconcileActionStatus(actionId, msg.id);
+                  },
+                ),
               const SizedBox(height: 6),
               // Subtle Assistant Actions (Copy, etc.)
               Row(
