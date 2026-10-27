@@ -21,16 +21,34 @@ class StaleWorkspaceResponseException implements Exception {
 class ApiClient {
   static const String _envBaseUrl = String.fromEnvironment('API_BASE_URL');
   static const String _envAiUrl = String.fromEnvironment('AI_BASE_URL');
+  static const String _envDevHost = String.fromEnvironment('DEV_HOST');
+  static const String _envApiHost = String.fromEnvironment('API_HOST');
+  static const bool _envUseLocalhost = bool.fromEnvironment('USE_LOCALHOST', defaultValue: false);
+  static const bool _envUseAdbReverse = bool.fromEnvironment('USE_ADB_REVERSE', defaultValue: false);
+
+  /// Resolves the platform-aware development host:
+  /// 1. Compile-time host override (`DEV_HOST` or `API_HOST`).
+  /// 2. Explicit localhost flag (`USE_LOCALHOST=true` or `USE_ADB_REVERSE=true`) for physical devices over `adb reverse`.
+  /// 3. Platform default:
+  ///    - Android (`TargetPlatform.android` when not Web): `10.0.2.2` (Android emulator host loopback alias).
+  ///    - Other platforms (Web, iOS Simulator, macOS/desktop): `localhost`.
+  static String get developmentHost {
+    if (_envDevHost.isNotEmpty) return _envDevHost;
+    if (_envApiHost.isNotEmpty) return _envApiHost;
+    if (_envUseLocalhost || _envUseAdbReverse) return 'localhost';
+
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return '10.0.2.2';
+    }
+    return 'localhost';
+  }
 
   static String get defaultBaseUrl {
     if (_envBaseUrl.isNotEmpty) return _envBaseUrl;
     if (kReleaseMode) {
       return 'https://acadex-backend-main.onrender.com/api/v1';
     }
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://localhost:5050/api/v1';
-    }
-    return 'http://localhost:5050/api/v1';
+    return 'http://$developmentHost:5050/api/v1';
   }
 
   static String get defaultAiUrl {
@@ -38,10 +56,7 @@ class ApiClient {
     if (kReleaseMode) {
       return 'https://acadex-backend-main.onrender.com/api/v1/ai';
     }
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:5001/api/v1/ai';
-    }
-    return 'http://localhost:5001/api/v1/ai';
+    return 'http://$developmentHost:5001/api/v1/ai';
   }
 
   static const String keyAccessToken = 'access_token';
