@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/firebase/firebase_initializer.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/ai_message.dart';
@@ -8,7 +7,9 @@ import '../../data/repositories/api_ai_repository.dart';
 import '../../data/repositories/mock_ai_repository.dart';
 
 final aiRepositoryProvider = Provider<AiRepository>((ref) {
-  if (FirebaseInitializer.shouldUseMock) {
+  // Use MockAiRepository only if explicitly requested at compile time with --dart-define=USE_MOCK_AI=true
+  const bool forceMock = bool.fromEnvironment('USE_MOCK_AI', defaultValue: false);
+  if (forceMock) {
     return MockAiRepository();
   }
   return ApiAiRepository();

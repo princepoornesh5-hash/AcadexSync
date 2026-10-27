@@ -278,11 +278,69 @@ export class AiService {
         throw error;
       }
 
+      const rawMsg = error.message || '';
+      const statusCode = error.status || error.code || 500;
+
+      // Sanitize log messages so raw API keys are never written to server logs
+      const sanitizedMsg = env.GEMINI_API_KEY
+        ? rawMsg.split(env.GEMINI_API_KEY).join('[REDACTED_API_KEY]')
+        : rawMsg;
+
       Logger.error('Gemini AI upstream request failed', {
-        errorMessage: error.message || 'Unknown error',
-        errorCode: error.status || error.code || 'UNKNOWN_STATUS',
+        errorMessage: sanitizedMsg || 'Unknown upstream error',
+        errorCode: statusCode,
       });
 
+      // 1. Authentication / Invalid API Key
+      if (
+        (statusCode === 400 && (rawMsg.includes('API_KEY_INVALID') || rawMsg.includes('API key not valid'))) ||
+        statusCode === 401 ||
+        statusCode === 403
+      ) {
+        throw new ApiError(
+          502,
+          'Gemini AI authentication failed. Please verify the configured GEMINI_API_KEY in Backend/.env.',
+          'AI_AUTH_ERROR'
+        );
+      }
+
+      // 2. Quota / Rate Limiting
+      if (
+        statusCode === 429 ||
+        rawMsg.includes('RESOURCE_EXHAUSTED') ||
+        rawMsg.includes('Quota exceeded')
+      ) {
+        throw new ApiError(
+          429,
+          'Gemini AI rate limit or quota exceeded. Please wait a moment before trying again.',
+          'AI_RATE_LIMIT_EXCEEDED'
+        );
+      }
+
+      // 3. Model Not Found or Unavailable
+      if (statusCode === 404 || (rawMsg.includes('models/') && rawMsg.includes('not found'))) {
+        throw new ApiError(
+          502,
+          `Configured Gemini model (${modelName}) is not available or supported by this API key.`,
+          'AI_MODEL_NOT_FOUND'
+        );
+      }
+
+      // 4. Gateway / Upstream Timeout
+      if (
+        statusCode === 504 ||
+        error.name === 'AbortError' ||
+        rawMsg.includes('timed out') ||
+        rawMsg.includes('timeout')
+      ) {
+        throw new ApiError(
+          504,
+          'AI service request timed out waiting for upstream response.',
+          'AI_GATEWAY_TIMEOUT'
+        );
+      }
+
+      // 5. Generic upstream failure - never leak raw internal errors or credentials
       throw new ApiError(
         502,
         'Failed to obtain response from Gemini AI service. Please try again later.',

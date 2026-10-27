@@ -61,6 +61,19 @@ async function startServer(): Promise<http.Server | void> {
           );
         }
 
+        // Validate Gemini AI Configuration at startup
+        if (!env.GEMINI_API_KEY || env.GEMINI_API_KEY.trim() === '') {
+          Logger.error(
+            '❌ [AI CONFIG ERROR] GEMINI_API_KEY is not configured in Backend/.env. ' +
+            'ACADEX AI assistant features will be unavailable (503 AI_CONFIG_ERROR) until a valid GEMINI_API_KEY is provided in Backend/.env.'
+          );
+        } else {
+          const maskedKey = env.GEMINI_API_KEY.length > 8
+            ? `${env.GEMINI_API_KEY.substring(0, 4)}...${env.GEMINI_API_KEY.substring(env.GEMINI_API_KEY.length - 4)}`
+            : '***';
+          Logger.info(`🤖 Gemini AI service configured (Model: ${env.GEMINI_MODEL}, Key: ${maskedKey})`);
+        }
+
         Logger.info(`🚀 ACADEX Backend running on port ${env.PORT}`);
         Logger.info(`   Health check: http://localhost:${env.PORT}/health`);
         Logger.info(`   API v1 Root:  http://localhost:${env.PORT}/api/v1`);

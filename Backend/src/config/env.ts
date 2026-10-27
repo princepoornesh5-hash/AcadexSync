@@ -2,7 +2,9 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { z } from 'zod';
 
-// Load .env from backend root or workspace root
+// Load .env from backend root (relative to this module) and current working directory
+const backendEnvPath = path.resolve(__dirname, '../../.env');
+dotenv.config({ path: backendEnvPath });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 dotenv.config();
 
