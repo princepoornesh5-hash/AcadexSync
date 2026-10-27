@@ -17,7 +17,16 @@ class CalendarEventCard extends StatelessWidget {
     this.dateLabel,
   });
 
+  bool get _isAssignmentDeadline =>
+      event.sourceType == CalendarSourceType.assignment ||
+      event.eventType == CalendarEventType.deadline ||
+      event.eventType == CalendarEventType.assignmentDeadline ||
+      (event.navigationTarget != null && event.navigationTarget!.startsWith('/assignments'));
+
   IconData _getIcon() {
+    if (_isAssignmentDeadline) {
+      return LucideIcons.fileClock;
+    }
     switch (event.eventType) {
       case CalendarEventType.holiday:
       case CalendarEventType.publicHoliday:
@@ -28,7 +37,7 @@ class CalendarEventCard extends StatelessWidget {
         return LucideIcons.fileCheck;
       case CalendarEventType.deadline:
       case CalendarEventType.assignmentDeadline:
-        return LucideIcons.clock;
+        return LucideIcons.fileClock;
       case CalendarEventType.internalAssessment:
       case CalendarEventType.classTest:
         return LucideIcons.clipboardCheck;
@@ -53,6 +62,9 @@ class CalendarEventCard extends StatelessWidget {
   }
 
   Color _getEventColor() {
+    if (_isAssignmentDeadline) {
+      return const Color(0xFF2563EB); // Royal Blue
+    }
     switch (event.eventType) {
       case CalendarEventType.holiday:
       case CalendarEventType.publicHoliday:
@@ -63,7 +75,7 @@ class CalendarEventCard extends StatelessWidget {
         return const Color(0xFF8B5CF6); // Purple
       case CalendarEventType.deadline:
       case CalendarEventType.assignmentDeadline:
-        return const Color(0xFF3B82F6); // Blue
+        return const Color(0xFF2563EB); // Royal Blue
       case CalendarEventType.internalAssessment:
       case CalendarEventType.classTest:
         return const Color(0xFFE11D48); // Rose
@@ -90,6 +102,7 @@ class CalendarEventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isAssignment = _isAssignmentDeadline;
     final color = _getEventColor();
     final isCancelled = event.status == CalendarEventStatus.cancelled;
     final isDraft = event.status == CalendarEventStatus.draft;
@@ -97,7 +110,7 @@ class CalendarEventCard extends StatelessWidget {
     String timeLabel = 'All Day';
     if (!event.allDay && event.startTime != null) {
       timeLabel = event.startTime!;
-      if (event.endTime != null) {
+      if (event.endTime != null && event.endTime != event.startTime) {
         timeLabel += ' – ${event.endTime}';
       }
     }
@@ -110,13 +123,17 @@ class CalendarEventCard extends StatelessWidget {
         border: Border.all(
           color: isCancelled
               ? (isDark ? Colors.red.shade900 : Colors.red.shade200)
-              : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-          width: 1,
+              : isAssignment
+                  ? (isDark ? const Color(0xFF1E3A8A) : const Color(0xFFBFDBFE))
+                  : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+          width: isAssignment ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.03),
-            blurRadius: 4,
+            color: isAssignment
+                ? const Color(0xFF2563EB).withValues(alpha: isDark ? 0.15 : 0.06)
+                : Colors.black.withValues(alpha: isDark ? 0.20 : 0.03),
+            blurRadius: isAssignment ? 6 : 4,
             offset: const Offset(0, 1),
           ),
         ],
@@ -127,7 +144,15 @@ class CalendarEventCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () {
-            if (event.sourceType == CalendarSourceType.derived &&
+            if (isAssignment) {
+              if (event.navigationTarget != null && event.navigationTarget!.isNotEmpty) {
+                context.push(event.navigationTarget!);
+              } else if (event.sourceId != null && event.sourceId!.isNotEmpty) {
+                context.push('/assignments/${event.sourceId}');
+              } else {
+                context.push('/assignments/${event.id}');
+              }
+            } else if (event.sourceType == CalendarSourceType.derived &&
                 event.navigationTarget != null &&
                 event.navigationTarget!.isNotEmpty) {
               context.push(event.navigationTarget!);
@@ -287,15 +312,26 @@ class CalendarEventCard extends StatelessWidget {
                                 color: color.withValues(alpha: isDark ? 0.2 : 0.08),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: Text(
-                                event.eventType.displayName,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: color,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (isAssignment) ...[
+                                    Icon(LucideIcons.fileClock, size: 11, color: color),
+                                    const SizedBox(width: 4),
+                                  ],
+                                  Flexible(
+                                    child: Text(
+                                      isAssignment ? 'Assignment Deadline' : event.eventType.displayName,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: color,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),

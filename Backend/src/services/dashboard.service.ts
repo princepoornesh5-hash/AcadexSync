@@ -7,6 +7,9 @@ import { FacultyAssignment } from '../models/facultyAssignment.model';
 import { Department } from '../models/department.model';
 import { College } from '../models/college.model';
 import { AcademicYear } from '../models/academicYear.model';
+import { Course } from '../models/course.model';
+import { Section } from '../models/section.model';
+import { Subject } from '../models/subject.model';
 import { AttendanceSession } from '../models/attendanceSession.model';
 import { AttendanceRecord } from '../models/attendanceRecord.model';
 import { Assignment } from '../models/assignment.model';
@@ -577,31 +580,34 @@ export class DashboardService {
 
     const departmentId = department._id;
 
-    const context: HodDashboardContext = {
-      departmentId: departmentId.toString(),
-      departmentName: department.name,
-      departmentCode: department.code,
-      designation: faculty?.designation || 'Head of Department',
-      managedScope: 'Department Academic & Faculty Operations',
-    };
-
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
     const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
 
+    const deptSections = await Section.find({ collegeId, departmentId }).select('_id').lean();
+    const deptSecIds = deptSections.map((s) => s._id);
+
     const [
       activeFacultyCount,
       activeStudentsCount,
+      coursesCount,
+      sectionsCount,
+      subjectsCount,
       todayClassesCount,
       pendingDepartmentRequests,
       pendingAssessmentsCount,
       pendingAttendanceCount,
+      attendanceStats,
+      activeAcademicYear,
       unreadNotificationCount,
       announcements,
       upcomingCalendar,
     ] = await Promise.all([
       Faculty.countDocuments({ collegeId, departmentId }),
       Student.countDocuments({ collegeId, departmentId }),
+      Course.countDocuments({ collegeId, departmentId }),
+      Section.countDocuments({ collegeId, departmentId }),
+      Subject.countDocuments({ collegeId, departmentId }),
       AttendanceSession.countDocuments({
         collegeId,
         departmentId,
@@ -623,6 +629,26 @@ export class DashboardService {
         date: { $gte: todayStart, $lte: todayEnd },
         status: { $in: ['SCHEDULED', 'IN_PROGRESS'] },
       }),
+      AttendanceRecord.aggregate([
+        {
+          $match: {
+            collegeId: new mongoose.Types.ObjectId(collegeId),
+            $or: [
+              { departmentId },
+              { sectionId: { $in: deptSecIds } },
+            ],
+            isCancelled: { $ne: true },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalRecords: { $sum: 1 },
+            present: { $sum: { $cond: [{ $in: ['$status', ['PRESENT', 'LATE', 'present', 'late']] }, 1, 0] } },
+          },
+        },
+      ]),
+      AcademicYear.findOne({ collegeId, status: 'ACTIVE' }).select('name code').lean(),
       Notification.countDocuments({
         recipientUserId: requester.id,
         isRead: false,
@@ -631,13 +657,31 @@ export class DashboardService {
       this.getUpcomingCalendarEvents(requester, customDate, 4),
     ]);
 
+    const attRec = attendanceStats[0];
+    const attendancePercentage = attRec && attRec.totalRecords > 0
+      ? Math.round((attRec.present / attRec.totalRecords) * 1000) / 10
+      : null;
+
+    const context: HodDashboardContext = {
+      departmentId: departmentId.toString(),
+      departmentName: department.name,
+      departmentCode: department.code,
+      designation: faculty?.designation || 'Head of Department',
+      managedScope: 'Department Academic & Faculty Operations',
+      academicYearName: activeAcademicYear?.name || null,
+    };
+
     const summary: HodDashboardSummary = {
       activeFacultyCount,
       activeStudentsCount,
+      coursesCount,
+      sectionsCount,
+      subjectsCount,
       todayClassesCount,
       pendingDepartmentRequests,
       pendingAssessmentsCount,
       pendingAttendanceCount,
+      attendancePercentage,
     };
 
     const alerts: DashboardAlert[] = [];
@@ -699,11 +743,14 @@ export class DashboardService {
 
     const quickActions: DashboardQuickAction[] = [
       { id: 'qa_timetable', label: 'Department Timetable', icon: 'calendar', route: '/timetable', isPrimary: true },
+      { id: 'qa_faculty_workload', label: 'Assign Faculty', icon: 'userCheck', route: '/faculty-assignments' },
+      { id: 'qa_students', label: 'Students', icon: 'users', route: '/academics/students' },
       { id: 'qa_attendance', label: 'Attendance Oversight', icon: 'checkSquare', route: '/attendance', badgeCount: pendingAttendanceCount },
       { id: 'qa_assessments', label: 'Assessments', icon: 'penTool', route: '/assessments', badgeCount: pendingAssessmentsCount },
       { id: 'qa_requests', label: 'Requests', icon: 'inbox', route: '/requests', badgeCount: pendingDepartmentRequests },
-      { id: 'qa_announcements', label: 'Announcements', icon: 'megaphone', route: '/announcements' },
       { id: 'qa_calendar', label: 'Academic Calendar', icon: 'calendarDays', route: '/calendar' },
+      { id: 'qa_analytics', label: 'Department Analytics', icon: 'barChart', route: '/analytics' },
+      { id: 'qa_announcements', label: 'Announcements', icon: 'megaphone', route: '/announcements' },
       { id: 'qa_notifications', label: 'Notifications', icon: 'bell', route: '/notifications', badgeCount: unreadNotificationCount },
     ];
 
@@ -735,20 +782,17 @@ export class DashboardService {
       throw ApiError.badRequest('College record not found');
     }
 
-    const context: CollegeAdminDashboardContext = {
-      collegeId,
-      collegeName: college.name,
-      collegeCode: college.code || 'AIT',
-      administrativeScope: 'Tenant Institution Operations',
-    };
-
     const [
       departmentsCount,
       facultyCount,
       studentsCount,
+      coursesCount,
+      sectionsCount,
       pendingRequestsCount,
       activeAnnouncementsCount,
       activeAcademicYearsCount,
+      attendanceStats,
+      activeAcademicYear,
       unreadNotificationCount,
       announcements,
       upcomingCalendar,
@@ -756,12 +800,25 @@ export class DashboardService {
       Department.countDocuments({ collegeId }),
       Faculty.countDocuments({ collegeId }),
       Student.countDocuments({ collegeId }),
+      Course.countDocuments({ collegeId }),
+      Section.countDocuments({ collegeId }),
       RequestModel.countDocuments({
         collegeId: new mongoose.Types.ObjectId(collegeId),
         status: { $in: [RequestStatus.SUBMITTED, RequestStatus.RECEIVED, RequestStatus.IN_REVIEW, RequestStatus.UNDER_REVIEW] },
       }),
       Announcement.countDocuments({ collegeId, status: 'PUBLISHED' }),
       AcademicYear.countDocuments({ collegeId, status: 'ACTIVE' }),
+      AttendanceRecord.aggregate([
+        { $match: { collegeId: new mongoose.Types.ObjectId(collegeId), isCancelled: { $ne: true } } },
+        {
+          $group: {
+            _id: null,
+            totalRecords: { $sum: 1 },
+            present: { $sum: { $cond: [{ $in: ['$status', ['PRESENT', 'LATE', 'present', 'late']] }, 1, 0] } },
+          },
+        },
+      ]),
+      AcademicYear.findOne({ collegeId, status: 'ACTIVE' }).select('name code').lean(),
       Notification.countDocuments({
         recipientUserId: requester.id,
         isRead: false,
@@ -770,13 +827,29 @@ export class DashboardService {
       this.getUpcomingCalendarEvents(requester, customDate, 4),
     ]);
 
+    const attRec = attendanceStats[0];
+    const attendancePercentage = attRec && attRec.totalRecords > 0
+      ? Math.round((attRec.present / attRec.totalRecords) * 1000) / 10
+      : null;
+
+    const context: CollegeAdminDashboardContext = {
+      collegeId,
+      collegeName: college.name,
+      collegeCode: college.code || 'AIT',
+      administrativeScope: 'Institutional Command Centre',
+      academicYearName: activeAcademicYear?.name || null,
+    };
+
     const summary: CollegeAdminDashboardSummary = {
       departmentsCount,
       facultyCount,
       studentsCount,
+      coursesCount,
+      sectionsCount,
       pendingRequestsCount,
       activeAnnouncementsCount,
       activeAcademicYearsCount,
+      attendancePercentage,
     };
 
     const alerts: DashboardAlert[] = [];
@@ -814,14 +887,15 @@ export class DashboardService {
     }));
 
     const quickActions: DashboardQuickAction[] = [
-      { id: 'qa_students', label: 'Students', icon: 'graduationCap', route: '/academics/students', isPrimary: true },
-      { id: 'qa_faculty', label: 'Faculty', icon: 'users', route: '/academics/faculty' },
-      { id: 'qa_departments', label: 'Departments', icon: 'layers', route: '/academics/departments' },
-      { id: 'qa_timetables', label: 'Timetables', icon: 'calendar', route: '/timetables' },
-      { id: 'qa_assessments', label: 'Assessments', icon: 'penTool', route: '/assessments' },
-      { id: 'qa_results', label: 'Academic Results', icon: 'award', route: '/academic-results' },
-      { id: 'qa_requests', label: 'Requests', icon: 'inbox', route: '/requests', badgeCount: pendingRequestsCount },
-      { id: 'qa_announcements', label: 'Announcements', icon: 'megaphone', route: '/announcements' },
+      { id: 'qa_academic_structure', label: 'Academic Structure', icon: 'layers', route: '/academics', isPrimary: true },
+      { id: 'qa_students', label: 'Student Directory', icon: 'graduationCap', route: '/academics/students' },
+      { id: 'qa_faculty', label: 'Faculty Directory', icon: 'users', route: '/academics/faculty' },
+      { id: 'qa_departments', label: 'Departments', icon: 'building', route: '/academics/departments' },
+      { id: 'qa_timetables', label: 'Timetable Manager', icon: 'calendar', route: '/timetable' },
+      { id: 'qa_calendar', label: 'Academic Calendar', icon: 'calendarDays', route: '/calendar' },
+      { id: 'qa_requests', label: 'Request Centre', icon: 'inbox', route: '/requests', badgeCount: pendingRequestsCount },
+      { id: 'qa_reports', label: 'Institutional Reports', icon: 'barChart', route: '/analytics' },
+      { id: 'qa_announcements', label: 'Announcements', icon: 'megaphone', route: '/announcements', badgeCount: activeAnnouncementsCount },
       { id: 'qa_notifications', label: 'Notifications', icon: 'bell', route: '/notifications', badgeCount: unreadNotificationCount },
     ];
 

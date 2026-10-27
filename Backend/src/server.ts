@@ -68,10 +68,7 @@ async function startServer(): Promise<http.Server | void> {
             'ACADEX AI assistant features will be unavailable (503 AI_CONFIG_ERROR) until a valid GEMINI_API_KEY is provided in Backend/.env.'
           );
         } else {
-          const maskedKey = env.GEMINI_API_KEY.length > 8
-            ? `${env.GEMINI_API_KEY.substring(0, 4)}...${env.GEMINI_API_KEY.substring(env.GEMINI_API_KEY.length - 4)}`
-            : '***';
-          Logger.info(`🤖 Gemini AI service configured (Model: ${env.GEMINI_MODEL}, Key: ${maskedKey})`);
+          Logger.info(`🤖 Gemini AI service configured (Model: ${env.GEMINI_MODEL})`);
         }
 
         Logger.info(`🚀 ACADEX Backend running on port ${env.PORT}`);

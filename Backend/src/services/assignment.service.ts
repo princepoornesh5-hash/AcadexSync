@@ -27,6 +27,7 @@ import { ISubmissionAttachment } from '../models/assignmentSubmission.model';
 import { ImageKitService } from '../storage/imagekit.service';
 import { NotificationService } from './notification.service';
 import { TeachingAuthorizationService } from './teachingAuthorization.service';
+import { AcademicScopeService } from './academicScope.service';
 import { logger } from '../utils/logger';
 import { realtimeEventBus, AcadexEventType, RealtimeAction } from '../realtime';
 
@@ -77,7 +78,14 @@ export class AssignmentService {
     collegeId: string,
     user: { id: string; name?: string; role?: string; email?: string; departmentId?: string },
     data: {
-      facultyAssignmentId: string;
+      facultyAssignmentId?: string | null;
+      scope?: string;
+      departmentId?: string | null;
+      courseId?: string | null;
+      academicYearId?: string | null;
+      semesterId?: string | null;
+      sectionId?: string | null;
+      subjectId?: string | null;
       title: string;
       description: string;
       questions?: string[];
@@ -97,17 +105,25 @@ export class AssignmentService {
       throw ApiError.badRequest('Assignment title is required.');
     }
 
-    // 1. Resolve and verify canonical teaching context
-    const fa = await TeachingAuthorizationService.assertFacultyAssignmentAccess(
+    // 1. Resolve and verify canonical academic scope based on role
+    const resolvedScope = await AcademicScopeService.validateAndResolveScope(
       collegeId,
-      user,
-      data.facultyAssignmentId,
+      user as any,
+      {
+        scope: data.scope,
+        departmentId: data.departmentId,
+        courseId: data.courseId,
+        academicYearId: data.academicYearId,
+        semesterId: data.semesterId,
+        sectionId: data.sectionId,
+        subjectId: data.subjectId,
+        facultyAssignmentId: data.facultyAssignmentId,
+      },
       'this assignment'
     );
 
-    // 2. Validate that teaching assignment is active
-    if (!fa.isActive || fa.status !== 'active') {
-      throw ApiError.badRequest('This teaching assignment is no longer active.');
+    if (!resolvedScope.facultyAssignmentId && (!resolvedScope.departmentId || !resolvedScope.semesterId || !resolvedScope.subjectId)) {
+      throw ApiError.badRequest('Department, semester, and subject are required to specify assignment audience.');
     }
 
     const dueDateTime = parseDueDateTime(data.dueDate, data.dueTime);
@@ -117,32 +133,38 @@ export class AssignmentService {
       throw ApiError.badRequest('Cannot publish an assignment with a due date in the past.');
     }
 
-    // 3. Duplicate protection (deterministic 5-second window)
-    const existingRecent = await Assignment.findOne({
+    // 2. Duplicate protection (deterministic 5-second window)
+    const duplicateQuery: any = {
       collegeId: new Types.ObjectId(collegeId),
-      facultyAssignmentId: fa._id,
       title: data.title.trim(),
       dueDate: data.dueDate,
       createdAt: { $gte: new Date(Date.now() - 5000) },
-    });
+    };
+    if (resolvedScope.facultyAssignmentId) {
+      duplicateQuery.facultyAssignmentId = new Types.ObjectId(resolvedScope.facultyAssignmentId);
+    } else if (resolvedScope.subjectId) {
+      duplicateQuery.subjectId = new Types.ObjectId(resolvedScope.subjectId);
+    }
+    const existingRecent = await Assignment.findOne(duplicateQuery);
     if (existingRecent) {
       return existingRecent;
     }
 
     const publishedAt = status === AssignmentStatus.PUBLISHED ? new Date() : null;
 
-    // 4. Derive academic context strictly from canonical FacultyAssignment
+    // 3. Persist assignment with authoritative scope
     const assignment = await Assignment.create({
       collegeId: new Types.ObjectId(collegeId),
-      departmentId: fa.departmentId,
-      courseId: fa.courseId,
-      academicYearId: fa.academicYearId,
-      semesterId: fa.semesterId,
-      sectionId: fa.sectionId || null,
-      subjectId: fa.subjectId,
+      departmentId: resolvedScope.departmentId ? new Types.ObjectId(resolvedScope.departmentId) : undefined,
+      courseId: resolvedScope.courseId ? new Types.ObjectId(resolvedScope.courseId) : undefined,
+      academicYearId: resolvedScope.academicYearId ? new Types.ObjectId(resolvedScope.academicYearId) : undefined,
+      semesterId: resolvedScope.semesterId ? new Types.ObjectId(resolvedScope.semesterId) : undefined,
+      sectionId: resolvedScope.sectionId ? new Types.ObjectId(resolvedScope.sectionId) : null,
+      subjectId: resolvedScope.subjectId ? new Types.ObjectId(resolvedScope.subjectId) : undefined,
       facultyId: new Types.ObjectId(user.id),
-      facultyAssignmentId: fa._id,
-      facultyName: user.name || fa.facultyName || 'Faculty',
+      facultyAssignmentId: resolvedScope.facultyAssignmentId ? new Types.ObjectId(resolvedScope.facultyAssignmentId) : null,
+      facultyName: user.name || 'Faculty',
+      scope: resolvedScope.scope,
       title: data.title.trim(),
       description: data.description.trim(),
       questions: data.questions || [],

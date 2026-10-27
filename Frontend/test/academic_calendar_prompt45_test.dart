@@ -366,11 +366,11 @@ void main() {
       // Holiday should remain visible
       expect(find.text('National Engineers Day'), findsWidgets);
 
-      // Tap 'Classes' chip
-      await tester.tap(find.text('Classes'));
+      // Tap 'Deadlines' chip
+      await tester.tap(find.text('Deadlines'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Operating Systems Class'), findsWidgets);
+      expect(find.text('Process Scheduling Assignment'), findsWidgets);
     });
   });
 }

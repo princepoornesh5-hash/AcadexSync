@@ -6,13 +6,17 @@ import '../../../../app/theme/app_theme.dart';
 class AiComposer extends StatefulWidget {
   final TextEditingController controller;
   final bool isLoading;
+  final bool isCooldownActive;
   final ValueChanged<String> onSubmitted;
+  final VoidCallback? onStopGenerating;
 
   const AiComposer({
     super.key,
     required this.controller,
     required this.isLoading,
+    this.isCooldownActive = false,
     required this.onSubmitted,
+    this.onStopGenerating,
   });
 
   @override
@@ -21,11 +25,14 @@ class AiComposer extends StatefulWidget {
 
 class _AiComposerState extends State<AiComposer> {
   final FocusNode _focusNode = FocusNode();
+  late final FocusNode _keyboardFocusNode;
   bool _hasText = false;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
+    _keyboardFocusNode = FocusNode();
     _hasText = widget.controller.text.trim().isNotEmpty;
     widget.controller.addListener(_handleTextChange);
   }
@@ -41,14 +48,22 @@ class _AiComposerState extends State<AiComposer> {
   void dispose() {
     widget.controller.removeListener(_handleTextChange);
     _focusNode.dispose();
+    _keyboardFocusNode.dispose();
     super.dispose();
   }
 
   void _submit() {
-    if (widget.isLoading) return;
+    if (widget.isLoading || widget.isCooldownActive || _isSubmitting) return;
     final text = widget.controller.text.trim();
     if (text.isEmpty) return;
+
+    _isSubmitting = true;
+    widget.controller.clear();
     widget.onSubmitted(text);
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => _isSubmitting = false);
+    });
   }
 
   @override
@@ -86,7 +101,7 @@ class _AiComposerState extends State<AiComposer> {
                   // Text Input Field
                   Expanded(
                     child: KeyboardListener(
-                      focusNode: FocusNode(),
+                      focusNode: _keyboardFocusNode,
                       onKeyEvent: (event) {
                         if (event is KeyDownEvent &&
                             event.logicalKey == LogicalKeyboardKey.enter &&
@@ -99,13 +114,17 @@ class _AiComposerState extends State<AiComposer> {
                         focusNode: _focusNode,
                         minLines: 1,
                         maxLines: 5,
-                        enabled: !widget.isLoading,
+                        enabled: !widget.isLoading && !widget.isCooldownActive,
                         style: AcadexTypography.body(
                           color: isDark ? Colors.white : const Color(0xFF0F172A),
                         ).copyWith(fontSize: 15, height: 1.45),
                         textInputAction: TextInputAction.newline,
                         decoration: InputDecoration(
-                          hintText: "Ask ACADEX Assistant...",
+                          hintText: widget.isLoading
+                              ? "ACADEX is responding..."
+                              : (widget.isCooldownActive
+                                  ? "Rate limit cooldown active. Please wait..."
+                                  : "Ask ACADEX Assistant..."),
                           hintStyle: AcadexTypography.body(
                             color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                           ).copyWith(fontSize: 15),
@@ -119,7 +138,7 @@ class _AiComposerState extends State<AiComposer> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Send Action Button (Circle)
+                  // Send or Stop Generating Action Button
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     width: 38,
@@ -127,21 +146,29 @@ class _AiComposerState extends State<AiComposer> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: widget.isLoading
-                          ? (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))
-                          : (_hasText
+                          ? (isDark ? const Color(0xFF334155) : const Color(0xFF0F172A))
+                          : (_hasText && !widget.isCooldownActive
                               ? (isDark ? AcadexColors.primary : const Color(0xFF0F172A))
                               : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9))),
                     ),
                     child: IconButton(
-                      iconSize: 18,
+                      iconSize: widget.isLoading ? 14 : 18,
                       padding: EdgeInsets.zero,
-                      tooltip: widget.isLoading ? "Thinking..." : "Send message",
-                      onPressed: (_hasText && !widget.isLoading) ? _submit : null,
+                      tooltip: widget.isLoading
+                          ? "Stop generating"
+                          : (widget.isCooldownActive
+                              ? "Cooldown active"
+                              : "Send message"),
+                      onPressed: widget.isLoading
+                          ? widget.onStopGenerating
+                          : ((_hasText && !widget.isCooldownActive && !_isSubmitting)
+                              ? _submit
+                              : null),
                       icon: Icon(
-                        LucideIcons.arrowUp,
+                        widget.isLoading ? LucideIcons.square : LucideIcons.arrowUp,
                         color: widget.isLoading
-                            ? (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
-                            : (_hasText
+                            ? Colors.white
+                            : (_hasText && !widget.isCooldownActive
                                 ? Colors.white
                                 : (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))),
                       ),
@@ -152,14 +179,19 @@ class _AiComposerState extends State<AiComposer> {
             ),
             const SizedBox(height: 6),
             // Footer disclaimer
-            Text(
-              "Acadex AI can make mistakes. Verify important academic information.",
-              style: TextStyle(
-                fontSize: 11.5,
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-                fontWeight: FontWeight.w400,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                "Acadex AI can make mistakes. Verify important academic information.",
+                style: TextStyle(
+                  fontSize: 11.5,
+                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                  fontWeight: FontWeight.w400,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),

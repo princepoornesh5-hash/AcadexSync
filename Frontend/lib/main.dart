@@ -2,6 +2,7 @@ import 'core/firebase/firebase_config.dart';
 import 'core/firebase/firebase_initializer.dart';
 import 'core/presentation/screens/firebase_error_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/router/app_router.dart';
 import 'dart:async';
@@ -33,6 +34,18 @@ void main() async {
   debugPrint('[BOOT_START]');
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
+
+    // Centralized Android Edge-to-Edge System Bar Configuration
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.dark,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
+    );
 
     // 1. Setup Global Error Handlers
     FlutterError.onError = (FlutterErrorDetails details) {

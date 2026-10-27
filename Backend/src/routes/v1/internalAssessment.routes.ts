@@ -3,7 +3,11 @@ import { authenticateRequest } from '../../middleware/auth.middleware';
 import { requireCollegeScope } from '../../middleware/tenant.middleware';
 import { requireRoles } from '../../middleware/role.middleware';
 import { validateRequest } from '../../middleware/validate.middleware';
-import { scheduleAssessmentSchema } from '../../validations/internalAssessment.validation';
+import {
+  scheduleAssessmentSchema,
+  previewScopeSchema,
+  checkScheduleConflictsSchema,
+} from '../../validations/internalAssessment.validation';
 import { AppRole } from '../../constants/roles';
 import { InternalAssessmentController } from '../../controllers/internalAssessment.controller';
 
@@ -17,6 +21,18 @@ router.use(requireCollegeScope);
 router.get('/context', InternalAssessmentController.getContext);
 router.get('/', InternalAssessmentController.listAssessments);
 router.post('/', InternalAssessmentController.createAssessment);
+
+// Scope Preview & Conflict Detection for Common Examinations
+router.post(
+  '/preview-scope',
+  validateRequest(previewScopeSchema),
+  InternalAssessmentController.previewScope
+);
+router.post(
+  '/check-conflicts',
+  validateRequest(checkScheduleConflictsSchema),
+  InternalAssessmentController.checkScheduleConflicts
+);
 
 // Exam Timetable & Migration Utilities (Placed before /:id routes to avoid collision)
 router.get('/schedules/timetable', InternalAssessmentController.getExamTimetable);
@@ -86,5 +102,6 @@ router.put('/:id', InternalAssessmentController.updateAssessment);
 router.post('/:id/schedule', validateRequest(scheduleAssessmentSchema), InternalAssessmentController.scheduleAssessment);
 router.get('/:id/schedule', InternalAssessmentController.getAssessmentSchedule);
 router.delete('/:id/schedule', InternalAssessmentController.cancelAssessmentSchedule);
+router.post('/:id/publish-exam', InternalAssessmentController.publishAssessment);
 
 export default router;

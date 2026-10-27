@@ -396,7 +396,7 @@ class AssignmentModel {
   final int? completedCount;
   final int? pendingCount;
 
-  // Student specific context
+  final String? scope;
   final StudentTaskStatus? studentStatus;
   final DateTime? completedAt;
   final bool isLate;
@@ -428,6 +428,7 @@ class AssignmentModel {
     this.publishedAt,
     this.closedAt,
     this.createdAt,
+    this.scope,
     this.subjectName,
     this.sectionName,
     this.totalStudents,
@@ -506,6 +507,7 @@ class AssignmentModel {
       publishedAt: json['publishedAt'] != null ? DateTime.tryParse(json['publishedAt'].toString()) : null,
       closedAt: json['closedAt'] != null ? DateTime.tryParse(json['closedAt'].toString()) : null,
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
+      scope: json['scope']?.toString(),
       subjectName: subjectName,
       sectionName: sectionName,
       totalStudents: json['totalStudents'] is num ? (json['totalStudents'] as num).toInt() : null,
@@ -532,6 +534,7 @@ class AssignmentModel {
       'subjectId': subjectId,
       'facultyId': facultyId,
       if (facultyAssignmentId != null) 'facultyAssignmentId': facultyAssignmentId,
+      if (scope != null) 'scope': scope,
       'facultyName': facultyName,
       'title': title,
       'description': description,

@@ -64,6 +64,7 @@ class DashboardContextModel {
   final String? collegeName;
   final String? collegeCode;
   final String? administrativeScope;
+  final String? academicYearName;
 
   // Super Admin Context
   final String? scope;
@@ -93,6 +94,7 @@ class DashboardContextModel {
     this.collegeName,
     this.collegeCode,
     this.administrativeScope,
+    this.academicYearName,
     this.scope,
   });
 
@@ -124,6 +126,7 @@ class DashboardContextModel {
       collegeName: json['collegeName'] as String?,
       collegeCode: json['collegeCode'] as String?,
       administrativeScope: json['administrativeScope'] as String?,
+      academicYearName: json['academicYearName'] as String?,
       scope: json['scope'] as String?,
     );
   }
@@ -154,6 +157,11 @@ class DashboardSummaryModel {
   final int pendingDepartmentRequests;
   final int pendingAssessmentsCount;
   final int pendingAttendanceCount;
+
+  // Shared Counts
+  final int coursesCount;
+  final int sectionsCount;
+  final int subjectsCount;
 
   // College Admin
   final int departmentsCount;
@@ -188,6 +196,9 @@ class DashboardSummaryModel {
     this.pendingDepartmentRequests = 0,
     this.pendingAssessmentsCount = 0,
     this.pendingAttendanceCount = 0,
+    this.coursesCount = 0,
+    this.sectionsCount = 0,
+    this.subjectsCount = 0,
     this.departmentsCount = 0,
     this.facultyCount = 0,
     this.studentsCount = 0,
@@ -222,6 +233,9 @@ class DashboardSummaryModel {
       pendingDepartmentRequests: (json['pendingDepartmentRequests'] as num?)?.toInt() ?? 0,
       pendingAssessmentsCount: (json['pendingAssessmentsCount'] as num?)?.toInt() ?? 0,
       pendingAttendanceCount: (json['pendingAttendanceCount'] as num?)?.toInt() ?? 0,
+      coursesCount: (json['coursesCount'] as num?)?.toInt() ?? 0,
+      sectionsCount: (json['sectionsCount'] as num?)?.toInt() ?? 0,
+      subjectsCount: (json['subjectsCount'] as num?)?.toInt() ?? 0,
       departmentsCount: (json['departmentsCount'] as num?)?.toInt() ?? 0,
       facultyCount: (json['facultyCount'] as num?)?.toInt() ?? 0,
       studentsCount: (json['studentsCount'] as num?)?.toInt() ?? 0,

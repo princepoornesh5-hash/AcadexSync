@@ -8,6 +8,7 @@ async function main() {
   const isExecute = args.includes('--execute');
   const allowAnomalies = args.includes('--allow-anomalies');
   const isIndexPreflightOnly = args.includes('--index-preflight');
+  const isStrict = args.includes('--strict');
   const rollbackIdx = args.indexOf('--rollback');
   const rollbackRunId = rollbackIdx !== -1 && args[rollbackIdx + 1] ? args[rollbackIdx + 1] : null;
 
@@ -36,7 +37,8 @@ async function main() {
       console.log(`Student compound index exists: ${preflight.collections.student.hasCompoundCollegeUserIdIndex}`);
       console.log(`Faculty duplicate records: ${preflight.collections.faculty.duplicateCount}`);
       console.log(`Student duplicate records: ${preflight.collections.student.duplicateCount}`);
-      console.log(`Membership conflicts: ${preflight.collections.workspaceMembership.conflictCount}`);
+      console.log(`Membership user conflicts: ${preflight.collections.workspaceMembership.userDuplicateCount}`);
+      console.log(`Membership PIN conflicts: ${preflight.collections.workspaceMembership.pinDuplicateCount}`);
       console.log(`Role conflicts: ${preflight.collections.workspaceRoleAssignment.conflictCount}`);
       console.log(`Can safely apply indexes: ${preflight.canSafelyApplyIndexes ? 'YES' : 'NO'}`);
       console.log('-----------------------------------------------------------------');
@@ -74,29 +76,38 @@ async function main() {
 
       if (report.anomalies.length > 0) {
         console.log('\n[WARNING] Detected Anomalies:');
-        for (const a of report.anomalies.slice(0, 15)) {
-          console.log(` - User ${a.userId} (${a.instituteId || a.email || 'No ID'}): ${a.reason}`);
+        for (const a of report.anomalies.slice(0, 20)) {
+          console.log(` - [${a.category}] User: ${a.userId || 'N/A'}, PIN: ${a.instituteId || 'N/A'}, College: ${a.collegeId || 'N/A'}`);
+          console.log(`   Reason: ${a.reason}`);
         }
-        if (report.anomalies.length > 15) {
-          console.log(`   ...and ${report.anomalies.length - 15} more anomalies.`);
+        if (report.anomalies.length > 20) {
+          console.log(`   ...and ${report.anomalies.length - 20} more anomalies.`);
         }
       }
 
       if (report.indexConflicts.length > 0) {
-        console.log('\n[WARNING] Detected Profile Index Conflicts:');
+        console.log('\n[WARNING] Detected Index Conflicts:');
         for (const c of report.indexConflicts) {
           console.log(
-            ` - Collection: ${c.collection}, College: ${c.collegeId}, User: ${c.userId}, Duplicate Count: ${c.count}`
+            ` - Collection: ${c.collection}, Key: ${JSON.stringify(c.indexKey || {})}, College: ${c.collegeId || 'N/A'}, User: ${c.userId || 'N/A'}, PIN: ${c.instituteId || 'N/A'}, Count: ${c.count}`
           );
+          console.log(`   Reason: ${c.reason}`);
         }
       }
 
       console.log('\nIndex Preflight Status:');
       console.log(`- Faculty compound index: ${preflight.collections.faculty.hasCompoundCollegeUserIdIndex ? 'Present' : 'Pending migration rollout'}`);
       console.log(`- Student compound index: ${preflight.collections.student.hasCompoundCollegeUserIdIndex ? 'Present' : 'Pending migration rollout'}`);
+      console.log(`- Membership PIN compound index: ${preflight.collections.workspaceMembership.hasCompoundCollegePinUniqueness ? 'Present' : 'Pending migration rollout'}`);
       console.log(`- Preflight Index Blockers: ${preflight.blockers.length}`);
       if (preflight.recommendations.length > 0) {
         preflight.recommendations.forEach((r) => console.log(`  * ${r}`));
+      }
+
+      if (!report.safeToMigrate && isStrict) {
+        console.error('\n[STRICT CHECK FAILED] Migration cannot proceed safely due to unresolved anomalies or index conflicts.');
+        process.exitCode = 1;
+        return;
       }
 
       console.log('\nTo execute migration, re-run with:');

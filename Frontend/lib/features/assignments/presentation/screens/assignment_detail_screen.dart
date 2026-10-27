@@ -329,6 +329,20 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
     }
   }
 
+  Future<void> _handleMarkDone() async {
+    setState(() => _isProcessing = true);
+    final notifier = ref.read(assignmentActionProvider.notifier);
+    final success = await notifier.completeAssignment(widget.assignmentId);
+    if (mounted) {
+      setState(() => _isProcessing = false);
+      if (success) {
+        AcadexSnackBar.showSuccess(context, 'Assignment marked as completed.');
+      } else {
+        AcadexSnackBar.showError(context, "Couldn't mark assignment as completed. Please try again.");
+      }
+    }
+  }
+
   Future<void> _handleArchive(AssignmentModel asgn) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -635,6 +649,19 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                 ],
 
 
+
+                if (isStudent && asgn.studentStatus != StudentTaskStatus.completed) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: AcadexButton(
+                      label: _isProcessing ? 'Saving...' : 'Mark as Done',
+                      icon: LucideIcons.checkCircle2,
+                      onPressed: _isProcessing ? null : _handleMarkDone,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
 
                 if (isFacultyOrAdmin) ...[
                   SizedBox(

@@ -20,6 +20,14 @@ export function errorHandler(
     message = err.message;
     code = err.code || 'API_ERROR';
     details = err.details;
+
+    // Propagate Retry-After header on 429 errors if present in details
+    if (statusCode === 429 && details && typeof details === 'object' && 'retryAfter' in (details as any)) {
+      const wait = (details as any).retryAfter;
+      if (wait && !res.getHeader('Retry-After')) {
+        res.setHeader('Retry-After', String(wait));
+      }
+    }
   } else if (err instanceof ZodError) {
     statusCode = 422;
     code = 'VALIDATION_ERROR';
@@ -71,15 +79,15 @@ export function errorHandler(
     success: false,
     error: {
       code,
-      message,
-      ...(details ? { details } : {}),
+      message: Logger.sanitize(message),
+      ...(details ? { details: Logger.sanitizeObject(details) } : {}),
     },
     timestamp: new Date().toISOString(),
   };
 
   // Only attach stack trace in local non-production development environments
   if (env.NODE_ENV === 'development' && err instanceof Error && err.stack) {
-    responsePayload.stack = err.stack;
+    responsePayload.stack = Logger.sanitize(err.stack);
   }
 
   return res.status(statusCode).json(responsePayload);

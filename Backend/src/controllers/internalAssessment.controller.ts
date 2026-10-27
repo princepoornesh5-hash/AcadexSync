@@ -729,4 +729,55 @@ export class InternalAssessmentController {
       `Correction request ${action === 'APPROVED' ? 'approved and assessment unlocked for correction' : 'rejected'}`
     );
   });
+
+  /**
+   * Previews eligible students and detects duplicate students across multi-department scopes.
+   */
+  static previewScope = asyncHandler(async (req: Request, res: Response) => {
+    const collegeId = (req as any).collegeId || (req as any).user?.collegeId;
+    if (!collegeId) throw ApiError.unauthorized('College context missing');
+
+    const result = await InternalAssessmentService.previewScope(
+      collegeId.toString(),
+      (req as any).user,
+      req.body
+    );
+
+    return ApiResponse.success(res, result, 'Assessment scope preview generated successfully');
+  });
+
+  /**
+   * Real-time schedule conflict check for rooms, invigilators, and academic sections.
+   */
+  static checkScheduleConflicts = asyncHandler(async (req: Request, res: Response) => {
+    const collegeId = (req as any).collegeId || (req as any).user?.collegeId;
+    if (!collegeId) throw ApiError.unauthorized('College context missing');
+
+    const result = await InternalAssessmentService.checkScheduleConflicts(
+      collegeId.toString(),
+      (req as any).user,
+      req.body
+    );
+
+    return ApiResponse.success(res, result, 'Schedule conflicts analyzed successfully');
+  });
+
+  /**
+   * Publishes an assessment schedule to students and emits targeted notifications.
+   */
+  static publishAssessment = asyncHandler(async (req: Request, res: Response) => {
+    const collegeId = (req as any).collegeId || (req as any).user?.collegeId;
+    if (!collegeId) throw ApiError.unauthorized('College context missing');
+
+    const assessmentId = req.params.id || req.body.assessmentId;
+    if (!assessmentId) throw ApiError.badRequest('Assessment ID is required');
+
+    const result = await InternalAssessmentService.publishAssessment(
+      collegeId.toString(),
+      (req as any).user,
+      assessmentId.toString()
+    );
+
+    return ApiResponse.success(res, result, 'Assessment published to students successfully');
+  });
 }

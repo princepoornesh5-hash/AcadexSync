@@ -7,7 +7,6 @@ import '../../../../core/presentation/utils/navigation_extensions.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_snackbar.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
-import '../../../academic_structure/domain/models/academic_models.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../auth/domain/models/role_enum.dart';
@@ -29,17 +28,16 @@ class NewAssignmentScreen extends ConsumerStatefulWidget {
 class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  // Scope Selection State
+  String _selectedScopeType = 'SECTION'; // COLLEGE, DEPARTMENT, SEMESTER, SECTION, SUBJECT
   String? _selectedFacultyAssignmentId;
+  String? _selectedDepartmentId;
+  String? _selectedCourseId;
+  String? _selectedSemesterId;
+  String? _selectedSectionId;
+  String? _selectedSubjectId;
 
-  @override
-  void initState() {
-    super.initState();
-    if (widget.initialFacultyAssignmentId != null &&
-        widget.initialFacultyAssignmentId!.isNotEmpty) {
-      _selectedFacultyAssignmentId = widget.initialFacultyAssignmentId;
-    }
-  }
-
+  // Assignment fields
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _maxMarksController = TextEditingController(text: '10');
@@ -53,6 +51,15 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
   final List<TextEditingController> _questionControllers = [];
 
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialFacultyAssignmentId != null &&
+        widget.initialFacultyAssignmentId!.isNotEmpty) {
+      _selectedFacultyAssignmentId = widget.initialFacultyAssignmentId;
+    }
+  }
 
   @override
   void dispose() {
@@ -104,9 +111,54 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
 
   Future<void> _handleSubmit({required bool publish}) async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedFacultyAssignmentId == null) {
-      AcadexSnackBar.showError(context, 'Please select a teaching context.');
+
+    final authState = ref.read(authProvider);
+    if (authState is! AuthAuthenticated) return;
+    final role = authState.user.role;
+
+    if (role == AppRole.student) {
+      AcadexSnackBar.showError(context, 'Students are not authorized to create assignments.');
       return;
+    }
+
+    final isFaculty = role == AppRole.faculty;
+
+    // Validate scope selections
+    if (isFaculty) {
+      if (_selectedFacultyAssignmentId == null || _selectedFacultyAssignmentId!.isEmpty) {
+        AcadexSnackBar.showError(context, 'Please select an authorized teaching context.');
+        return;
+      }
+    } else {
+      switch (_selectedScopeType) {
+        case 'COLLEGE':
+          // College wide requires no further hierarchy
+          break;
+        case 'DEPARTMENT':
+          if (_selectedDepartmentId == null || _selectedDepartmentId!.isEmpty) {
+            AcadexSnackBar.showError(context, 'Please select a department.');
+            return;
+          }
+          break;
+        case 'SEMESTER':
+          if (_selectedSemesterId == null || _selectedSemesterId!.isEmpty) {
+            AcadexSnackBar.showError(context, 'Please select a course and semester.');
+            return;
+          }
+          break;
+        case 'SECTION':
+          if (_selectedSectionId == null || _selectedSectionId!.isEmpty) {
+            AcadexSnackBar.showError(context, 'Please select a section.');
+            return;
+          }
+          break;
+        case 'SUBJECT':
+          if (_selectedSubjectId == null || _selectedSubjectId!.isEmpty) {
+            AcadexSnackBar.showError(context, 'Please select a subject.');
+            return;
+          }
+          break;
+      }
     }
 
     final maxMarks = int.tryParse(_maxMarksController.text.trim()) ?? 10;
@@ -134,9 +186,29 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
     final dueDateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
     final dueTimeStr = _selectedTime.format(context);
 
+    // Resolve academic year if applicable
+    final semesterMap = ref.read(semesterMapProvider);
+    String? academicYearId;
+    if (_selectedSemesterId != null) {
+      academicYearId = semesterMap[_selectedSemesterId]?.academicYearId;
+    }
+    if (academicYearId == null) {
+      final currentAy = ref.read(currentAcademicYearProvider);
+      academicYearId = currentAy?.id;
+    }
+
     final notifier = ref.read(assignmentActionProvider.notifier);
     final result = await notifier.createAssignment(
-      facultyAssignmentId: _selectedFacultyAssignmentId!,
+      facultyAssignmentId: isFaculty ? _selectedFacultyAssignmentId : null,
+      scope: isFaculty
+          ? (_selectedSectionId != null ? 'SECTION' : 'SEMESTER')
+          : _selectedScopeType,
+      departmentId: _selectedDepartmentId,
+      courseId: _selectedCourseId,
+      academicYearId: academicYearId,
+      semesterId: _selectedSemesterId,
+      sectionId: _selectedSectionId,
+      subjectId: _selectedSubjectId,
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
       questions: questions,
@@ -159,7 +231,7 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
       } else {
         AcadexSnackBar.showError(
           context,
-          "Couldn't publish the assignment. Please try again.",
+          "Couldn't publish the assignment. Please check all scope selections and try again.",
         );
       }
     }
@@ -169,33 +241,136 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authState = ref.watch(authProvider);
-    final facultyAssignmentsAsync = ref.watch(facultyAssignmentsProvider);
+
+    if (authState is! AuthAuthenticated) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final user = authState.user;
+    final role = user.role;
+
+    if (role == AppRole.student) {
+      return Scaffold(
+        backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
+        appBar: AppBar(
+          title: const Text('Create Assignment'),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(LucideIcons.shieldAlert, size: 56, color: Color(0xFFEF4444)),
+                const SizedBox(height: 16),
+                Text(
+                  'Access Restricted',
+                  style: AcadexTypography.h3(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Students are not permitted to create assignments.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                AcadexButton(
+                  label: 'Back to Assignments',
+                  icon: LucideIcons.arrowLeft,
+                  onPressed: () => context.safePop(fallbackRoute: '/assignments'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final isFaculty = role == AppRole.faculty;
+    final isHod = role == AppRole.hod;
+    final isAdmin = role == AppRole.collegeAdmin ||
+        role == AppRole.superAdmin;
+
+    // Academic Structure Watchers
+    final departments = ref.watch(departmentsProvider).valueOrNull ?? [];
+    final courses = ref.watch(coursesProvider).valueOrNull ?? [];
+    final semesters = ref.watch(semestersProvider).valueOrNull ?? [];
+    final sections = ref.watch(sectionsProvider).valueOrNull ?? [];
+    final subjects = ref.watch(subjectsProvider).valueOrNull ?? [];
+
     final subjectMap = ref.watch(subjectMapProvider);
     final sectionMap = ref.watch(sectionMapProvider);
+    final departmentMap = ref.watch(departmentMapProvider);
 
-    // Canonical teaching contexts based on authenticated role
     final myAssignments = ref.watch(myFacultyAssignmentsProvider);
-    final isFaculty = authState is AuthAuthenticated && authState.user.role == AppRole.faculty;
 
-    List<FacultyAssignment> userAssignments = [];
-    if (isFaculty) {
-      userAssignments = myAssignments;
-    } else if (facultyAssignmentsAsync.hasValue) {
-      final all = facultyAssignmentsAsync.value!;
-      if (authState is AuthAuthenticated && authState.user.role == AppRole.hod) {
-        userAssignments = all
-            .where((fa) =>
-                authState.user.departmentId == null ||
-                fa.departmentId == authState.user.departmentId)
-            .toList();
-      } else {
-        userAssignments = all;
+    // Initial setup for HOD: lock department
+    if (isHod && user.departmentId != null && _selectedDepartmentId != user.departmentId) {
+      _selectedDepartmentId = user.departmentId;
+      if (_selectedScopeType == 'COLLEGE') {
+        _selectedScopeType = 'DEPARTMENT';
       }
     }
 
-    if (_selectedFacultyAssignmentId == null && userAssignments.isNotEmpty) {
-      _selectedFacultyAssignmentId = userAssignments.first.id;
+    // Auto-select first faculty assignment for faculty if none selected
+    if (isFaculty && _selectedFacultyAssignmentId == null && myAssignments.isNotEmpty) {
+      final first = myAssignments.first;
+      _selectedFacultyAssignmentId = first.id;
+      _selectedDepartmentId = first.departmentId;
+      _selectedCourseId = first.courseId;
+      _selectedSemesterId = first.semesterId;
+      _selectedSectionId = first.sectionId;
+      _selectedSubjectId = first.subjectId;
+      _selectedScopeType = first.sectionId != null ? 'SECTION' : 'SEMESTER';
     }
+
+    // Filter dependent dropdowns
+    final effectiveDeptId = isHod ? (user.departmentId ?? _selectedDepartmentId) : _selectedDepartmentId;
+
+    final filteredCourses = courses.where((c) {
+      if (effectiveDeptId == null || effectiveDeptId.isEmpty) return true;
+      return c.departmentId == effectiveDeptId;
+    }).toList();
+
+    final filteredSemesters = semesters.where((s) {
+      if (_selectedCourseId != null && _selectedCourseId!.isNotEmpty) {
+        return s.courseId == _selectedCourseId;
+      }
+      if (effectiveDeptId != null && effectiveDeptId.isNotEmpty) {
+        return s.departmentId == effectiveDeptId;
+      }
+      return true;
+    }).toList();
+
+    final filteredSections = sections.where((sec) {
+      if (_selectedSemesterId != null && _selectedSemesterId!.isNotEmpty) {
+        return sec.semesterId == _selectedSemesterId;
+      }
+      if (_selectedCourseId != null && _selectedCourseId!.isNotEmpty) {
+        return sec.courseId == _selectedCourseId;
+      }
+      return true;
+    }).toList();
+
+    final filteredSubjects = subjects.where((sub) {
+      if (_selectedSemesterId != null && _selectedSemesterId!.isNotEmpty) {
+        return sub.semesterId == _selectedSemesterId || sub.courseId == _selectedCourseId;
+      }
+      if (_selectedCourseId != null && _selectedCourseId!.isNotEmpty) {
+        return sub.courseId == _selectedCourseId;
+      }
+      if (effectiveDeptId != null && effectiveDeptId.isNotEmpty) {
+        return sub.departmentId == effectiveDeptId;
+      }
+      return true;
+    }).toList();
 
     final dateFormat = DateFormat('dd MMM yyyy');
 
@@ -221,50 +396,347 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. TEACHING CONTEXT
+              // ─────────────────────────────────────────────────────────
+              // 1. ACADEMIC SCOPE & AUDIENCE SELECTION
+              // ─────────────────────────────────────────────────────────
               Text(
-                'TEACHING CONTEXT',
+                isFaculty ? 'TEACHING CONTEXT' : 'ACADEMIC AUDIENCE & SCOPE',
                 style: AcadexTypography.eyebrow(
                   color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                 ),
               ),
               const SizedBox(height: 6),
-              DropdownButtonFormField<String>(
-                value: _selectedFacultyAssignmentId,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: AcadexRadius.borderRadiusMd,
-                    borderSide: BorderSide(
-                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+
+              if (isFaculty) ...[
+                // Faculty: strictly choose from authorized teaching assignments
+                if (myAssignments.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.1),
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                      border: Border.all(color: Colors.amber.shade300),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(LucideIcons.alertTriangle, size: 18, color: Colors.amber.shade800),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'No active teaching assignments found for your account. You cannot publish assignments until classes are assigned.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark ? Colors.amber.shade200 : Colors.amber.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  DropdownButtonFormField<String>(
+                    value: _selectedFacultyAssignmentId,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: AcadexRadius.borderRadiusMd,
+                        borderSide: BorderSide(
+                          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                        ),
+                      ),
+                    ),
+                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                    items: myAssignments.map((fa) {
+                      final subj = subjectMap[fa.subjectId]?.name ?? 'Subject';
+                      final sec = sectionMap[fa.sectionId]?.name;
+                      final label = sec != null ? '$subj ($sec)' : subj;
+                      return DropdownMenuItem<String>(
+                        value: fa.id,
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val == null) return;
+                      final fa = myAssignments.firstWhere((a) => a.id == val);
+                      setState(() {
+                        _selectedFacultyAssignmentId = fa.id;
+                        _selectedDepartmentId = fa.departmentId;
+                        _selectedCourseId = fa.courseId;
+                        _selectedSemesterId = fa.semesterId;
+                        _selectedSectionId = fa.sectionId;
+                        _selectedSubjectId = fa.subjectId;
+                        _selectedScopeType = fa.sectionId != null ? 'SECTION' : 'SEMESTER';
+                      });
+                    },
+                    validator: (val) => val == null ? 'Please select an authorized teaching context.' : null,
+                  ),
+              ] else ...[
+                // HOD & College Admin: Role-based scope selector
+                DropdownButtonFormField<String>(
+                  value: _selectedScopeType,
+                  decoration: InputDecoration(
+                    labelText: 'Scope Level *',
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                      borderSide: BorderSide(
+                        color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                      ),
                     ),
                   ),
+                  dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                  items: [
+                    if (isAdmin)
+                      const DropdownMenuItem(value: 'COLLEGE', child: Text('Entire College')),
+                    const DropdownMenuItem(value: 'DEPARTMENT', child: Text('Department Wide')),
+                    const DropdownMenuItem(value: 'SEMESTER', child: Text('Semester / Class')),
+                    const DropdownMenuItem(value: 'SECTION', child: Text('Specific Section')),
+                    const DropdownMenuItem(value: 'SUBJECT', child: Text('Specific Subject')),
+                  ],
+                  onChanged: (val) {
+                    if (val == null) return;
+                    setState(() {
+                      _selectedScopeType = val;
+                      if (val == 'COLLEGE') {
+                        if (!isHod) _selectedDepartmentId = null;
+                        _selectedCourseId = null;
+                        _selectedSemesterId = null;
+                        _selectedSectionId = null;
+                        _selectedSubjectId = null;
+                      } else if (val == 'DEPARTMENT') {
+                        _selectedCourseId = null;
+                        _selectedSemesterId = null;
+                        _selectedSectionId = null;
+                        _selectedSubjectId = null;
+                      } else if (val == 'SEMESTER') {
+                        _selectedSectionId = null;
+                        _selectedSubjectId = null;
+                      } else if (val == 'SECTION') {
+                        _selectedSubjectId = null;
+                      }
+                    });
+                  },
                 ),
-                dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
-                items: userAssignments.map((fa) {
-                  final subj = subjectMap[fa.subjectId]?.name ?? 'Subject';
-                  final sec = sectionMap[fa.sectionId]?.name ?? 'Section';
-                  return DropdownMenuItem<String>(
-                    value: fa.id,
-                    child: Text(
-                      '$subj ($sec)',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  setState(() => _selectedFacultyAssignmentId = val);
-                },
-              ),
+                const SizedBox(height: 12),
 
+                // Department Selection (Editable for Admin, Locked for HOD)
+                if (_selectedScopeType != 'COLLEGE') ...[
+                  if (isHod)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isDark ? AcadexColors.darkSurfaceCard : const Color(0xFFF1F5F9),
+                        borderRadius: AcadexRadius.borderRadiusMd,
+                        border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(LucideIcons.building, size: 16, color: AcadexColors.primary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Department: ${departmentMap[user.departmentId]?.name ?? user.departmentId ?? "Your Department"} (Locked)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    DropdownButtonFormField<String>(
+                      value: _selectedDepartmentId,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Department / Branch *',
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: AcadexRadius.borderRadiusMd,
+                        ),
+                      ),
+                      dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                      items: departments.map((d) {
+                        return DropdownMenuItem(
+                          value: d.id,
+                          child: Text('${d.name} (${d.code})', overflow: TextOverflow.ellipsis),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedDepartmentId = val;
+                          _selectedCourseId = null;
+                          _selectedSemesterId = null;
+                          _selectedSectionId = null;
+                          _selectedSubjectId = null;
+                        });
+                      },
+                      validator: (val) {
+                        if (_selectedScopeType != 'COLLEGE' && (val == null || val.isEmpty)) {
+                          return 'Please select a department.';
+                        }
+                        return null;
+                      },
+                    ),
+                  const SizedBox(height: 12),
+                ],
+
+                // Program / Course Selection (for SEMESTER, SECTION, SUBJECT)
+                if (_selectedScopeType == 'SEMESTER' ||
+                    _selectedScopeType == 'SECTION' ||
+                    _selectedScopeType == 'SUBJECT') ...[
+                  DropdownButtonFormField<String>(
+                    value: _selectedCourseId,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: 'Program / Course *',
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: AcadexRadius.borderRadiusMd,
+                      ),
+                    ),
+                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                    items: filteredCourses.map((c) {
+                      return DropdownMenuItem(
+                        value: c.id,
+                        child: Text('${c.name} (${c.code})', overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedCourseId = val;
+                        _selectedSemesterId = null;
+                        _selectedSectionId = null;
+                        _selectedSubjectId = null;
+                      });
+                    },
+                    validator: (val) => val == null ? 'Please select a course/program.' : null,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Semester Selection
+                  DropdownButtonFormField<String>(
+                    value: _selectedSemesterId,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: 'Semester / Class *',
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: AcadexRadius.borderRadiusMd,
+                      ),
+                    ),
+                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                    items: filteredSemesters.map((s) {
+                      return DropdownMenuItem(
+                        value: s.id,
+                        child: Text(s.name, overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedSemesterId = val;
+                        _selectedSectionId = null;
+                        _selectedSubjectId = null;
+                      });
+                    },
+                    validator: (val) => val == null ? 'Please select a semester.' : null,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // Section Selection (for SECTION or SUBJECT)
+                if (_selectedScopeType == 'SECTION' || _selectedScopeType == 'SUBJECT') ...[
+                  DropdownButtonFormField<String>(
+                    value: _selectedSectionId,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: _selectedScopeType == 'SECTION' ? 'Section *' : 'Section (Optional)',
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: AcadexRadius.borderRadiusMd,
+                      ),
+                    ),
+                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                    items: [
+                      if (_selectedScopeType == 'SUBJECT')
+                        const DropdownMenuItem<String>(value: null, child: Text('All Sections')),
+                      ...filteredSections.map((sec) {
+                        return DropdownMenuItem(
+                          value: sec.id,
+                          child: Text('Section ${sec.name}', overflow: TextOverflow.ellipsis),
+                        );
+                      }),
+                    ],
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedSectionId = val;
+                      });
+                    },
+                    validator: (val) {
+                      if (_selectedScopeType == 'SECTION' && (val == null || val.isEmpty)) {
+                        return 'Please select a section.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // Subject Selection (for SUBJECT)
+                if (_selectedScopeType == 'SUBJECT') ...[
+                  DropdownButtonFormField<String>(
+                    value: _selectedSubjectId,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: 'Subject *',
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: AcadexRadius.borderRadiusMd,
+                      ),
+                    ),
+                    dropdownColor: isDark ? AcadexColors.darkSurfaceCard : Colors.white,
+                    items: filteredSubjects.map((sub) {
+                      return DropdownMenuItem(
+                        value: sub.id,
+                        child: Text('${sub.name} (${sub.code})', overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedSubjectId = val;
+                      });
+                    },
+                    validator: (val) {
+                      if (_selectedScopeType == 'SUBJECT' && (val == null || val.isEmpty)) {
+                        return 'Please select a subject.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ],
+
+              const SizedBox(height: 12),
+              const Divider(height: 1, color: AcadexColors.hairline),
               const SizedBox(height: 18),
 
+              // ─────────────────────────────────────────────────────────
               // 2. ASSIGNMENT DETAILS
+              // ─────────────────────────────────────────────────────────
               Text(
                 'ASSIGNMENT TITLE',
                 style: AcadexTypography.eyebrow(
@@ -324,7 +796,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
 
               const SizedBox(height: 16),
 
+              // ─────────────────────────────────────────────────────────
               // 3. TYPE & MAXIMUM MARKS ROW
+              // ─────────────────────────────────────────────────────────
               Row(
                 children: [
                   Expanded(
@@ -408,7 +882,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
 
               const SizedBox(height: 16),
 
+              // ─────────────────────────────────────────────────────────
               // 4. DUE DATE & TIME ROW
+              // ─────────────────────────────────────────────────────────
               Row(
                 children: [
                   Expanded(
@@ -505,7 +981,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
 
               const SizedBox(height: 20),
 
+              // ─────────────────────────────────────────────────────────
               // 5. QUESTIONS (OPTIONAL)
+              // ─────────────────────────────────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -580,7 +1058,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
 
               const SizedBox(height: 16),
 
+              // ─────────────────────────────────────────────────────────
               // 6. ATTACHMENT (OPTIONAL)
+              // ─────────────────────────────────────────────────────────
               Text(
                 'ATTACHMENT (OPTIONAL)',
                 style: AcadexTypography.eyebrow(
@@ -628,7 +1108,9 @@ class _NewAssignmentScreenState extends ConsumerState<NewAssignmentScreen> {
 
               const SizedBox(height: 28),
 
+              // ─────────────────────────────────────────────────────────
               // 7. ACTIONS: [ Publish Assignment ] and [ Save Draft ]
+              // ─────────────────────────────────────────────────────────
               SizedBox(
                 width: double.infinity,
                 height: 48,

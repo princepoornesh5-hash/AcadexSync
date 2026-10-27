@@ -375,7 +375,7 @@ void main() {
       expect(activeClassCaptured!.subjectName, equals('Database Systems'));
       expect(activeClassCaptured!.sectionId, equals('sec_cs_a'));
       expect(activeClassCaptured!.sectionName, equals('A'));
-      expect(activeClassCaptured!.timeSlot, equals('10:00 – 11:00'));
+      expect(activeClassCaptured!.timeSlot, equals('10:00 - 11:00'));
       expect(activeClassCaptured!.date, equals(DateTime(2026, 10, 1)));
     });
 

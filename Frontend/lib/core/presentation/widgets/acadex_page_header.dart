@@ -59,11 +59,17 @@ class AcadexPageHeader extends StatelessWidget {
           ),
           const SizedBox(height: 6),
         ],
-        if (isMobile)
-          Column(
+        if (isMobile) () {
+          final isAllIconButtons = actions != null &&
+              actions!.isNotEmpty &&
+              actions!.length <= 2 &&
+              actions!.every((w) => w is IconButton);
+
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   if (onBack != null) ...[
                     IconButton(
@@ -87,6 +93,13 @@ class AcadexPageHeader extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (isAllIconButtons) ...[
+                    const SizedBox(width: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: actions!,
+                    ),
+                  ],
                 ],
               ),
               if (subtitle != null && subtitle!.isNotEmpty) ...[
@@ -100,7 +113,7 @@ class AcadexPageHeader extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
-              if (actions != null && actions!.isNotEmpty) ...[
+              if (actions != null && actions!.isNotEmpty && !isAllIconButtons) ...[
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
@@ -110,7 +123,8 @@ class AcadexPageHeader extends StatelessWidget {
                 ),
               ],
             ],
-          )
+          );
+        }()
         else
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

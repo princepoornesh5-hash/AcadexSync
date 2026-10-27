@@ -8,6 +8,9 @@ import {
   StudentMarkStatus,
   IAssessmentComponent,
   IStudentAssessmentEntry,
+  IAcademicScopeTarget,
+  Department,
+  Course,
   Section,
   Subject,
   StudentEnrollment,
@@ -62,6 +65,19 @@ export interface SaveMarksPayload {
   }>;
 }
 
+export interface AcademicScopeTargetDTO {
+  departmentId: string;
+  courseId: string;
+  academicYearId: string;
+  semesterId: string;
+  sectionId?: string | null;
+  facultyAssignmentId?: string | null;
+  departmentName?: string | null;
+  sectionName?: string | null;
+  semesterNumber?: number | null;
+  studentCount?: number;
+}
+
 export interface CreateAssessmentPayload {
   departmentId?: string;
   courseId?: string;
@@ -70,9 +86,10 @@ export interface CreateAssessmentPayload {
   sectionId?: string | null;
   subjectId?: string;
   facultyAssignmentId?: string | null;
+  academicScopes?: AcademicScopeTargetDTO[];
   title: string;
   description?: string;
-  assessmentType?: AssessmentType;
+  assessmentType?: AssessmentType | string;
   maximumMarks: number;
   passMarks?: number;
   weightage?: number;
@@ -80,6 +97,21 @@ export interface CreateAssessmentPayload {
   components?: IAssessmentComponent[];
   sourceType?: 'LIVE' | 'IMPORTED' | 'HISTORICAL_MANUAL';
   isHistorical?: boolean;
+}
+
+export interface PreviewScopePayload {
+  subjectId: string;
+  academicScopes: AcademicScopeTargetDTO[];
+}
+
+export interface CheckScheduleConflictsPayload {
+  date: string | Date;
+  startTime: string;
+  endTime: string;
+  roomId?: string | null;
+  invigilatorFacultyId?: string | null;
+  targetSectionIds?: string[];
+  assessmentId?: string | null;
 }
 
 export interface ScheduleAssessmentPayload {
@@ -504,7 +536,78 @@ export class InternalAssessmentService {
     } = payload;
 
     let faDoc: any = null;
-    if (facultyAssignmentId) {
+    const validatedScopes: IAcademicScopeTarget[] = [];
+    const scopeEnrollmentQueries: any[] = [];
+
+    if (payload.academicScopes && payload.academicScopes.length > 0) {
+      for (const sc of payload.academicScopes) {
+        if (!sc.departmentId || !sc.courseId || !sc.academicYearId || !sc.semesterId) {
+          throw ApiError.badRequest('Incomplete academic hierarchy in one of the selected academic scopes');
+        }
+
+        const scopeSubId = subjectId || (sc as any).subjectId;
+        if (!scopeSubId) {
+          throw ApiError.badRequest('Subject is required for all academic scopes');
+        }
+
+        let scFa: any = null;
+        if (sc.facultyAssignmentId) {
+          scFa = await TeachingAuthorizationService.assertAssessmentCreationAccess(
+            collegeId,
+            user,
+            sc.facultyAssignmentId
+          );
+        } else {
+          scFa = await TeachingAuthorizationService.assertSubjectSectionAccess(
+            collegeId,
+            user,
+            scopeSubId,
+            sc.sectionId || null,
+            'assessments for this teaching context'
+          );
+        }
+
+        const deptDoc = await Department.findById(sc.departmentId).select('name');
+        const secDoc = sc.sectionId ? await Section.findById(sc.sectionId).select('name') : null;
+
+        validatedScopes.push({
+          departmentId: new Types.ObjectId(sc.departmentId),
+          courseId: new Types.ObjectId(sc.courseId),
+          academicYearId: new Types.ObjectId(sc.academicYearId),
+          semesterId: new Types.ObjectId(sc.semesterId),
+          sectionId: sc.sectionId ? new Types.ObjectId(sc.sectionId) : null,
+          facultyAssignmentId: scFa?._id ? new Types.ObjectId(scFa._id) : (sc.facultyAssignmentId ? new Types.ObjectId(sc.facultyAssignmentId) : null),
+          departmentName: deptDoc?.name || sc.departmentName || null,
+          sectionName: secDoc?.name || sc.sectionName || null,
+          semesterNumber: sc.semesterNumber || null,
+        });
+
+        const scQuery: any = {
+          collegeId: new Types.ObjectId(collegeId),
+          semesterId: new Types.ObjectId(sc.semesterId),
+          academicYearId: new Types.ObjectId(sc.academicYearId),
+          status: 'active',
+        };
+        if (sc.sectionId) {
+          scQuery.sectionId = new Types.ObjectId(sc.sectionId);
+        }
+        scopeEnrollmentQueries.push(scQuery);
+      }
+
+      if (validatedScopes.length > 0) {
+        departmentId = departmentId || validatedScopes[0].departmentId.toString();
+        courseId = courseId || validatedScopes[0].courseId.toString();
+        academicYearId = academicYearId || validatedScopes[0].academicYearId.toString();
+        semesterId = semesterId || validatedScopes[0].semesterId.toString();
+        sectionId = sectionId || (validatedScopes[0].sectionId ? validatedScopes[0].sectionId.toString() : null);
+        if (!facultyAssignmentId && validatedScopes[0].facultyAssignmentId) {
+          facultyAssignmentId = validatedScopes[0].facultyAssignmentId.toString();
+        }
+        if (!faDoc && facultyAssignmentId) {
+          faDoc = await FacultyAssignment.findById(facultyAssignmentId);
+        }
+      }
+    } else if (facultyAssignmentId) {
       faDoc = await TeachingAuthorizationService.assertAssessmentCreationAccess(
         collegeId,
         user,
@@ -534,34 +637,66 @@ export class InternalAssessmentService {
     }
 
     // Business-level Duplicate Prevention:
-    // Prevent duplicate assessment title within the same section, subject, and semester
-    const existingAssessment = await InternalAssessment.findOne({
+    // Prevent duplicate assessment title within the same section/scope, subject, and semester
+    const targetSectionIdsToCheck = [
+      sectionId ? new Types.ObjectId(sectionId) : null,
+      ...validatedScopes.map((s) => s.sectionId || null),
+    ].filter(Boolean);
+
+    const duplicateQuery: any = {
       collegeId: new Types.ObjectId(collegeId),
       subjectId: new Types.ObjectId(subjectId),
       semesterId: new Types.ObjectId(semesterId),
-      sectionId: sectionId ? new Types.ObjectId(sectionId) : null,
       title: new RegExp(`^${title.trim()}$`, 'i'),
       status: { $ne: AssessmentStatus.ARCHIVED },
-    });
+    };
+    if (targetSectionIdsToCheck.length > 0) {
+      duplicateQuery.$or = [
+        { sectionId: { $in: targetSectionIdsToCheck } },
+        { 'academicScopes.sectionId': { $in: targetSectionIdsToCheck } },
+      ];
+    } else {
+      duplicateQuery.sectionId = null;
+    }
+
+    const existingAssessment = await InternalAssessment.findOne(duplicateQuery);
     if (existingAssessment) {
-      throw ApiError.conflict(`An assessment with title '${title.trim()}' already exists for this subject and section.`);
+      throw ApiError.conflict(`An assessment with title '${title.trim()}' already exists for this subject and scope.`);
     }
 
     const isHistoricalEntry = payload.isHistorical === true || sourceType === 'HISTORICAL_MANUAL';
     const finalSourceType = isHistoricalEntry ? 'HISTORICAL_MANUAL' : (sourceType || 'LIVE');
 
-    // Enrolled students roster strictly scoped to college, semester, and academic year
-    const query: any = {
-      collegeId: new Types.ObjectId(collegeId),
-      semesterId: new Types.ObjectId(semesterId),
-      academicYearId: new Types.ObjectId(academicYearId),
-      status: 'active',
-    };
-    if (sectionId) {
-      query.sectionId = new Types.ObjectId(sectionId);
+    // Enrolled students roster: query scopes or single section, deduplicate students
+    let enrollments: any[] = [];
+    if (scopeEnrollmentQueries.length > 0) {
+      const allFound = await StudentEnrollment.find({
+        $or: scopeEnrollmentQueries,
+      }).populate('studentId');
+
+      const seenStudentIds = new Set<string>();
+      for (const e of allFound) {
+        if (!e.studentId) continue;
+        const s = e.studentId as any;
+        const sId = (s._id ? s._id : s).toString();
+        if (!seenStudentIds.has(sId)) {
+          seenStudentIds.add(sId);
+          enrollments.push(e);
+        }
+      }
+    } else {
+      const query: any = {
+        collegeId: new Types.ObjectId(collegeId),
+        semesterId: new Types.ObjectId(semesterId),
+        academicYearId: new Types.ObjectId(academicYearId),
+        status: 'active',
+      };
+      if (sectionId) {
+        query.sectionId = new Types.ObjectId(sectionId);
+      }
+      enrollments = await StudentEnrollment.find(query).populate('studentId');
     }
 
-    const enrollments = await StudentEnrollment.find(query).populate('studentId');
     const initialEntries: IStudentAssessmentEntry[] = enrollments
       .filter((e) => e.studentId != null)
       .map((e) => {
@@ -594,9 +729,11 @@ export class InternalAssessmentService {
       facultyAssignmentId: facultyAssignmentId ? new Types.ObjectId(facultyAssignmentId) : faDoc?._id || null,
       facultyId: faDoc?.facultyId || null,
       facultyName: faDoc?.facultyName || user.name || 'Faculty',
+      academicScopes: validatedScopes,
+      isCommonExam: validatedScopes.length > 1,
       title: title.trim(),
       description: description || '',
-      assessmentType: assessmentType || AssessmentType.INTERNAL_EXAM,
+      assessmentType: (assessmentType as any) || AssessmentType.INTERNAL_EXAM,
       maximumMarks,
       passMarks: passMarks ?? Math.round(maximumMarks * 0.4),
       weightage: weightage ?? 0,
@@ -2550,7 +2687,7 @@ export class InternalAssessmentService {
       items.push({
         assessmentId: a._id.toString(),
         title: a.title,
-        type: a.assessmentType,
+        type: a.assessmentType as AssessmentType,
         maxMarks: a.maximumMarks,
         obtainedMarks: obtained,
         status: markStatus,
@@ -3022,9 +3159,13 @@ export class InternalAssessmentService {
     if (params.sectionId && params.subjectId) {
       return InternalAssessment.findOne({
         collegeId: new Types.ObjectId(collegeId),
-        sectionId: new Types.ObjectId(params.sectionId),
+        $or: [
+          { sectionId: new Types.ObjectId(params.sectionId) },
+          { 'academicScopes.sectionId': new Types.ObjectId(params.sectionId) },
+        ],
         subjectId: new Types.ObjectId(params.subjectId),
-      });
+        status: { $ne: AssessmentStatus.ARCHIVED },
+      }).sort({ createdAt: -1 });
     }
 
     return null;
@@ -3054,7 +3195,10 @@ export class InternalAssessmentService {
       query.facultyAssignmentId = new Types.ObjectId(filters.facultyAssignmentId);
     }
     if (filters.sectionId && Types.ObjectId.isValid(filters.sectionId)) {
-      query.sectionId = new Types.ObjectId(filters.sectionId);
+      query.$or = [
+        { sectionId: new Types.ObjectId(filters.sectionId) },
+        { 'academicScopes.sectionId': new Types.ObjectId(filters.sectionId) },
+      ];
     }
     if (filters.subjectId && Types.ObjectId.isValid(filters.subjectId)) {
       query.subjectId = new Types.ObjectId(filters.subjectId);
@@ -3074,8 +3218,43 @@ export class InternalAssessmentService {
 
     const roleUpper = (user.role || '').toUpperCase();
     if (roleUpper === 'STUDENT') {
-      // Students can only view PUBLISHED assessments
-      query.status = AssessmentStatus.PUBLISHED;
+      const student = await Student.findOne({
+        collegeId: new Types.ObjectId(collegeId),
+        userId: new Types.ObjectId(user.id),
+      });
+
+      const studentAllowedStatuses = [
+        AssessmentStatus.SCHEDULED,
+        AssessmentStatus.PUBLISHED,
+        AssessmentStatus.COMPLETED,
+        AssessmentStatus.MARKS_ENTRY,
+        AssessmentStatus.SUBMITTED,
+        AssessmentStatus.REVIEWED,
+      ];
+
+      if (student) {
+        const enrollments = await StudentEnrollment.find({
+          collegeId: new Types.ObjectId(collegeId),
+          studentId: student._id,
+          status: 'active',
+        });
+        const sectionIds = enrollments.map((e) => e.sectionId).filter(Boolean) as Types.ObjectId[];
+        const semesterIds = enrollments.map((e) => e.semesterId).filter(Boolean) as Types.ObjectId[];
+
+        query.$and = [
+          { status: { $in: studentAllowedStatuses } },
+          {
+            $or: [
+              { sectionId: { $in: sectionIds } },
+              { 'academicScopes.sectionId': { $in: sectionIds } },
+              { 'entries.studentId': student._id },
+              { semesterId: { $in: semesterIds }, sectionId: null },
+            ],
+          },
+        ];
+      } else {
+        query.status = AssessmentStatus.PUBLISHED;
+      }
     }
 
     return InternalAssessment.find(query)
@@ -3111,8 +3290,23 @@ export class InternalAssessmentService {
     }
 
     const roleUpper = (user.role || '').toUpperCase();
-    if (roleUpper === 'STUDENT' && assessment.status !== AssessmentStatus.PUBLISHED) {
-      throw ApiError.forbidden('Assessment marks have not yet been published.');
+    if (roleUpper === 'STUDENT') {
+      if (assessment.status === AssessmentStatus.DRAFT) {
+        throw ApiError.forbidden('This assessment is currently in draft and not accessible to students.');
+      }
+      const student = await Student.findOne({
+        collegeId: new Types.ObjectId(collegeId),
+        userId: new Types.ObjectId(user.id),
+      });
+
+      if (assessment.status === AssessmentStatus.PUBLISHED && student) {
+        assessment.entries = assessment.entries.filter(
+          (e) => e.studentId.toString() === student._id.toString()
+        );
+      } else {
+        // Strip other students' marks while evaluation is ongoing
+        assessment.entries = [];
+      }
     }
 
     const schedule = await AssessmentSchedule.findOne({
@@ -3275,15 +3469,24 @@ export class InternalAssessmentService {
           'The selected room is already booked for another assessment during this time slot.'
         );
       }
-      if (
-        assessment.sectionId &&
-        conf.sectionId &&
-        conf.sectionId.toString() === assessment.sectionId.toString()
-      ) {
+      
+      const thisSectionIds = [
+        assessment.sectionId ? assessment.sectionId.toString() : null,
+        ...((assessment.academicScopes || []).map((s) => (s.sectionId ? s.sectionId.toString() : null))),
+      ].filter(Boolean) as string[];
+
+      const confSectionIds = [
+        conf.sectionId ? conf.sectionId.toString() : null,
+        ...((conf.targetSectionIds || []).map((s: any) => (s ? s.toString() : null))),
+      ].filter(Boolean) as string[];
+
+      const hasSectionOverlap = thisSectionIds.length > 0 && confSectionIds.length > 0 && thisSectionIds.some((id) => confSectionIds.includes(id));
+      if (hasSectionOverlap) {
         throw ApiError.conflict(
           'The selected section already has another assessment scheduled during this time slot.'
         );
       }
+
       if (
         invigilatorFacultyId &&
         conf.invigilatorFacultyId &&
@@ -3295,6 +3498,16 @@ export class InternalAssessmentService {
       }
     }
 
+    const allSectionObjectIds = [
+      assessment.sectionId ? assessment.sectionId : null,
+      ...((assessment.academicScopes || []).map((s) => s.sectionId || null)),
+    ].filter(Boolean) as Types.ObjectId[];
+
+    const allDeptObjectIds = [
+      assessment.departmentId ? assessment.departmentId : null,
+      ...((assessment.academicScopes || []).map((s) => s.departmentId || null)),
+    ].filter(Boolean) as Types.ObjectId[];
+
     // Upsert AssessmentSchedule record
     const schedule = await AssessmentSchedule.findOneAndUpdate(
       { collegeId: new Types.ObjectId(collegeId), assessmentId: assessment._id },
@@ -3305,6 +3518,8 @@ export class InternalAssessmentService {
           academicYearId: assessment.academicYearId,
           semesterId: assessment.semesterId,
           sectionId: assessment.sectionId,
+          targetSectionIds: allSectionObjectIds,
+          targetDepartmentIds: allDeptObjectIds,
           subjectId: assessment.subjectId,
           facultyAssignmentId: assessment.facultyAssignmentId,
           date: dateObj,
@@ -3445,6 +3660,14 @@ export class InternalAssessmentService {
     if (assessment.status === AssessmentStatus.SCHEDULED) {
       assessment.status = AssessmentStatus.DRAFT;
     }
+    assessment.auditLog.push({
+      action: 'SCHEDULE_CANCELLED',
+      performedBy: new Types.ObjectId(user.id),
+      performedByName: user.name || 'User',
+      performedByRole: user.role || 'FACULTY',
+      timestamp: new Date(),
+      details: 'Assessment schedule was cancelled',
+    });
     await assessment.save();
 
     await CalendarEvent.deleteOne({
@@ -3453,7 +3676,353 @@ export class InternalAssessmentService {
       sourceId: assessment._id.toString(),
     });
 
+    // Notify enrolled students of cancellation
+    try {
+      const studentIds = assessment.entries.map((e) => e.studentId);
+      const students = await Student.find({
+        _id: { $in: studentIds },
+        userId: { $ne: null },
+      }).select('userId');
+
+      for (const s of students) {
+        if (s.userId) {
+          await NotificationService.createNotification({
+            collegeId,
+            recipientUserId: s.userId.toString(),
+            recipientRole: AppRole.STUDENT,
+            notificationType: NotificationType.TIMETABLE_CANCELLED,
+            category: NotificationCategory.ASSESSMENT,
+            priority: NotificationPriority.HIGH,
+            title: `Exam Cancelled: ${assessment.title}`,
+            body: `The examination scheduled for ${assessment.title} has been cancelled.`,
+            deepLink: '/assessments',
+            metadata: { assessmentId: assessment._id.toString() },
+          }).catch((err: any) => logger.warn(`Failed to send cancellation notification: ${err?.message}`));
+        }
+      }
+    } catch (err: any) {
+      logger.warn(`Error emitting cancellation notification: ${err?.message}`);
+    }
+
     return { message: 'Assessment schedule cancelled successfully' };
+  }
+
+  /**
+   * Previews scope resolution, student counts, and detects duplicate students across scopes
+   * for common examinations spanning multiple departments/sections.
+   */
+  static async previewScope(
+    collegeId: string,
+    user: AuthUserContext,
+    payload: PreviewScopePayload
+  ) {
+    const { subjectId, academicScopes } = payload;
+    if (!subjectId || !Types.ObjectId.isValid(subjectId)) {
+      throw ApiError.badRequest('Invalid or missing subjectId');
+    }
+    if (!Array.isArray(academicScopes) || academicScopes.length === 0) {
+      throw ApiError.badRequest('At least one academic scope must be provided');
+    }
+
+    const authorizedScopes: Array<{
+      departmentId: string;
+      departmentName: string;
+      courseId: string;
+      courseName?: string;
+      semesterId: string;
+      semesterNumber?: number;
+      sectionId?: string | null;
+      sectionName?: string | null;
+      studentCount: number;
+    }> = [];
+
+    const allEnrollmentQueries: any[] = [];
+    let grossStudentCount = 0;
+
+    for (const sc of academicScopes) {
+      if (!sc.departmentId || !sc.courseId || !sc.academicYearId || !sc.semesterId) {
+        throw ApiError.badRequest('Incomplete academic hierarchy in one of the scopes');
+      }
+
+      // Assert teaching context authorization for this scope
+      if (sc.facultyAssignmentId) {
+        await TeachingAuthorizationService.assertAssessmentCreationAccess(
+          collegeId,
+          user,
+          sc.facultyAssignmentId
+        );
+      } else {
+        await TeachingAuthorizationService.assertSubjectSectionAccess(
+          collegeId,
+          user,
+          subjectId,
+          sc.sectionId || null,
+          'assessments for this teaching context'
+        );
+      }
+
+      const deptDoc = await Department.findById(sc.departmentId).select('name');
+      const secDoc = sc.sectionId ? await Section.findById(sc.sectionId).select('name') : null;
+      const courseDoc = await Course.findById(sc.courseId).select('name');
+
+      const scQuery: any = {
+        collegeId: new Types.ObjectId(collegeId),
+        semesterId: new Types.ObjectId(sc.semesterId),
+        academicYearId: new Types.ObjectId(sc.academicYearId),
+        status: 'active',
+      };
+      if (sc.sectionId) {
+        scQuery.sectionId = new Types.ObjectId(sc.sectionId);
+      }
+      allEnrollmentQueries.push(scQuery);
+
+      const count = await StudentEnrollment.countDocuments(scQuery);
+      grossStudentCount += count;
+
+      authorizedScopes.push({
+        departmentId: sc.departmentId,
+        departmentName: deptDoc?.name || sc.departmentName || 'Department',
+        courseId: sc.courseId,
+        courseName: courseDoc?.name || undefined,
+        semesterId: sc.semesterId,
+        semesterNumber: sc.semesterNumber || undefined,
+        sectionId: sc.sectionId || null,
+        sectionName: secDoc?.name || sc.sectionName || null,
+        studentCount: count,
+      });
+    }
+
+    // Resolve unique students across all scopes to detect duplicates
+    const allEnrollments = await StudentEnrollment.find({
+      $or: allEnrollmentQueries,
+    }).populate('studentId', 'name rollNumber admissionNumber');
+
+    const seenIds = new Set<string>();
+    const studentsPreview: Array<{
+      studentId: string;
+      name: string;
+      rollNumber?: string;
+      admissionNumber?: string;
+    }> = [];
+
+    for (const enr of allEnrollments) {
+      if (!enr.studentId) continue;
+      const s = enr.studentId as any;
+      const sId = (s._id ? s._id : s).toString();
+      if (!seenIds.has(sId)) {
+        seenIds.add(sId);
+        if (studentsPreview.length < 50) {
+          studentsPreview.push({
+            studentId: sId,
+            name: s.name || 'Student',
+            rollNumber: s.rollNumber || undefined,
+            admissionNumber: s.admissionNumber || undefined,
+          });
+        }
+      }
+    }
+
+    const totalEligibleStudents = seenIds.size;
+    const duplicateStudentCount = grossStudentCount - totalEligibleStudents;
+
+    return {
+      authorizedScopes,
+      totalEligibleStudents,
+      duplicateStudentCount: duplicateStudentCount > 0 ? duplicateStudentCount : 0,
+      studentsPreview,
+    };
+  }
+
+  /**
+   * Conflict detection checking room, invigilator, and student group / section overlap.
+   */
+  static async checkScheduleConflicts(
+    collegeId: string,
+    _user: AuthUserContext,
+    payload: CheckScheduleConflictsPayload
+  ) {
+    const { date, startTime, endTime, roomId, invigilatorFacultyId, targetSectionIds, assessmentId } =
+      payload;
+
+    if (!startTime || !endTime) {
+      throw ApiError.badRequest('startTime and endTime are required');
+    }
+    const [sh, sm] = startTime.split(':').map(Number);
+    const [eh, em] = endTime.split(':').map(Number);
+    if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em) || eh * 60 + em <= sh * 60 + sm) {
+      throw ApiError.badRequest('endTime must be strictly later than startTime');
+    }
+
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      throw ApiError.badRequest('Invalid date format');
+    }
+    const dateString =
+      typeof date === 'string' && date.length === 10
+        ? date
+        : dateObj.toISOString().split('T')[0];
+
+    const query: any = {
+      collegeId: new Types.ObjectId(collegeId),
+      dateString,
+      status: 'SCHEDULED',
+    };
+    if (assessmentId && Types.ObjectId.isValid(assessmentId)) {
+      query.assessmentId = { $ne: new Types.ObjectId(assessmentId) };
+    }
+
+    const potentialConflicts = await AssessmentSchedule.find(query).populate('assessmentId', 'title');
+    const conflicts: Array<{
+      type: 'ROOM' | 'INVIGILATOR' | 'SECTION';
+      entityId?: string;
+      conflictingAssessmentId: string;
+      conflictingTitle: string;
+      timeSlot: string;
+      message: string;
+    }> = [];
+
+    for (const conf of potentialConflicts) {
+      const isOverlapping = conf.startTime < endTime && conf.endTime > startTime;
+      if (!isOverlapping) continue;
+
+      const title = (conf.assessmentId as any)?.title || 'Assessment';
+      const timeSlot = `${conf.startTime} - ${conf.endTime}`;
+
+      if (roomId && conf.roomId && conf.roomId.toString() === roomId.toString()) {
+        conflicts.push({
+          type: 'ROOM',
+          entityId: roomId.toString(),
+          conflictingAssessmentId: conf.assessmentId?._id?.toString() || conf.assessmentId?.toString() || '',
+          conflictingTitle: title,
+          timeSlot,
+          message: `The selected room is booked for '${title}' during ${timeSlot}.`,
+        });
+      }
+
+      if (
+        invigilatorFacultyId &&
+        conf.invigilatorFacultyId &&
+        conf.invigilatorFacultyId.toString() === invigilatorFacultyId.toString()
+      ) {
+        conflicts.push({
+          type: 'INVIGILATOR',
+          entityId: invigilatorFacultyId.toString(),
+          conflictingAssessmentId: conf.assessmentId?._id?.toString() || conf.assessmentId?.toString() || '',
+          conflictingTitle: title,
+          timeSlot,
+          message: `The assigned invigilator is scheduled for '${title}' during ${timeSlot}.`,
+        });
+      }
+
+      if (targetSectionIds && targetSectionIds.length > 0) {
+        const confSections = [
+          conf.sectionId ? conf.sectionId.toString() : null,
+          ...((conf.targetSectionIds || []).map((s: any) => (s ? s.toString() : null))),
+        ].filter(Boolean);
+
+        for (const secId of targetSectionIds) {
+          if (confSections.includes(secId.toString())) {
+            conflicts.push({
+              type: 'SECTION',
+              entityId: secId.toString(),
+              conflictingAssessmentId: conf.assessmentId?._id?.toString() || conf.assessmentId?.toString() || '',
+              conflictingTitle: title,
+              timeSlot,
+              message: `An academic section included in this assessment already has another examination ('${title}') scheduled during ${timeSlot}.`,
+            });
+            break;
+          }
+        }
+      }
+    }
+
+    return {
+      hasConflicts: conflicts.length > 0,
+      conflicts,
+    };
+  }
+
+  /**
+   * Publishes an assessment to students and triggers targeted notifications.
+   */
+  static async publishAssessment(
+    collegeId: string,
+    user: AuthUserContext,
+    assessmentId: string
+  ) {
+    if (!Types.ObjectId.isValid(assessmentId)) {
+      throw ApiError.badRequest('Invalid assessment ID format');
+    }
+    const assessment = await InternalAssessment.findOne({
+      _id: new Types.ObjectId(assessmentId),
+      collegeId: new Types.ObjectId(collegeId),
+    }).populate('subjectId', 'name code');
+
+    if (!assessment) {
+      throw ApiError.notFound('Assessment not found');
+    }
+
+    await TeachingAuthorizationService.assertAssessmentManagementAccess(
+      collegeId,
+      user,
+      assessment,
+      'publishing this assessment'
+    );
+
+    if (assessment.status === AssessmentStatus.ARCHIVED) {
+      throw ApiError.badRequest('Cannot publish an archived assessment');
+    }
+
+    assessment.status = AssessmentStatus.SCHEDULED;
+    assessment.isPublishedToStudents = true;
+    assessment.auditLog.push({
+      action: 'EXAM_PUBLISHED',
+      performedBy: new Types.ObjectId(user.id),
+      performedByName: user.name || 'User',
+      performedByRole: user.role || 'FACULTY',
+      timestamp: new Date(),
+      details: `Assessment '${assessment.title}' published to students and schedule confirmed.`,
+    });
+    await assessment.save();
+
+    // Idempotent Notification to all enrolled students
+    try {
+      const studentIds = assessment.entries.map((e) => e.studentId);
+      const students = await Student.find({
+        _id: { $in: studentIds },
+        userId: { $ne: null },
+      }).select('userId');
+
+      const subjectName = (assessment.subjectId as any)?.name || 'Subject';
+      const scheduleInfo = assessment.schedule
+        ? ` on ${assessment.schedule.date ? new Date(assessment.schedule.date).toLocaleDateString() : ''} (${assessment.schedule.startTime || ''} - ${assessment.schedule.endTime || ''})`
+        : '';
+
+      for (const s of students) {
+        if (s.userId) {
+          await NotificationService.createNotification({
+            collegeId,
+            recipientUserId: s.userId.toString(),
+            recipientRole: AppRole.STUDENT,
+            notificationType: NotificationType.ASSESSMENT_PUBLISHED,
+            category: NotificationCategory.ASSESSMENT,
+            priority: NotificationPriority.HIGH,
+            title: `Exam Scheduled: ${assessment.title}`,
+            body: `${assessment.title} for ${subjectName} has been scheduled${scheduleInfo}. Tap to view venue and instructions.`,
+            deepLink: `/assessments`,
+            metadata: {
+              assessmentId: assessment._id.toString(),
+              subjectId: assessment.subjectId ? (assessment.subjectId as any)._id?.toString() || assessment.subjectId.toString() : '',
+            },
+            idempotencyKey: `assessment_pub_${assessment._id.toString()}_${s.userId.toString()}`,
+          }).catch((err: any) => logger.warn(`Failed to send exam published notification: ${err?.message}`));
+        }
+      }
+    } catch (err: any) {
+      logger.warn(`Error emitting assessment published notifications: ${err?.message}`);
+    }
+
+    return assessment;
   }
 
   /**
@@ -3469,7 +4038,10 @@ export class InternalAssessmentService {
     };
 
     if (params.sectionId && Types.ObjectId.isValid(params.sectionId)) {
-      query.sectionId = new Types.ObjectId(params.sectionId);
+      query.$or = [
+        { sectionId: new Types.ObjectId(params.sectionId) },
+        { targetSectionIds: new Types.ObjectId(params.sectionId) },
+      ];
     }
     if (params.semesterId && Types.ObjectId.isValid(params.semesterId)) {
       query.semesterId = new Types.ObjectId(params.semesterId);

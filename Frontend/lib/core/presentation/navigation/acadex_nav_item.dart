@@ -1,6 +1,8 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../features/auth/domain/models/role_enum.dart';
+import '../../../features/search/domain/models/search_models.dart';
 
 /// Conceptual navigation groups for desktop drawer and navigation rail
 enum AcadexNavGroup {
@@ -45,14 +47,22 @@ class AcadexNavItem {
     if (customMatch != null) {
       return customMatch!(currentRoute);
     }
-    if (currentRoute == route) return true;
+    // Clean query parameters and fragments for matching
+    final cleanRoute = currentRoute.split('?').first.split('#').first;
+
+    // Exact route match
+    if (cleanRoute == route) return true;
+
+    // Specific allowed matching prefixes (exact or subroute)
     for (final prefix in matchingPrefixes) {
-      if (currentRoute == prefix || currentRoute.startsWith('$prefix/')) {
+      if (cleanRoute == prefix || cleanRoute.startsWith('$prefix/')) {
         return true;
       }
     }
-    if (route != '/' && !route.startsWith('/dashboard')) {
-      if (currentRoute.startsWith(route)) {
+
+    // Properly defined route ancestry for standard subroutes (excluding root & dashboard)
+    if (route != '/' && !route.startsWith('/dashboard') && route != '/academics') {
+      if (cleanRoute.startsWith('$route/')) {
         return true;
       }
     }
@@ -88,7 +98,6 @@ class AcadexNavigationService {
       allowedRoles: const [AppRole.collegeAdmin, AppRole.hod],
       isPrimary: true,
       matchingPrefixes: const [
-        '/academics',
         '/academic-structure',
         '/academics/setup',
         '/academics/colleges',
@@ -97,8 +106,8 @@ class AcadexNavigationService {
         '/academics/semesters',
         '/academics/sections',
         '/academics/subjects',
+        '/academics/academic_years',
         '/faculty-assignments',
-        '/academics/rooms',
       ],
     ),
     AcadexNavItem(
@@ -211,7 +220,7 @@ class AcadexNavigationService {
       group: AcadexNavGroup.operations,
       allowedRoles: const [AppRole.superAdmin, AppRole.collegeAdmin],
       isPrimary: true,
-      matchingPrefixes: const ['/users', '/academics/faculty', '/academics/students'],
+      matchingPrefixes: const ['/users'],
     ),
     AcadexNavItem(
       id: 'requests',
@@ -392,15 +401,124 @@ class AcadexNavigationService {
     return item.matchesRoute(activeRoute);
   }
 
-  /// Resolves the currently active navigation item from a route for a given role
-  static AcadexNavItem? resolveActiveItem(String activeRoute, AppRole role) {
-    final items = _allNavItems.where((item) => item.allowedRoles.contains(role));
+  /// Resolves the single authoritative active navigation item for a route and role.
+  /// Uses route specificity scoring to guarantee that more specific child destinations
+  /// (such as /academics/students) always win over broader ancestor routes (like /academics).
+  static AcadexNavItem? resolveActiveItem(
+    String activeRoute,
+    AppRole role, {
+    List<AcadexNavItem>? candidates,
+  }) {
+    final cleanRoute = activeRoute.split('?').first.split('#').first;
+    final items = candidates ?? _allNavItems.where((item) => item.allowedRoles.contains(role)).toList();
+
+    AcadexNavItem? bestMatch;
+    int bestScore = -1;
+
     for (final item in items) {
-      if (item.matchesRoute(activeRoute)) {
-        return item;
+      if (!item.matchesRoute(cleanRoute)) continue;
+
+      int score = 0;
+      final itemCleanRoute = item.route.split('?').first.split('#').first;
+
+      if (cleanRoute == itemCleanRoute) {
+        // Highest priority: exact route match
+        score = 2000 + itemCleanRoute.length;
+      } else {
+        // Match against explicit matching prefixes
+        for (final prefix in item.matchingPrefixes) {
+          if (cleanRoute == prefix) {
+            score = math.max(score, 1000 + prefix.length);
+          } else if (cleanRoute.startsWith('$prefix/')) {
+            score = math.max(score, 500 + prefix.length);
+          }
+        }
+        // Subroute prefix match
+        if (score == 0 && itemCleanRoute != '/' && !itemCleanRoute.startsWith('/dashboard')) {
+          if (cleanRoute.startsWith('$itemCleanRoute/')) {
+            score = 100 + itemCleanRoute.length;
+          }
+        }
+        // General match fallback
+        if (score == 0) {
+          score = 10;
+        }
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = item;
       }
     }
-    return null;
+
+    return bestMatch;
+  }
+
+  /// Matches authorized navigation destinations for global search, enabling
+  /// quick module navigation (e.g. typing "students" resolves to Students Directory)
+  static List<SearchResult> searchNavigationDestinations(String query, AppRole role) {
+    final prefix = query.trim().toLowerCase();
+    if (prefix.isEmpty) return [];
+
+    final results = <SearchResult>[];
+    final allowedItems = _allNavItems.where((it) => it.allowedRoles.contains(role) && it.id != 'home');
+
+    for (final item in allowedItems) {
+      final labelLower = item.label.toLowerCase();
+      final idLower = item.id.toLowerCase();
+      final routeLower = item.route.toLowerCase();
+
+      bool matches = labelLower.contains(prefix) || idLower.contains(prefix) || routeLower.contains(prefix);
+
+      // Check common synonyms for campus workflows
+      if (!matches) {
+        if (prefix == 'students' || prefix == 'student') {
+          matches = item.id == 'students';
+        } else if (prefix == 'faculty' || prefix == 'teachers' || prefix == 'staff') {
+          matches = item.id == 'faculty' || item.id == 'my_classes';
+        } else if (prefix == 'courses' || prefix == 'programs' || prefix == 'degrees') {
+          matches = item.id == 'academics';
+        } else if (prefix == 'timetable' || prefix == 'schedule' || prefix == 'classes') {
+          matches = item.id == 'timetable_admin' || item.id == 'timetable_user';
+        } else if (prefix == 'attendance' || prefix == 'absent') {
+          matches = item.id == 'attendance';
+        } else if (prefix == 'grades' || prefix == 'marks' || prefix == 'results') {
+          matches = item.id == 'reports' || item.id == 'analytics_hod';
+        }
+      }
+
+      if (matches) {
+        String groupDesc = 'Academic Navigation';
+        switch (item.group) {
+          case AcadexNavGroup.workspace:
+            groupDesc = 'Workspace Hub';
+            break;
+          case AcadexNavGroup.academics:
+            groupDesc = 'Academic Module';
+            break;
+          case AcadexNavGroup.operations:
+            groupDesc = 'Campus Operations';
+            break;
+          case AcadexNavGroup.insights:
+            groupDesc = 'Insights & Analytics';
+            break;
+          case AcadexNavGroup.system:
+            groupDesc = 'System & Preferences';
+            break;
+        }
+
+        results.add(SearchResult(
+          id: 'nav_${item.id}',
+          title: item.label,
+          subtitle: '$groupDesc • ${item.route}',
+          type: SearchResultType.navigation,
+          destinationRoute: item.route,
+          relevanceScore: labelLower.startsWith(prefix) ? 100 : 80,
+        ));
+      }
+    }
+
+    return results;
   }
 
   static AcadexNavItem _getItem(String id) {

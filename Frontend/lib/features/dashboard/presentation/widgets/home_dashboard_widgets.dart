@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/providers/navigation_provider.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_motion.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
@@ -30,6 +32,7 @@ class DashboardGreetingHeader extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final isNarrow = constraints.maxWidth < 460;
+          final isUltraNarrow = constraints.maxWidth < 340;
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -65,6 +68,14 @@ class DashboardGreetingHeader extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
+                      greeting.greetingText,
+                      style: AcadexTypography.caption(
+                        color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                      ).copyWith(fontSize: 11.5, fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
                       greeting.displayName,
                       style: AcadexTypography.heading2(
                         color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
@@ -73,22 +84,22 @@ class DashboardGreetingHeader extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 3),
-                    Row(
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 2,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         AcadexBadge(
                           label: greeting.role.replaceAll('_', ' '),
                           variant: AcadexBadgeVariant.primary,
                         ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '•  $dateStr',
-                            style: AcadexTypography.caption(
-                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                            ).copyWith(fontSize: 11),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                        Text(
+                          '•  $dateStr',
+                          style: AcadexTypography.caption(
+                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          ).copyWith(fontSize: 11),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -96,13 +107,15 @@ class DashboardGreetingHeader extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(width: 8),
+              if (!isUltraNarrow) ...[
+                const SizedBox(width: 8),
 
-              // Live IST HH:MM Time Board + ACADEX Assistant Minute Animation
-              AcadexLiveTimeBoard(
-                userName: greeting.displayName,
-                isCompact: isNarrow,
-              ),
+                // Live IST HH:MM Time Board + ACADEX Assistant Minute Animation
+                AcadexLiveTimeBoard(
+                  userName: greeting.displayName,
+                  isCompact: isNarrow,
+                ),
+              ],
             ],
           );
         },
@@ -190,12 +203,22 @@ class DashboardContextCard extends StatelessWidget {
                       spacing: 6,
                       runSpacing: 4,
                       children: [
-                        if (contextModel.semesterNumber != null)
-                          _buildChip(context, 'Sem ${contextModel.semesterNumber}', isDark),
+                        if (contextModel.semesterName != null && contextModel.semesterName!.isNotEmpty)
+                          _buildChip(context, contextModel.semesterName!, isDark)
+                        else if (contextModel.semesterNumber != null)
+                          _buildChip(context, 'Semester ${contextModel.semesterNumber}', isDark),
                         if (contextModel.sectionName != null && contextModel.sectionName!.isNotEmpty)
-                          _buildChip(context, 'Sec ${contextModel.sectionName!}', isDark),
+                          _buildChip(
+                            context,
+                            contextModel.sectionName!.startsWith('Section')
+                                ? contextModel.sectionName!
+                                : 'Section ${contextModel.sectionName!}',
+                            isDark,
+                          ),
                         if (contextModel.rollNumber != null && contextModel.rollNumber!.isNotEmpty)
                           _buildChip(context, 'Roll: ${contextModel.rollNumber}', isDark),
+                        if (contextModel.academicYearName != null)
+                          _buildChip(context, contextModel.academicYearName!, isDark),
                       ],
                     ),
                   ],
@@ -287,6 +310,8 @@ class DashboardContextCard extends StatelessWidget {
                       _buildChip(context, 'Head of Department', isDark),
                       if (contextModel.departmentCode != null)
                         _buildChip(context, contextModel.departmentCode!, isDark),
+                      if (contextModel.academicYearName != null)
+                        _buildChip(context, contextModel.academicYearName!, isDark),
                     ],
                   ),
                 ],
@@ -323,7 +348,17 @@ class DashboardContextCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 3),
-                  _buildChip(context, 'College Administration', isDark),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      _buildChip(context, 'College Administration', isDark),
+                      if (contextModel.collegeCode != null)
+                        _buildChip(context, contextModel.collegeCode!, isDark),
+                      if (contextModel.academicYearName != null)
+                        _buildChip(context, contextModel.academicYearName!, isDark),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -615,10 +650,12 @@ class DashboardPendingActionsSection extends StatelessWidget {
 
 class DashboardUpcomingSection extends StatelessWidget {
   final List<DashboardUpcomingItemModel> upcoming;
+  final String? emptyMessage;
 
   const DashboardUpcomingSection({
     super.key,
     required this.upcoming,
+    this.emptyMessage,
   });
 
   @override
@@ -681,7 +718,7 @@ class DashboardUpcomingSection extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'No classes scheduled today',
+                    emptyMessage ?? 'No classes scheduled today',
                     style: AcadexTypography.caption(
                       color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                     ),
@@ -815,7 +852,7 @@ class DashboardUpcomingSection extends StatelessWidget {
 
 // ── 6. QUICK ACTIONS GRID (TACTILE & COMPACT) ───────────────────────────────
 
-class DashboardQuickActionsGrid extends StatelessWidget {
+class DashboardQuickActionsGrid extends ConsumerWidget {
   final List<DashboardQuickActionModel> quickActions;
   final String? title;
 
@@ -826,9 +863,11 @@ class DashboardQuickActionsGrid extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (quickActions.isEmpty) return const SizedBox.shrink();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final navState = ref.watch(navigationProvider);
+    final allRoutes = quickActions.map((a) => a.route).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -843,7 +882,14 @@ class DashboardQuickActionsGrid extends StatelessWidget {
         const SizedBox(height: 8),
         LayoutBuilder(
           builder: (context, constraints) {
-            final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
+            final w = constraints.maxWidth;
+            final count = quickActions.length;
+            final crossAxisCount = w < 280 ? 2 : (count <= 4 ? count : 4);
+            final itemWidth = (w - (crossAxisCount - 1) * 8) / crossAxisCount;
+            final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+            final targetHeight = 74.0 * textScale.clamp(1.0, 1.6);
+            final childAspectRatio = (itemWidth / targetHeight).clamp(0.9, 1.4);
+
             return GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -852,96 +898,35 @@ class DashboardQuickActionsGrid extends StatelessWidget {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 8,
                 mainAxisSpacing: 8,
-                childAspectRatio: 2.5,
+                childAspectRatio: childAspectRatio,
               ),
               itemBuilder: (context, index) {
                 final action = quickActions[index];
-                return _buildQuickActionTile(context, action, isDark);
+                final isSelected = navState.isActionActive(
+                  route: action.route,
+                  id: action.id,
+                  isPrimaryFallback: action.isPrimary,
+                  allRoutes: allRoutes,
+                );
+                return DashboardActionCard(
+                  label: action.label,
+                  icon: _resolveIcon(action.icon),
+                  isSelected: isSelected,
+                  badgeCount: action.badgeCount,
+                  isCompact: true,
+                  onTap: () {
+                    ref.read(navigationProvider.notifier).selectDashboardAction(
+                      route: action.route,
+                      id: action.id,
+                    );
+                    context.push(action.route);
+                  },
+                );
               },
             );
           },
         ),
       ],
-    );
-  }
-
-  Widget _buildQuickActionTile(BuildContext context, DashboardQuickActionModel action, bool isDark) {
-    final icon = _resolveIcon(action.icon);
-
-    return AcadexPressable(
-      onTap: () => context.push(action.route),
-      pressedScale: 0.965,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-          borderRadius: AcadexRadius.borderRadiusMd,
-          border: Border.all(
-            color: action.isPrimary
-                ? AcadexColors.primary.withValues(alpha: 0.4)
-                : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-            width: action.isPrimary ? 1.2 : 0.8,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isDark ? Colors.black.withValues(alpha: 0.15) : const Color(0x0607111F),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: action.isPrimary
-                    ? AcadexColors.primary.withValues(alpha: 0.12)
-                    : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
-                borderRadius: AcadexRadius.borderRadiusSm,
-              ),
-              child: Icon(
-                icon,
-                size: 15,
-                color: action.isPrimary
-                    ? AcadexColors.primary
-                    : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                action.label,
-                style: AcadexTypography.bodySmall(
-                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                ).copyWith(
-                  fontWeight: action.isPrimary ? FontWeight.w700 : FontWeight.w500,
-                  fontSize: 12,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (action.badgeCount != null && action.badgeCount! > 0)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                decoration: BoxDecoration(
-                  color: AcadexColors.error,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '${action.badgeCount}',
-                  style: const TextStyle(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -987,14 +972,258 @@ class DashboardQuickActionsGrid extends StatelessWidget {
   }
 }
 
+// ── 7. DASHBOARD ACTION CARD (ACCESSIBLE, TACTILE & STATE-AWARE) ──────────────
+
+class DashboardActionCard extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final int? badgeCount;
+  final bool isCompact;
+
+  const DashboardActionCard({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+    this.badgeCount,
+    this.isCompact = true,
+  });
+
+  @override
+  State<DashboardActionCard> createState() => _DashboardActionCardState();
+}
+
+class _DashboardActionCardState extends State<DashboardActionCard> {
+  bool _isHovered = false;
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final Color borderColor;
+    final double borderWidth;
+    final Color backgroundColor;
+
+    if (widget.isSelected) {
+      borderColor = AcadexColors.primary;
+      borderWidth = 1.5;
+      backgroundColor = isDark
+          ? AcadexColors.primary.withValues(alpha: 0.12)
+          : AcadexColors.primary.withValues(alpha: 0.05);
+    } else if (_isFocused) {
+      borderColor = AcadexColors.primary;
+      borderWidth = 1.5;
+      backgroundColor = isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface;
+    } else if (_isHovered) {
+      borderColor = AcadexColors.primary.withValues(alpha: 0.5);
+      borderWidth = 1.0;
+      backgroundColor = isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface;
+    } else {
+      borderColor = isDark ? AcadexColors.darkHairline : AcadexColors.hairline;
+      borderWidth = 0.8;
+      backgroundColor = isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface;
+    }
+
+    final isPrimaryOrSelected = widget.isSelected;
+
+    return FocusableActionDetector(
+      onShowFocusHighlight: (v) => setState(() => _isFocused = v),
+      onShowHoverHighlight: (v) => setState(() => _isHovered = v),
+      actions: {
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (_) {
+            widget.onTap();
+            return null;
+          },
+        ),
+      },
+      child: AcadexPressable(
+        onTap: widget.onTap,
+        pressedScale: 0.965,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: widget.isCompact
+              ? const EdgeInsets.symmetric(horizontal: 5, vertical: 5)
+              : const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: AcadexRadius.borderRadiusMd,
+            border: Border.all(
+              color: borderColor,
+              width: borderWidth,
+            ),
+            boxShadow: [
+              if (_isFocused)
+                BoxShadow(
+                  color: AcadexColors.primary.withValues(alpha: 0.25),
+                  blurRadius: 6,
+                  spreadRadius: 1,
+                )
+              else if (_isHovered)
+                BoxShadow(
+                  color: isDark ? Colors.black.withValues(alpha: 0.25) : const Color(0x1007111F),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                )
+              else
+                BoxShadow(
+                  color: isDark ? Colors.black.withValues(alpha: 0.15) : const Color(0x0607111F),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+            ],
+          ),
+          child: widget.isCompact
+              ? Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: [
+                    Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.center,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: isPrimaryOrSelected
+                                    ? AcadexColors.primary.withValues(alpha: 0.15)
+                                    : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+                                borderRadius: AcadexRadius.borderRadiusSm,
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  widget.icon,
+                                  size: 20,
+                                  color: isPrimaryOrSelected
+                                      ? AcadexColors.primary
+                                      : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              widget.label,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: isPrimaryOrSelected ? FontWeight.w700 : FontWeight.w600,
+                                color: isPrimaryOrSelected
+                                    ? AcadexColors.primary
+                                    : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                                height: 1.15,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (widget.badgeCount != null && widget.badgeCount! > 0)
+                      Positioned(
+                        top: -4,
+                        right: -4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: AcadexColors.error,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                          child: Center(
+                            child: Text(
+                              '${widget.badgeCount}',
+                              style: const TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                height: 1.0,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: isPrimaryOrSelected
+                            ? AcadexColors.primary.withValues(alpha: 0.15)
+                            : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
+                        borderRadius: AcadexRadius.borderRadiusSm,
+                      ),
+                      child: Icon(
+                        widget.icon,
+                        size: 15,
+                        color: isPrimaryOrSelected
+                            ? AcadexColors.primary
+                            : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.label,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isPrimaryOrSelected ? FontWeight.w700 : FontWeight.w600,
+                          color: isPrimaryOrSelected
+                              ? AcadexColors.primary
+                              : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (widget.badgeCount != null && widget.badgeCount! > 0)
+                      Container(
+                        margin: const EdgeInsets.only(left: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: AcadexColors.error,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '${widget.badgeCount}',
+                          style: const TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+}
+
 // ── 7. RECENT ACTIVITY SECTION ──────────────────────────────────────────────
 
 class DashboardRecentActivitySection extends StatelessWidget {
   final List<DashboardRecentActivityModel> recent;
+  final String? emptyMessage;
 
   const DashboardRecentActivitySection({
     super.key,
     required this.recent,
+    this.emptyMessage,
   });
 
   @override
@@ -1032,7 +1261,7 @@ class DashboardRecentActivitySection extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "You're all caught up. No recent updates right now.",
+                    emptyMessage ?? "You're all caught up. No recent updates right now.",
                     style: AcadexTypography.caption(
                       color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
                     ),
@@ -1129,6 +1358,113 @@ class DashboardRecentActivitySection extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ── 9. COMPACT SUMMARY TILE (SQUARE-LIKE & CENTERED) ───────────────────────
+
+class DashboardCompactTile extends StatelessWidget {
+  final String title;
+  final String value;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const DashboardCompactTile({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final card = AcadexCard(
+      isFlat: true,
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Center(
+                  child: Icon(icon, size: 20, color: color),
+                ),
+              ),
+              const SizedBox(height: 3),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.center,
+                child: Text(
+                  value,
+                  textAlign: TextAlign.center,
+                  style: AcadexTypography.heading2(
+                    color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                  ).copyWith(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 1.5),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: AcadexTypography.caption(
+                  color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                ).copyWith(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  height: 1.15,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (subtitle.isNotEmpty) ...[
+                const SizedBox(height: 1),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: AcadexTypography.caption(
+                    color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                  ).copyWith(fontSize: 9.0, height: 1.1),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (onTap == null) {
+      return card;
+    }
+
+    return AcadexPressable(
+      onTap: onTap,
+      pressedScale: 0.97,
+      child: card,
     );
   }
 }

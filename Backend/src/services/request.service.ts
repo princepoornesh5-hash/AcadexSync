@@ -70,7 +70,7 @@ export class RequestService {
   /**
    * Resolves routing authority based on role, department, and academic context
    */
-  private static async resolveTarget(
+  public static async resolveTarget(
     user: AuthenticatedUser,
     input: CreateRequestInput
   ): Promise<{

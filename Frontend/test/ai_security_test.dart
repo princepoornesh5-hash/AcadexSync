@@ -118,11 +118,48 @@ void main() {
       expect(
         () => repo.sendMessage(query: 'test query', context: {}),
         throwsA(
-          isA<Exception>().having(
-            (e) => e.toString(),
-            'message',
-            contains('Too many requests'),
-          ),
+          isA<AiChatException>()
+              .having((e) => e.statusCode, 'statusCode', equals(429))
+              .having((e) => e.category, 'category', equals('gemini_quota_limit')),
+        ),
+      );
+    });
+
+    test('ApiAiRepository distinguishes application rate limit with retry-after', () async {
+      final dio = Dio();
+      dio.interceptors.add(InterceptorsWrapper(
+        onRequest: (options, handler) {
+          return handler.reject(
+            DioException(
+              requestOptions: options,
+              response: Response(
+                requestOptions: options,
+                statusCode: 429,
+                headers: Headers.fromMap({'retry-after': ['5']}),
+                data: {
+                  'error': {
+                    'code': 'APP_RATE_LIMIT_EXCEEDED',
+                    'message': "You've sent several requests. Please wait a moment before trying again.",
+                    'details': {'retryAfter': 5},
+                  }
+                },
+              ),
+            ),
+          );
+        },
+      ));
+
+      final testApiClient = ApiClient(customDio: dio);
+      final repo = ApiAiRepository(client: testApiClient);
+
+      expect(
+        () => repo.sendMessage(query: 'test query', context: {}),
+        throwsA(
+          isA<AiChatException>()
+              .having((e) => e.statusCode, 'statusCode', equals(429))
+              .having((e) => e.category, 'category', equals('application_limit'))
+              .having((e) => e.retryAfterSeconds, 'retryAfterSeconds', equals(5))
+              .having((e) => e.message, 'message', contains("You've sent several requests")),
         ),
       );
     });

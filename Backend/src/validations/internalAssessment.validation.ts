@@ -43,6 +43,44 @@ export const getContextSchema = z.object({
   }),
 });
 
+export const academicScopeTargetSchema = z.object({
+  departmentId: objectIdSchema,
+  courseId: objectIdSchema,
+  academicYearId: objectIdSchema,
+  semesterId: objectIdSchema,
+  sectionId: objectIdSchema.optional().nullable(),
+  facultyAssignmentId: objectIdSchema.optional().nullable(),
+  departmentName: z.string().optional(),
+  sectionName: z.string().optional(),
+  semesterNumber: z.number().optional(),
+});
+
+export const previewScopeSchema = z.object({
+  body: z.object({
+    subjectId: objectIdSchema,
+    academicScopes: z.array(academicScopeTargetSchema).min(1, 'At least one academic scope is required'),
+  }),
+});
+
+export const checkScheduleConflictsSchema = z.object({
+  body: z.object({
+    date: z.string().min(8, 'Exam date is required'),
+    startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Invalid startTime (HH:MM)'),
+    endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Invalid endTime (HH:MM)'),
+    roomId: objectIdSchema.optional().nullable(),
+    invigilatorFacultyId: objectIdSchema.optional().nullable(),
+    targetSectionIds: z.array(objectIdSchema).optional(),
+    assessmentId: objectIdSchema.optional().nullable(),
+  }).refine(
+    (data) => {
+      const [sh, sm] = data.startTime.split(':').map(Number);
+      const [eh, em] = data.endTime.split(':').map(Number);
+      return eh * 60 + em > sh * 60 + sm;
+    },
+    { message: 'endTime must be strictly later than startTime' }
+  ),
+});
+
 export const createAssessmentSchema = z.object({
   body: z.object({
     departmentId: objectIdSchema.optional(),
@@ -52,9 +90,10 @@ export const createAssessmentSchema = z.object({
     sectionId: objectIdSchema.optional().nullable(),
     subjectId: objectIdSchema.optional(),
     facultyAssignmentId: objectIdSchema.optional().nullable(),
+    academicScopes: z.array(academicScopeTargetSchema).optional(),
     title: z.string().min(2, 'Title must be at least 2 characters').max(150),
     description: z.string().max(1000).optional(),
-    assessmentType: z.nativeEnum(AssessmentType).optional().default(AssessmentType.INTERNAL_EXAM),
+    assessmentType: z.string().optional().default(AssessmentType.INTERNAL_EXAM),
     maximumMarks: z.number().positive('Maximum marks must be greater than 0'),
     passMarks: z.number().min(0).optional(),
     weightage: z.number().min(0).max(100).optional(),
@@ -62,9 +101,18 @@ export const createAssessmentSchema = z.object({
     components: z.array(assessmentComponentSchema).optional(),
     sourceType: z.enum(['LIVE', 'IMPORTED', 'HISTORICAL_MANUAL']).optional(),
     isHistorical: z.boolean().optional(),
-  }).refine((data) => data.facultyAssignmentId || (data.subjectId && data.sectionId && data.departmentId && data.courseId && data.academicYearId && data.semesterId), {
-    message: 'Either facultyAssignmentId or full academic context (department, course, academicYear, semester, section, subject) must be provided',
-  }),
+  }).refine(
+    (data) =>
+      Boolean(
+        (data.academicScopes && data.academicScopes.length > 0) ||
+        data.facultyAssignmentId ||
+        (data.subjectId && data.sectionId && data.departmentId && data.courseId && data.academicYearId && data.semesterId)
+      ),
+    {
+      message:
+        'Either academicScopes, facultyAssignmentId, or full academic context (department, course, academicYear, semester, section, subject) must be provided',
+    }
+  ),
 });
 
 export const updateAssessmentSchema = z.object({

@@ -78,12 +78,16 @@ class AcadexPageContainer extends ConsumerWidget {
 
     final isMobile = AcadexBreakpoints.isMobile(context);
     final hPad = horizontalPadding ?? AcadexBreakpoints.responsiveHorizontalPadding(context);
+    final mediaTop = MediaQuery.paddingOf(context).top;
     final mediaBottom = MediaQuery.paddingOf(context).bottom;
 
     final effectiveHasBottomNav = hasBottomNav ?? isMobile;
 
-    final baseTop = topPadding ?? (isMobile ? AcadexSpacing.space12 : AcadexSpacing.space16);
-    final effectiveTop = baseTop;
+    // When an enclosing Scaffold has an AppBar, Flutter automatically removes top padding (mediaTop == 0).
+    // When no AppBar is present (e.g. mobile child screens), mediaTop retains the status bar inset (> 0).
+    // Adding mediaTop ensures page content strictly begins below the status bar, eliminating status bar collisions.
+    final baseTop = isMobile ? AcadexSpacing.space12 : AcadexSpacing.space16;
+    final effectiveTop = topPadding ?? (mediaTop + baseTop);
 
     final baseBottom = bottomPadding ??
         (effectiveHasBottomNav

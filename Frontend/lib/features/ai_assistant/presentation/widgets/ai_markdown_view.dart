@@ -8,12 +8,14 @@ class AiMarkdownView extends StatelessWidget {
   final String text;
   final Color? textColor;
   final double fontSize;
+  final bool isStreaming;
 
   const AiMarkdownView({
     super.key,
     required this.text,
     this.textColor,
     this.fontSize = 15.0,
+    this.isStreaming = false,
   });
 
   @override
@@ -23,7 +25,14 @@ class AiMarkdownView extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: blocks.map((block) => _buildBlock(context, block, color)).toList(),
+      children: [
+        ...blocks.map((block) => _buildBlock(context, block, color)),
+        if (isStreaming)
+          const Padding(
+            padding: EdgeInsets.only(top: 2.0),
+            child: _BlinkingCursorWidget(key: Key('ai_blinking_cursor')),
+          ),
+      ],
     );
   }
 
@@ -49,7 +58,9 @@ class AiMarkdownView extends StatelessWidget {
           content: codeLines.join('\n'),
           extra: lang.isEmpty ? 'code' : lang,
         ));
-        i++;
+        if (i < lines.length && lines[i].trim().startsWith('```')) {
+          i++;
+        }
         continue;
       }
 
@@ -279,19 +290,16 @@ class AiMarkdownView extends StatelessWidget {
       }
 
       if (match.group(2) != null) {
-        // Bold: **text**
         spans.add(TextSpan(
           text: match.group(2),
           style: baseStyle.copyWith(fontWeight: FontWeight.bold),
         ));
       } else if (match.group(3) != null) {
-        // Italic: *text*
         spans.add(TextSpan(
           text: match.group(3),
           style: baseStyle.copyWith(fontStyle: FontStyle.italic),
         ));
       } else if (match.group(4) != null) {
-        // Inline code: `code`
         spans.add(WidgetSpan(
           alignment: PlaceholderAlignment.middle,
           child: Container(
@@ -438,6 +446,60 @@ class _CodeBlockWidgetState extends State<_CodeBlockWidget> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _BlinkingCursorWidget extends StatefulWidget {
+  const _BlinkingCursorWidget({super.key});
+
+  @override
+  State<_BlinkingCursorWidget> createState() => _BlinkingCursorWidgetState();
+}
+
+class _BlinkingCursorWidgetState extends State<_BlinkingCursorWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    if (reduceMotion) {
+      return Container(
+        width: 7,
+        height: 14,
+        decoration: BoxDecoration(
+          color: AcadexColors.primary,
+          borderRadius: BorderRadius.circular(1.5),
+        ),
+      );
+    }
+
+    return FadeTransition(
+      opacity: _controller,
+      child: Container(
+        width: 7,
+        height: 14,
+        decoration: BoxDecoration(
+          color: AcadexColors.primary,
+          borderRadius: BorderRadius.circular(1.5),
+        ),
       ),
     );
   }

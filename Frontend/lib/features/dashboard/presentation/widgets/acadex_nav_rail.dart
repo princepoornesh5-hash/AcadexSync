@@ -27,14 +27,11 @@ class AcadexNavRail extends ConsumerWidget {
     }
 
     final navItems = AcadexNavigationService.getPrimaryNavItems(role);
-
-    int selectedIndex = 0;
-    for (int i = 0; i < navItems.length; i++) {
-      if (navItems[i].matchesRoute(activeRoute)) {
-        selectedIndex = i;
-        break;
-      }
-    }
+    final activeItem = AcadexNavigationService.resolveActiveItem(activeRoute, role, candidates: navItems);
+    int selectedIndex = activeItem != null
+        ? navItems.indexWhere((it) => it.id == activeItem.id)
+        : -1;
+    if (selectedIndex < 0) selectedIndex = 0;
 
     final selectedColor = AcadexColors.primary;
     final unselectedColor = AcadexColors.inkMuted;

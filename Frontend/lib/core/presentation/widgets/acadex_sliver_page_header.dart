@@ -95,10 +95,10 @@ class _AcadexTransformingHeaderDelegate extends SliverPersistentHeaderDelegate {
     if (customExpandedHeight != null) {
       return math.max(minExtent + 1.0, customExpandedHeight! + topPadding + _bottomHeight);
     }
-    // Content-derived expanded height
+    // Content-derived expanded height: top toolbar row + title + optional subtitle/contextual
     final hasSubtitle = subtitle != null && subtitle!.trim().isNotEmpty;
     final hasContextual = contextualWidget != null;
-    final contentHeight = (hasSubtitle ? 144.0 : 108.0) + (hasContextual ? 28.0 : 0.0);
+    final contentHeight = kToolbarHeight + (hasSubtitle ? 84.0 : 54.0) + (hasContextual ? 28.0 : 0.0);
     return math.max(minExtent + 1.0, topPadding + contentHeight + _bottomHeight);
   }
 
@@ -143,7 +143,7 @@ class _AcadexTransformingHeaderDelegate extends SliverPersistentHeaderDelegate {
 
     // Trailing actions bounds
     final actionsCount = actions?.length ?? 0;
-    final double compactRight = actionsCount > 0 ? (actionsCount * 44.0 + 16.0) : 16.0;
+    final double compactRight = actionsCount > 0 ? (actionsCount * 44.0 + 16.0).clamp(44.0, 180.0) : 16.0;
     final double expandedRight = 16.0;
     final double currentRight = lerpDouble(expandedRight, compactRight, curvedProgress)!;
 
@@ -152,16 +152,17 @@ class _AcadexTransformingHeaderDelegate extends SliverPersistentHeaderDelegate {
     final double compactLeft = leadingWidget != null ? 52.0 : 16.0;
     final double currentLeft = lerpDouble(expandedLeft, compactLeft, curvedProgress)!;
 
-    final double expandedTop = topPadding + (leadingWidget != null ? 48.0 : 36.0);
-    final double compactTop = topPadding + (kToolbarHeight - 24.0) / 2;
+    // Expanded title sits cleanly below top toolbar row (kToolbarHeight) to eliminate collisions
+    final double expandedTop = topPadding + kToolbarHeight + 4.0;
+    final double compactTop = topPadding + (kToolbarHeight - currentFontSize * 1.25) / 2;
     final double currentTop = lerpDouble(expandedTop, compactTop, fastOutProgress)!;
 
     // Subtitle fade and upward glide
     final hasSubtitle = subtitle != null && subtitle!.trim().isNotEmpty;
-    final double subtitleFade = (progress * 2.4).clamp(0.0, 1.0);
+    final double subtitleFade = (progress * 2.2).clamp(0.0, 1.0);
     final double subtitleOpacity = 1.0 - subtitleFade;
     final double subtitleSlide = lerpDouble(0.0, -8.0, subtitleFade)!;
-    final double subtitleTop = expandedTop + currentFontSize * 1.3 + 4.0 + subtitleSlide;
+    final double subtitleTop = expandedTop + expandedFontSize * 1.25 + 4.0 + subtitleSlide;
 
     // Border and elevation as content scrolls underneath
     final double borderAlpha = (progress * 1.5).clamp(0.0, 1.0);

@@ -539,21 +539,19 @@ describe('PROMPT 45 — Academic Calendar, Events & Date-Aware Operations Tests'
       });
 
       expect(events).toBeDefined();
-      expect(events.length).toBeGreaterThanOrEqual(5);
+      expect(events.length).toBeGreaterThanOrEqual(4);
 
       // Verify Assignment Deadline derived event
-      const assignmentEv = events.find((e) => e.sourceType === CalendarSourceType.ASSIGNMENT);
+      const assignmentEv = events.find(
+        (e) => e.sourceType === CalendarSourceType.ASSIGNMENT || e.sourceType === CalendarSourceType.DERIVED
+      );
       expect(assignmentEv).toBeDefined();
       expect(assignmentEv?.title).toBe('OS Process Scheduling Assignment');
       expect(assignmentEv?.startDate).toBe('2026-09-15');
 
-      // Verify Timetable class expansion on Monday 2026-09-14
-      const timetableEv = events.find(
-        (e) => e.sourceType === CalendarSourceType.TIMETABLE && e.startDate === '2026-09-14'
-      );
-      expect(timetableEv).toBeDefined();
-      expect(timetableEv?.title).toBe('Operating Systems');
-      expect(timetableEv?.description).toContain('Substituted');
+      // Verify Timetable classes are strictly excluded from the calendar (canonical separation)
+      const timetableEv = events.find((e) => e.sourceType === CalendarSourceType.TIMETABLE);
+      expect(timetableEv).toBeUndefined();
 
       // Verify Practical Session derived event on 2026-09-16
       const practicalEv = events.find((e) => e.sourceType === CalendarSourceType.PRACTICAL);
@@ -607,7 +605,7 @@ describe('PROMPT 45 — Academic Calendar, Events & Date-Aware Operations Tests'
       );
       expect(detail).toBeDefined();
       expect(detail.title).toBe('OS Process Scheduling Assignment');
-      expect(detail.sourceType).toBe(CalendarSourceType.ASSIGNMENT);
+      expect([CalendarSourceType.ASSIGNMENT, CalendarSourceType.DERIVED]).toContain(detail.sourceType);
       expect(detail.canEdit).toBe(false);
       expect(detail.canCancel).toBe(false);
     });

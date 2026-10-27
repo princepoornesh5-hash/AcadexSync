@@ -1,5 +1,6 @@
 import '../../domain/repositories/ai_repository.dart';
 import '../../domain/models/ai_response.dart';
+import '../../domain/models/ai_stream_event.dart';
 
 class MockAiRepository implements AiRepository {
   @override
@@ -9,6 +10,39 @@ class MockAiRepository implements AiRepository {
   }) async {
     final res = await sendChatMessage(query: query, context: context);
     return res.answer;
+  }
+
+  @override
+  Stream<AiStreamEvent> streamChatMessage({
+    required String query,
+    required Map<String, dynamic> context,
+    List<Map<String, String>>? history,
+  }) async* {
+    yield const AiStreamStartEvent(model: 'mock-gemini-stream', correlationId: 'mock-corr-1');
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    final fullResponse = await sendChatMessage(
+      query: query,
+      context: context,
+      history: history,
+    );
+
+    if (fullResponse.proposal != null) {
+      yield AiStreamProposalEvent(proposal: fullResponse.proposal!);
+    }
+
+    final words = fullResponse.answer.split(' ');
+    for (int i = 0; i < words.length; i += 3) {
+      final chunk = words.skip(i).take(3).join(' ') + (i + 3 < words.length ? ' ' : '');
+      await Future.delayed(const Duration(milliseconds: 20));
+      yield AiStreamDeltaEvent(text: chunk);
+    }
+
+    yield AiStreamDoneEvent(
+      answer: fullResponse.answer,
+      model: fullResponse.model ?? 'mock-gemini-stream',
+      proposal: fullResponse.proposal,
+    );
   }
 
   @override

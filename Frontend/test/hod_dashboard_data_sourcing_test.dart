@@ -10,6 +10,7 @@ import 'package:campus_management/features/timetable/presentation/providers/time
 import 'package:campus_management/features/timetable/data/repositories/api_timetable_repository.dart';
 import 'package:campus_management/features/dashboard/presentation/screens/hod_dashboard.dart';
 import 'package:campus_management/features/dashboard/presentation/providers/dashboard_providers.dart';
+import 'package:campus_management/features/dashboard/domain/models/home_dashboard_models.dart';
 import 'package:campus_management/features/academic_structure/domain/repositories/academic_repository.dart';
 import 'package:campus_management/features/academic_structure/presentation/providers/academic_providers.dart';
 import 'package:campus_management/features/academic_structure/domain/models/academic_models.dart';
@@ -239,6 +240,17 @@ void main() {
             todayScheduleProvider.overrideWithValue(const AsyncValue.data([])),
             hodStatsProvider.overrideWith((ref) async => []),
             hodActivityProvider.overrideWith((ref) async => []),
+            homeDashboardProvider.overrideWith((ref) async => const HomeDashboardModel(
+              role: 'HOD',
+              greeting: DashboardGreetingModel(greetingText: 'Good morning', displayName: 'Test HOD', role: 'HOD'),
+              context: DashboardContextModel(departmentName: 'Computer Science', departmentCode: 'CSE'),
+              summary: DashboardSummaryModel(),
+              alerts: [],
+              quickActions: [],
+              pendingActions: [],
+              upcoming: [],
+              recent: [],
+            )),
           ],
           child: const MaterialApp(
             home: Scaffold(body: HodDashboard()),
@@ -262,6 +274,17 @@ void main() {
             todayScheduleProvider.overrideWithValue(AsyncValue.error(Exception('Connection timeout'), StackTrace.empty)),
             hodStatsProvider.overrideWith((ref) async => []),
             hodActivityProvider.overrideWith((ref) async => []),
+            homeDashboardProvider.overrideWith((ref) async => const HomeDashboardModel(
+              role: 'HOD',
+              greeting: DashboardGreetingModel(greetingText: 'Good morning', displayName: 'Test HOD', role: 'HOD'),
+              context: DashboardContextModel(departmentName: 'Computer Science', departmentCode: 'CSE'),
+              summary: DashboardSummaryModel(),
+              alerts: [],
+              quickActions: [],
+              pendingActions: [],
+              upcoming: [],
+              recent: [],
+            )),
           ],
           child: const MaterialApp(
             home: Scaffold(body: HodDashboard()),

@@ -21,22 +21,86 @@ export class AiController {
     }
 
     const validatedInput = chatRequestSchema.parse(req.body);
+    const correlationId =
+      (req.headers['x-correlation-id'] as string) ||
+      `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+    res.setHeader('X-Correlation-ID', correlationId);
 
     const result = await AiService.generateChatResponse({
       message: validatedInput.message,
       history: validatedInput.history,
       user: req.user,
       collegeId: req.user.collegeId || req.collegeId,
+      correlationId,
     });
 
     Logger.info('AI assistant query processed successfully', {
       userId: req.user.id,
       role: req.user.role,
       model: result.model,
+      correlationId,
       hasProposal: Boolean(result.proposal),
+      providerCallsCount: result.providerCallsCount,
     });
 
     return ApiResponse.success(res, result, 'AI response generated successfully');
+  });
+
+  /**
+   * Process authenticated conversational query through Gemini AI with real-time SSE streaming
+   */
+  static chatStream = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw ApiError.unauthorized('Authentication required to access ACADEX AI Assistant');
+    }
+
+    const validatedInput = chatRequestSchema.parse(req.body);
+    const correlationId =
+      (req.headers['x-correlation-id'] as string) ||
+      `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+
+    // Set Server-Sent Events (SSE) headers
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.setHeader('X-Correlation-ID', correlationId);
+    res.flushHeaders?.();
+
+    const abortController = new AbortController();
+    req.on('close', () => {
+      abortController.abort();
+    });
+
+    const sendSseEvent = (event: string, data: any) => {
+      if (res.writableEnded) return;
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+      if (typeof (res as any).flush === 'function') {
+        (res as any).flush();
+      }
+    };
+
+    await AiService.streamChatResponse({
+      message: validatedInput.message,
+      history: validatedInput.history,
+      user: req.user,
+      collegeId: req.user.collegeId || req.collegeId,
+      correlationId,
+      abortSignal: abortController.signal,
+      callbacks: {
+        onStart: (data) => sendSseEvent('start', data),
+        onDelta: (text) => sendSseEvent('delta', { text }),
+        onProposal: (proposal) => sendSseEvent('proposal', proposal),
+        onDone: (data) => {
+          sendSseEvent('done', data);
+          res.end();
+        },
+        onError: (err) => {
+          sendSseEvent('error', err);
+          res.end();
+        },
+      },
+    });
   });
 
   /**

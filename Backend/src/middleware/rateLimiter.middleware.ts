@@ -11,6 +11,7 @@ export interface RateLimiterOptions {
   windowMs?: number;
   maxRequests?: number;
   message?: string;
+  code?: string;
   keyGenerator?: (req: Request) => string;
   skipInTest?: boolean;
 }
@@ -83,9 +84,88 @@ export function createRateLimiter(options: RateLimiterOptions = {}) {
       res.setHeader('Retry-After', waitSeconds);
       return next(
         ApiError.tooManyRequests(
-          options.message || `Too many requests. Please try again in ${waitSeconds} seconds.`
+          options.message || `Too many requests. Please try again in ${waitSeconds} seconds.`,
+          options.code || 'TOO_MANY_REQUESTS',
+          {
+            retryAfter: waitSeconds,
+            type: 'application',
+            limit: maxRequests,
+            resetTime: Math.ceil(record.resetTime / 1000),
+          }
         )
       );
+    }
+
+    return next();
+  };
+}
+
+export interface ConcurrencyLimiterOptions {
+  maxConcurrent?: number;
+  message?: string;
+  keyGenerator?: (req: Request) => string;
+  skipInTest?: boolean;
+}
+
+/**
+ * In-memory concurrency limiter factory.
+ * Enforces a strict upper bound on parallel in-flight requests per user/client.
+ */
+export function createConcurrencyLimiter(options: ConcurrencyLimiterOptions = {}) {
+  const activeRequests = new Map<string, number>();
+  const maxConcurrent = options.maxConcurrent ?? 1;
+  const skipInTest = options.skipInTest ?? true;
+
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (req.method === 'OPTIONS') return next();
+
+    // Skip in test unless explicitly enabled via options or header
+    const forceEnable = req.headers['x-test-enable-concurrency'] === 'true';
+    if (process.env.NODE_ENV === 'test' && skipInTest && !forceEnable) {
+      return next();
+    }
+
+    const key = options.keyGenerator
+      ? options.keyGenerator(req)
+      : (req as any).user?.id
+      ? `user:${(req as any).user.id}`
+      : (req.headers['x-forwarded-for'] as string) || req.ip || req.socket?.remoteAddress || 'unknown-client';
+
+    const currentCount = activeRequests.get(key) || 0;
+    if (currentCount >= maxConcurrent) {
+      if (typeof res.setHeader === 'function') {
+        res.setHeader('Retry-After', 2);
+      }
+      return next(
+        ApiError.tooManyRequests(
+          options.message || 'A response is already in progress. Please wait for it to complete.',
+          'CONCURRENT_REQUEST_LIMIT',
+          { type: 'concurrent', retryAfter: 2 }
+        )
+      );
+    }
+
+    activeRequests.set(key, currentCount + 1);
+
+    let released = false;
+    const release = () => {
+      if (!released) {
+        released = true;
+        const count = activeRequests.get(key) || 1;
+        if (count <= 1) {
+          activeRequests.delete(key);
+        } else {
+          activeRequests.set(key, count - 1);
+        }
+      }
+    };
+
+    if (typeof res.once === 'function') {
+      res.once('finish', release);
+      res.once('close', release);
+    } else if (typeof res.on === 'function') {
+      res.on('finish', release);
+      res.on('close', release);
     }
 
     return next();

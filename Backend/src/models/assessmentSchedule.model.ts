@@ -22,6 +22,8 @@ export interface IAssessmentScheduleDoc extends Document {
   invigilatorFacultyId?: mongoose.Types.ObjectId | null;
   invigilatorName?: string | null;
   instructions?: string | null;
+  targetSectionIds?: mongoose.Types.ObjectId[];
+  targetDepartmentIds?: mongoose.Types.ObjectId[];
   status: AssessmentScheduleStatus;
   createdBy?: mongoose.Types.ObjectId | null;
   updatedBy?: mongoose.Types.ObjectId | null;
@@ -39,6 +41,8 @@ const AssessmentScheduleSchema = new Schema<IAssessmentScheduleDoc>(
     academicYearId: { type: Schema.Types.ObjectId, ref: 'AcademicYear', required: true },
     semesterId: { type: Schema.Types.ObjectId, ref: 'Semester', required: true },
     sectionId: { type: Schema.Types.ObjectId, ref: 'Section', default: null, index: true },
+    targetSectionIds: [{ type: Schema.Types.ObjectId, ref: 'Section', index: true }],
+    targetDepartmentIds: [{ type: Schema.Types.ObjectId, ref: 'Department' }],
     subjectId: { type: Schema.Types.ObjectId, ref: 'Subject', required: true, index: true },
     date: { type: Date, required: true, index: true },
     dateString: { type: String, required: true, index: true, trim: true },

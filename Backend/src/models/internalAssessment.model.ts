@@ -21,8 +21,12 @@ export enum AssessmentType {
   INTERNAL_EXAM = 'INTERNAL_EXAM',
   MID_TERM = 'MID_TERM',
   MODEL_EXAM = 'MODEL_EXAM',
+  SLIP_TEST = 'SLIP_TEST',
+  SEMESTER_EXAM = 'SEMESTER_EXAM',
   LAB_EXAM = 'LAB_EXAM',
+  LAB_INTERNAL = 'LAB_INTERNAL',
   PRACTICAL = 'PRACTICAL',
+  VIVA_VOCE = 'VIVA_VOCE',
   QUIZ = 'QUIZ',
   ASSIGNMENT = 'ASSIGNMENT',
   PROJECT = 'PROJECT',
@@ -91,6 +95,19 @@ export interface IAssessmentCorrectionScope {
   reason?: string;
 }
 
+export interface IAcademicScopeTarget {
+  departmentId: mongoose.Types.ObjectId;
+  courseId: mongoose.Types.ObjectId;
+  academicYearId: mongoose.Types.ObjectId;
+  semesterId: mongoose.Types.ObjectId;
+  sectionId?: mongoose.Types.ObjectId | null;
+  facultyAssignmentId?: mongoose.Types.ObjectId | null;
+  departmentName?: string | null;
+  sectionName?: string | null;
+  semesterNumber?: number | null;
+  studentCount?: number;
+}
+
 export interface IInternalAssessment extends Document {
   collegeId: mongoose.Types.ObjectId;
   departmentId: mongoose.Types.ObjectId;
@@ -102,8 +119,10 @@ export interface IInternalAssessment extends Document {
   facultyAssignmentId?: mongoose.Types.ObjectId | null;
   facultyId?: mongoose.Types.ObjectId | null;
   facultyName?: string;
+  academicScopes?: IAcademicScopeTarget[];
+  isCommonExam?: boolean;
   title: string;
-  assessmentType: AssessmentType;
+  assessmentType: AssessmentType | string;
   maximumMarks: number;
   passMarks?: number;
   weightage?: number;
@@ -113,6 +132,7 @@ export interface IInternalAssessment extends Document {
   components: IAssessmentComponent[];
   entries: IStudentAssessmentEntry[];
   status: AssessmentStatus;
+  isPublishedToStudents?: boolean;
   submittedAt?: Date;
   submittedBy?: mongoose.Types.ObjectId;
   publishedAt?: Date;
@@ -174,6 +194,22 @@ const AssessmentAuditEntrySchema = new Schema<IAssessmentAuditEntry>(
   { _id: false }
 );
 
+const AcademicScopeTargetSchema = new Schema<IAcademicScopeTarget>(
+  {
+    departmentId: { type: Schema.Types.ObjectId, ref: 'Department', required: true },
+    courseId: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
+    academicYearId: { type: Schema.Types.ObjectId, ref: 'AcademicYear', required: true },
+    semesterId: { type: Schema.Types.ObjectId, ref: 'Semester', required: true },
+    sectionId: { type: Schema.Types.ObjectId, ref: 'Section', default: null },
+    facultyAssignmentId: { type: Schema.Types.ObjectId, ref: 'FacultyAssignment', default: null },
+    departmentName: { type: String, default: null },
+    sectionName: { type: String, default: null },
+    semesterNumber: { type: Number, default: null },
+    studentCount: { type: Number, default: 0 },
+  },
+  { _id: false }
+);
+
 const InternalAssessmentSchema = new Schema<IInternalAssessment>(
   {
     collegeId: { type: Schema.Types.ObjectId, ref: 'College', required: true, index: true },
@@ -186,10 +222,11 @@ const InternalAssessmentSchema = new Schema<IInternalAssessment>(
     facultyAssignmentId: { type: Schema.Types.ObjectId, ref: 'FacultyAssignment', default: null },
     facultyId: { type: Schema.Types.ObjectId, ref: 'Faculty', default: null },
     facultyName: { type: String, default: null },
+    academicScopes: [AcademicScopeTargetSchema],
+    isCommonExam: { type: Boolean, default: false, index: true },
     title: { type: String, default: 'Internal Assessment', trim: true },
     assessmentType: {
       type: String,
-      enum: Object.values(AssessmentType),
       default: AssessmentType.INTERNAL,
       index: true,
     },

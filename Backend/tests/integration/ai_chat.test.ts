@@ -14,6 +14,8 @@ import { Assignment } from '../../src/models/assignment.model';
 import { CalendarEvent } from '../../src/models/calendarEvent.model';
 import { PendingAction } from '../../src/models/pendingAction.model';
 import { AuditLog } from '../../src/models/auditLog.model';
+import { Student } from '../../src/models/student.model';
+import { RequestModel } from '../../src/models/request.model';
 import { setupTestDB, teardownTestDB, clearTestDB } from '../setup';
 import { createTestAuthHeader } from '../helpers/auth.helper';
 import { User } from '../../src/models/user.model';
@@ -21,6 +23,8 @@ import { AccountStatus } from '../../src/constants/status';
 import { AppRole } from '../../src/constants/roles';
 import { AssignmentStatus, AssignmentType } from '../../src/constants/assignment.constants';
 import { CalendarEventType, CalendarEventScope, CalendarSourceType, CalendarEventStatus } from '../../src/constants/calendar.constants';
+import { RequestStatus } from '../../src/constants/request.constants';
+import { getFunctionDeclarationsForRole } from '../../src/services/aiTools.registry';
 import { AssignmentService } from '../../src/services/assignment.service';
 import { AcademicCalendarService } from '../../src/services/academicCalendar.service';
 import { AiService } from '../../src/services/ai.service';
@@ -188,6 +192,23 @@ describe('AI Chat & Confirmed Actions Integration Tests', () => {
       sectionId: testSec._id,
       subjectId: testSub._id,
       academicYearId: testYear._id,
+      status: 'active',
+      isActive: true,
+    });
+
+    await Student.create({
+      collegeId: testCollege._id,
+      departmentId: testDept._id,
+      userId: testStudentUser._id,
+      instituteId: 'STU-CSE-01',
+      name: 'Ada Lovelace',
+      email: 'ada.lovelace@ait.edu',
+      courseId: testCourse._id,
+      academicYearId: testYear._id,
+      semesterId: testSem._id,
+      sectionId: testSec._id,
+      rollNumber: 'CS2601',
+      admissionNumber: 'ADM-2026-001',
       status: 'active',
       isActive: true,
     });
@@ -1700,6 +1721,644 @@ describe('AI Chat & Confirmed Actions Integration Tests', () => {
       });
       expect(auditEntry).not.toBeNull();
       expect(auditEntry?.actorUserId).toBe(testFacultyUser.id);
+    });
+  });
+
+  describe('Role-Specific Execution, Scoping & Request Lifecycle Flow', () => {
+    it('Student: requests their own assignments and creates an authorised request with full persistence flow', async () => {
+      // 1. Create a published assignment for testSec
+      await Assignment.create({
+        collegeId: testCollege._id,
+        departmentId: testDept._id,
+        courseId: testCourse._id,
+        academicYearId: testYear._id,
+        semesterId: testSem._id,
+        sectionId: testSec._id,
+        subjectId: testSub._id,
+        facultyAssignmentId: testFa._id,
+        facultyId: testFacultyUser._id,
+        facultyName: 'Prof. Alan Turing',
+        title: 'Student Specific Homework 1',
+        description: 'Complete Chapter 1',
+        assignmentType: AssignmentType.HOMEWORK,
+        status: AssignmentStatus.PUBLISHED,
+        dueDate: '2026-11-15',
+        dueTime: '11:59 PM',
+        dueDateTime: new Date('2026-11-15T23:59:00.000Z'),
+        maximumMarks: 100,
+      });
+
+      // 2. Student queries own assignments via AI chat tool calling
+      let clientTurn = 0;
+      AiService.setMockClient({
+        models: {
+          generateContent: jest.fn().mockImplementation(async () => {
+            clientTurn++;
+            if (clientTurn === 1) {
+              return {
+                functionCalls: [
+                  {
+                    name: 'get_my_assignments',
+                    args: { status: 'published' },
+                  },
+                ],
+              };
+            }
+            return {
+              text: 'You have 1 active assignment: Student Specific Homework 1.',
+            };
+          }),
+        },
+      } as any);
+
+      const studentAuthHeader = createTestAuthHeader({
+        role: AppRole.STUDENT,
+        userId: testStudentUser.id,
+        departmentId: testDept.id,
+        collegeId: testCollege.id,
+      });
+
+      const queryRes = await request(app)
+        .post('/api/v1/ai/chat')
+        .set(studentAuthHeader)
+        .send({ message: 'What assignments do I have?' });
+
+      expect(queryRes.status).toBe(200);
+      expect(queryRes.body.data.answer).toContain('Student Specific Homework 1');
+
+      // 3. Student requests to create a Leave request
+      clientTurn = 0;
+      AiService.setMockClient({
+        models: {
+          generateContent: jest.fn().mockImplementation(async () => {
+            clientTurn++;
+            if (clientTurn === 1) {
+              return {
+                functionCalls: [
+                  {
+                    name: 'propose_create_request',
+                    args: {
+                      requestType: 'LEAVE',
+                      title: 'Medical Leave Application',
+                      description: 'Severe viral fever and doctor recommended bed rest',
+                      startDate: 'tomorrow',
+                    },
+                  },
+                ],
+              };
+            }
+            return {
+              text: 'I have prepared your medical leave request draft. Please review and confirm to submit.',
+            };
+          }),
+        },
+      } as any);
+
+      const proposeRes = await request(app)
+        .post('/api/v1/ai/chat')
+        .set(studentAuthHeader)
+        .send({ message: 'I need to apply for sick leave for tomorrow' });
+
+      expect(proposeRes.status).toBe(200);
+      expect(proposeRes.body.data.proposal).toBeDefined();
+      const actionId = proposeRes.body.data.proposal.actionId;
+      expect(actionId).toBeDefined();
+      expect(proposeRes.body.data.proposal.actionType).toBe('CREATE_REQUEST');
+
+      // Verify NO request was created in DB prior to confirmation
+      const beforeConfirm = await RequestModel.find({ requesterUserId: testStudentUser.id });
+      expect(beforeConfirm.length).toBe(0);
+
+      // 4. Student confirms the proposed action
+      const confirmRes = await request(app)
+        .post('/api/v1/ai/action/confirm')
+        .set(studentAuthHeader)
+        .send({ actionId, idempotencyKey: `idem-${actionId}` });
+
+      expect(confirmRes.status).toBe(200);
+      expect(confirmRes.body.data.status).toBe('EXECUTED');
+      expect(confirmRes.body.data.result.requestId).toBeDefined();
+
+      // 5. Verify authoritative database persistence in RequestModel
+      const afterConfirm = await RequestModel.findOne({ requesterUserId: testStudentUser.id });
+      expect(afterConfirm).not.toBeNull();
+      expect(afterConfirm?.requestType).toBe('LEAVE');
+      expect(afterConfirm?.status).toBe(RequestStatus.SUBMITTED);
+      expect(afterConfirm?.collegeId.toString()).toBe(testCollege.id);
+    });
+
+    it('Faculty: reads assigned-class information and creates an authorised request using faculty workflow', async () => {
+      // 1. Faculty reads assigned class info
+      let clientTurn = 0;
+      AiService.setMockClient({
+        models: {
+          generateContent: jest.fn().mockImplementation(async () => {
+            clientTurn++;
+            if (clientTurn === 1) {
+              return {
+                functionCalls: [
+                  {
+                    name: 'get_my_timetable',
+                    args: { day: 'monday' },
+                  },
+                ],
+              };
+            }
+            return {
+              text: 'You are scheduled to teach Data Structures on Monday from 09:00 to 10:00.',
+            };
+          }),
+        },
+      } as any);
+
+      const facultyAuthHeader = createTestAuthHeader({
+        role: AppRole.FACULTY,
+        userId: testFacultyUser.id,
+        departmentId: testDept.id,
+        collegeId: testCollege.id,
+      });
+
+      const ttRes = await request(app)
+        .post('/api/v1/ai/chat')
+        .set(facultyAuthHeader)
+        .send({ message: 'What is my teaching schedule on Monday?' });
+
+      expect(ttRes.status).toBe(200);
+      expect(ttRes.body.data.answer).toContain('Data Structures');
+
+      // 2. Faculty creates an authorised On-Duty request
+      clientTurn = 0;
+      AiService.setMockClient({
+        models: {
+          generateContent: jest.fn().mockImplementation(async () => {
+            clientTurn++;
+            if (clientTurn === 1) {
+              return {
+                functionCalls: [
+                  {
+                    name: 'propose_create_request',
+                    args: {
+                      requestType: 'ON_DUTY',
+                      title: 'Faculty Workshop Attendance',
+                      description: 'Attending State Level Technical Symposium on AI Systems',
+                      startDate: 'tomorrow',
+                    },
+                  },
+                ],
+              };
+            }
+            return {
+              text: 'I have drafted your on-duty permission request. Please review and confirm.',
+            };
+          }),
+        },
+      } as any);
+
+      const proposeRes = await request(app)
+        .post('/api/v1/ai/chat')
+        .set(facultyAuthHeader)
+        .send({ message: 'Apply for on duty permission for technical symposium tomorrow' });
+
+      expect(proposeRes.status).toBe(200);
+      expect(proposeRes.body.data.proposal).toBeDefined();
+      const actionId = proposeRes.body.data.proposal.actionId;
+
+      // Confirm the request
+      const confirmRes = await request(app)
+        .post('/api/v1/ai/action/confirm')
+        .set(facultyAuthHeader)
+        .send({ actionId });
+
+      expect(confirmRes.status).toBe(200);
+
+      // Verify persistence: Routed to HOD
+      const facultyReqDoc = await RequestModel.findOne({ requesterUserId: testFacultyUser.id });
+      expect(facultyReqDoc).not.toBeNull();
+      expect(facultyReqDoc?.requestType).toBe('ON_DUTY');
+      expect(facultyReqDoc?.targetRole).toBe(AppRole.HOD);
+      expect(facultyReqDoc?.status).toBe(RequestStatus.SUBMITTED);
+    });
+
+    it('HOD: accesses authorised department data and is scoped to their department', async () => {
+      // Create an assignment in CSE and another in a different department
+      const otherDept = await Department.create({
+        collegeId: testCollege._id,
+        name: 'Mechanical Engineering',
+        code: 'MECH',
+      });
+
+      await Assignment.create({
+        collegeId: testCollege._id,
+        departmentId: testDept._id,
+        courseId: testCourse._id,
+        academicYearId: testYear._id,
+        semesterId: testSem._id,
+        sectionId: testSec._id,
+        subjectId: testSub._id,
+        facultyAssignmentId: testFa._id,
+        facultyId: testFacultyUser._id,
+        facultyName: 'Prof. Alan Turing',
+        title: 'CSE Department Assignment',
+        description: 'Assignment for CSE',
+        assignmentType: AssignmentType.HOMEWORK,
+        dueDate: '2026-11-20',
+        dueTime: '23:59',
+        dueDateTime: new Date('2026-11-20T23:59:00.000Z'),
+        maximumMarks: 50,
+        status: AssignmentStatus.PUBLISHED,
+      });
+
+      await Assignment.create({
+        collegeId: testCollege._id,
+        departmentId: otherDept._id,
+        courseId: testCourse._id,
+        academicYearId: testYear._id,
+        semesterId: testSem._id,
+        sectionId: testSec._id,
+        subjectId: testSub._id,
+        facultyId: new mongoose.Types.ObjectId(),
+        facultyName: 'Prof. Mech',
+        title: 'MECH Department Assignment',
+        description: 'Assignment for MECH',
+        assignmentType: AssignmentType.HOMEWORK,
+        dueDate: '2026-11-20',
+        dueTime: '23:59',
+        dueDateTime: new Date('2026-11-20T23:59:00.000Z'),
+        maximumMarks: 50,
+        status: AssignmentStatus.PUBLISHED,
+      });
+
+      let clientTurn = 0;
+      AiService.setMockClient({
+        models: {
+          generateContent: jest.fn().mockImplementation(async () => {
+            clientTurn++;
+            if (clientTurn === 1) {
+              return {
+                functionCalls: [
+                  {
+                    name: 'get_my_assignments',
+                    args: {},
+                  },
+                ],
+              };
+            }
+            return {
+              text: 'Found 1 department assignment: CSE Department Assignment.',
+            };
+          }),
+        },
+      } as any);
+
+      const hodAuthHeader = createTestAuthHeader({
+        role: AppRole.HOD,
+        userId: testHodUser.id,
+        departmentId: testDept.id,
+        collegeId: testCollege.id,
+      });
+
+      const res = await request(app)
+        .post('/api/v1/ai/chat')
+        .set(hodAuthHeader)
+        .send({ message: 'List all assignments in my department' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.answer).toContain('CSE Department Assignment');
+      expect(res.body.data.answer).not.toContain('MECH Department Assignment');
+    });
+
+    it('College Admin: accesses authorised college-level information across all departments', async () => {
+      const adminUser = await User.create({
+        instituteId: 'ADM-COL-01',
+        name: 'Dr. College Administrator',
+        email: 'admin.col@ait.edu',
+        role: AppRole.COLLEGE_ADMIN,
+        collegeId: testCollege._id,
+        accountStatus: AccountStatus.ACTIVE,
+      });
+
+      let clientTurn = 0;
+      AiService.setMockClient({
+        models: {
+          generateContent: jest.fn().mockImplementation(async () => {
+            clientTurn++;
+            if (clientTurn === 1) {
+              return {
+                functionCalls: [
+                  {
+                    name: 'get_my_assignments',
+                    args: {},
+                  },
+                ],
+              };
+            }
+            return {
+              text: 'Overview of college-level assignments generated.',
+            };
+          }),
+        },
+      } as any);
+
+      const adminAuthHeader = createTestAuthHeader({
+        role: AppRole.COLLEGE_ADMIN,
+        userId: adminUser.id,
+        collegeId: testCollege.id,
+      });
+
+      const res = await request(app)
+        .post('/api/v1/ai/chat')
+        .set(adminAuthHeader)
+        .send({ message: 'Give me an overview of all assignments in the college' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.answer).toContain('college-level');
+    });
+
+    it('Cross-tenant and out-of-scope operations are strictly rejected with 403 Forbidden', async () => {
+      const otherCollege = await College.create({
+        name: 'Rival Polytechnic',
+        code: 'RIV',
+        address: '999 Far Away St',
+        email: 'info@rival.edu',
+        phone: '1112223334',
+        principal: 'Dr. Rival',
+      });
+
+      // User from otherCollege attempts to access testCollege AI chat
+      const crossTenantHeader = createTestAuthHeader({
+        role: AppRole.STUDENT,
+        userId: testStudentUser.id,
+        collegeId: otherCollege.id, // Belonging to other college
+      });
+
+      const res = await request(app)
+        .post('/api/v1/ai/chat')
+        .set(crossTenantHeader)
+        .send({ message: 'Hello AI' });
+
+      // Tenant middleware rejects mismatched college header
+      expect(res.status).toBe(403);
+    });
+
+    it('Tool Declarations: strictly filters tool declarations by authenticated user role', () => {
+      // 1. Student declarations
+      const studentDecls = getFunctionDeclarationsForRole(AppRole.STUDENT);
+      const studentToolNames = studentDecls.map((d: any) => d.name);
+      expect(studentToolNames).toContain('get_my_profile');
+      expect(studentToolNames).toContain('get_my_timetable');
+      expect(studentToolNames).toContain('get_my_assignments');
+      expect(studentToolNames).toContain('get_calendar_events');
+      expect(studentToolNames).toContain('get_my_attendance');
+      expect(studentToolNames).toContain('get_published_notes');
+      expect(studentToolNames).toContain('get_my_requests');
+      expect(studentToolNames).toContain('get_announcements');
+      expect(studentToolNames).toContain('propose_create_request');
+
+      // Student must NOT receive faculty/admin write/analytical tools
+      expect(studentToolNames).not.toContain('propose_create_assignment');
+      expect(studentToolNames).not.toContain('propose_create_calendar_event');
+      expect(studentToolNames).not.toContain('propose_respond_request');
+      expect(studentToolNames).not.toContain('get_incoming_requests');
+      expect(studentToolNames).not.toContain('get_reports_dashboard');
+
+      // 2. Faculty declarations
+      const facultyDecls = getFunctionDeclarationsForRole(AppRole.FACULTY);
+      const facultyToolNames = facultyDecls.map((d: any) => d.name);
+      expect(facultyToolNames).toContain('propose_create_assignment');
+      expect(facultyToolNames).toContain('propose_create_calendar_event');
+      expect(facultyToolNames).toContain('propose_create_request');
+      expect(facultyToolNames).toContain('get_incoming_requests');
+      expect(facultyToolNames).not.toContain('get_reports_dashboard');
+      expect(facultyToolNames).toContain('propose_respond_request');
+
+      // 3. HOD declarations
+      const hodDecls = getFunctionDeclarationsForRole(AppRole.HOD);
+      const hodToolNames = hodDecls.map((d: any) => d.name);
+      expect(hodToolNames).toContain('propose_respond_request');
+      expect(hodToolNames).toContain('get_incoming_requests');
+      expect(hodToolNames).toContain('get_reports_dashboard');
+      expect(hodToolNames).toContain('propose_create_request');
+
+      // 4. College Admin declarations
+      const adminDecls = getFunctionDeclarationsForRole(AppRole.COLLEGE_ADMIN);
+      const adminToolNames = adminDecls.map((d: any) => d.name);
+      expect(adminToolNames).toContain('propose_respond_request');
+      expect(adminToolNames).toContain('get_reports_dashboard');
+      expect(adminToolNames).toContain('propose_create_calendar_event');
+    });
+
+    it('HOD: reviews and approves student request via propose_respond_request workflow', async () => {
+      // 1. Create a student pending request
+      const existingReq = await RequestModel.create({
+        requestId: 'REQ-REV-101',
+        collegeId: testCollege._id,
+        departmentId: testDept._id,
+        requesterUserId: testStudentUser.id,
+        requesterName: testStudentUser.name,
+        requesterRole: AppRole.STUDENT,
+        targetRole: AppRole.HOD,
+        targetUserId: testHodUser.id,
+        targetName: 'Computer Science HOD',
+        requestType: 'LEAVE',
+        title: 'Medical Leave Application',
+        description: 'Need leave for 2 days due to fever',
+        status: RequestStatus.SUBMITTED,
+        history: [
+          {
+            status: RequestStatus.SUBMITTED,
+            changedBy: testStudentUser.id,
+            changedByName: testStudentUser.name,
+            note: 'Initial request submission',
+            timestamp: new Date(),
+          },
+        ],
+      });
+
+      let clientTurn = 0;
+      AiService.setMockClient({
+        models: {
+          generateContent: jest.fn().mockImplementation(async () => {
+            clientTurn++;
+            if (clientTurn === 1) {
+              return {
+                functionCalls: [
+                  {
+                    name: 'propose_respond_request',
+                    args: {
+                      requestId: existingReq.requestId,
+                      action: 'APPROVE',
+                      remarks: 'Approved by HOD. Take care.',
+                    },
+                    id: 'call_respond_101',
+                  },
+                ],
+              };
+            }
+            return {
+              text: 'I have prepared the approval decision for request REQ-REV-101. Please confirm to finalize.',
+            };
+          }),
+        },
+      } as any);
+
+      const hodAuthHeader = createTestAuthHeader({
+        role: AppRole.HOD,
+        userId: testHodUser.id,
+        name: testHodUser.name,
+        departmentId: testDept.id,
+        collegeId: testCollege.id,
+      });
+
+      const res = await request(app)
+        .post('/api/v1/ai/chat')
+        .set(hodAuthHeader)
+        .send({ message: `Approve request ${existingReq.requestId} with note Approved by HOD. Take care.` });
+
+      expect(res.status).toBe(200);
+      const proposal = res.body.data.proposal;
+      expect(proposal).toBeDefined();
+      expect(proposal.actionType).toBe('RESPOND_REQUEST');
+      expect(proposal.preview.requestId).toBe(existingReq.requestId);
+      expect(proposal.preview.action).toBe('APPROVED');
+
+      // Confirm the decision
+      const confirmRes = await request(app)
+        .post('/api/v1/ai/action/confirm')
+        .set(hodAuthHeader)
+        .send({ actionId: proposal.actionId });
+
+      expect(confirmRes.status).toBe(200);
+
+      // Verify DB update
+      const updatedReq = await RequestModel.findOne({ requestId: existingReq.requestId });
+      expect(updatedReq?.status).toBe(RequestStatus.APPROVED);
+      expect(updatedReq?.responseMessage).toBe('Approved by HOD. Take care.');
+
+      // Verify AuditLog
+      const auditLog = await AuditLog.findOne({
+        action: 'AI_RESPOND_REQUEST_CONFIRMED',
+        actorUserId: testHodUser.id,
+      });
+      expect(auditLog).not.toBeNull();
+    });
+
+    it('Student: receives access-denied error when attempting to invoke faculty write tools', async () => {
+      let clientTurn = 0;
+      AiService.setMockClient({
+        models: {
+          generateContent: jest.fn().mockImplementation(async () => {
+            clientTurn++;
+            if (clientTurn === 1) {
+              return {
+                functionCalls: [
+                  {
+                    name: 'propose_create_assignment',
+                    args: {
+                      title: 'Unauthorized Assignment',
+                      dueDate: '2026-12-01',
+                    },
+                    id: 'call_unauth_1',
+                  },
+                ],
+              };
+            }
+            return {
+              text: 'You are not authorized to create assignments as a student.',
+            };
+          }),
+        },
+      } as any);
+
+      const studentAuthHeader = createTestAuthHeader({
+        role: AppRole.STUDENT,
+        userId: testStudentUser.id,
+        name: testStudentUser.name,
+        departmentId: testDept.id,
+        collegeId: testCollege.id,
+      });
+
+      const res = await request(app)
+        .post('/api/v1/ai/chat')
+        .set(studentAuthHeader)
+        .send({ message: 'Create an assignment for my class' });
+
+      expect(res.status).toBe(200);
+      // Tool was blocked by backend role enforcement, so no proposal was created
+      expect(res.body.data.proposal).toBeUndefined();
+    });
+
+    it('Read Tools: get_my_profile, get_my_attendance, and get_announcements execute cleanly', async () => {
+      // 1. Profile tool
+      let clientTurn = 0;
+      AiService.setMockClient({
+        models: {
+          generateContent: jest.fn().mockImplementation(async () => {
+            clientTurn++;
+            if (clientTurn === 1) {
+              return {
+                functionCalls: [
+                  {
+                    name: 'get_my_profile',
+                    args: {},
+                    id: 'call_prof_test',
+                  },
+                ],
+              };
+            }
+            return {
+              text: 'Profile details: Ada Lovelace, Computer Science Department.',
+            };
+          }),
+        },
+      } as any);
+
+      const studentAuthHeader = createTestAuthHeader({
+        role: AppRole.STUDENT,
+        userId: testStudentUser.id,
+        name: testStudentUser.name,
+        departmentId: testDept.id,
+        collegeId: testCollege.id,
+      });
+
+      const profileRes = await request(app)
+        .post('/api/v1/ai/chat')
+        .set(studentAuthHeader)
+        .send({ message: 'Who am I and what is my academic profile?' });
+
+      expect(profileRes.status).toBe(200);
+      expect(profileRes.body.data.answer).toContain('Ada Lovelace');
+
+      // 2. Announcements tool
+      clientTurn = 0;
+      AiService.setMockClient({
+        models: {
+          generateContent: jest.fn().mockImplementation(async () => {
+            clientTurn++;
+            if (clientTurn === 1) {
+              return {
+                functionCalls: [
+                  {
+                    name: 'get_announcements',
+                    args: { limit: 5 },
+                    id: 'call_ann_test',
+                  },
+                ],
+              };
+            }
+            return {
+              text: 'No new college announcements at this time.',
+            };
+          }),
+        },
+      } as any);
+
+      const annRes = await request(app)
+        .post('/api/v1/ai/chat')
+        .set(studentAuthHeader)
+        .send({ message: 'Are there any announcements?' });
+
+      expect(annRes.status).toBe(200);
+      expect(annRes.body.data.answer).toBeDefined();
     });
   });
 });

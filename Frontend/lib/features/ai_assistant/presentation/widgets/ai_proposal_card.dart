@@ -26,12 +26,24 @@ class AiProposalCard extends StatelessWidget {
     final preview = (proposal['preview'] as Map<String, dynamic>?) ?? {};
     final status = message.actionStatus ?? 'PENDING';
     final isAssignment = actionType == 'CREATE_ASSIGNMENT';
+    final isRequest = actionType == 'CREATE_REQUEST';
+    final isRespond = actionType == 'RESPOND_REQUEST';
 
     // Color accents
-    final accentColor = isAssignment ? const Color(0xFF0052CC) : const Color(0xFF7C3AED);
+    final accentColor = isAssignment
+        ? const Color(0xFF0052CC)
+        : isRequest
+            ? const Color(0xFF0D9488)
+            : isRespond
+                ? const Color(0xFFD97706)
+                : const Color(0xFF7C3AED);
     final badgeBg = isAssignment
         ? (isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF))
-        : (isDark ? const Color(0xFF2E1065) : const Color(0xFFF5F3FF));
+        : isRequest
+            ? (isDark ? const Color(0xFF134E4A) : const Color(0xFFF0FDFA))
+            : isRespond
+                ? (isDark ? const Color(0xFF451A03) : const Color(0xFFFFFBEB))
+                : (isDark ? const Color(0xFF2E1065) : const Color(0xFFF5F3FF));
 
     return Container(
       margin: const EdgeInsets.only(top: 12),
@@ -66,14 +78,26 @@ class AiProposalCard extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  isAssignment ? LucideIcons.bookOpen : LucideIcons.calendar,
+                  isAssignment
+                      ? LucideIcons.bookOpen
+                      : isRequest
+                          ? LucideIcons.fileText
+                          : isRespond
+                              ? LucideIcons.checkSquare
+                              : LucideIcons.calendar,
                   size: 18,
                   color: accentColor,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    isAssignment ? 'Assignment Draft Proposal' : 'Calendar Event Proposal',
+                    isAssignment
+                        ? 'Assignment Draft Proposal'
+                        : isRequest
+                            ? 'Request Draft Proposal'
+                            : isRespond
+                                ? 'Request Review Decision'
+                                : 'Calendar Event Proposal',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -136,6 +160,86 @@ class AiProposalCard extends StatelessWidget {
                       icon: LucideIcons.award,
                       label: 'Maximum Marks',
                       value: '${preview['maximumMarks']} marks',
+                      isDark: isDark,
+                    ),
+                  ],
+                ] else if (isRequest) ...[
+                  if (preview['requestType'] != null) ...[
+                    _buildMetaRow(
+                      context,
+                      icon: LucideIcons.tag,
+                      label: 'Request Category',
+                      value: preview['requestType'] as String,
+                      isDark: isDark,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (preview['targetName'] != null) ...[
+                    _buildMetaRow(
+                      context,
+                      icon: LucideIcons.userCheck,
+                      label: 'Routed Authority',
+                      value: preview['targetName'] as String,
+                      isDark: isDark,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (preview['startDate'] != null) ...[
+                    _buildMetaRow(
+                      context,
+                      icon: LucideIcons.calendar,
+                      label: 'Requested Date',
+                      value: '${preview['startDate']}${preview['endDate'] != null && preview['endDate'] != preview['startDate'] ? ' to ' + preview['endDate'] : ''}',
+                      isDark: isDark,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (preview['reason'] != null) ...[
+                    _buildMetaRow(
+                      context,
+                      icon: LucideIcons.info,
+                      label: 'Specific Reason',
+                      value: preview['reason'] as String,
+                      isDark: isDark,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (preview['description'] != null) ...[
+                    _buildMetaRow(
+                      context,
+                      icon: LucideIcons.alignLeft,
+                      label: 'Details',
+                      value: preview['description'] as String,
+                      isDark: isDark,
+                    ),
+                  ],
+                ] else if (isRespond) ...[
+                  if (preview['requestId'] != null) ...[
+                    _buildMetaRow(
+                      context,
+                      icon: LucideIcons.hash,
+                      label: 'Request ID',
+                      value: preview['requestId'] as String,
+                      isDark: isDark,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (preview['action'] != null) ...[
+                    _buildMetaRow(
+                      context,
+                      icon: LucideIcons.checkCheck,
+                      label: 'Review Decision',
+                      value: preview['action'] as String,
+                      isDark: isDark,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (preview['message'] != null) ...[
+                    _buildMetaRow(
+                      context,
+                      icon: LucideIcons.messageSquare,
+                      label: 'Reviewer Remarks',
+                      value: preview['message'] as String,
                       isDark: isDark,
                     ),
                   ],

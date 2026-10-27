@@ -42,7 +42,14 @@ class FakePrompt40AssignmentsRepository implements AssignmentsRepository {
 
   @override
   Future<AssignmentModel> createAssignment({
-    required String facultyAssignmentId,
+    String? facultyAssignmentId,
+    String? scope,
+    String? departmentId,
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? sectionId,
+    String? subjectId,
     required String title,
     required String description,
     List<String>? questions,

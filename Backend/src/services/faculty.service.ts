@@ -6,6 +6,9 @@ import { College } from '../models/college.model';
 import { Department } from '../models/department.model';
 import { Invitation } from '../models/invitation.model';
 import { AuditLog } from '../models/auditLog.model';
+import { WorkspaceMembership } from '../models/workspaceMembership.model';
+import { WorkspaceRoleAssignment } from '../models/workspaceRoleAssignment.model';
+import { logger } from '../utils/logger';
 import { AppRole } from '../constants/roles';
 import { AccountStatus, CollegeStatus, DepartmentStatus } from '../constants/status';
 import { ApiError } from '../utils/apiError';
@@ -148,11 +151,33 @@ export class FacultyService {
         metadata: input.metadata || null,
       });
     } catch (err: any) {
-      // Compensating Rollback: Remove User and Invitation to prevent orphan states
-      await Promise.all([
-        User.findByIdAndDelete(user._id),
-        Invitation.findByIdAndDelete(invitationResult.invitation.id),
-      ]);
+      // Safe Compensating Rollback: NEVER delete pre-existing global user accounts!
+      const rollbackPromises: Promise<any>[] = [];
+
+      if (invitationResult.isNewUser) {
+        // Only delete the User document if it was newly created during this provisioning call
+        rollbackPromises.push(User.findByIdAndDelete(user._id).catch(() => {}));
+      }
+
+      // Clean up the invitation created for this specific college attempt
+      if (invitationResult.invitation?.id) {
+        rollbackPromises.push(Invitation.findByIdAndDelete(invitationResult.invitation.id).catch(() => {}));
+      }
+
+      // If a new membership was established for this college during this attempt, clean it up
+      if (invitationResult.isNewMembership && invitationResult.membershipId) {
+        rollbackPromises.push(WorkspaceMembership.findByIdAndDelete(invitationResult.membershipId).catch(() => {}));
+        rollbackPromises.push(WorkspaceRoleAssignment.deleteMany({ membershipId: invitationResult.membershipId }).catch(() => {}));
+      }
+
+      await Promise.all(rollbackPromises);
+
+      logger.warn(`Safe compensating rollback completed for faculty provisioning failure: ${err?.message}`, {
+        userId: user._id?.toString(),
+        collegeId: dept.collegeId?.toString(),
+        isNewUser: invitationResult.isNewUser,
+      });
+
       if (err.code === 11000) {
         throw ApiError.conflict('Faculty profile with this userId or employeeId already exists');
       }

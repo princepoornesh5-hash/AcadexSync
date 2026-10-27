@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticateRequest } from '../../middleware/auth.middleware';
 import { requireCollegeScope } from '../../middleware/tenant.middleware';
 import { validateBody } from '../../middleware/validate.middleware';
-import { createRateLimiter } from '../../middleware/rateLimiter.middleware';
+import { createRateLimiter, createConcurrencyLimiter } from '../../middleware/rateLimiter.middleware';
 import { env } from '../../config/env';
 import { AiController } from '../../controllers/ai.controller';
 import {
@@ -17,19 +17,46 @@ const router = Router();
 router.use(authenticateRequest);
 router.use(requireCollegeScope);
 
-// AI-specific rate limiter (configurable per minute)
+// AI-specific rate limiter (strictly scoped per authenticated user principal)
 const aiRateLimiter = createRateLimiter({
   windowMs: 60 * 1000, // 1 minute
   maxRequests: env.AI_RATE_LIMIT_MAX,
-  message: 'Too many AI requests. Please wait a minute before asking another question.',
+  code: 'APP_RATE_LIMIT_EXCEEDED',
+  message: "You've sent several requests. Please wait a moment before trying again.",
+  keyGenerator: (req) => {
+    return (req as any).user?.id
+      ? `ai:user:${(req as any).user.id}`
+      : `ai:ip:${(req.headers['x-forwarded-for'] as string) || req.ip || 'unknown-client'}`;
+  },
+});
+
+// AI concurrency limiter (strictly 1 active response per authenticated user)
+const aiConcurrencyLimiter = createConcurrencyLimiter({
+  maxConcurrent: 1,
+  message: 'A response is already in progress. Please wait for it to complete.',
+  keyGenerator: (req) => {
+    return (req as any).user?.id
+      ? `ai:conc:${(req as any).user.id}`
+      : `ai:conc:ip:${(req.headers['x-forwarded-for'] as string) || req.ip || 'unknown-client'}`;
+  },
 });
 
 // Authenticated AI chat endpoint with tool calling
 router.post(
   '/chat',
+  aiConcurrencyLimiter,
   aiRateLimiter,
   validateBody(chatRequestSchema),
   AiController.chat
+);
+
+// Authenticated real-time streaming AI chat endpoint (Server-Sent Events)
+router.post(
+  '/chat/stream',
+  aiConcurrencyLimiter,
+  aiRateLimiter,
+  validateBody(chatRequestSchema),
+  AiController.chatStream
 );
 
 // Explicit user confirmation endpoint for pending AI write actions

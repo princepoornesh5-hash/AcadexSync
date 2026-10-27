@@ -12,6 +12,8 @@ export interface IWorkspaceRoleAssignment extends Document {
   scope?: Record<string, unknown> | null;
   assignedAt: Date;
   revokedAt?: Date | null;
+  effectiveStartDate: Date;
+  effectiveEndDate?: Date | null;
   assignedBy?: string | null;
   revokedBy?: string | null;
   statusReason?: string | null;
@@ -51,6 +53,8 @@ const WorkspaceRoleAssignmentSchema = new Schema<IWorkspaceRoleAssignment>(
     scope: { type: Schema.Types.Mixed, default: null },
     assignedAt: { type: Date, default: Date.now },
     revokedAt: { type: Date, default: null },
+    effectiveStartDate: { type: Date, default: Date.now },
+    effectiveEndDate: { type: Date, default: null },
     assignedBy: { type: String, default: null },
     revokedBy: { type: String, default: null },
     statusReason: { type: String, default: null, trim: true },
@@ -83,6 +87,19 @@ const WorkspaceRoleAssignmentSchema = new Schema<IWorkspaceRoleAssignment>(
     },
   }
 );
+
+// Date range validation guard
+WorkspaceRoleAssignmentSchema.pre('validate', function (next) {
+  if (this.effectiveStartDate && this.effectiveEndDate) {
+    if (new Date(this.effectiveEndDate).getTime() < new Date(this.effectiveStartDate).getTime()) {
+      return next(new Error('effectiveEndDate cannot be earlier than effectiveStartDate'));
+    }
+  }
+  if (!this.effectiveStartDate && this.assignedAt) {
+    this.effectiveStartDate = this.assignedAt;
+  }
+  next();
+});
 
 // Prevent duplicate role assignments with identical scope on the same membership
 WorkspaceRoleAssignmentSchema.index(

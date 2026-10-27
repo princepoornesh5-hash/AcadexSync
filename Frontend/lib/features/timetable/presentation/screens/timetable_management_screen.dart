@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/presentation/widgets/acadex_page_header.dart';
+import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_badge.dart';
@@ -259,49 +260,46 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
       orElse: () => null,
     );
 
-    return Material(
-      color: Colors.transparent,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1600),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-                // Header with Create Timetable Action
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: isMobile ? 8 : 16),
-                  child: AcadexPageHeader(
-                    title: 'Manage Timetable',
-                    subtitle: isMobile ? null : 'Create master timetable containers, configure periods & breaks, and manage live published schedules.',
-                    actions: [
-                      if (canCreate) ...[
-                        if (hasContainers && activeDraft != null) ...[
-                          AcadexButton(
-                            label: 'Open Designer',
-                            icon: LucideIcons.layoutGrid,
-                            variant: AcadexButtonVariant.secondary,
-                            size: isMobile ? AcadexButtonSize.sm : AcadexButtonSize.md,
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => TimetableDesignerScreen(timetableId: activeDraft.id),
-                                ),
-                              );
-                            },
+    return AcadexPageContainer(
+      scrollable: false,
+      maxWidth: 1600,
+      horizontalPadding: 0,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header with Create Timetable Action
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: isMobile ? 8 : 16),
+            child: AcadexPageHeader(
+              title: 'Manage Timetable',
+              subtitle: isMobile ? null : 'Create master timetable containers, configure periods & breaks, and manage live published schedules.',
+              actions: [
+                if (canCreate) ...[
+                  if (hasContainers && activeDraft != null)
+                    AcadexButton(
+                      label: 'Open Designer',
+                      icon: LucideIcons.layoutGrid,
+                      variant: AcadexButtonVariant.secondary,
+                      size: isMobile ? AcadexButtonSize.sm : AcadexButtonSize.md,
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => TimetableDesignerScreen(timetableId: activeDraft.id),
                           ),
-                          const SizedBox(width: 8),
-                        ],
-                        AcadexButton(
-                          label: 'Create Timetable',
-                          icon: LucideIcons.sparkles,
-                          variant: AcadexButtonVariant.primary,
-                          size: isMobile ? AcadexButtonSize.sm : AcadexButtonSize.md,
-                          onPressed: () => _openCreateTimetable(),
-                        ),
-                      ],
-                    ],
+                        );
+                      },
+                    ),
+                  AcadexButton(
+                    label: 'Create Timetable',
+                    icon: LucideIcons.sparkles,
+                    variant: AcadexButtonVariant.primary,
+                    size: isMobile ? AcadexButtonSize.sm : AcadexButtonSize.md,
+                    onPressed: () => _openCreateTimetable(),
                   ),
-                ),
+                ],
+              ],
+            ),
+          ),
 
                 // Top View Switcher (Master Timetable Containers vs Class Slots)
                 Padding(
@@ -391,9 +389,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                         ),
                 ),
               ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
@@ -523,6 +519,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                     children: [
                       // Status Badge & Version
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           _buildStatusBadge(container.status, isDark),
                           const SizedBox(width: 8),
@@ -541,12 +538,17 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                           ),
                         ],
                       ),
-
+                      const SizedBox(width: 8),
                       // Timing Mode Tag
-                      Text(
-                        '${container.activeDays.length} Active Days • ${container.timingMode.displayName}',
-                        style: AcadexTypography.caption(
-                          color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      Flexible(
+                        child: Text(
+                          '${container.activeDays.length} Active Days • ${container.timingMode.displayName}',
+                          style: AcadexTypography.caption(
+                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.end,
                         ),
                       ),
                     ],
@@ -628,6 +630,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
     TimetableContainerModel container,
     bool isDark,
   ) {
+    final isMobile = MediaQuery.of(context).size.width < 768;
     if (container.status == TimetableStatus.draft) {
       return Align(
         alignment: Alignment.centerRight,
@@ -679,7 +682,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
                 );
               },
               icon: const Icon(LucideIcons.edit3, size: 16, color: Colors.white),
-              label: const Text('Continue Editing', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              label: Text(isMobile ? 'Edit' : 'Continue Editing', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
               style: ElevatedButton.styleFrom(backgroundColor: AcadexColors.primary),
             ),
           ],
@@ -715,7 +718,7 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
             OutlinedButton.icon(
               onPressed: () => _handleCreateDraftOrEditVersion(context, ref, container),
               icon: const Icon(LucideIcons.copy, size: 16),
-              label: const Text('Edit Draft / New Version'),
+              label: Text(isMobile ? 'Edit Draft' : 'Edit Draft / New Version'),
             ),
             ElevatedButton.icon(
               onPressed: () {
@@ -1193,10 +1196,11 @@ class _TimetableManagementScreenState extends ConsumerState<TimetableManagementS
   // =========================================================================
   Widget _buildFilterBar(BuildContext context, WidgetRef ref, AppRole role, TimetableFilterState filters) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 20, vertical: 8),
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: AcadexRadius.borderRadiusLg,

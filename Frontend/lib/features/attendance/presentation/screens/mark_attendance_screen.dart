@@ -315,10 +315,9 @@ class _MarkAttendanceScreenState extends ConsumerState<MarkAttendanceScreen> {
         },
         child: Scaffold(
           backgroundColor: isDark ? AcadexColors.darkCanvas : AcadexColors.canvas,
-          body: Column(
-            children: [
-              Expanded(child: bodyContent),
-            ],
+          body: SafeArea(
+            bottom: false,
+            child: bodyContent,
           ),
         ),
       );

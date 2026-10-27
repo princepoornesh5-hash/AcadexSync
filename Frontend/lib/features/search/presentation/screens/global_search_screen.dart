@@ -11,18 +11,29 @@ import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_chip.dart';
 
 class GlobalSearchScreen extends ConsumerStatefulWidget {
-  const GlobalSearchScreen({super.key});
+  final String? initialQuery;
+
+  const GlobalSearchScreen({super.key, this.initialQuery});
 
   @override
   ConsumerState<GlobalSearchScreen> createState() => _GlobalSearchScreenState();
 }
 
 class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
-  final TextEditingController _searchController = TextEditingController();
+  late final TextEditingController _searchController;
 
   @override
   void initState() {
     super.initState();
+    final initial = widget.initialQuery ?? '';
+    _searchController = TextEditingController(text: initial);
+    if (initial.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(searchQueryProvider.notifier).state = initial;
+        ref.read(recentSearchesProvider.notifier).addSearch(initial);
+      });
+    }
     _searchController.addListener(() {
       ref.read(searchQueryProvider.notifier).state = _searchController.text;
     });
@@ -37,7 +48,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   void _onResultTapped(SearchResult result) {
     ref.read(recentSearchesProvider.notifier).addSearch(result.title);
     if (result.destinationRoute.isNotEmpty) {
-      context.push(result.destinationRoute);
+      context.go(result.destinationRoute);
     }
   }
 
@@ -46,14 +57,17 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     
     final filters = [
       null,
+      SearchResultType.navigation,
       SearchResultType.student,
       SearchResultType.faculty,
       SearchResultType.department,
       SearchResultType.subject,
+      SearchResultType.course,
     ];
 
     String getFilterName(SearchResultType? type) {
       if (type == null) return "All";
+      if (type == SearchResultType.navigation) return "Modules";
       final text = type.toString().split('.').last;
       return text[0].toUpperCase() + text.substring(1);
     }
@@ -258,8 +272,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                       },
                       loading: () => const AcadexLoadingState(message: "Searching campus records..."),
                       error: (err, stack) => Center(
-                        child: AcadexErrorState(
-                          message: 'Error executing search: $err',
+                        child: AcadexErrorState.fromError(
+                          error: err,
+                          title: 'Search Restricted or Unavailable',
                           onRetry: () => ref.refresh(searchResultsProvider),
                         ),
                       ),

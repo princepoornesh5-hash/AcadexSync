@@ -605,7 +605,7 @@ void main() {
       expect(find.text('User Management'), findsOneWidget);
 
       // Institutional Metrics
-      expect(find.text('8'), findsOneWidget); // Total Departments
+      expect(find.descendant(of: find.byType(GridView), matching: find.text('8')), findsOneWidget); // Total Departments
       expect(find.text('3200'), findsOneWidget); // Total Students
       expect(find.text('160'), findsOneWidget); // Total Faculty
     });

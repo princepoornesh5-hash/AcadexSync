@@ -1,6 +1,10 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export type PendingActionType = 'CREATE_ASSIGNMENT' | 'CREATE_CALENDAR_EVENT';
+export type PendingActionType =
+  | 'CREATE_ASSIGNMENT'
+  | 'CREATE_CALENDAR_EVENT'
+  | 'CREATE_REQUEST'
+  | 'RESPOND_REQUEST';
 export type PendingActionStatus = 'PENDING' | 'EXECUTED' | 'CANCELLED' | 'EXPIRED';
 
 export interface IPendingAction extends Document {
@@ -30,7 +34,7 @@ const PendingActionSchema = new Schema<IPendingAction>(
     actionType: {
       type: String,
       required: true,
-      enum: ['CREATE_ASSIGNMENT', 'CREATE_CALENDAR_EVENT'],
+      enum: ['CREATE_ASSIGNMENT', 'CREATE_CALENDAR_EVENT', 'CREATE_REQUEST', 'RESPOND_REQUEST'],
       index: true,
     },
     status: {

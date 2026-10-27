@@ -264,6 +264,9 @@ export class TeachingAuthorizationService {
       return;
     }
     if (roleUpper === 'FACULTY') {
+      if (assignment.facultyId && user.id && assignment.facultyId.toString() === user.id.toString()) {
+        return;
+      }
       if (assignment.facultyAssignmentId) {
         await this.assertFacultyAssignmentAccess(collegeId, user, assignment.facultyAssignmentId, 'this assignment');
         return;

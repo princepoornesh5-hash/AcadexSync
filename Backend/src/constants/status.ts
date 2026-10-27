@@ -13,6 +13,22 @@ export enum MembershipStatus {
   REVOKED = 'revoked',
   DEACTIVATED = 'deactivated',
   INACTIVE = 'inactive',
+  TRANSFERRED = 'transferred',
+  COMPLETED = 'completed',
+}
+
+export enum MembershipType {
+  STUDENT = 'student',
+  FACULTY = 'faculty',
+  STAFF = 'staff',
+  ADMINISTRATOR = 'administrator',
+}
+
+export enum TransferCreditStatus {
+  PENDING = 'pending',
+  VERIFIED = 'verified',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
 }
 
 export enum RoleAssignmentStatus {

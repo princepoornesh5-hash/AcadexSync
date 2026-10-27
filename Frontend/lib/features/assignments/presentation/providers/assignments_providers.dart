@@ -129,7 +129,14 @@ class AssignmentActionNotifier extends StateNotifier<AssignmentActionState> {
   AssignmentsRepository get _repo => _ref.read(assignmentsRepositoryProvider);
 
   Future<AssignmentModel?> createAssignment({
-    required String facultyAssignmentId,
+    String? facultyAssignmentId,
+    String? scope,
+    String? departmentId,
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? sectionId,
+    String? subjectId,
     required String title,
     required String description,
     List<String>? questions,
@@ -144,6 +151,13 @@ class AssignmentActionNotifier extends StateNotifier<AssignmentActionState> {
     try {
       final created = await _repo.createAssignment(
         facultyAssignmentId: facultyAssignmentId,
+        scope: scope,
+        departmentId: departmentId,
+        courseId: courseId,
+        academicYearId: academicYearId,
+        semesterId: semesterId,
+        sectionId: sectionId,
+        subjectId: subjectId,
         title: title,
         description: description,
         questions: questions,

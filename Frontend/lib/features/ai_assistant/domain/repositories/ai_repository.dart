@@ -1,4 +1,5 @@
 import '../models/ai_response.dart';
+import '../models/ai_stream_event.dart';
 
 abstract class AiRepository {
   Future<String> sendMessage({
@@ -7,6 +8,12 @@ abstract class AiRepository {
   });
 
   Future<AiResponse> sendChatMessage({
+    required String query,
+    required Map<String, dynamic> context,
+    List<Map<String, String>>? history,
+  });
+
+  Stream<AiStreamEvent> streamChatMessage({
     required String query,
     required Map<String, dynamic> context,
     List<Map<String, String>>? history,

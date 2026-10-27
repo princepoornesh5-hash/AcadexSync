@@ -37,6 +37,7 @@ export interface HodDashboardContext {
   departmentCode: string;
   designation?: string | null;
   managedScope?: string;
+  academicYearName?: string | null;
 }
 
 export interface CollegeAdminDashboardContext {
@@ -44,6 +45,7 @@ export interface CollegeAdminDashboardContext {
   collegeName: string;
   collegeCode: string;
   administrativeScope?: string;
+  academicYearName?: string | null;
 }
 
 export interface SuperAdminDashboardContext {
@@ -82,6 +84,10 @@ export interface HodDashboardSummary {
   pendingDepartmentRequests: number;
   pendingAssessmentsCount: number;
   pendingAttendanceCount: number;
+  coursesCount?: number;
+  sectionsCount?: number;
+  subjectsCount?: number;
+  attendancePercentage?: number | null;
 }
 
 export interface CollegeAdminDashboardSummary {
@@ -91,6 +97,9 @@ export interface CollegeAdminDashboardSummary {
   pendingRequestsCount: number;
   activeAnnouncementsCount: number;
   activeAcademicYearsCount: number;
+  coursesCount?: number;
+  sectionsCount?: number;
+  attendancePercentage?: number | null;
 }
 
 export interface SuperAdminDashboardSummary {

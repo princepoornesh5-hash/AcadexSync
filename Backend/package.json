@@ -14,7 +14,8 @@
     "create-super-admin": "ts-node src/scripts/create-super-admin.ts",
     "seed:svgp": "ts-node src/scripts/seed-svgp-demo.ts",
     "seed:svgp:reset": "ts-node src/scripts/seed-svgp-demo.ts --reset",
-    "test:gemini-smoke": "ts-node src/scripts/gemini-smoke-test.ts"
+    "test:gemini-smoke": "ts-node src/scripts/gemini-smoke-test.ts",
+    "test:gemini-stream-smoke": "ts-node src/scripts/gemini-stream-smoke-test.ts"
   },
   "keywords": [
     "acadex",

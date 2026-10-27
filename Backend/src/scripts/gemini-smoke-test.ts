@@ -37,14 +37,7 @@ async function runSmokeTest(): Promise<void> {
     process.exit(1);
   }
 
-  const maskedKey =
-    env.GEMINI_API_KEY.length > 8
-      ? `${env.GEMINI_API_KEY.substring(0, 4)}...${env.GEMINI_API_KEY.substring(
-          env.GEMINI_API_KEY.length - 4
-        )} (${env.GEMINI_API_KEY.length} chars)`
-      : '*** (too short)';
-
-  console.log(`    - GEMINI_API_KEY:    ${maskedKey}`);
+  console.log('    - GEMINI_API_KEY:    [CONFIGURED]');
   console.log('\n[2] Initializing @google/genai SDK Client...');
 
   try {
@@ -76,7 +69,10 @@ async function runSmokeTest(): Promise<void> {
     const status = error.status || error.code || 'UNKNOWN';
     console.error(`Status Code: ${status}`);
 
-    const rawMsg = error.message || '';
+    const rawMsg = error.message || String(error);
+    const safeMsg = env.GEMINI_API_KEY
+      ? rawMsg.split(env.GEMINI_API_KEY).join('[REDACTED]')
+      : rawMsg;
     if (
       rawMsg.includes('API_KEY_INVALID') ||
       rawMsg.includes('API key not valid') ||
@@ -95,10 +91,10 @@ async function runSmokeTest(): Promise<void> {
         `Reason: Model "${env.GEMINI_MODEL}" was not found or is not supported by your API key.`
       );
       console.error(
-        'Try setting GEMINI_MODEL=gemini-2.0-flash or gemini-1.5-flash in Backend/.env.'
+        'Try setting GEMINI_MODEL=gemini-3.5-flash-lite in Backend/.env (confirmed available for new API keys).'
       );
     } else {
-      console.error(`Reason: ${rawMsg || 'Unknown upstream communication error'}`);
+      console.error(`Reason: ${safeMsg || 'Unknown upstream communication error'}`);
     }
     console.error('----------------------------------------------------\n');
     process.exit(1);

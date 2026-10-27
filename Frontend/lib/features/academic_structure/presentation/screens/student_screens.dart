@@ -202,14 +202,10 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
         children: [
           // Header
           if (isMobile) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: AcadexPageHeader(
-                    title: "Students",
-                    subtitle: "Direct directory & academic roster.",
-                  ),
-                ),
+            AcadexPageHeader(
+              title: "Students",
+              subtitle: "Direct directory & academic roster.",
+              actions: [
                 if (isStaff) ...[
                   IconButton(
                     icon: const Icon(LucideIcons.userCheck, size: 20),
@@ -289,82 +285,159 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
             secs: availableSections,
           ),
 
-          // Search Bar & Status Chips
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: "Search students by name or roll number...",
-                    prefixIcon: const Icon(LucideIcons.search, size: 18),
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    border: OutlineInputBorder(
+          // Search Bar & Status Chips / Actions
+          if (isMobile) ...[
+            TextField(
+              decoration: InputDecoration(
+                hintText: "Search by name or roll number...",
+                prefixIcon: const Icon(LucideIcons.search, size: 18),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: AcadexRadius.borderRadiusMd,
+                  borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                ),
+              ),
+              onChanged: (v) {
+                setState(() => _searchQuery = v);
+                _syncFilters();
+              },
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                // Status Filter
+                PopupMenuButton<String?>(
+                  tooltip: "Filter by Status",
+                  initialValue: _statusFilter,
+                  onSelected: (val) => setState(() => _statusFilter = val),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
                       borderRadius: AcadexRadius.borderRadiusMd,
-                      borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                      border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(LucideIcons.filter, size: 16, color: _statusFilter != null ? AcadexColors.primary : AcadexColors.inkMuted),
+                        const SizedBox(width: 6),
+                        Text(
+                          _statusFilter == null
+                              ? "All Status"
+                              : _statusFilter == 'active'
+                                  ? "Active"
+                                  : _statusFilter == 'pending_activation'
+                                      ? "Pending"
+                                      : _statusFilter == 'on_leave'
+                                          ? "On Leave"
+                                          : "Alumni",
+                          style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ],
                     ),
                   ),
-                  onChanged: (v) {
-                    setState(() => _searchQuery = v);
-                    _syncFilters();
-                  },
+                  itemBuilder: (ctx) => [
+                    const PopupMenuItem(value: null, child: Text("All Status")),
+                    const PopupMenuItem(value: 'active', child: Text("Active")),
+                    const PopupMenuItem(value: 'pending_activation', child: Text("Pending Activation")),
+                    const PopupMenuItem(value: 'on_leave', child: Text("On Leave")),
+                    const PopupMenuItem(value: 'alumni', child: Text("Alumni / Graduated")),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 12),
-              // Status Filter
-              PopupMenuButton<String?>(
-                tooltip: "Filter by Status",
-                initialValue: _statusFilter,
-                onSelected: (val) => setState(() => _statusFilter = val),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                    borderRadius: AcadexRadius.borderRadiusMd,
-                    border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                const Spacer(),
+                if (isStaff) ...[
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AcadexColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    onPressed: () => context.push('/academics/students/new'),
+                    icon: const Icon(LucideIcons.plus, size: 16),
+                    label: const Text("Add Student"),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.filter, size: 16, color: _statusFilter != null ? AcadexColors.primary : AcadexColors.inkMuted),
-                      const SizedBox(width: 6),
-                      Text(
-                        _statusFilter == null
-                            ? "All Status"
-                            : _statusFilter == 'active'
-                                ? "Active"
-                                : _statusFilter == 'pending_activation'
-                                    ? "Pending"
-                                    : _statusFilter == 'on_leave'
-                                        ? "On Leave"
-                                        : "Alumni",
-                        style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ),
-                itemBuilder: (ctx) => [
-                  const PopupMenuItem(value: null, child: Text("All Status")),
-                  const PopupMenuItem(value: 'active', child: Text("Active")),
-                  const PopupMenuItem(value: 'pending_activation', child: Text("Pending Activation")),
-                  const PopupMenuItem(value: 'on_leave', child: Text("On Leave")),
-                  const PopupMenuItem(value: 'alumni', child: Text("Alumni / Graduated")),
                 ],
-              ),
-              if (isStaff) ...[
-                const SizedBox(width: 12),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AcadexColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  ),
-                  onPressed: () => context.push('/academics/students/new'),
-                  icon: const Icon(LucideIcons.plus, size: 16),
-                  label: const Text("Add Student"),
-                ),
               ],
-            ],
-          ),
+            ),
+          ] else ...[
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: "Search students by name or roll number...",
+                      prefixIcon: const Icon(LucideIcons.search, size: 18),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: AcadexRadius.borderRadiusMd,
+                        borderSide: BorderSide(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                      ),
+                    ),
+                    onChanged: (v) {
+                      setState(() => _searchQuery = v);
+                      _syncFilters();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Status Filter
+                PopupMenuButton<String?>(
+                  tooltip: "Filter by Status",
+                  initialValue: _statusFilter,
+                  onSelected: (val) => setState(() => _statusFilter = val),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                      borderRadius: AcadexRadius.borderRadiusMd,
+                      border: Border.all(color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(LucideIcons.filter, size: 16, color: _statusFilter != null ? AcadexColors.primary : AcadexColors.inkMuted),
+                        const SizedBox(width: 6),
+                        Text(
+                          _statusFilter == null
+                              ? "All Status"
+                              : _statusFilter == 'active'
+                                  ? "Active"
+                                  : _statusFilter == 'pending_activation'
+                                      ? "Pending"
+                                      : _statusFilter == 'on_leave'
+                                          ? "On Leave"
+                                          : "Alumni",
+                          style: AcadexTypography.caption().copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  itemBuilder: (ctx) => [
+                    const PopupMenuItem(value: null, child: Text("All Status")),
+                    const PopupMenuItem(value: 'active', child: Text("Active")),
+                    const PopupMenuItem(value: 'pending_activation', child: Text("Pending Activation")),
+                    const PopupMenuItem(value: 'on_leave', child: Text("On Leave")),
+                    const PopupMenuItem(value: 'alumni', child: Text("Alumni / Graduated")),
+                  ],
+                ),
+                if (isStaff) ...[
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AcadexColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    onPressed: () => context.push('/academics/students/new'),
+                    icon: const Icon(LucideIcons.plus, size: 16),
+                    label: const Text("Add Student"),
+                  ),
+                ],
+              ],
+            ),
+          ],
           const SizedBox(height: 14),
 
           // Clean Row-Based Student List
@@ -683,14 +756,19 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                         style: AcadexTypography.caption(
                           color: AcadexColors.primary,
                         ).copyWith(fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                AcadexBadge(
-                  label: statusLabel,
-                  variant: _getBadgeVariant(s),
+                Flexible(
+                  flex: 0,
+                  child: AcadexBadge(
+                    label: statusLabel,
+                    variant: _getBadgeVariant(s),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 const Icon(LucideIcons.chevronRight, size: 16, color: AcadexColors.inkMuted),
@@ -707,12 +785,10 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
     ThemeData theme, {
     bool isStaff = false,
   }) {
-    // Checkbox column is only meaningful for staff roles (HOD, College Admin,
-    // Super Admin) who have access to bulk-action operations (promote, transfer,
-    // graduate). Faculty users are read-only on this screen and must not see a
-    // non-functional selection affordance.
+    // Unwanted checkboxes removed: Directory is designed for clean roster viewing & profile access.
+    // Legitimate batch/import operations are handled via dedicated modal wizards (e.g. CSV import, promotion stepper).
     return AcadexDataTable(
-      showCheckboxColumn: isStaff,
+      showCheckboxColumn: false,
       columns: const ["Student", "Roll No.", "Status", "Actions"],
       rows: students.map((s) {
         final statusLabel = s.accountStatus == AccountStatus.pendingActivation
@@ -720,21 +796,6 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
             : s.lifecycleState.displayName;
 
         return DataRow(
-          selected: isStaff && _selectedIds.contains(s.id),
-          // onSelectChanged must be null when checkboxes are hidden; providing a
-          // non-null callback while showCheckboxColumn is false can still cause
-          // Flutter's DataTable to render a hidden-but-active interactive area.
-          onSelectChanged: isStaff
-              ? (selected) {
-                  setState(() {
-                    if (selected == true) {
-                      _selectedIds.add(s.id);
-                    } else {
-                      _selectedIds.remove(s.id);
-                    }
-                  });
-                }
-              : null,
           cells: [
             DataCell(
               Semantics(

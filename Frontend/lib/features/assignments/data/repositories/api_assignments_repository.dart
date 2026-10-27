@@ -81,7 +81,14 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
 
   @override
   Future<AssignmentModel> createAssignment({
-    required String facultyAssignmentId,
+    String? facultyAssignmentId,
+    String? scope,
+    String? departmentId,
+    String? courseId,
+    String? academicYearId,
+    String? semesterId,
+    String? sectionId,
+    String? subjectId,
     required String title,
     required String description,
     List<String>? questions,
@@ -93,8 +100,16 @@ class ApiAssignmentsRepository implements AssignmentsRepository {
     AssignmentStatus? status,
   }) async {
     try {
-      final payload = {
-        'facultyAssignmentId': facultyAssignmentId,
+      final payload = <String, dynamic>{
+        if (facultyAssignmentId != null && facultyAssignmentId.isNotEmpty)
+          'facultyAssignmentId': facultyAssignmentId,
+        if (scope != null && scope.isNotEmpty) 'scope': scope,
+        if (departmentId != null && departmentId.isNotEmpty) 'departmentId': departmentId,
+        if (courseId != null && courseId.isNotEmpty) 'courseId': courseId,
+        if (academicYearId != null && academicYearId.isNotEmpty) 'academicYearId': academicYearId,
+        if (semesterId != null && semesterId.isNotEmpty) 'semesterId': semesterId,
+        if (sectionId != null && sectionId.isNotEmpty) 'sectionId': sectionId,
+        if (subjectId != null && subjectId.isNotEmpty) 'subjectId': subjectId,
         'title': title,
         'description': description,
         'questions': questions ?? [],

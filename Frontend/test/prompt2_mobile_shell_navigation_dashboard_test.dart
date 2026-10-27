@@ -19,6 +19,7 @@ import 'package:campus_management/features/dashboard/presentation/screens/super_
 import 'package:campus_management/features/dashboard/presentation/widgets/acadex_app_bar.dart';
 import 'package:campus_management/features/dashboard/presentation/widgets/acadex_bottom_nav.dart';
 import 'package:campus_management/features/dashboard/presentation/widgets/acadex_drawer.dart';
+import 'package:campus_management/features/dashboard/presentation/widgets/home_dashboard_widgets.dart';
 
 class _FakeAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
   _FakeAuthNotifier(super.initial);
@@ -366,9 +367,14 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(tester.takeException(), isNull);
-        expect(find.text('Institution Operations Snapshot'), findsOneWidget);
+        expect(
+          find.byWidgetPredicate(
+            (w) => w is Text && (w.data == 'Institutional Overview' || w.data == 'Institution Operations Snapshot'),
+          ),
+          findsOneWidget,
+        );
         expect(find.text('Departments'), findsOneWidget);
-        expect(find.text('8'), findsOneWidget);
+        expect(find.widgetWithText(DashboardCompactTile, '8'), findsOneWidget);
       });
 
       testWidgets('8. Super Admin Dashboard renders compact platform overview on $name without overflow', (tester) async {

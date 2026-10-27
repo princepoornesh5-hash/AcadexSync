@@ -46,3 +46,4 @@ export * from './historicalAttendanceSummary.model';
 export * from './workspaceMembership.model';
 export * from './workspaceRoleAssignment.model';
 export * from './pendingAction.model';
+export * from './transferCredit.model';

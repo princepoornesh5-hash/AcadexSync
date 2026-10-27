@@ -2,8 +2,7 @@ import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../domain/models/search_models.dart';
 import '../../../academic_structure/data/repositories/mock_academic_repository.dart';
-// import '../../../attendance/data/repositories/mock_attendance_repository.dart';
-
+import '../../../../core/presentation/navigation/acadex_nav_item.dart';
 import '../../domain/repositories/search_repository.dart';
 
 class MockSearchRepository implements SearchRepository {
@@ -23,6 +22,12 @@ class MockSearchRepository implements SearchRepository {
     final lowercaseQuery = query.toLowerCase().trim();
     List<SearchResult> results = [];
 
+    // --- Search Navigation Destinations ---
+    if (filterType == null || filterType == SearchResultType.navigation) {
+      final navResults = AcadexNavigationService.searchNavigationDestinations(query, currentUser.role);
+      results.addAll(navResults);
+    }
+
     // --- Search Students ---
     if (filterType == null || filterType == SearchResultType.student) {
       final students = await mockAcademicRepo.getStudents();
@@ -38,9 +43,9 @@ class MockSearchRepository implements SearchRepository {
             results.add(SearchResult(
               id: student.id,
               title: student.name,
-              subtitle: student.rollNumber,
+              subtitle: 'Roll No: ${student.rollNumber}',
               type: SearchResultType.student,
-              destinationRoute: '/module/Students', // Assuming we navigate to student list/profile
+              destinationRoute: '/academics/students/${student.id}',
               relevanceScore: _calculateScore(student.name, student.rollNumber, lowercaseQuery),
             ));
           }
@@ -56,9 +61,9 @@ class MockSearchRepository implements SearchRepository {
           results.add(SearchResult(
             id: faculty.id,
             title: faculty.name,
-            subtitle: faculty.employeeId,
+            subtitle: 'Faculty ID: ${faculty.employeeId}',
             type: SearchResultType.faculty,
-            destinationRoute: '/module/Faculty',
+            destinationRoute: '/academics/faculty/${faculty.id}',
             relevanceScore: _calculateScore(faculty.name, faculty.employeeId, lowercaseQuery),
           ));
         }
@@ -73,9 +78,9 @@ class MockSearchRepository implements SearchRepository {
           results.add(SearchResult(
             id: subject.id,
             title: subject.name,
-            subtitle: subject.code,
+            subtitle: 'Subject Code: ${subject.code}',
             type: SearchResultType.subject,
-            destinationRoute: '/module/Subjects',
+            destinationRoute: '/academics/subjects/${subject.id}',
             relevanceScore: _calculateScore(subject.name, subject.code, lowercaseQuery),
           ));
         }
@@ -90,9 +95,9 @@ class MockSearchRepository implements SearchRepository {
           results.add(SearchResult(
             id: dept.id,
             title: dept.name,
-            subtitle: dept.code,
+            subtitle: 'Department Code: ${dept.code}',
             type: SearchResultType.department,
-            destinationRoute: '/module/Departments',
+            destinationRoute: '/academics/departments/${dept.id}',
             relevanceScore: _calculateScore(dept.name, dept.code, lowercaseQuery),
           ));
         }

@@ -2,6 +2,8 @@ import crypto from 'crypto';
 import { PendingAction, IPendingAction, PendingActionType } from '../models/pendingAction.model';
 import { AssignmentService } from './assignment.service';
 import { AcademicCalendarService } from './academicCalendar.service';
+import { RequestService } from './request.service';
+import { RequestStatus } from '../constants/request.constants';
 import { AssignmentStatus, AssignmentType } from '../constants/assignment.constants';
 import { ApiError } from '../utils/apiError';
 import { Logger } from '../utils/logger';
@@ -205,6 +207,50 @@ export class PendingActionService {
           endTime: eventDoc.endTime,
           location: eventDoc.location,
         };
+      } else if (lockedAction.actionType === 'CREATE_REQUEST') {
+        const draft = lockedAction.draftPayload;
+        const newRequest = await RequestService.createRequest(
+          {
+            requestType: draft.requestType,
+            title: draft.title,
+            description: draft.description,
+            status: RequestStatus.SUBMITTED,
+            details: draft.details,
+            relatedEntityType: draft.relatedEntityType,
+            relatedEntityId: draft.relatedEntityId,
+            academicContext: draft.academicContext,
+          },
+          user
+        );
+
+        executionResult = {
+          requestId: newRequest.requestId,
+          id: newRequest.id,
+          title: newRequest.title,
+          requestType: newRequest.requestType,
+          status: newRequest.status,
+          targetRole: newRequest.targetRole,
+          targetName: newRequest.targetName,
+          createdAt: newRequest.createdAt,
+        };
+      } else if (lockedAction.actionType === 'RESPOND_REQUEST') {
+        const draft = lockedAction.draftPayload;
+        const updated = await RequestService.respondToRequest(
+          draft.requestId,
+          {
+            action: draft.action,
+            message: draft.message,
+          },
+          user
+        );
+
+        executionResult = {
+          requestId: updated.requestId,
+          id: updated.id,
+          status: updated.status,
+          responseMessage: updated.responseMessage,
+          respondedAt: updated.respondedAt,
+        };
       } else {
         throw ApiError.badRequest(`Unsupported action type: ${lockedAction.actionType}`);
       }
@@ -221,6 +267,20 @@ export class PendingActionService {
 
       // Production audit logging
       try {
+        const entityType =
+          lockedAction.actionType === 'CREATE_ASSIGNMENT'
+            ? 'Assignment'
+            : lockedAction.actionType === 'CREATE_CALENDAR_EVENT'
+            ? 'CalendarEvent'
+            : 'Request';
+        const entityId = (
+          executionResult.assignmentId ||
+          executionResult.eventId ||
+          executionResult.requestId ||
+          executionResult.id ||
+          lockedAction.actionId
+        ).toString();
+
         await AuditLog.create({
           collegeId: lockedAction.collegeId,
           departmentId: user.departmentId || undefined,
@@ -228,8 +288,8 @@ export class PendingActionService {
           actorEmail: user.email,
           actorRole: user.role,
           action: `AI_${lockedAction.actionType}_CONFIRMED`,
-          entityType: lockedAction.actionType === 'CREATE_ASSIGNMENT' ? 'Assignment' : 'CalendarEvent',
-          entityId: (executionResult.assignmentId || executionResult.eventId || lockedAction.actionId).toString(),
+          entityType,
+          entityId,
           newValue: {
             actionId: lockedAction.actionId,
             summary: lockedAction.summary,
@@ -255,6 +315,13 @@ export class PendingActionService {
 
       // Log failure audit record
       try {
+        const entityType =
+          lockedAction.actionType === 'CREATE_ASSIGNMENT'
+            ? 'Assignment'
+            : lockedAction.actionType === 'CREATE_CALENDAR_EVENT'
+            ? 'CalendarEvent'
+            : 'Request';
+
         await AuditLog.create({
           collegeId: lockedAction.collegeId,
           departmentId: user.departmentId || undefined,
@@ -262,7 +329,7 @@ export class PendingActionService {
           actorEmail: user.email,
           actorRole: user.role,
           action: `AI_${lockedAction.actionType}_FAILED`,
-          entityType: lockedAction.actionType === 'CREATE_ASSIGNMENT' ? 'Assignment' : 'CalendarEvent',
+          entityType,
           entityId: lockedAction.actionId,
           newValue: {
             actionId: lockedAction.actionId,

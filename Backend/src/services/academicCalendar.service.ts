@@ -616,6 +616,11 @@ export class AcademicCalendarService {
           collegeId: new mongoose.Types.ObjectId(collegeId),
           isActive: true,
         });
+        if (!assignment) {
+          throw ApiError.forbidden('You can only create events for teaching contexts assigned to you');
+        }
+      } else {
+        throw ApiError.badRequest('You can only create events for teaching contexts assigned to you');
       }
 
       if (assignment) {
@@ -626,9 +631,6 @@ export class AcademicCalendarService {
         semesterId = assignment.semesterId;
         sectionId = assignment.sectionId || null;
         departmentId = assignment.departmentId;
-      } else {
-        if (data.subjectId) subjectId = new mongoose.Types.ObjectId(data.subjectId);
-        if (data.sectionId) sectionId = new mongoose.Types.ObjectId(data.sectionId);
       }
     }
 
@@ -1036,11 +1038,40 @@ export class AcademicCalendarService {
     };
 
     if (requester.role === AppRole.STUDENT) {
-      assignmentFilter.sectionId = { $in: Array.from(enrolledSectionIds).map((id) => new mongoose.Types.ObjectId(id)) };
+      const studentConditions: any[] = [];
+      for (const enr of studentEnrollments) {
+        const cond: any = {
+          semesterId: enr.semesterId,
+          courseId: enr.courseId,
+        };
+        if (enr.sectionId) {
+          cond.$or = [
+            { sectionId: enr.sectionId },
+            { sectionId: null },
+            { sectionId: { $exists: false } },
+          ];
+        } else {
+          cond.$or = [
+            { sectionId: null },
+            { sectionId: { $exists: false } },
+          ];
+        }
+        studentConditions.push(cond);
+      }
+      if (studentConditions.length > 0) {
+        assignmentFilter.$or = [
+          ...studentConditions,
+          { scope: 'COLLEGE' },
+          { scope: 'DEPARTMENT', departmentId: { $in: Array.from(enrolledDeptIds).map((id) => new mongoose.Types.ObjectId(id)) } },
+        ];
+      } else {
+        assignmentFilter._id = { $in: [] };
+      }
     } else if (requester.role === AppRole.FACULTY) {
       assignmentFilter.$or = [
         { facultyId: new mongoose.Types.ObjectId(requester.id) },
         { sectionId: { $in: Array.from(facultySectionIds).map((id) => new mongoose.Types.ObjectId(id)) } },
+        { subjectId: { $in: Array.from(facultySubjectIds).map((id) => new mongoose.Types.ObjectId(id)) } },
       ];
     } else if (requester.role === AppRole.HOD && hodDeptId) {
       assignmentFilter.departmentId = new mongoose.Types.ObjectId(hodDeptId);
@@ -1052,10 +1083,10 @@ export class AcademicCalendarService {
         id: `derived_assignment_${a._id.toString()}`,
         title: a.title,
         description: a.description || `Due at ${a.dueTime}`,
-        sourceType: CalendarSourceType.ASSIGNMENT,
+        sourceType: CalendarSourceType.DERIVED,
         sourceId: a._id.toString(),
-        eventType: CalendarEventType.ASSIGNMENT_DEADLINE,
-        scope: CalendarEventScope.CLASS,
+        eventType: CalendarEventType.DEADLINE,
+        scope: ((a as any).scope as CalendarEventScope) || (a.sectionId ? CalendarEventScope.SECTION : CalendarEventScope.SEMESTER),
         startDate: a.dueDate,
         endDate: a.dueDate,
         startTime: a.dueTime || null,

@@ -8,26 +8,43 @@ import { WorkspaceMembership } from '../../models/workspaceMembership.model';
 import { WorkspaceRoleAssignment } from '../../models/workspaceRoleAssignment.model';
 import { AuditLog } from '../../models/auditLog.model';
 import { AppRole } from '../../constants/roles';
-import { AccountStatus, MembershipStatus, RoleAssignmentStatus } from '../../constants/status';
+import { AccountStatus, MembershipStatus, RoleAssignmentStatus, MembershipType } from '../../constants/status';
 import { logger } from '../../utils/logger';
 
 export interface MigrationAnomaly {
-  userId: string;
+  userId?: string;
+  membershipId?: string;
+  roleAssignmentId?: string;
+  profileId?: string;
   instituteId?: string;
   email?: string;
   role?: string;
   collegeId?: string;
   departmentId?: string;
+  category:
+    | 'MISSING_COLLEGE'
+    | 'MISSING_PIN'
+    | 'CONFLICTING_PIN'
+    | 'ORPHAN_REFERENCE'
+    | 'CROSS_TENANT_MISMATCH'
+    | 'STATUS_CONFLICT'
+    | 'INVALID_DATE'
+    | 'PROFILE_UNMAPPABLE'
+    | 'MANUAL_RESOLUTION_REQUIRED';
   reason: string;
+  requiresManualResolution: boolean;
   details?: Record<string, unknown>;
 }
 
 export interface IndexConflict {
-  collection: 'Faculty' | 'Student';
-  collegeId: string;
-  userId: string;
+  collection: 'Faculty' | 'Student' | 'WorkspaceMembership' | 'WorkspaceRoleAssignment' | 'User';
+  indexKey?: Record<string, number>;
+  collegeId?: string;
+  userId?: string;
+  instituteId?: string;
   count: number;
   conflictingIds: string[];
+  reason: string;
 }
 
 export interface DryRunReport {
@@ -119,10 +136,12 @@ export class WorkspaceMigrationService {
     for (const dup of facultyDups) {
       conflicts.push({
         collection: 'Faculty',
+        indexKey: { collegeId: 1, userId: 1 },
         collegeId: dup._id.collegeId.toString(),
         userId: dup._id.userId.toString(),
         count: dup.count,
         conflictingIds: dup.ids.map((id: any) => id.toString()),
+        reason: 'Multiple Faculty profile records found for the same user in the same college.',
       });
     }
 
@@ -142,14 +161,292 @@ export class WorkspaceMigrationService {
     for (const dup of studentDups) {
       conflicts.push({
         collection: 'Student',
+        indexKey: { collegeId: 1, userId: 1 },
         collegeId: dup._id.collegeId.toString(),
         userId: dup._id.userId.toString(),
         count: dup.count,
         conflictingIds: dup.ids.map((id: any) => id.toString()),
+        reason: 'Multiple Student profile records found for the same user in the same college.',
       });
     }
 
     return conflicts;
+  }
+
+  /**
+   * Detects duplicate institutional PIN numbers within the same college across
+   * WorkspaceMembership and legacy User models to prevent compound index collision.
+   */
+  public static async detectPinDuplicates(): Promise<{
+    conflicts: IndexConflict[];
+    anomalies: MigrationAnomaly[];
+  }> {
+    const conflicts: IndexConflict[] = [];
+    const anomalies: MigrationAnomaly[] = [];
+
+    // 1. Check duplicate PINs in WorkspaceMembership on { collegeId, instituteId }
+    const membershipPinDups = await WorkspaceMembership.aggregate([
+      {
+        $match: {
+          collegeId: { $ne: null },
+          instituteId: { $ne: null, $nin: ['', null] },
+        },
+      },
+      {
+        $group: {
+          _id: { collegeId: '$collegeId', instituteId: '$instituteId' },
+          count: { $sum: 1 },
+          membershipIds: { $push: '$_id' },
+          userIds: { $push: '$userId' },
+        },
+      },
+      { $match: { count: { $gt: 1 } } },
+    ]);
+
+    for (const dup of membershipPinDups) {
+      const collegeIdStr = dup._id.collegeId.toString();
+      const pinStr = dup._id.instituteId.toString();
+      conflicts.push({
+        collection: 'WorkspaceMembership',
+        indexKey: { collegeId: 1, instituteId: 1 },
+        collegeId: collegeIdStr,
+        instituteId: pinStr,
+        count: dup.count,
+        conflictingIds: dup.membershipIds.map((id: any) => id.toString()),
+        reason: `Duplicate PIN Number "${pinStr}" in WorkspaceMembership for college ${collegeIdStr}`,
+      });
+
+      anomalies.push({
+        collegeId: collegeIdStr,
+        instituteId: pinStr,
+        category: 'CONFLICTING_PIN',
+        reason: `Duplicate institutional PIN Number "${pinStr}" found across ${dup.count} memberships in college ${collegeIdStr}`,
+        requiresManualResolution: true,
+        details: {
+          conflictingMembershipIds: dup.membershipIds.map((id: any) => id.toString()),
+          conflictingUserIds: dup.userIds.map((id: any) => id.toString()),
+        },
+      });
+    }
+
+    // 2. Check duplicate PINs in User collection for the same collegeId
+    const userPinDups = await User.aggregate([
+      {
+        $match: {
+          collegeId: { $ne: null },
+          instituteId: { $ne: null, $nin: ['', null] },
+          role: { $ne: AppRole.SUPER_ADMIN },
+        },
+      },
+      {
+        $group: {
+          _id: { collegeId: '$collegeId', instituteId: '$instituteId' },
+          count: { $sum: 1 },
+          userIds: { $push: '$_id' },
+        },
+      },
+      { $match: { count: { $gt: 1 } } },
+    ]);
+
+    for (const dup of userPinDups) {
+      const collegeIdStr = dup._id.collegeId.toString();
+      const pinStr = dup._id.instituteId.toString();
+      conflicts.push({
+        collection: 'User',
+        indexKey: { collegeId: 1, instituteId: 1 },
+        collegeId: collegeIdStr,
+        instituteId: pinStr,
+        count: dup.count,
+        conflictingIds: dup.userIds.map((id: any) => id.toString()),
+        reason: `Duplicate PIN Number "${pinStr}" in legacy User records for college ${collegeIdStr}`,
+      });
+
+      anomalies.push({
+        collegeId: collegeIdStr,
+        instituteId: pinStr,
+        category: 'CONFLICTING_PIN',
+        reason: `Duplicate institutional PIN Number "${pinStr}" found across ${dup.count} users in college ${collegeIdStr}`,
+        requiresManualResolution: true,
+        details: {
+          conflictingUserIds: dup.userIds.map((id: any) => id.toString()),
+        },
+      });
+    }
+
+    return { conflicts, anomalies };
+  }
+
+  /**
+   * Scans for orphaned references and cross-tenant mismatches in memberships, roles, and profiles.
+   */
+  public static async detectOrphanedReferences(): Promise<MigrationAnomaly[]> {
+    const anomalies: MigrationAnomaly[] = [];
+
+    // A. Check orphaned WorkspaceMembership records
+    const memberships = await WorkspaceMembership.find({}).lean();
+    for (const m of memberships) {
+      const userExists = await User.exists({ _id: m.userId });
+      if (!userExists) {
+        anomalies.push({
+          membershipId: m._id.toString(),
+          userId: m.userId.toString(),
+          collegeId: m.collegeId?.toString(),
+          category: 'ORPHAN_REFERENCE',
+          reason: `WorkspaceMembership references non-existent User ${m.userId}`,
+          requiresManualResolution: true,
+        });
+      }
+
+      const collegeExists = await College.exists({ _id: m.collegeId });
+      if (!collegeExists) {
+        anomalies.push({
+          membershipId: m._id.toString(),
+          userId: m.userId?.toString(),
+          collegeId: m.collegeId.toString(),
+          category: 'ORPHAN_REFERENCE',
+          reason: `WorkspaceMembership references non-existent College ${m.collegeId}`,
+          requiresManualResolution: true,
+        });
+      }
+    }
+
+    // B. Check orphaned WorkspaceRoleAssignment records
+    const roleAssignments = await WorkspaceRoleAssignment.find({}).lean();
+    for (const r of roleAssignments) {
+      const membershipExists = await WorkspaceMembership.exists({ _id: r.membershipId });
+      if (!membershipExists) {
+        anomalies.push({
+          roleAssignmentId: r._id.toString(),
+          membershipId: r.membershipId.toString(),
+          userId: r.userId?.toString(),
+          collegeId: r.collegeId?.toString(),
+          category: 'ORPHAN_REFERENCE',
+          reason: `WorkspaceRoleAssignment references non-existent WorkspaceMembership ${r.membershipId}`,
+          requiresManualResolution: true,
+        });
+      }
+
+      const userExists = await User.exists({ _id: r.userId });
+      if (!userExists) {
+        anomalies.push({
+          roleAssignmentId: r._id.toString(),
+          userId: r.userId.toString(),
+          collegeId: r.collegeId?.toString(),
+          category: 'ORPHAN_REFERENCE',
+          reason: `WorkspaceRoleAssignment references non-existent User ${r.userId}`,
+          requiresManualResolution: true,
+        });
+      }
+
+      const collegeExists = await College.exists({ _id: r.collegeId });
+      if (!collegeExists) {
+        anomalies.push({
+          roleAssignmentId: r._id.toString(),
+          collegeId: r.collegeId.toString(),
+          category: 'ORPHAN_REFERENCE',
+          reason: `WorkspaceRoleAssignment references non-existent College ${r.collegeId}`,
+          requiresManualResolution: true,
+        });
+      }
+    }
+
+    // C. Check Faculty profile tenant integrity
+    const facultyProfiles = await Faculty.find({}).lean();
+    for (const f of facultyProfiles) {
+      const user = await User.findById(f.userId).lean();
+      if (!user) {
+        anomalies.push({
+          profileId: f._id.toString(),
+          userId: f.userId?.toString(),
+          collegeId: f.collegeId?.toString(),
+          category: 'PROFILE_UNMAPPABLE',
+          reason: `Faculty profile references non-existent User ${f.userId}`,
+          requiresManualResolution: true,
+        });
+        continue;
+      }
+
+      const collegeExists = await College.exists({ _id: f.collegeId });
+      if (!collegeExists) {
+        anomalies.push({
+          profileId: f._id.toString(),
+          userId: f.userId.toString(),
+          collegeId: f.collegeId?.toString(),
+          category: 'PROFILE_UNMAPPABLE',
+          reason: `Faculty profile references non-existent College ${f.collegeId}`,
+          requiresManualResolution: true,
+        });
+        continue;
+      }
+
+      // If user has scalar collegeId that differs from faculty profile collegeId, verify membership exists
+      if (user.collegeId && user.collegeId.toString() !== f.collegeId.toString()) {
+        const membership = await WorkspaceMembership.findOne({
+          userId: f.userId,
+          collegeId: f.collegeId,
+        }).lean();
+        if (!membership) {
+          anomalies.push({
+            profileId: f._id.toString(),
+            userId: f.userId.toString(),
+            collegeId: f.collegeId.toString(),
+            category: 'CROSS_TENANT_MISMATCH',
+            reason: `Faculty profile belongs to College ${f.collegeId}, but User primary collegeId is ${user.collegeId} with no corresponding membership`,
+            requiresManualResolution: true,
+          });
+        }
+      }
+    }
+
+    // D. Check Student profile tenant integrity
+    const studentProfiles = await Student.find({}).lean();
+    for (const s of studentProfiles) {
+      const user = await User.findById(s.userId).lean();
+      if (!user) {
+        anomalies.push({
+          profileId: s._id.toString(),
+          userId: s.userId?.toString(),
+          collegeId: s.collegeId?.toString(),
+          category: 'PROFILE_UNMAPPABLE',
+          reason: `Student profile references non-existent User ${s.userId}`,
+          requiresManualResolution: true,
+        });
+        continue;
+      }
+
+      const collegeExists = await College.exists({ _id: s.collegeId });
+      if (!collegeExists) {
+        anomalies.push({
+          profileId: s._id.toString(),
+          userId: s.userId.toString(),
+          collegeId: s.collegeId?.toString(),
+          category: 'PROFILE_UNMAPPABLE',
+          reason: `Student profile references non-existent College ${s.collegeId}`,
+          requiresManualResolution: true,
+        });
+        continue;
+      }
+
+      // Check cross-tenant profile mapping
+      if (user.collegeId && user.collegeId.toString() !== s.collegeId.toString()) {
+        const membership = await WorkspaceMembership.findOne({
+          userId: s.userId,
+          collegeId: s.collegeId,
+        }).lean();
+        if (!membership) {
+          anomalies.push({
+            profileId: s._id.toString(),
+            userId: s.userId.toString(),
+            collegeId: s.collegeId.toString(),
+            category: 'CROSS_TENANT_MISMATCH',
+            reason: `Student profile belongs to College ${s.collegeId}, but User primary collegeId is ${user.collegeId} with no corresponding membership`,
+            requiresManualResolution: true,
+          });
+        }
+      }
+    }
+
+    return anomalies;
   }
 
   /**
@@ -186,7 +483,9 @@ export class WorkspaceMigrationService {
           instituteId: u.instituteId,
           email: u.email,
           role: u.role,
+          category: 'MISSING_COLLEGE',
           reason: 'Non-SuperAdmin user is missing collegeId reference',
+          requiresManualResolution: true,
         });
         continue;
       }
@@ -199,12 +498,27 @@ export class WorkspaceMigrationService {
           email: u.email,
           role: u.role,
           collegeId: u.collegeId.toString(),
+          category: 'ORPHAN_REFERENCE',
           reason: 'Referenced college document does not exist',
+          requiresManualResolution: true,
         });
         continue;
       }
 
-      // 3. Validate department reference for HOD
+      // 3. Validate institutional PIN Number presence
+      if (!u.instituteId || u.instituteId.trim() === '') {
+        anomalies.push({
+          userId: u._id.toString(),
+          email: u.email,
+          role: u.role,
+          collegeId: u.collegeId.toString(),
+          category: 'MISSING_PIN',
+          reason: 'User record is missing institutional PIN Number (instituteId)',
+          requiresManualResolution: true,
+        });
+      }
+
+      // 4. Validate department reference for HOD
       if (u.role === AppRole.HOD) {
         if (!u.departmentId) {
           anomalies.push({
@@ -213,7 +527,9 @@ export class WorkspaceMigrationService {
             email: u.email,
             role: u.role,
             collegeId: u.collegeId.toString(),
+            category: 'ORPHAN_REFERENCE',
             reason: 'HOD user is missing departmentId reference',
+            requiresManualResolution: true,
           });
           continue;
         }
@@ -227,7 +543,9 @@ export class WorkspaceMigrationService {
             role: u.role,
             collegeId: u.collegeId.toString(),
             departmentId: u.departmentId.toString(),
+            category: 'ORPHAN_REFERENCE',
             reason: 'HOD department document does not exist',
+            requiresManualResolution: true,
           });
           continue;
         }
@@ -240,13 +558,15 @@ export class WorkspaceMigrationService {
             role: u.role,
             collegeId: u.collegeId.toString(),
             departmentId: u.departmentId.toString(),
+            category: 'CROSS_TENANT_MISMATCH',
             reason: 'Cross-tenant violation: HOD department belongs to a different college',
+            requiresManualResolution: true,
           });
           continue;
         }
       }
 
-      // 4. Validate AccountStatus mapping
+      // 5. Validate AccountStatus mapping
       const mappedStatus = this.mapAccountStatusToMembershipStatus(u.accountStatus);
       if (!mappedStatus) {
         anomalies.push({
@@ -254,12 +574,14 @@ export class WorkspaceMigrationService {
           instituteId: u.instituteId,
           email: u.email,
           role: u.role,
+          category: 'MANUAL_RESOLUTION_REQUIRED',
           reason: `Unrecognized or ambiguous accountStatus "${u.accountStatus}"`,
+          requiresManualResolution: true,
         });
         continue;
       }
 
-      // 5. Check if already migrated
+      // 6. Check existing membership and scalar identity consistency
       const existingMembership = await WorkspaceMembership.findOne({
         userId: u._id,
         collegeId: u.collegeId,
@@ -267,13 +589,74 @@ export class WorkspaceMigrationService {
 
       if (existingMembership) {
         alreadyMigrated++;
+
+        // Verify PIN Number consistency if both are set
+        if (
+          existingMembership.instituteId &&
+          u.instituteId &&
+          existingMembership.instituteId.trim().toUpperCase() !== u.instituteId.trim().toUpperCase()
+        ) {
+          anomalies.push({
+            userId: u._id.toString(),
+            membershipId: existingMembership._id.toString(),
+            instituteId: u.instituteId,
+            collegeId: u.collegeId.toString(),
+            category: 'CONFLICTING_PIN',
+            reason: `PIN Number mismatch: User.instituteId "${u.instituteId}" conflicts with WorkspaceMembership.instituteId "${existingMembership.instituteId}"`,
+            requiresManualResolution: true,
+            details: {
+              userInstituteId: u.instituteId,
+              membershipInstituteId: existingMembership.instituteId,
+            },
+          });
+        }
+
+        // Verify status consistency
+        if (
+          (u.accountStatus === AccountStatus.DEACTIVATED && existingMembership.status === MembershipStatus.ACTIVE) ||
+          (u.accountStatus === AccountStatus.ACTIVE && existingMembership.status === MembershipStatus.DEACTIVATED)
+        ) {
+          anomalies.push({
+            userId: u._id.toString(),
+            membershipId: existingMembership._id.toString(),
+            collegeId: u.collegeId.toString(),
+            category: 'STATUS_CONFLICT',
+            reason: `Account status conflict: User is "${u.accountStatus}" but WorkspaceMembership is "${existingMembership.status}"`,
+            requiresManualResolution: true,
+          });
+        }
+
+        // Verify date integrity
+        if (
+          existingMembership.effectiveEndDate &&
+          existingMembership.effectiveStartDate &&
+          new Date(existingMembership.effectiveStartDate).getTime() > new Date(existingMembership.effectiveEndDate).getTime()
+        ) {
+          anomalies.push({
+            userId: u._id.toString(),
+            membershipId: existingMembership._id.toString(),
+            collegeId: u.collegeId.toString(),
+            category: 'INVALID_DATE',
+            reason: 'Membership effectiveStartDate is later than effectiveEndDate',
+            requiresManualResolution: true,
+          });
+        }
       } else {
         eligibleForMigration++;
       }
     }
 
-    // Check profile duplicates
-    const indexConflicts = await this.detectProfileDuplicates();
+    // 7. Detect PIN duplicate conflicts
+    const { conflicts: pinConflicts, anomalies: pinAnomalies } = await this.detectPinDuplicates();
+    anomalies.push(...pinAnomalies);
+
+    // 8. Detect profile duplicates and orphaned references
+    const profileConflicts = await this.detectProfileDuplicates();
+    const orphanAnomalies = await this.detectOrphanedReferences();
+    anomalies.push(...orphanAnomalies);
+
+    const allIndexConflicts = [...pinConflicts, ...profileConflicts];
+    const unresolvedAnomaliesCount = anomalies.filter((a) => a.requiresManualResolution).length;
 
     return {
       runId,
@@ -284,14 +667,27 @@ export class WorkspaceMigrationService {
         eligibleForMigration,
         alreadyMigrated,
         superAdminPlatformUsers,
-        unresolvedAnomalies: anomalies.length,
+        unresolvedAnomalies: unresolvedAnomaliesCount,
       },
       statusBreakdown,
       roleBreakdown,
       anomalies,
-      indexConflicts,
-      safeToMigrate: anomalies.length === 0 && indexConflicts.length === 0,
+      indexConflicts: allIndexConflicts,
+      safeToMigrate: unresolvedAnomaliesCount === 0 && allIndexConflicts.length === 0,
     };
+  }
+
+  /**
+   * Helper to derive canonical MembershipType from legacy AppRole.
+   */
+  public static mapRoleToMemberType(role: AppRole | string): MembershipType {
+    if (role === AppRole.STUDENT) {
+      return MembershipType.STUDENT;
+    }
+    if (role === AppRole.COLLEGE_ADMIN) {
+      return MembershipType.ADMINISTRATOR;
+    }
+    return MembershipType.FACULTY;
   }
 
   /**
@@ -354,7 +750,10 @@ export class WorkspaceMigrationService {
             continue; // Skip unrecognized statuses to avoid guessing
           }
 
-          // A. Idempotent WorkspaceMembership creation / lookup
+          const memberType = this.mapRoleToMemberType(user.role);
+          const effectiveStartDate = (user as any).createdAt || new Date();
+
+          // A. Idempotent WorkspaceMembership creation / backfill
           let membership = await WorkspaceMembership.findOne({
             userId: user._id,
             collegeId: user.collegeId,
@@ -364,9 +763,12 @@ export class WorkspaceMigrationService {
             membership = await WorkspaceMembership.create({
               userId: user._id,
               collegeId: user.collegeId,
+              instituteId: user.instituteId ? user.instituteId.trim().toUpperCase() : null,
+              memberType,
               status: mappedMembershipStatus,
               isDefault: true,
               joinedAt: (user as any).createdAt || new Date(),
+              effectiveStartDate,
               statusReason: 'Backfilled via WorkspaceMigrationService',
               metadata: {
                 migrationRunId: runId,
@@ -388,12 +790,30 @@ export class WorkspaceMigrationService {
               newValue: {
                 userId: user.id,
                 collegeId: user.collegeId.toString(),
+                instituteId: membership.instituteId,
+                memberType: membership.memberType,
                 status: membership.status,
                 migrationRunId: runId,
               },
             }).catch((err) => logger.warn(`Migration audit log failed: ${err.message}`));
           } else {
-            // Already exists - DO NOT overwrite status or reactivate suspended/revoked
+            // Already exists - safely backfill instituteId or memberType if missing
+            let updated = false;
+            if (!membership.instituteId && user.instituteId) {
+              membership.instituteId = user.instituteId.trim().toUpperCase();
+              updated = true;
+            }
+            if (!membership.memberType) {
+              membership.memberType = memberType;
+              updated = true;
+            }
+            if (!membership.effectiveStartDate) {
+              membership.effectiveStartDate = effectiveStartDate;
+              updated = true;
+            }
+            if (updated) {
+              await membership.save();
+            }
             skippedExistingCount++;
           }
 
@@ -416,6 +836,7 @@ export class WorkspaceMigrationService {
               departmentId: deptObjectId,
               status: initialRoleStatus,
               assignedAt: (user as any).createdAt || new Date(),
+              effectiveStartDate,
               assignedBy: actorUserId,
               statusReason: 'Backfilled via WorkspaceMigrationService',
               scope: {
@@ -529,8 +950,11 @@ export class WorkspaceMigrationService {
       };
       workspaceMembership: {
         existingIndexes: Array<{ name: string; key: Record<string, any>; unique?: boolean }>;
-        hasCompoundUniqueness: boolean;
-        conflictCount: number;
+        hasCompoundCollegeUserUniqueness: boolean;
+        hasCompoundCollegePinUniqueness: boolean;
+        userDuplicateCount: number;
+        pinDuplicateCount: number;
+        pinDuplicateSample: Array<{ collegeId: string; instituteId: string; count: number }>;
       };
       workspaceRoleAssignment: {
         existingIndexes: Array<{ name: string; key: Record<string, any>; unique?: boolean }>;
@@ -572,10 +996,16 @@ export class WorkspaceMigrationService {
       (idx) => idx.key.collegeId === 1 && idx.key.userId === 1 && idx.unique === true
     );
 
-    const membershipCompound = membershipIndexes.some(
+    const membershipUserCompound = membershipIndexes.some(
       (idx) =>
         (idx.key.userId === 1 && idx.key.collegeId === 1) ||
         (idx.key.collegeId === 1 && idx.key.userId === 1)
+    );
+
+    const membershipPinCompound = membershipIndexes.some(
+      (idx) =>
+        (idx.key.collegeId === 1 && idx.key.instituteId === 1) ||
+        (idx.key.instituteId === 1 && idx.key.collegeId === 1)
     );
 
     const roleCompound = roleAssignmentIndexes.some(
@@ -604,11 +1034,27 @@ export class WorkspaceMigrationService {
       { $match: { count: { $gt: 1 } } },
     ]);
 
-    const membershipDups = await WorkspaceMembership.aggregate([
+    const membershipUserDups = await WorkspaceMembership.aggregate([
       { $match: { collegeId: { $ne: null }, userId: { $ne: null } } },
       {
         $group: {
           _id: { collegeId: '$collegeId', userId: '$userId' },
+          count: { $sum: 1 },
+        },
+      },
+      { $match: { count: { $gt: 1 } } },
+    ]);
+
+    const membershipPinDups = await WorkspaceMembership.aggregate([
+      {
+        $match: {
+          collegeId: { $ne: null },
+          instituteId: { $ne: null, $nin: ['', null] },
+        },
+      },
+      {
+        $group: {
+          _id: { collegeId: '$collegeId', instituteId: '$instituteId' },
           count: { $sum: 1 },
         },
       },
@@ -636,6 +1082,11 @@ export class WorkspaceMigrationService {
         'Legacy unique index on Student.userId exists. In production, drop after compound {collegeId: 1, userId: 1} is validated.'
       );
     }
+    if (!membershipPinCompound) {
+      recommendations.push(
+        'Compound index on WorkspaceMembership {collegeId: 1, instituteId: 1} is pending initialization.'
+      );
+    }
 
     if (facultyDups.length > 0) {
       blockers.push(`Found ${facultyDups.length} duplicate (collegeId, userId) records in Faculty collection.`);
@@ -643,8 +1094,11 @@ export class WorkspaceMigrationService {
     if (studentDups.length > 0) {
       blockers.push(`Found ${studentDups.length} duplicate (collegeId, userId) records in Student collection.`);
     }
-    if (membershipDups.length > 0) {
-      blockers.push(`Found ${membershipDups.length} duplicate (collegeId, userId) records in WorkspaceMembership collection.`);
+    if (membershipUserDups.length > 0) {
+      blockers.push(`Found ${membershipUserDups.length} duplicate (collegeId, userId) records in WorkspaceMembership collection.`);
+    }
+    if (membershipPinDups.length > 0) {
+      blockers.push(`Found ${membershipPinDups.length} duplicate (collegeId, instituteId) PIN records in WorkspaceMembership collection.`);
     }
     if (roleDups.length > 0) {
       blockers.push(`Found ${roleDups.length} duplicate role assignments in WorkspaceRoleAssignment collection.`);
@@ -678,8 +1132,15 @@ export class WorkspaceMigrationService {
         },
         workspaceMembership: {
           existingIndexes: membershipIndexes.map((i) => ({ name: i.name || 'unnamed', key: i.key, unique: i.unique })),
-          hasCompoundUniqueness: membershipCompound,
-          conflictCount: membershipDups.length,
+          hasCompoundCollegeUserUniqueness: membershipUserCompound,
+          hasCompoundCollegePinUniqueness: membershipPinCompound,
+          userDuplicateCount: membershipUserDups.length,
+          pinDuplicateCount: membershipPinDups.length,
+          pinDuplicateSample: membershipPinDups.slice(0, 5).map((d) => ({
+            collegeId: d._id.collegeId.toString(),
+            instituteId: d._id.instituteId.toString(),
+            count: d.count,
+          })),
         },
         workspaceRoleAssignment: {
           existingIndexes: roleAssignmentIndexes.map((i) => ({ name: i.name || 'unnamed', key: i.key, unique: i.unique })),

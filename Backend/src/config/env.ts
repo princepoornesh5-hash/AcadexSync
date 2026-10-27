@@ -142,7 +142,7 @@ const envSchema = z.object({
 
   // Google Gemini AI Configuration
   GEMINI_API_KEY: z.string().optional(),
-  GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+  GEMINI_MODEL: z.string().default('gemini-3.5-flash-lite'),
   AI_RATE_LIMIT_MAX: z
     .string()
     .transform((val) => parseInt(val, 10))

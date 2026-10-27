@@ -28,6 +28,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
 
   bool _isSidebarOpen = true;
   bool _showScrollToBottom = false;
+  bool _isNearBottom = true;
 
   @override
   void initState() {
@@ -39,7 +40,9 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
     if (!_scrollController.hasClients) return;
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.offset;
-    final isFarFromBottom = (maxScroll - currentScroll) > 180;
+    final distanceToBottom = maxScroll - currentScroll;
+    _isNearBottom = distanceToBottom <= 120;
+    final isFarFromBottom = distanceToBottom > 180;
     if (isFarFromBottom != _showScrollToBottom) {
       setState(() => _showScrollToBottom = isFarFromBottom);
     }
@@ -60,7 +63,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
         if (animate) {
           _scrollController.animateTo(
             target,
-            duration: const Duration(milliseconds: 300),
+            duration: const Duration(milliseconds: 250),
             curve: Curves.easeOut,
           );
         } else {
@@ -72,10 +75,11 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
 
   void _submitQuery(String query) {
     if (query.trim().isEmpty) return;
+    final chatState = ref.read(aiChatProvider);
+    if (chatState.isCooldownActive || chatState.isStreaming || chatState.isLoading) return;
     _queryController.clear();
-    ref.read(aiChatProvider.notifier).sendMessage(query).then((_) {
-      _scrollToBottom();
-    });
+    _isNearBottom = true;
+    ref.read(aiChatProvider.notifier).sendMessage(query);
     _scrollToBottom();
   }
 
@@ -136,11 +140,13 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
 
     final isMobile = AcadexBreakpoints.isMobile(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mediaTop = MediaQuery.paddingOf(context).top;
+    final mediaBottom = MediaQuery.paddingOf(context).bottom;
 
-    // Auto-scroll when new messages arrive
+    // Auto-scroll when new chunks arrive, ONLY if user is already near bottom
     ref.listen(aiChatProvider, (previous, next) {
-      if (previous?.messages.length != next.messages.length) {
-        _scrollToBottom();
+      if (_isNearBottom) {
+        _scrollToBottom(animate: false);
       }
     });
 
@@ -152,14 +158,16 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       drawer: isMobile
           ? Drawer(
-              child: AiChatSidebar(
-                onNewChat: () {
-                  Navigator.of(context).pop();
-                  _handleNewChat();
-                },
-                onClose: () => Navigator.of(context).pop(),
-                authState: authState,
-                isModal: true,
+              child: SafeArea(
+                child: AiChatSidebar(
+                  onNewChat: () {
+                    Navigator.of(context).pop();
+                    _handleNewChat();
+                  },
+                  onClose: () => Navigator.of(context).pop(),
+                  authState: authState,
+                  isModal: true,
+                ),
               ),
             )
           : null,
@@ -176,10 +184,13 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                   minWidth: 260,
                   maxWidth: 260,
                   alignment: Alignment.topLeft,
-                  child: AiChatSidebar(
-                    onNewChat: _handleNewChat,
-                    authState: authState,
-                    isModal: false,
+                  child: Padding(
+                    padding: EdgeInsets.only(top: mediaTop),
+                    child: AiChatSidebar(
+                      onNewChat: _handleNewChat,
+                      authState: authState,
+                      isModal: false,
+                    ),
                   ),
                 ),
               ),
@@ -191,8 +202,8 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
               children: [
                 // Minimal Header
                 Container(
-                  height: 52,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  height: 52 + mediaTop,
+                  padding: EdgeInsets.only(top: mediaTop, left: 14, right: 14),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF0F172A) : Colors.white,
                     border: Border(
@@ -298,12 +309,9 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                                     width: 54,
                                     height: 54,
                                     decoration: BoxDecoration(
-                                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE6F2FF),
+                                      color: const Color(0xFFE6F2FF),
                                       shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: isDark ? const Color(0xFF334155) : const Color(0xFFCCE6FF),
-                                        width: 1.5,
-                                      ),
+                                      border: Border.all(color: const Color(0xFFCCE6FF)),
                                     ),
                                     child: const Icon(
                                       LucideIcons.sparkles,
@@ -314,80 +322,50 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                                   const SizedBox(height: 18),
                                   Text(
                                     "What can I help you with?",
-                                    textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: isMobile ? 22 : 26,
                                       fontWeight: FontWeight.w700,
                                       color: isDark ? Colors.white : const Color(0xFF0F172A),
                                       letterSpacing: -0.5,
                                     ),
+                                    textAlign: TextAlign.center,
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    "Ask anything about your timetable, attendance standing, courses, or campus operations.",
-                                    textAlign: TextAlign.center,
+                                    "Ask about attendance, courses, assignments, or campus operations.",
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 14.5,
                                       color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                      height: 1.4,
                                     ),
+                                    textAlign: TextAlign.center,
                                   ),
-                                  const SizedBox(height: 32),
-                                  // 4 Suggestion Cards in 2x2 grid
+                                  const SizedBox(height: 28),
+
+                                  // Suggested prompts grid
                                   LayoutBuilder(
                                     builder: (context, constraints) {
-                                      final isSmall = constraints.maxWidth < 600;
-                                      return Wrap(
-                                        spacing: 12,
-                                        runSpacing: 12,
-                                        children: suggestedPrompts.map((prompt) {
-                                          final cardWidth = isSmall ? constraints.maxWidth : (constraints.maxWidth - 12) / 2;
-                                          return SizedBox(
-                                            width: cardWidth,
-                                            child: InkWell(
-                                              onTap: chatState.isLoading ? null : () => _submitQuery(prompt),
-                                              borderRadius: BorderRadius.circular(12),
-                                              child: Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                                decoration: BoxDecoration(
-                                                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                                                  borderRadius: BorderRadius.circular(12),
-                                                  border: Border.all(
-                                                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                                                  ),
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.black.withValues(alpha: 0.02),
-                                                      blurRadius: 4,
-                                                      offset: const Offset(0, 1),
-                                                    ),
-                                                  ],
-                                                ),
-                                                child: Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: Text(
-                                                        prompt,
-                                                        style: TextStyle(
-                                                          fontSize: 13.5,
-                                                          fontWeight: FontWeight.w500,
-                                                          color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B),
-                                                          height: 1.35,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Icon(
-                                                      LucideIcons.arrowUpRight,
-                                                      size: 16,
-                                                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        }).toList(),
+                                      final isNarrow = constraints.maxWidth < 600;
+                                      if (isNarrow) {
+                                        return Column(
+                                          children: suggestedPrompts.map((prompt) {
+                                            return Padding(
+                                              padding: const EdgeInsets.only(bottom: 10),
+                                              child: _buildPromptTile(prompt, isDark),
+                                            );
+                                          }).toList(),
+                                        );
+                                      }
+                                      return GridView.builder(
+                                        shrinkWrap: true,
+                                        physics: const NeverScrollableScrollPhysics(),
+                                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 2,
+                                          mainAxisSpacing: 10,
+                                          crossAxisSpacing: 10,
+                                          mainAxisExtent: 68,
+                                        ),
+                                        itemCount: suggestedPrompts.length,
+                                        itemBuilder: (context, index) => _buildPromptTile(suggestedPrompts[index], isDark),
                                       );
                                     },
                                   ),
@@ -400,42 +378,14 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                         // Active Message List
                         ListView.builder(
                           controller: _scrollController,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isMobile ? 12 : 24,
-                            vertical: 16,
+                          padding: EdgeInsets.fromLTRB(
+                            isMobile ? 12 : 24,
+                            16,
+                            isMobile ? 12 : 24,
+                            54,
                           ),
-                          itemCount: chatState.messages.length + (chatState.isLoading ? 1 : 0),
+                          itemCount: chatState.messages.length,
                           itemBuilder: (context, index) {
-                            // Thinking state indicator
-                            if (index == chatState.messages.length) {
-                              return Center(
-                                child: Container(
-                                  constraints: const BoxConstraints(maxWidth: 780),
-                                  margin: const EdgeInsets.symmetric(vertical: 12),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        width: 32,
-                                        height: 32,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFE6F2FF),
-                                          shape: BoxShape.circle,
-                                          border: Border.all(color: const Color(0xFFCCE6FF)),
-                                        ),
-                                        child: const Icon(LucideIcons.sparkles, size: 16, color: Color(0xFF0052CC)),
-                                      ),
-                                      const SizedBox(width: 14),
-                                      const Padding(
-                                        padding: EdgeInsets.only(top: 8.0),
-                                        child: AiThinkingIndicator(),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }
-
                             final msg = chatState.messages[index];
                             final isAi = msg.isAi;
 
@@ -512,33 +462,79 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
+                        color: chatState.isCooldownActive ? const Color(0xFFFFFBEB) : const Color(0xFFFEF2F2),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFFECACA)),
+                        border: Border.all(
+                          color: chatState.isCooldownActive ? const Color(0xFFFDE68A) : const Color(0xFFFECACA),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(LucideIcons.alertCircle, color: AcadexColors.error, size: 18),
+                          Icon(
+                            chatState.isCooldownActive ? LucideIcons.hourglass : LucideIcons.alertCircle,
+                            color: chatState.isCooldownActive ? const Color(0xFFD97706) : AcadexColors.error,
+                            size: 18,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               chatState.error!,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
-                                color: Color(0xFF991B1B),
+                                color: chatState.isCooldownActive ? const Color(0xFF92400E) : const Color(0xFF991B1B),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
+                          if (chatState.isCooldownActive) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEF3C7),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFFCD34D)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(LucideIcons.timer, size: 12, color: Color(0xFFB45309)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${chatState.cooldownRemainingSeconds}s',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFFB45309),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
                           TextButton(
+                            onPressed: (chatState.isCooldownActive || chatState.isStreaming)
+                                ? null
+                                : () {
+                                    ref.read(aiChatProvider.notifier).retryLastMessage();
+                                  },
+                            child: Text(
+                              chatState.isCooldownActive
+                                  ? 'Wait (${chatState.cooldownRemainingSeconds}s)'
+                                  : 'Retry',
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          IconButton(
+                            icon: const Icon(LucideIcons.x, size: 16),
+                            splashRadius: 16,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                            color: chatState.isCooldownActive ? const Color(0xFFB45309) : const Color(0xFF991B1B),
                             onPressed: () {
-                              final lastUserMsg = chatState.messages.reversed
-                                  .firstWhere((m) => !m.isAi, orElse: () => chatState.messages.first);
-                              if (!lastUserMsg.isAi) {
-                                _submitQuery(lastUserMsg.text);
-                              }
+                              ref.read(aiChatProvider.notifier).clearError();
                             },
-                            child: const Text('Retry', style: TextStyle(fontSize: 13)),
                           ),
                         ],
                       ),
@@ -546,15 +542,71 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                   ),
 
                 // Message Composer
-                AiComposer(
-                  controller: _queryController,
-                  isLoading: chatState.isLoading,
-                  onSubmitted: _submitQuery,
+                Padding(
+                  padding: EdgeInsets.only(bottom: mediaBottom > 0 ? mediaBottom : 6),
+                  child: AiComposer(
+                    controller: _queryController,
+                    isLoading: chatState.isStreaming,
+                    isCooldownActive: chatState.isCooldownActive,
+                    onSubmitted: _submitQuery,
+                    onStopGenerating: () {
+                      ref.read(aiChatProvider.notifier).stopGenerating();
+                    },
+                  ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPromptTile(String prompt, bool isDark) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _submitQuery(prompt),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  prompt,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B),
+                    height: 1.35,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                LucideIcons.arrowUpRight,
+                size: 16,
+                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -566,7 +618,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
         constraints: const BoxConstraints(maxWidth: 620),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F172A), // Dark navy ChatGPT style user bubble
+          color: const Color(0xFF0F172A),
           borderRadius: BorderRadius.circular(20).copyWith(
             bottomRight: const Radius.circular(4),
           ),
@@ -585,6 +637,9 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
 
   Widget _buildAssistantRow(BuildContext context, AiMessage msg, bool isDark) {
     final text = msg.text;
+    final isStreaming = msg.isStreaming;
+    final isInterrupted = msg.isInterrupted;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -612,10 +667,20 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AiMarkdownView(
-                text: text,
-                textColor: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A),
-              ),
+              // If actively streaming and no text yet, show the "ACADEX is thinking..." typing indicator
+              if (text.isEmpty && isStreaming)
+                const Padding(
+                  padding: EdgeInsets.only(top: 6.0),
+                  child: AiThinkingIndicator(),
+                )
+              else
+                AiMarkdownView(
+                  text: text,
+                  isStreaming: isStreaming,
+                  textColor: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A),
+                ),
+
+              // Action Proposal Card if present
               if (msg.proposal != null)
                 AiProposalCard(
                   message: msg,
@@ -632,14 +697,58 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                     ref.read(aiChatProvider.notifier).reconcileActionStatus(actionId, msg.id);
                   },
                 ),
+
+              // Interrupted response banner with retry option
+              if (isInterrupted)
+                Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF451A03) : const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF78350F) : const Color(0xFFFCD34D),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(LucideIcons.alertTriangle, size: 14, color: Color(0xFFD97706)),
+                      const SizedBox(width: 6),
+                      Text(
+                        "Generation stopped or interrupted",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? const Color(0xFFFCD34D) : const Color(0xFF92400E),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () => ref.read(aiChatProvider.notifier).retryLastMessage(),
+                        child: Text(
+                          "Retry",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309),
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
               const SizedBox(height: 6),
               // Subtle Assistant Actions (Copy, etc.)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _CopyButton(text: text, isDark: isDark),
-                ],
-              ),
+              if (text.isNotEmpty && !isStreaming)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _CopyButton(text: text, isDark: isDark),
+                  ],
+                ),
             ],
           ),
         ),

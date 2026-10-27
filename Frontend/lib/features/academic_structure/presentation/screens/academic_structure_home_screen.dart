@@ -341,12 +341,13 @@ class _AcademicStructureHomeScreenState
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Row(
         children: List.generate(categories.length, (index) {
           final cat = categories[index];
           final isSelected = currentIndex == index;
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: EdgeInsets.only(right: index == categories.length - 1 ? 0 : 8),
             child: InkWell(
               onTap: () => onSelect(index),
               borderRadius: BorderRadius.circular(AcadexRadius.md),
@@ -385,6 +386,8 @@ class _AcademicStructureHomeScreenState
                     const SizedBox(width: 8),
                     Text(
                       cat.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -547,7 +550,7 @@ class _AcademicStructureHomeScreenState
         case AcademicWorkspaceModule.departments:
           dynamicCreateButton = AcadexButton(
             key: const Key('acad_create_dept'),
-            label: '+ Create ${terminology.label(AcademicConcept.department)}',
+            label: isMobile ? '+ ${terminology.label(AcademicConcept.department)}' : '+ Create ${terminology.label(AcademicConcept.department)}',
             icon: LucideIcons.plus,
             size: btnSize,
             onPressed: () => context.push('/academics/departments/new'),
@@ -556,7 +559,7 @@ class _AcademicStructureHomeScreenState
         case AcademicWorkspaceModule.programs:
           dynamicCreateButton = AcadexButton(
             key: const Key('acad_create_prog'),
-            label: '+ Create ${terminology.label(AcademicConcept.program)}',
+            label: isMobile ? '+ ${terminology.label(AcademicConcept.program)}' : '+ Create ${terminology.label(AcademicConcept.program)}',
             icon: LucideIcons.plus,
             size: btnSize,
             onPressed: () => context.push('/academics/courses/new'),
@@ -565,7 +568,7 @@ class _AcademicStructureHomeScreenState
         case AcademicWorkspaceModule.semesters:
           dynamicCreateButton = AcadexButton(
             key: const Key('acad_create_sem'),
-            label: '+ Create ${terminology.label(AcademicConcept.semester)}',
+            label: isMobile ? '+ ${terminology.label(AcademicConcept.semester)}' : '+ Create ${terminology.label(AcademicConcept.semester)}',
             icon: LucideIcons.plus,
             size: btnSize,
             onPressed: () => context.push('/academics/semesters/new'),
@@ -574,7 +577,7 @@ class _AcademicStructureHomeScreenState
         case AcademicWorkspaceModule.sections:
           dynamicCreateButton = AcadexButton(
             key: const Key('acad_create_sec'),
-            label: '+ Create ${terminology.label(AcademicConcept.section)}',
+            label: isMobile ? '+ ${terminology.label(AcademicConcept.section)}' : '+ Create ${terminology.label(AcademicConcept.section)}',
             icon: LucideIcons.plus,
             size: btnSize,
             onPressed: () => context.push('/academics/sections/new'),
@@ -583,7 +586,7 @@ class _AcademicStructureHomeScreenState
         case AcademicWorkspaceModule.subjects:
           dynamicCreateButton = AcadexButton(
             key: const Key('acad_create_sub'),
-            label: '+ Create ${terminology.label(AcademicConcept.subject)}',
+            label: isMobile ? '+ ${terminology.label(AcademicConcept.subject)}' : '+ Create ${terminology.label(AcademicConcept.subject)}',
             icon: LucideIcons.plus,
             size: btnSize,
             onPressed: () => context.push('/academics/subjects/new'),
@@ -592,7 +595,7 @@ class _AcademicStructureHomeScreenState
         case AcademicWorkspaceModule.faculty:
           dynamicCreateButton = AcadexButton(
             key: const Key('acad_add_fac'),
-            label: '+ Add Faculty',
+            label: isMobile ? '+ Faculty' : '+ Add Faculty',
             icon: LucideIcons.userPlus,
             size: btnSize,
             onPressed: () => context.push('/academics/faculty/new'),
@@ -601,7 +604,7 @@ class _AcademicStructureHomeScreenState
         case AcademicWorkspaceModule.rooms:
           dynamicCreateButton = AcadexButton(
             key: const Key('acad_create_room'),
-            label: '+ Add ${terminology.label(AcademicConcept.room)}',
+            label: isMobile ? '+ ${terminology.label(AcademicConcept.room)}' : '+ Add ${terminology.label(AcademicConcept.room)}',
             icon: LucideIcons.plus,
             size: btnSize,
             onPressed: () => context.push('/academics/rooms/new'),
@@ -611,7 +614,7 @@ class _AcademicStructureHomeScreenState
 
       return [
         AcadexButton(
-          label: 'Department Setup',
+          label: isMobile ? 'Setup' : 'Department Setup',
           icon: LucideIcons.compass,
           variant: AcadexButtonVariant.secondary,
           size: btnSize,
@@ -636,7 +639,7 @@ class _AcademicStructureHomeScreenState
         case AcademicWorkspaceModule.programs:
           dynamicCreateButton = AcadexButton(
             key: const Key('hod_acad_create_prog'),
-            label: '+ Create ${terminology.label(AcademicConcept.program)}',
+            label: isMobile ? '+ ${terminology.label(AcademicConcept.program)}' : '+ Create ${terminology.label(AcademicConcept.program)}',
             icon: LucideIcons.plus,
             size: btnSize,
             onPressed: () => context.push('/academics/courses/new'),
@@ -645,7 +648,7 @@ class _AcademicStructureHomeScreenState
         case AcademicWorkspaceModule.semesters:
           dynamicCreateButton = AcadexButton(
             key: const Key('hod_acad_create_sem'),
-            label: '+ Create ${terminology.label(AcademicConcept.semester)}',
+            label: isMobile ? '+ ${terminology.label(AcademicConcept.semester)}' : '+ Create ${terminology.label(AcademicConcept.semester)}',
             icon: LucideIcons.plus,
             size: btnSize,
             onPressed: () => context.push('/academics/semesters/new'),
@@ -654,7 +657,7 @@ class _AcademicStructureHomeScreenState
         case AcademicWorkspaceModule.sections:
           dynamicCreateButton = AcadexButton(
             key: const Key('hod_acad_create_sec'),
-            label: '+ Create ${terminology.label(AcademicConcept.section)}',
+            label: isMobile ? '+ ${terminology.label(AcademicConcept.section)}' : '+ Create ${terminology.label(AcademicConcept.section)}',
             icon: LucideIcons.plus,
             size: btnSize,
             onPressed: () => context.push('/academics/sections/new'),
@@ -663,7 +666,7 @@ class _AcademicStructureHomeScreenState
         case AcademicWorkspaceModule.subjects:
           dynamicCreateButton = AcadexButton(
             key: const Key('hod_acad_create_sub'),
-            label: '+ Create ${terminology.label(AcademicConcept.subject)}',
+            label: isMobile ? '+ ${terminology.label(AcademicConcept.subject)}' : '+ Create ${terminology.label(AcademicConcept.subject)}',
             icon: LucideIcons.plus,
             size: btnSize,
             onPressed: () => context.push('/academics/subjects/new'),
@@ -672,7 +675,7 @@ class _AcademicStructureHomeScreenState
         case AcademicWorkspaceModule.faculty:
           dynamicCreateButton = AcadexButton(
             key: const Key('hod_acad_add_fac'),
-            label: '+ Add Faculty',
+            label: isMobile ? '+ Faculty' : '+ Add Faculty',
             icon: LucideIcons.userPlus,
             size: btnSize,
             onPressed: () => context.push('/academics/faculty/new'),
@@ -681,7 +684,7 @@ class _AcademicStructureHomeScreenState
         case AcademicWorkspaceModule.rooms:
           dynamicCreateButton = AcadexButton(
             key: const Key('hod_acad_create_room'),
-            label: '+ Add ${terminology.label(AcademicConcept.room)}',
+            label: isMobile ? '+ ${terminology.label(AcademicConcept.room)}' : '+ Add ${terminology.label(AcademicConcept.room)}',
             icon: LucideIcons.plus,
             size: btnSize,
             onPressed: () => context.push('/academics/rooms/new'),
@@ -690,7 +693,7 @@ class _AcademicStructureHomeScreenState
         default:
           dynamicCreateButton = AcadexButton(
             key: const Key('hod_acad_create_prog_fallback'),
-            label: '+ Create ${terminology.label(AcademicConcept.program)}',
+            label: isMobile ? '+ ${terminology.label(AcademicConcept.program)}' : '+ Create ${terminology.label(AcademicConcept.program)}',
             icon: LucideIcons.plus,
             size: btnSize,
             onPressed: () => context.push('/academics/courses/new'),
@@ -699,7 +702,7 @@ class _AcademicStructureHomeScreenState
 
       return [
         AcadexButton(
-          label: 'Department Setup',
+          label: isMobile ? 'Setup' : 'Department Setup',
           icon: LucideIcons.compass,
           variant: AcadexButtonVariant.secondary,
           size: btnSize,
@@ -945,6 +948,32 @@ class _AcademicStructureHomeScreenState
       ),
     ];
 
+    int getTabIndexForStat(int statIndex) {
+      if (isHod) {
+        if (statIndex == 0) return isSectionEnabled ? 4 : 3; // Faculty
+        if (statIndex == 1) return 0; // Courses
+        if (statIndex == 2) return 1; // Semesters
+        if (isSectionEnabled) {
+          if (statIndex == 3) return 2; // Sections
+          if (statIndex == 4) return 3; // Subjects
+        } else {
+          if (statIndex == 3) return 2; // Subjects
+        }
+        return 0;
+      } else {
+        if (statIndex == 0) return 0; // Departments
+        if (statIndex == 1) return 1; // Courses
+        if (statIndex == 2) return 2; // Semesters
+        if (isSectionEnabled) {
+          if (statIndex == 3) return 3; // Sections
+          if (statIndex == 4) return 4; // Subjects
+        } else {
+          if (statIndex == 3) return 3; // Subjects
+        }
+        return 0;
+      }
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
@@ -960,14 +989,15 @@ class _AcademicStructureHomeScreenState
         LayoutBuilder(builder: (context, constraints) {
           final width = constraints.maxWidth;
           final crossAxisCount = width > 900 ? stats.length : (width > 560 ? 3 : 2);
-          final ratio = width > 900 ? 2.4 : (width > 560 ? 2.5 : 2.2);
+          final textScaler = MediaQuery.textScalerOf(context);
+          final tileHeight = textScaler.scale(76.0).clamp(72.0, 96.0);
 
           return GridView.builder(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: crossAxisCount,
               mainAxisSpacing: 8,
               crossAxisSpacing: 8,
-              childAspectRatio: ratio,
+              mainAxisExtent: tileHeight,
             ),
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -981,6 +1011,15 @@ class _AcademicStructureHomeScreenState
                 icon: s.icon,
                 subtitle: s.subtitle,
                 isDark: isDark,
+                onTap: () {
+                  final target = getTabIndexForStat(i);
+                  if (target < _tabController.length) {
+                    _tabController.animateTo(target);
+                    setState(() {
+                      _currentTabIndex = target;
+                    });
+                  }
+                },
               );
             },
           );
@@ -996,39 +1035,45 @@ class _AcademicStructureHomeScreenState
     required IconData icon,
     String? subtitle,
     required bool isDark,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(AcadexRadius.md),
-        border: Border.all(
-          color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.15) : const Color(0x0607111F),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: AcadexColors.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AcadexRadius.sm),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+            borderRadius: BorderRadius.circular(AcadexRadius.md),
+            border: Border.all(
+              color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
             ),
-            child: Center(
-              child: Icon(icon, size: 16, color: AcadexColors.primary),
-            ),
+            boxShadow: [
+              BoxShadow(
+                color: isDark ? Colors.black.withValues(alpha: 0.15) : const Color(0x0607111F),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AcadexColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AcadexRadius.sm),
+                ),
+                child: Center(
+                  child: Icon(icon, size: 16, color: AcadexColors.primary),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -1074,7 +1119,9 @@ class _AcademicStructureHomeScreenState
           ),
         ],
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildDepartmentFilterDropdown(
@@ -1262,7 +1309,7 @@ class _AcademicStructureHomeScreenState
                         ),
                     ],
                   ),
-                  onTap: () => context.push('/academics/departments'),
+                  onTap: () => context.push('/academics/departments/${dept.id}'),
                 ),
               ),
             );
@@ -1359,7 +1406,7 @@ class _AcademicStructureHomeScreenState
                         ),
                     ],
                   ),
-                  onTap: () => context.push('/academics/courses'),
+                  onTap: () => context.push('/academics/courses/${course.id}'),
                 ),
               ),
             );
@@ -1459,7 +1506,7 @@ class _AcademicStructureHomeScreenState
                         ),
                     ],
                   ),
-                  onTap: () => context.push('/academics/semesters'),
+                  onTap: () => context.push('/academics/semesters/${sem.id}'),
                 ),
               ),
             );
@@ -1558,7 +1605,7 @@ class _AcademicStructureHomeScreenState
                         ),
                     ],
                   ),
-                  onTap: () => context.push('/academics/sections'),
+                  onTap: () => context.push('/academics/sections/${sec.id}'),
                 ),
               ),
             );

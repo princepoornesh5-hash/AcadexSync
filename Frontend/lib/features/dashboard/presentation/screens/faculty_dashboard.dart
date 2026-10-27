@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../domain/models/home_dashboard_models.dart';
@@ -22,11 +22,12 @@ class FacultyDashboard extends ConsumerWidget {
       },
       child: dashboardAsync.when(
         loading: () => const Center(
-          child: AcadexLoadingState(message: 'Loading faculty dashboard...'),
+          child: AcadexLoadingState.spinner(message: 'Loading faculty dashboard...'),
         ),
         error: (err, _) => AcadexErrorState.fromError(
           error: err,
           title: 'Unable to load dashboard',
+          retryLabel: 'Try Again',
           onRetry: () => ref.invalidate(homeDashboardProvider),
         ),
         data: (dashboard) {
@@ -57,7 +58,7 @@ class FacultyDashboard extends ConsumerWidget {
                   pendingActions: dashboard.pendingActions,
                 ),
 
-              // 5. Faculty Operational Metrics
+              // 5. Faculty Operational Metrics (Compact Centered Tiles)
               _buildFacultyOperationalSummary(context, dashboard.summary),
 
               // 6. Today / Upcoming Teaching Schedule
@@ -83,23 +84,38 @@ class FacultyDashboard extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 14),
-        Text(
-          'Teaching & Evaluation Snapshot',
-          style: AcadexTypography.heading3(
-            color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-          ).copyWith(fontSize: 14.5, fontWeight: FontWeight.w700),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                'Teaching & Evaluation Snapshot',
+                style: AcadexTypography.heading3(
+                  color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                ).copyWith(fontSize: 14.5, fontWeight: FontWeight.w700),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Faculty Instruction Scope',
+              style: AcadexTypography.caption(
+                color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+              ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         LayoutBuilder(
           builder: (context, constraints) {
             final w = constraints.maxWidth;
-            final isDesktop = w >= 768;
-            final isNarrow = w < 380;
-            final crossAxisCount = isDesktop ? 4 : 2;
-            final childAspectRatio = isDesktop
-                ? (w >= 1100 ? 2.8 : 2.4)
-                : (isNarrow ? 1.7 : 1.85);
+            final crossAxisCount = w < 280 ? 2 : 4;
+            final itemWidth = (w - (crossAxisCount - 1) * 8) / crossAxisCount;
+            final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+            final targetCardHeight = 80.0 * textScale.clamp(1.0, 1.6);
+            final childAspectRatio = (itemWidth / targetCardHeight).clamp(0.85, 1.45);
 
             return GridView.count(
               shrinkWrap: true,
@@ -109,41 +125,37 @@ class FacultyDashboard extends ConsumerWidget {
               mainAxisSpacing: 8,
               childAspectRatio: childAspectRatio,
               children: [
-                _buildMetricTile(
-                  context,
+                DashboardCompactTile(
                   title: 'Assigned Classes',
                   value: '${summary.assignedClassesCount}',
                   subtitle: 'Teaching sections',
                   icon: LucideIcons.bookOpen,
                   color: AcadexColors.primary,
-                  isDark: isDark,
+                  onTap: () => context.push('/timetable'),
                 ),
-                _buildMetricTile(
-                  context,
+                DashboardCompactTile(
                   title: 'Pending Reviews',
                   value: '${summary.submissionsAwaitingReview}',
                   subtitle: 'Awaiting grading',
                   icon: LucideIcons.fileSpreadsheet,
                   color: summary.submissionsAwaitingReview > 0 ? AcadexColors.warning : AcadexColors.inkMuted,
-                  isDark: isDark,
+                  onTap: () => context.push('/assignments'),
                 ),
-                _buildMetricTile(
-                  context,
+                DashboardCompactTile(
                   title: 'Pending Attendance',
                   value: '${summary.pendingAttendanceSessions}',
                   subtitle: 'Sessions to complete',
                   icon: LucideIcons.checkSquare,
                   color: summary.pendingAttendanceSessions > 0 ? AcadexColors.warning : AcadexColors.inkMuted,
-                  isDark: isDark,
+                  onTap: () => context.push('/attendance'),
                 ),
-                _buildMetricTile(
-                  context,
+                DashboardCompactTile(
                   title: 'Assessment Marks',
                   value: '${summary.pendingAssessmentMarks}',
                   subtitle: 'Marks pending entry',
                   icon: LucideIcons.penTool,
                   color: summary.pendingAssessmentMarks > 0 ? AcadexColors.error : AcadexColors.inkMuted,
-                  isDark: isDark,
+                  onTap: () => context.push('/assessments'),
                 ),
               ],
             );
@@ -152,69 +164,5 @@ class FacultyDashboard extends ConsumerWidget {
       ],
     );
   }
-
-  Widget _buildMetricTile(
-    BuildContext context, {
-    required String title,
-    required String value,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required bool isDark,
-  }) {
-    return AcadexCard(
-      isFlat: true,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Center(
-                  child: Icon(icon, size: 13, color: color),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: AcadexTypography.caption(
-                    color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                  ).copyWith(fontSize: 11.5, fontWeight: FontWeight.w600),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: AcadexTypography.heading2(
-                color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-              ).copyWith(fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: -0.3),
-            ),
-          ),
-          Text(
-            subtitle,
-            style: AcadexTypography.caption(
-              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-            ).copyWith(fontSize: 10.5),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
 }
+

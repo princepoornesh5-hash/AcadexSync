@@ -42,6 +42,8 @@ class AcadexDrawer extends ConsumerWidget {
     final role = user?.role ?? AppRole.student;
     final activeWorkspace = ref.watch(activeWorkspaceProvider);
     final groupedItems = AcadexNavigationService.getGroupedNavItems(role);
+    final allDrawerItems = groupedItems.values.expand((items) => items).toList();
+    final activeItem = AcadexNavigationService.resolveActiveItem(activeRoute, role, candidates: allDrawerItems);
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isCollapsed = !isModal && ref.watch(sidebarCollapsedProvider);
     final drawerWidth = isModal ? math.min(290.0, screenWidth * 0.82) : (isCollapsed ? 68.0 : 240.0);
@@ -280,7 +282,7 @@ class AcadexDrawer extends ConsumerWidget {
                     _DrawerTile(
                       label: item.label,
                       icon: item.icon,
-                      isActive: item.matchesRoute(activeRoute),
+                      isActive: activeItem != null && item.id == activeItem.id,
                       badgeCount: item.badgeCount,
                       isCollapsed: isCollapsed,
                       onTap: () {

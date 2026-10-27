@@ -658,7 +658,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => fadeTransitionPage(
           context: context,
           state: state,
-          child: const GlobalSearchScreen(),
+          child: ShellWrapper(
+            activeRoute: '/search',
+            child: GlobalSearchScreen(
+              initialQuery: state.uri.queryParameters['q'],
+            ),
+          ),
         ),
       ),
       GoRoute(

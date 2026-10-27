@@ -1,6 +1,7 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import '../../domain/repositories/ai_repository.dart';
 import '../../domain/models/ai_response.dart';
+import '../../domain/models/ai_stream_event.dart';
 
 class FirebaseAiRepository implements AiRepository {
   final FirebaseFunctions _functions = FirebaseFunctions.instance;
@@ -45,6 +46,36 @@ class FirebaseAiRepository implements AiRepository {
     } catch (_) {
       throw Exception('Acadex AI is temporarily unavailable.');
     }
+  }
+
+  @override
+  Stream<AiStreamEvent> streamChatMessage({
+    required String query,
+    required Map<String, dynamic> context,
+    List<Map<String, String>>? history,
+  }) async* {
+    yield const AiStreamStartEvent(model: 'firebase-functions', correlationId: 'fb-stream-1');
+    final response = await sendChatMessage(
+      query: query,
+      context: context,
+      history: history,
+    );
+
+    if (response.proposal != null) {
+      yield AiStreamProposalEvent(proposal: response.proposal!);
+    }
+
+    final words = response.answer.split(' ');
+    for (int i = 0; i < words.length; i += 3) {
+      final chunk = words.skip(i).take(3).join(' ') + (i + 3 < words.length ? ' ' : '');
+      yield AiStreamDeltaEvent(text: chunk);
+    }
+
+    yield AiStreamDoneEvent(
+      answer: response.answer,
+      model: response.model,
+      proposal: response.proposal,
+    );
   }
 
   @override

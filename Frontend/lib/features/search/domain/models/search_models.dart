@@ -1,4 +1,5 @@
 enum SearchResultType {
+  navigation,
   student,
   faculty,
   hod,

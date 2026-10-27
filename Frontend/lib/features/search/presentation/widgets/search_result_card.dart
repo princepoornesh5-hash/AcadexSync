@@ -16,6 +16,8 @@ class SearchResultCard extends StatelessWidget {
 
   IconData _getIconForType(SearchResultType type) {
     switch (type) {
+      case SearchResultType.navigation:
+        return LucideIcons.compass;
       case SearchResultType.student:
         return LucideIcons.user;
       case SearchResultType.faculty:

@@ -7,7 +7,7 @@ import { AuditLog } from '../models/auditLog.model';
 import { WorkspaceMembership } from '../models/workspaceMembership.model';
 import { WorkspaceRoleAssignment } from '../models/workspaceRoleAssignment.model';
 import { AppRole } from '../constants/roles';
-import { AccountStatus, CollegeStatus, DepartmentStatus, InvitationStatus, MembershipStatus, RoleAssignmentStatus } from '../constants/status';
+import { AccountStatus, CollegeStatus, DepartmentStatus, InvitationStatus, MembershipStatus, MembershipType, RoleAssignmentStatus } from '../constants/status';
 import { PasswordService } from './password.service';
 import {
   generateActivationCode,
@@ -38,6 +38,9 @@ export interface CreateInvitationResult {
   user: IUser;
   collegeCode?: string;
   collegeName?: string;
+  isNewUser: boolean;
+  isNewMembership: boolean;
+  membershipId?: string;
 }
 
 export interface ReissueInvitationResult {
@@ -405,6 +408,9 @@ export class InvitationService {
             user,
             collegeCode: college?.code,
             collegeName: college?.name,
+            isNewUser: false,
+            isNewMembership: false,
+            membershipId: existingMembership._id.toString(),
           };
         }
       }
@@ -433,15 +439,28 @@ export class InvitationService {
       collegeId,
     });
 
+    let isNewMembership = false;
     if (!membership) {
       membership = await WorkspaceMembership.create({
         userId: user._id,
         collegeId,
+        instituteId: normalizedInstituteId,
+        memberType:
+          data.role === AppRole.STUDENT
+            ? MembershipType.STUDENT
+            : data.role === AppRole.FACULTY || data.role === AppRole.HOD
+            ? MembershipType.FACULTY
+            : MembershipType.ADMINISTRATOR,
         status: user.accountStatus === AccountStatus.ACTIVE ? MembershipStatus.ACTIVE : MembershipStatus.PENDING,
         isDefault: !existingUser,
         joinedAt: new Date(),
+        effectiveStartDate: new Date(),
         createdBy: creator.id,
       });
+      isNewMembership = true;
+    } else if (!membership.instituteId) {
+      membership.instituteId = normalizedInstituteId;
+      await membership.save();
     }
 
     // 3. Establish WorkspaceRoleAssignment in PENDING (or ACTIVE if already active user)
@@ -546,6 +565,9 @@ export class InvitationService {
       user,
       collegeCode: college?.code,
       collegeName: college?.name,
+      isNewUser: !existingUser,
+      isNewMembership,
+      membershipId: membership.id,
     };
   }
 

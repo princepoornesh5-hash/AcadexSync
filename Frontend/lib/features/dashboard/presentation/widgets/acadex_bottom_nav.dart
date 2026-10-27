@@ -33,16 +33,8 @@ class AcadexBottomNav extends ConsumerWidget {
     }
 
     final primaryItems = AcadexNavigationService.getPrimaryNavItems(role);
-
-    // Check if any primary item is active
-    bool isAnyPrimaryActive = false;
-    for (final item in primaryItems) {
-      if (item.matchesRoute(activeRoute)) {
-        isAnyPrimaryActive = true;
-        break;
-      }
-    }
-    final isMoreActive = !isAnyPrimaryActive;
+    final activeItem = AcadexNavigationService.resolveActiveItem(activeRoute, role, candidates: primaryItems);
+    final isMoreActive = activeItem == null;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -69,7 +61,7 @@ class AcadexBottomNav extends ConsumerWidget {
           child: Row(
             children: [
               ...primaryItems.map((item) {
-                final isActive = item.matchesRoute(activeRoute);
+                final isActive = activeItem != null && item.id == activeItem.id;
                 return _NavTab(
                   icon: item.icon,
                   label: item.label,

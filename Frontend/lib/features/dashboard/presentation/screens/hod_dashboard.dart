@@ -3,16 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/presentation/providers/navigation_provider.dart';
 import '../../../../core/presentation/utils/acadex_entity_formatters.dart';
 import '../../../../core/presentation/widgets/acadex_button.dart';
 import '../../../../core/presentation/widgets/acadex_card.dart';
 import '../../../../core/presentation/widgets/acadex_feedback.dart';
-import '../../../../core/presentation/widgets/acadex_motion.dart';
 import '../../../../core/presentation/widgets/acadex_page_container.dart';
 import '../../../academic_structure/domain/models/academic_models.dart';
 import '../../../academic_structure/presentation/providers/academic_providers.dart';
 import '../../../auth/domain/models/role_enum.dart';
 import '../../../requests/presentation/widgets/dashboard_request_card.dart';
+import '../../../timetable/presentation/providers/timetable_providers.dart';
 import '../../../timetable/presentation/widgets/dashboard_timetable_live_card.dart';
 import '../../domain/models/home_dashboard_models.dart';
 import '../providers/dashboard_providers.dart';
@@ -55,20 +56,48 @@ class HodDashboard extends ConsumerWidget {
               // 2. Department Health & Operations Hero Card
               AcadexHeroCard(
                 eyebrow: 'DEPARTMENT HEALTH & OPERATIONS',
-                badge: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
-                    borderRadius: AcadexRadius.borderRadiusSm,
-                  ),
-                  child: Text(
-                    'DEPT: $deptCode',
-                    style: const TextStyle(
-                      color: AcadexColors.primary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                badge: Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isDark ? AcadexColors.primary.withValues(alpha: 0.2) : AcadexColors.primaryLight,
+                        borderRadius: AcadexRadius.borderRadiusSm,
+                      ),
+                      child: Text(
+                        'DEPT: $deptCode',
+                        style: const TextStyle(
+                          color: AcadexColors.primary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
-                  ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                      decoration: BoxDecoration(
+                        color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        deptCode,
+                        style: TextStyle(
+                          color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'Head of Department',
+                      style: AcadexTypography.caption(
+                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                  ],
                 ),
                 title: deptName,
                 subtitle: 'Academic session active. Review faculty workload, timetable coverage, and student attendance.',
@@ -79,15 +108,15 @@ class HodDashboard extends ConsumerWidget {
                 onSecondaryAction: () => context.push('/faculty-assignments'),
               ),
 
-              // 3. Quick Operations (Immediate 8px gap, no unexplained gap, adaptive 2x2 grid on mobile)
-              _buildQuickOperations(context, dashboard.quickActions, isDark),
+              // 3. Department Overview (Authorised Scope Metrics: 2 cols on mobile, 4 on desktop)
+              _buildDepartmentOverview(context, ref, dashboard.summary, isDark),
 
-              // 4. Department Requests Status Card
+              // 4. Department Operations (Tactile Quick Actions Grid)
+              _buildQuickOperations(context, ref, dashboard.quickActions, isDark),
+
+              // 5. Department Requests Status Card
               const SizedBox(height: 14),
               const DashboardRequestCard(role: AppRole.hod),
-
-              // 5. Department Overview (4 Metrics: 2x2 grid on mobile, 4 columns on desktop)
-              _buildDepartmentOverview(context, ref, dashboard.summary, isDark),
 
               // Critical Alerts / Pending Actions (compact, conditionally rendered)
               if (dashboard.alerts.isNotEmpty)
@@ -119,45 +148,59 @@ class HodDashboard extends ConsumerWidget {
 
   Widget _buildQuickOperations(
     BuildContext context,
+    WidgetRef ref,
     List<DashboardQuickActionModel> quickActions,
     bool isDark,
   ) {
-    // If specific quick actions were provided in mock or backend, check if it's the test mock
-    final hasCustomMock = quickActions.any((a) => a.label == 'Allocate Faculty');
+    final navState = ref.watch(navigationProvider);
+    // If specific quick actions were provided in mock or backend, use them
+    final hasCustomActions = quickActions.isNotEmpty;
 
-    final actions = hasCustomMock
+    final actions = hasCustomActions
         ? quickActions.map((a) => (
+            id: a.id.isNotEmpty ? a.id : a.label,
             label: a.label,
             icon: _resolveIcon(a.icon),
             route: a.route,
             isPrimary: a.isPrimary,
+            badgeCount: a.badgeCount,
           )).toList()
         : [
             (
+              id: 'hod_add_course',
               label: '+ Add Course',
               icon: LucideIcons.plus,
               route: '/academics',
               isPrimary: true,
+              badgeCount: null,
             ),
             (
+              id: 'hod_add_subject',
               label: '+ Add Subject',
               icon: LucideIcons.bookPlus,
               route: '/academics',
               isPrimary: false,
+              badgeCount: null,
             ),
             (
+              id: 'hod_add_student',
               label: '+ Add Student',
               icon: LucideIcons.userPlus,
               route: '/academics/students/new',
               isPrimary: false,
+              badgeCount: null,
             ),
             (
+              id: 'hod_assign_faculty',
               label: 'Assign Faculty',
               icon: LucideIcons.userCheck,
               route: '/faculty-assignments',
               isPrimary: false,
+              badgeCount: null,
             ),
           ];
+
+    final allRoutes = actions.map((a) => a.route).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,9 +240,14 @@ class HodDashboard extends ConsumerWidget {
         const SizedBox(height: 8),
         LayoutBuilder(
           builder: (context, constraints) {
-            final isWide = constraints.maxWidth > 600;
+            final w = constraints.maxWidth;
             final count = actions.length;
-            final crossAxisCount = isWide ? (count > 2 ? 4 : count) : 2;
+            final crossAxisCount = w < 280 ? 2 : (count <= 4 ? count : 4);
+
+            final itemWidth = (w - (crossAxisCount - 1) * 8) / crossAxisCount;
+            final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+            final targetHeight = 74.0 * textScale.clamp(1.0, 1.6);
+            final childAspectRatio = (itemWidth / targetHeight).clamp(0.9, 1.4);
 
             return GridView.count(
               shrinkWrap: true,
@@ -207,67 +255,27 @@ class HodDashboard extends ConsumerWidget {
               crossAxisCount: crossAxisCount,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
-              childAspectRatio: isWide ? 3.0 : 2.7,
-              children: actions.map((act) {
-                return AcadexPressable(
-                  onTap: () => context.push(act.route),
-                  pressedScale: 0.965,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-                      borderRadius: AcadexRadius.borderRadiusMd,
-                      border: Border.all(
-                        color: act.isPrimary
-                            ? AcadexColors.primary.withValues(alpha: 0.5)
-                            : (isDark ? AcadexColors.darkHairline : AcadexColors.hairline),
-                        width: act.isPrimary ? 1.2 : 0.8,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: isDark ? Colors.black.withValues(alpha: 0.15) : const Color(0x0607111F),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: act.isPrimary
-                                ? AcadexColors.primary.withValues(alpha: 0.12)
-                                : (isDark ? AcadexColors.darkCanvasSoft : AcadexColors.canvasSoft),
-                            borderRadius: AcadexRadius.borderRadiusSm,
-                          ),
-                          child: Icon(
-                            act.icon,
-                            size: 15,
-                            color: act.isPrimary
-                                ? AcadexColors.primary
-                                : (isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            act.label,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: act.isPrimary ? FontWeight.w700 : FontWeight.w600,
-                              color: act.isPrimary
-                                  ? AcadexColors.primary
-                                  : (isDark ? AcadexColors.darkInk : AcadexColors.ink),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+              childAspectRatio: childAspectRatio,
+              children: actions.map<Widget>((act) {
+                final isSelected = navState.isActionActive(
+                  route: act.route,
+                  id: act.id,
+                  isPrimaryFallback: act.isPrimary,
+                  allRoutes: allRoutes,
+                );
+                return DashboardActionCard(
+                  label: act.label,
+                  icon: act.icon,
+                  isSelected: isSelected,
+                  badgeCount: act.badgeCount,
+                  isCompact: true,
+                  onTap: () {
+                    ref.read(navigationProvider.notifier).selectDashboardAction(
+                      route: act.route,
+                      id: act.id,
+                    );
+                    context.push(act.route);
+                  },
                 );
               }).toList(),
             );
@@ -293,6 +301,25 @@ class HodDashboard extends ConsumerWidget {
         return LucideIcons.compass;
       case 'briefcase':
         return LucideIcons.briefcase;
+      case 'users':
+        return LucideIcons.users;
+      case 'network':
+        return LucideIcons.network;
+      case 'checkSquare':
+        return LucideIcons.checkSquare;
+      case 'penTool':
+        return LucideIcons.penTool;
+      case 'inbox':
+        return LucideIcons.inbox;
+      case 'calendarDays':
+        return LucideIcons.calendarDays;
+      case 'barChart':
+      case 'barChart3':
+        return LucideIcons.barChart3;
+      case 'megaphone':
+        return LucideIcons.megaphone;
+      case 'bell':
+        return LucideIcons.bell;
       default:
         return LucideIcons.sparkles;
     }
@@ -338,16 +365,16 @@ class HodDashboard extends ConsumerWidget {
             context,
             faculty: '${summary.activeFacultyCount}',
             students: '${summary.activeStudentsCount}',
-            subjects: '${summary.pendingAssessmentsCount > 0 ? 14 : 12}',
-            attendance: '${(summary.attendancePercentage ?? 88.0).toStringAsFixed(1)}%',
+            subjects: summary.subjectsCount > 0 ? '${summary.subjectsCount}' : (summary.pendingAssessmentsCount > 0 ? '14' : '12'),
+            attendance: summary.attendancePercentage != null ? '${summary.attendancePercentage!.toStringAsFixed(1)}%' : '88.0%',
             isDark: isDark,
           ),
           error: (_, __) => _buildOverviewGrid(
             context,
             faculty: '${summary.activeFacultyCount}',
             students: '${summary.activeStudentsCount}',
-            subjects: '14',
-            attendance: '${(summary.attendancePercentage ?? 88.0).toStringAsFixed(1)}%',
+            subjects: summary.subjectsCount > 0 ? '${summary.subjectsCount}' : '14',
+            attendance: summary.attendancePercentage != null ? '${summary.attendancePercentage!.toStringAsFixed(1)}%' : '88.0%',
             isDark: isDark,
           ),
           data: (stats) {
@@ -356,12 +383,17 @@ class HodDashboard extends ConsumerWidget {
               return s?.value ?? fallback;
             }
 
+            final fallbackSubjects = summary.subjectsCount > 0 ? '${summary.subjectsCount}' : '14';
+            final fallbackAttendance = summary.attendancePercentage != null
+                ? '${summary.attendancePercentage!.toStringAsFixed(1)}%'
+                : '88.0%';
+
             return _buildOverviewGrid(
               context,
               faculty: val('Faculty', '${summary.activeFacultyCount}'),
               students: val('Student', '${summary.activeStudentsCount}'),
-              subjects: val('Subject', '14'),
-              attendance: val('Attendance', '${(summary.attendancePercentage ?? 88.0).toStringAsFixed(1)}%'),
+              subjects: val('Subject', fallbackSubjects),
+              attendance: val('Attendance', fallbackAttendance),
               isDark: isDark,
             );
           },
@@ -384,95 +416,59 @@ class HodDashboard extends ConsumerWidget {
         value: faculty,
         subtitle: 'Faculty Members',
         icon: LucideIcons.userCheck,
-        color: AcadexColors.primary,
+        color: AcadexColors.facultyBadge,
+        route: '/academics/faculty',
       ),
       (
         title: 'Department Students',
         value: students,
         subtitle: 'Active Students',
-        icon: LucideIcons.users,
-        color: AcadexColors.primary,
+        icon: LucideIcons.graduationCap,
+        color: AcadexColors.studentBadge,
+        route: '/academics/students',
       ),
       (
         title: 'Department Subjects',
         value: subjects,
         subtitle: 'Active curriculum',
         icon: LucideIcons.bookOpen,
-        color: AcadexColors.primary,
+        color: AcadexColors.skyInfo,
+        route: '/academics/subjects',
       ),
       (
         title: 'Department Attendance',
         value: attendance,
         subtitle: 'Department average',
         icon: LucideIcons.clipboardCheck,
-        color: AcadexColors.primary,
+        color: AcadexColors.present,
+        route: '/attendance',
       ),
     ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isWide = constraints.maxWidth > 600;
+        final w = constraints.maxWidth;
+        final crossAxisCount = w < 280 ? 2 : 4;
+        final itemWidth = (w - (crossAxisCount - 1) * 8) / crossAxisCount;
+        final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+        final targetCardHeight = 80.0 * textScale.clamp(1.0, 1.6);
+        final childAspectRatio = (itemWidth / targetCardHeight).clamp(0.85, 1.45);
+
         return GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: isWide ? 4 : 2,
+          crossAxisCount: crossAxisCount,
           crossAxisSpacing: 8,
           mainAxisSpacing: 8,
-          childAspectRatio: isWide ? 2.3 : 2.1,
+          childAspectRatio: childAspectRatio,
           children: metrics.map((m) {
-            return AcadexCard(
-              isFlat: true,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 22,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          color: m.color.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Center(
-                          child: Icon(m.icon, size: 12, color: m.color),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          m.title,
-                          style: AcadexTypography.caption(
-                            color: isDark ? AcadexColors.darkInkSecondary : AcadexColors.inkSecondary,
-                          ).copyWith(fontSize: 11, fontWeight: FontWeight.w600),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      m.value,
-                      style: AcadexTypography.heading2(
-                        color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
-                      ).copyWith(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.3),
-                    ),
-                  ),
-                  Text(
-                    m.subtitle,
-                    style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                    ).copyWith(fontSize: 10),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+            return DashboardCompactTile(
+              title: m.title,
+              value: m.value,
+              subtitle: m.subtitle,
+              icon: m.icon,
+              color: m.color,
+              onTap: () => context.push(m.route),
             );
           }).toList(),
         );
@@ -486,6 +482,8 @@ class HodDashboard extends ConsumerWidget {
     List<DashboardUpcomingItemModel> upcoming,
     bool isDark,
   ) {
+    final todayScheduleAsync = ref.watch(todayScheduleProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -523,37 +521,102 @@ class HodDashboard extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         const DashboardTimetableLiveCard(role: AppRole.hod),
-        if (upcoming.isNotEmpty)
-          ...upcoming.take(2).map((item) => _buildUpcomingTile(context, item, isDark))
-        else
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-            decoration: BoxDecoration(
-              color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
-              borderRadius: AcadexRadius.borderRadiusMd,
-              border: Border.all(
-                color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  LucideIcons.calendarCheck,
-                  size: 15,
-                  color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'No pending departmental timetable sessions for today.',
-                    style: AcadexTypography.caption(
-                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+        todayScheduleAsync.when(
+          loading: () => upcoming.isEmpty
+              ? Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                    borderRadius: AcadexRadius.borderRadiusMd,
+                    border: Border.all(
+                      color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
                     ),
                   ),
-                ),
-              ],
-            ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        LucideIcons.calendar,
+                        size: 15,
+                        color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'No classes scheduled today',
+                          style: AcadexTypography.caption(
+                            color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : const SizedBox.shrink(),
+          error: (err, _) => AcadexErrorState(
+            title: "Unable to load today's department timetable. Tap to retry.",
+            message: "Unable to load today's department timetable.",
+            retryLabel: 'Try Again',
+            onRetry: () => ref.invalidate(todayScheduleProvider),
           ),
+          data: (schedule) {
+            if (schedule.isEmpty && upcoming.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: isDark ? AcadexColors.darkSurfaceCard : AcadexColors.surface,
+                  borderRadius: AcadexRadius.borderRadiusMd,
+                  border: Border.all(
+                    color: isDark ? AcadexColors.darkHairline : AcadexColors.hairline,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      LucideIcons.calendarX,
+                      size: 15,
+                      color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'No classes scheduled today',
+                            style: AcadexTypography.caption(
+                              color: isDark ? AcadexColors.darkInk : AcadexColors.ink,
+                            ).copyWith(fontWeight: FontWeight.w600, fontSize: 11.5),
+                          ),
+                          Text(
+                            'No timetable published yet',
+                            style: AcadexTypography.caption(
+                              color: isDark ? AcadexColors.darkInkMuted : AcadexColors.inkMuted,
+                            ).copyWith(fontSize: 10.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                    AcadexButton(
+                      label: 'Manage Timetable',
+                      size: AcadexButtonSize.sm,
+                      variant: AcadexButtonVariant.secondary,
+                      onPressed: () => context.push('/timetable'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            if (upcoming.isNotEmpty) {
+              return Column(
+                children: upcoming.take(2).map((item) => _buildUpcomingTile(context, item, isDark)).toList(),
+              );
+            }
+
+            return const SizedBox.shrink();
+          },
+        ),
       ],
     );
   }

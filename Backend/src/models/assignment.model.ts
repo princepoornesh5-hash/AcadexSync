@@ -19,6 +19,7 @@ export interface IAssignment extends Document {
   facultyId: mongoose.Types.ObjectId;
   facultyAssignmentId?: mongoose.Types.ObjectId;
   facultyName: string;
+  scope?: string;
   title: string;
   description: string;
   questions: string[];
@@ -76,6 +77,12 @@ const AssignmentSchema = new Schema<IAssignment>(
       default: AssignmentStatus.DRAFT,
       index: true,
     },
+    scope: {
+      type: String,
+      enum: ['COLLEGE', 'DEPARTMENT', 'COURSE', 'SEMESTER', 'SECTION', 'CLASS', 'SUBJECT'],
+      default: 'SECTION',
+      index: true,
+    },
     publishedAt: { type: Date, default: null },
     closedAt: { type: Date, default: null },
   },
@@ -94,6 +101,7 @@ const AssignmentSchema = new Schema<IAssignment>(
         ret.sectionId = ret.sectionId ? ret.sectionId.toString() : null;
         ret.subjectId = ret.subjectId?.toString();
         ret.facultyId = ret.facultyId?.toString();
+        ret.scope = ret.scope || (ret.sectionId ? 'SECTION' : 'SEMESTER');
         if (ret.facultyAssignmentId) {
           ret.facultyAssignmentId = ret.facultyAssignmentId.toString();
         }

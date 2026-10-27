@@ -2,7 +2,14 @@ import { z } from 'zod';
 import { AssignmentStatus, AssignmentType } from '../constants/assignment.constants';
 
 export const createAssignmentSchema = z.object({
-  facultyAssignmentId: z.string().min(1, 'Teaching context (Faculty Assignment) is required.'),
+  facultyAssignmentId: z.string().optional().nullable(),
+  scope: z.enum(['COLLEGE', 'DEPARTMENT', 'COURSE', 'SEMESTER', 'SECTION', 'CLASS', 'SUBJECT']).optional(),
+  departmentId: z.string().optional().nullable(),
+  courseId: z.string().optional().nullable(),
+  academicYearId: z.string().optional().nullable(),
+  semesterId: z.string().optional().nullable(),
+  sectionId: z.string().optional().nullable(),
+  subjectId: z.string().optional().nullable(),
   title: z
     .string()
     .min(2, 'Assignment Title must be at least 2 characters.')
@@ -41,7 +48,13 @@ export const createAssignmentSchema = z.object({
     })
     .optional()
     .default(AssignmentStatus.DRAFT),
-});
+}).refine(
+  (data) => Boolean(data.facultyAssignmentId || data.subjectId || data.semesterId || data.departmentId),
+  {
+    message: 'Either a faculty assignment or academic scope (department, semester, subject) must be specified.',
+    path: ['facultyAssignmentId'],
+  }
+);
 
 export const updateAssignmentStatusSchema = z.object({
   status: z.nativeEnum(AssignmentStatus, {
