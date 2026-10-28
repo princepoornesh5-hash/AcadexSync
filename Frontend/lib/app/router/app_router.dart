@@ -15,6 +15,8 @@ import '../../features/auth/presentation/screens/registration_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/activation_screen.dart';
 import '../../features/auth/presentation/screens/change_password_screen.dart';
+import '../../features/auth/presentation/screens/terms_and_conditions_screen.dart';
+import '../../features/auth/presentation/screens/contact_us_screen.dart';
 import '../../features/dashboard/presentation/screens/super_admin_dashboard.dart';
 import '../../features/dashboard/presentation/screens/college_admin_dashboard.dart';
 import '../../features/dashboard/presentation/screens/hod_dashboard.dart';
@@ -470,22 +472,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           loc == '/verify-otp' ||
           loc == '/reset-password' ||
           loc == '/activate';
+      final isPublicInfoRoute =
+          loc == '/terms' ||
+          loc == '/terms-and-conditions' ||
+          loc == '/contact-us' ||
+          loc == '/contact';
       final isStartup = loc == '/';
 
       if (currentAuthState is AuthProfileLoading ||
           currentAuthState is AuthInitial) {
         // Minimal loading placeholder while background session restoration resolves
-        return (isGoingToAuth || isStartup) ? null : '/';
+        return (isGoingToAuth || isPublicInfoRoute || isStartup) ? null : '/';
       }
 
       if (currentAuthState is AuthProfileError ||
           currentAuthState is AuthError) {
         // Force to login if profile fails, but avoid infinite redirect loop if already on an auth route
-        return isGoingToAuth ? null : '/login';
+        return (isGoingToAuth || isPublicInfoRoute) ? null : '/login';
       }
 
       if (currentAuthState is! AuthAuthenticated) {
-        return isGoingToAuth ? null : '/login';
+        return (isGoingToAuth || isPublicInfoRoute) ? null : '/login';
       }
 
       // User is logged in
@@ -688,6 +695,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const StartupLoadingView(),
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/terms',
+        builder: (context, state) => const TermsAndConditionsScreen(),
+      ),
+      GoRoute(
+        path: '/terms-and-conditions',
+        redirect: (context, state) => '/terms',
+      ),
+      GoRoute(
+        path: '/contact-us',
+        builder: (context, state) => const ContactUsScreen(),
+      ),
+      GoRoute(path: '/contact', redirect: (context, state) => '/contact-us'),
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegistrationScreen(),

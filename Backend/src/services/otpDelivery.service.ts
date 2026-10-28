@@ -1,5 +1,7 @@
 import { OtpPurpose, OtpDeliveryMethod } from '../constants/status';
 import { Logger } from '../utils/logger';
+import { ApiError } from '../utils/apiError';
+import { EmailService } from './email.service';
 
 export interface SendOtpOptions {
   destination: string;
@@ -8,8 +10,18 @@ export interface SendOtpOptions {
   deliveryMethod: OtpDeliveryMethod;
 }
 
+export interface OtpDeliveryResult {
+  success: boolean;
+  messageId?: string;
+  error?: string;
+  errorCode?: string;
+  isProviderRejection?: boolean;
+  isTimeout?: boolean;
+  isConfigurationError?: boolean;
+}
+
 export interface IOtpDeliveryAdapter {
-  sendOtp(options: SendOtpOptions): Promise<boolean>;
+  sendOtp(options: SendOtpOptions): Promise<OtpDeliveryResult | boolean>;
 }
 
 /**
@@ -20,14 +32,14 @@ export interface IOtpDeliveryAdapter {
 export class DevOtpDeliveryAdapter implements IOtpDeliveryAdapter {
   private lastDelivered: Map<string, string> = new Map();
 
-  async sendOtp(options: SendOtpOptions): Promise<boolean> {
+  async sendOtp(options: SendOtpOptions): Promise<OtpDeliveryResult> {
     this.lastDelivered.set(options.destination, options.otp);
     if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
       Logger.info(
         `[DEV OTP DELIVERY] OTP sent to ${options.destination} via ${options.deliveryMethod} for ${options.purpose}`
       );
     }
-    return true;
+    return { success: true };
   }
 
   getLastOtp(destination: string): string | undefined {
@@ -39,16 +51,19 @@ export class DevOtpDeliveryAdapter implements IOtpDeliveryAdapter {
   }
 }
 
-import { EmailService } from './email.service';
-
 /**
  * Production Resend Email Delivery Adapter
  */
 export class EmailDeliveryAdapter implements IOtpDeliveryAdapter {
-  async sendOtp(options: SendOtpOptions): Promise<boolean> {
+  async sendOtp(options: SendOtpOptions): Promise<OtpDeliveryResult> {
     if (!EmailService.isConfigured()) {
       Logger.error('[EMAIL OTP] Delivery failed: Email service is not configured (RESEND_API_KEY is missing).');
-      return false;
+      return {
+        success: false,
+        error: 'Email delivery service is not configured. RESEND_API_KEY is missing.',
+        errorCode: 'PROVIDER_NOT_CONFIGURED',
+        isConfigurationError: true,
+      };
     }
 
     const result = await EmailService.sendOtpEmail({
@@ -57,7 +72,21 @@ export class EmailDeliveryAdapter implements IOtpDeliveryAdapter {
       purpose: options.purpose,
     });
 
-    return result.success;
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error,
+        errorCode: result.errorCode,
+        isProviderRejection: result.isProviderRejection ?? (result.errorCode === 'validation_error' || result.errorCode === 'PROVIDER_SANDBOX_RESTRICTION'),
+        isTimeout: result.isTimeout ?? (result.errorCode === 'PROVIDER_TIMEOUT'),
+        isConfigurationError: result.errorCode === 'PROVIDER_NOT_CONFIGURED',
+      };
+    }
+
+    return {
+      success: true,
+      messageId: result.messageId,
+    };
   }
 }
 
@@ -65,33 +94,43 @@ export class EmailDeliveryAdapter implements IOtpDeliveryAdapter {
  * Production SMS Delivery Adapter placeholder
  */
 export class SmsDeliveryAdapter implements IOtpDeliveryAdapter {
-  async sendOtp(options: SendOtpOptions): Promise<boolean> {
+  async sendOtp(options: SendOtpOptions): Promise<OtpDeliveryResult> {
     Logger.info(`[SMS OTP] Sending OTP to ${Logger.maskEmail(options.destination)}`);
     // Future integration: Twilio / AWS SNS / MSG91
-    return true;
+    return { success: true };
   }
 }
 
-import { ApiError } from '../utils/apiError';
-
 export class OtpDeliveryService {
-  private static adapter: IOtpDeliveryAdapter = new DevOtpDeliveryAdapter();
+  private static customAdapter: IOtpDeliveryAdapter | null = null;
+  private static defaultDevAdapter: DevOtpDeliveryAdapter = new DevOtpDeliveryAdapter();
 
-  static setAdapter(newAdapter: IOtpDeliveryAdapter): void {
-    this.adapter = newAdapter;
+  static setAdapter(newAdapter: IOtpDeliveryAdapter | null): void {
+    this.customAdapter = newAdapter;
   }
 
   static getAdapter(): IOtpDeliveryAdapter {
-    return this.adapter;
+    if (this.customAdapter) {
+      return this.customAdapter;
+    }
+    // In test environment, default to DevOtpDeliveryAdapter so existing integration test suites can inspect and clear
+    if (process.env.NODE_ENV === 'test') {
+      return this.defaultDevAdapter;
+    }
+    if (EmailService.isConfigured()) {
+      return new EmailDeliveryAdapter();
+    }
+    return this.defaultDevAdapter;
   }
 
   static isConfigured(deliveryMethod: OtpDeliveryMethod): boolean {
-    if (this.adapter instanceof DevOtpDeliveryAdapter) {
+    const adapter = this.getAdapter();
+    if (adapter instanceof DevOtpDeliveryAdapter) {
       // In production, placeholder development adapter is strictly rejected
       return process.env.NODE_ENV !== 'production';
     }
 
-    if (this.adapter instanceof EmailDeliveryAdapter) {
+    if (adapter instanceof EmailDeliveryAdapter) {
       return EmailService.isConfigured();
     }
 
@@ -107,15 +146,15 @@ export class OtpDeliveryService {
       Logger.error(
         `[OTP DELIVERY ERROR] Delivery provider for ${deliveryMethod} is not configured.`
       );
-      throw ApiError.internal(
-        `Contact delivery service for ${deliveryMethod} is not configured in this environment. Please contact your campus administrator.`
+      throw ApiError.serviceUnavailable(
+        `Contact delivery service for ${deliveryMethod} is not configured in this environment. Please contact your campus administrator.`,
+        'DELIVERY_PROVIDER_UNCONFIGURED'
       );
     }
   }
 
-  static async sendOtp(options: SendOtpOptions): Promise<boolean> {
+  static async sendOtp(options: SendOtpOptions): Promise<OtpDeliveryResult | boolean> {
     this.assertConfigured(options.deliveryMethod);
-    return this.adapter.sendOtp(options);
+    return this.getAdapter().sendOtp(options);
   }
 }
-

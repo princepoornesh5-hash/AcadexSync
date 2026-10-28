@@ -19,6 +19,9 @@ export interface SendEmailResult {
   messageId?: string;
   error?: string;
   errorCode?: string;
+  isSandboxRestriction?: boolean;
+  isTimeout?: boolean;
+  isProviderRejection?: boolean;
 }
 
 export interface SendOtpEmailOptions {
@@ -186,7 +189,20 @@ export class EmailService {
 
     // 6. Safe logging (Masked recipient, no OTP, no HTML content)
     const maskedRecipients = cleanedRecipients.map((r) => Logger.maskEmail(r)).join(', ');
-    Logger.info(`[EMAIL SERVICE] Sending transactional email "${subject}" to ${maskedRecipients}`);
+
+    // 6b. Development recipient redirect (when in non-production and RESEND_DEV_REDIRECT_EMAIL is configured)
+    let actualRecipients = cleanedRecipients;
+    let actualSubject = subject;
+    const devRedirect = env.RESEND_DEV_REDIRECT_EMAIL?.trim();
+    if (env.NODE_ENV !== 'production' && devRedirect && devRedirect.length > 0) {
+      actualRecipients = [devRedirect];
+      actualSubject = `${subject} [Dev Target: ${maskedRecipients}]`;
+      Logger.info(
+        `[EMAIL SERVICE] Development redirect active: delivering to ${Logger.maskEmail(devRedirect)} (intended: ${maskedRecipients})`
+      );
+    } else {
+      Logger.info(`[EMAIL SERVICE] Sending transactional email "${subject}" to ${maskedRecipients}`);
+    }
 
     // 7. Dispatch with provider timeout handling
     const timeoutMs = env.RESEND_TIMEOUT_MS || 10000;
@@ -194,8 +210,8 @@ export class EmailService {
     const emailPayload: CreateEmailOptions = options.html
       ? {
           from: senderResolution.sender,
-          to: cleanedRecipients,
-          subject,
+          to: actualRecipients,
+          subject: actualSubject,
           html: options.html,
           ...(options.text ? { text: options.text } : {}),
           ...(options.replyTo ? { replyTo: options.replyTo } : {}),
@@ -203,8 +219,8 @@ export class EmailService {
         }
       : {
           from: senderResolution.sender,
-          to: cleanedRecipients,
-          subject,
+          to: actualRecipients,
+          subject: actualSubject,
           text: options.text as string,
           ...(options.replyTo ? { replyTo: options.replyTo } : {}),
           ...(options.tags ? { tags: options.tags } : {}),
@@ -223,13 +239,28 @@ export class EmailService {
       const response = await Promise.race([sendPromise, timeoutPromise]);
 
       if (response.error) {
+        const errName = response.error.name || 'Error';
+        const rawErrMsg = response.error.message || '';
         Logger.error(
-          `[EMAIL SERVICE] Resend provider returned an error: ${response.error.name || 'Error'} - ${response.error.message}`
+          `[EMAIL SERVICE] Resend provider returned an error: ${errName} - ${rawErrMsg}`
         );
+
+        const isSandbox =
+          errName.toLowerCase().includes('validation') ||
+          rawErrMsg.toLowerCase().includes('only send testing emails') ||
+          rawErrMsg.toLowerCase().includes('verify a domain') ||
+          rawErrMsg.toLowerCase().includes('not allowed on free test plan');
+
+        const actionableError = isSandbox
+          ? 'Email delivery restricted: In test sandbox mode (onboarding@resend.dev), emails can only be delivered to the verified Resend account owner. To send to student/institutional emails, an administrator must verify an institutional sender domain at resend.com/domains or configure RESEND_DEV_REDIRECT_EMAIL for local testing.'
+          : rawErrMsg;
+
         return {
           success: false,
-          error: response.error.message,
-          errorCode: response.error.name,
+          error: actionableError,
+          errorCode: isSandbox ? 'PROVIDER_SANDBOX_RESTRICTION' : errName,
+          isSandboxRestriction: isSandbox,
+          isProviderRejection: true,
         };
       }
 
@@ -242,11 +273,16 @@ export class EmailService {
       };
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown provider error';
+      const isTimeout = errorMessage.includes('timed out');
       Logger.error(`[EMAIL SERVICE] Provider failure during email delivery: ${errorMessage}`);
       return {
         success: false,
-        error: errorMessage,
-        errorCode: 'PROVIDER_DISPATCH_ERROR',
+        error: isTimeout
+          ? 'Email delivery timed out while contacting provider. Please try requesting a code again shortly.'
+          : errorMessage,
+        errorCode: isTimeout ? 'PROVIDER_TIMEOUT' : 'PROVIDER_DISPATCH_ERROR',
+        isTimeout,
+        isProviderRejection: !isTimeout,
       };
     }
   }

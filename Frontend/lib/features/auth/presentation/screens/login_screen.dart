@@ -539,27 +539,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ).copyWith(letterSpacing: -0.5),
                           ),
                           const SizedBox(height: 4),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 5,
-                                height: 5,
-                                decoration: const BoxDecoration(
-                                  color: AcadexColors.accentPink,
-                                  shape: BoxShape.circle,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 5,
+                                  height: 5,
+                                  decoration: const BoxDecoration(
+                                    color: AcadexColors.accentPink,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Campus Operating System',
-                                style: AcadexTypography.bodySmall(
-                                  color: isDark
-                                      ? AcadexColors.darkInkMuted
-                                      : AcadexColors.inkMuted,
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Campus Operating System',
+                                  style: AcadexTypography.bodySmall(
+                                    color: isDark
+                                        ? AcadexColors.darkInkMuted
+                                        : AcadexColors.inkMuted,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 20),
                           _buildFormContent(
@@ -609,6 +613,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (kDebugMode) ...[
           const SizedBox(height: 12),
           _buildDevDrawer(context, isDark, isLoading),
+        ],
+
+        // Accessible Login Footer on initial welcome step
+        if (_currentStep == LoginStep.welcome) ...[
+          _buildLoginFooter(context, isDark),
         ],
       ],
     );
@@ -763,32 +772,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           const SizedBox(height: 12),
 
           // Activate institutional account link
-          TextButton.icon(
-            key: const Key('link_activate_account'),
-            onPressed: isLoading ? null : () => context.go('/activate'),
-            icon: const Icon(
-              LucideIcons.shieldCheck,
-              size: 16,
-              color: AcadexColors.accentPink,
-            ),
-            label: Text.rich(
-              TextSpan(
-                text: 'Have an invitation code? ',
-                style: AcadexTypography.caption(
-                  color: isDark
-                      ? AcadexColors.darkInkSecondary
-                      : AcadexColors.inkSecondary,
-                ),
-                children: [
-                  TextSpan(
-                    text: 'Activate Account',
-                    style: AcadexTypography.caption(color: AcadexColors.primary)
-                        .copyWith(
-                          fontWeight: FontWeight.w600,
-                          decoration: TextDecoration.underline,
-                        ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: TextButton.icon(
+              key: const Key('link_activate_account'),
+              onPressed: isLoading ? null : () => context.go('/activate'),
+              icon: const Icon(
+                LucideIcons.shieldCheck,
+                size: 16,
+                color: AcadexColors.accentPink,
+              ),
+              label: Text.rich(
+                TextSpan(
+                  text: 'Have an invitation code? ',
+                  style: AcadexTypography.caption(
+                    color: isDark
+                        ? AcadexColors.darkInkSecondary
+                        : AcadexColors.inkSecondary,
                   ),
-                ],
+                  children: [
+                    TextSpan(
+                      text: 'Activate Account',
+                      style:
+                          AcadexTypography.caption(
+                            color: AcadexColors.primary,
+                          ).copyWith(
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline,
+                          ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1282,6 +1296,93 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Compact, accessible footer on the initial login screen linking to
+  /// in-app Terms & Conditions and Contact Us screens.
+  Widget _buildLoginFooter(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20.0, bottom: 8.0),
+      child: Semantics(
+        container: true,
+        label: 'Terms & Conditions and Contact Us links',
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            InkWell(
+              key: const Key('login_terms_link'),
+              onTap: () => context.push('/terms'),
+              borderRadius: BorderRadius.circular(6),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 10,
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Terms & Conditions',
+                      style:
+                          AcadexTypography.caption(
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
+                          ).copyWith(
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.1,
+                          ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                '·',
+                style: TextStyle(
+                  color: isDark
+                      ? AcadexColors.darkInkFaint
+                      : AcadexColors.inkFaint,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            InkWell(
+              key: const Key('login_contact_link'),
+              onTap: () => context.push('/contact-us'),
+              borderRadius: BorderRadius.circular(6),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 10,
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Contact Us',
+                      style:
+                          AcadexTypography.caption(
+                            color: isDark
+                                ? AcadexColors.darkInkMuted
+                                : AcadexColors.inkMuted,
+                          ).copyWith(
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.1,
+                          ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

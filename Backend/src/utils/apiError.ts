@@ -52,4 +52,12 @@ export class ApiError extends Error {
   static internal(message = 'Internal server error', code = 'INTERNAL_ERROR', details?: unknown): ApiError {
     return new ApiError(500, message, code, details, false);
   }
+
+  static badGateway(message = 'Bad gateway. Upstream provider failed.', code = 'BAD_GATEWAY', details?: unknown): ApiError {
+    return new ApiError(502, message, code, details);
+  }
+
+  static serviceUnavailable(message = 'Service temporarily unavailable. Please try again later.', code = 'SERVICE_UNAVAILABLE', details?: unknown): ApiError {
+    return new ApiError(503, message, code, details);
+  }
 }

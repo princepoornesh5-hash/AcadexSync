@@ -206,13 +206,18 @@ class NetworkErrorDiagnostic {
             (backendMsg.toString().toLowerCase().contains('database') ||
                 backendMsg.toString().toLowerCase().contains('mongo'));
 
+        final userFacing = backendMsg != null &&
+                backendMsg.toString().trim().isNotEmpty
+            ? backendMsg.toString().trim()
+            : (isDbError
+                ? 'ACADEXSYNC database connection is unavailable. Please try again in a moment.'
+                : 'ACADEXSYNC server encountered an internal error. Please try again shortly.');
+
         return NetworkErrorDiagnostic(
           kind: isDbError
               ? NetworkFailureKind.databaseUnavailable
               : NetworkFailureKind.backendServerError,
-          userMessage: isDbError
-              ? 'ACADEXSYNC database connection is unavailable. Please try again in a moment.'
-              : 'ACADEXSYNC server encountered an internal error. Please try again shortly.',
+          userMessage: userFacing,
           technicalMessage: 'HTTP $status Server Error: $backendMsg',
           statusCode: status,
           requestUri: uri,

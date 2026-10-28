@@ -245,7 +245,14 @@ export class ActivationService {
     OtpDeliveryService.assertConfigured(deliveryMethod);
 
     // Dispatch OTP via OtpService (enforces cooldown, hashing, expiry, 5-attempt limits)
-    await OtpService.requestOtp(user._id, OtpPurpose.ACCOUNT_ACTIVATION, destination, deliveryMethod);
+    await OtpService.requestOtp({
+      destination,
+      purpose: OtpPurpose.ACCOUNT_ACTIVATION,
+      userId: user._id,
+      invitationId: invitation._id,
+      deliveryMethod,
+      expiresInSeconds: env.OTP_EXPIRES_IN || 300,
+    });
 
     // Audit log
     await AuditService.log({
@@ -615,11 +622,11 @@ export class ActivationService {
         expiresInSeconds: env.OTP_EXPIRES_IN || 300,
       });
     } catch (err: unknown) {
-      if (err instanceof ApiError && err.statusCode === 429) {
+      if (err instanceof ApiError) {
         throw err;
       }
       Logger.error('[ACTIVATION] Institutional activation OTP dispatch failed', err);
-      throw ApiError.internal('Failed to deliver verification code. Please try again later.');
+      throw ApiError.badGateway('Failed to deliver verification code. Please try again later.');
     }
 
     return genericResponse;

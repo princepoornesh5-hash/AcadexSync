@@ -157,6 +157,7 @@ const envSchema = z.object({
   // Resend Transactional Email Delivery Configuration
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z.string().default('onboarding@resend.dev'),
+  RESEND_DEV_REDIRECT_EMAIL: z.string().optional(),
   RESEND_TIMEOUT_MS: z
     .union([z.string(), z.number()])
     .transform((val) => (typeof val === 'number' ? val : parseInt(val, 10)))

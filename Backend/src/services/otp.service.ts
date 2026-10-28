@@ -162,16 +162,44 @@ export class OtpService {
 
     // 5. Dispatch via delivery adapter (Resend for email)
     try {
-      const delivered = await OtpDeliveryService.sendOtp({
+      const rawResult = await OtpDeliveryService.sendOtp({
         destination: normalizedDestination,
         otp: rawOtp,
         purpose,
         deliveryMethod,
       });
 
-      if (!delivered) {
+      const deliveryResult = typeof rawResult === 'boolean' ? { success: rawResult } : rawResult;
+
+      if (!deliveryResult.success) {
         await Otp.findByIdAndDelete(createdOtp._id).catch(() => {});
-        throw ApiError.internal('Failed to deliver verification code. Please try again later.');
+
+        if (deliveryResult.isConfigurationError) {
+          throw ApiError.serviceUnavailable(
+            deliveryResult.error || 'Email delivery service is currently unavailable. Please contact your campus administrator.',
+            'EMAIL_SERVICE_UNCONFIGURED'
+          );
+        }
+
+        if (deliveryResult.isTimeout) {
+          throw ApiError.badGateway(
+            'Email delivery provider timed out. Please try requesting a code again shortly.',
+            'EMAIL_DELIVERY_TIMEOUT'
+          );
+        }
+
+        if (deliveryResult.isProviderRejection) {
+          throw ApiError.badRequest(
+            deliveryResult.error || 'Email delivery was rejected by the provider domain policy.',
+            'EMAIL_DELIVERY_REJECTED',
+            { providerError: deliveryResult.error }
+          );
+        }
+
+        throw ApiError.badGateway(
+          deliveryResult.error || 'Failed to deliver verification code via email provider.',
+          'EMAIL_DELIVERY_FAILED'
+        );
       }
     } catch (deliveryError) {
       // Remove un-delivered OTP to avoid leaving user blocked by cooldown
