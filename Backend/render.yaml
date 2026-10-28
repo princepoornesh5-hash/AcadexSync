@@ -5,7 +5,7 @@ services:
     plan: free
     region: oregon
     rootDir: Backend
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /health
     autoDeploy: true
@@ -42,8 +42,12 @@ services:
         value: "60"
       - key: BCRYPT_SALT_ROUNDS
         value: "10"
+      # CORS_ORIGIN must be the exact deployed frontend origin (no wildcards in production).
+      # Example: https://acadexsync.netlify.app
+      # If the frontend is hosted on a custom domain, use that domain.
+      # DO NOT set this to * — the backend will refuse to start in production if it is.
       - key: CORS_ORIGIN
-        value: "*"
+        sync: false
       - key: IMAGEKIT_PUBLIC_KEY
         sync: false
       - key: IMAGEKIT_PRIVATE_KEY
